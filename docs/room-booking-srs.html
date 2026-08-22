@@ -1,0 +1,571 @@
+<title>ข้อกำหนดระบบจองห้อง รร.ส.สส.</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;500;600&family=Sarabun:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+:root{
+  --paper:#F8F7FA; --ink:#22202B; --muted:#6E6A7A; --line:#DCD8E3; --panel:#EFEDF3;
+  --accent:#5B3A6E; --accent-soft:#EBE3F0; --accent-ink:#3E2650;
+  --ok:#2E6B4A; --warn:#8A5A12; --crit:#9A2F2F;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --paper:#17151D; --ink:#ECE8F2; --muted:#A59FB3; --line:#353040; --panel:#221F2B;
+    --accent:#B48AD0; --accent-soft:#2C2238; --accent-ink:#D9C2EA;
+    --ok:#7FC49A; --warn:#E0B05E; --crit:#E08080;
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#17151D; --ink:#ECE8F2; --muted:#A59FB3; --line:#353040; --panel:#221F2B;
+  --accent:#B48AD0; --accent-soft:#2C2238; --accent-ink:#D9C2EA;
+  --ok:#7FC49A; --warn:#E0B05E; --crit:#E08080;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:"Sarabun",system-ui,sans-serif;font-size:17px;line-height:1.65}
+.wrap{max-width:1160px;margin:0 auto;padding:2.5rem 1.25rem 5rem;display:grid;grid-template-columns:1fr;gap:2rem}
+@media(min-width:980px){.wrap{grid-template-columns:220px minmax(0,1fr)}}
+nav{display:none}
+@media(min-width:980px){nav{display:block;position:sticky;top:1.5rem;align-self:start;font-size:.85rem;line-height:1.5}}
+nav a{display:block;color:var(--muted);text-decoration:none;padding:.2rem 0 .2rem .75rem;border-left:2px solid var(--line)}
+nav a:hover,nav a:focus-visible{color:var(--accent);border-left-color:var(--accent);outline:none}
+main{max-width:72ch;min-width:0}
+h1,h2,h3{font-family:"Kanit",system-ui,sans-serif;font-weight:500;line-height:1.25;text-wrap:balance;margin:0}
+h1{font-size:2.1rem}
+h2{font-size:1.45rem;margin-top:3rem;padding-top:1.25rem;border-top:1px solid var(--line);color:var(--accent-ink)}
+h3{font-size:1.1rem;margin-top:1.75rem;font-weight:600}
+p{margin:.75rem 0}
+.eyebrow{font-family:"IBM Plex Mono",monospace;font-size:.75rem;letter-spacing:.12em;text-transform:uppercase;color:var(--accent);margin-bottom:.6rem}
+.meta{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:.75rem 1.5rem;margin:1.5rem 0;padding:1rem 1.25rem;background:var(--panel);border-radius:6px;font-size:.9rem}
+.meta b{display:block;font-size:.72rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:500}
+.tbl{overflow-x:auto;margin:1rem 0}
+table{border-collapse:collapse;width:100%;font-size:.92rem}
+th,td{text-align:left;vertical-align:top;padding:.5rem .65rem;border-bottom:1px solid var(--line)}
+th{font-family:"Kanit",sans-serif;font-weight:500;font-size:.85rem;color:var(--muted);background:var(--panel)}
+td code,p code,li code,span code{font-family:"IBM Plex Mono",monospace;font-size:.85em;background:var(--panel);padding:.05em .35em;border-radius:3px}
+ul,ol{padding-left:1.4rem;margin:.5rem 0}
+li{margin:.25rem 0}
+.req{display:grid;grid-template-columns:4.2rem 1fr;gap:.45rem 1rem;margin:1rem 0}
+.req .id{font-family:"IBM Plex Mono",monospace;font-size:.8rem;color:var(--accent);padding-top:.2rem}
+.decision{border-left:3px solid var(--accent);background:var(--accent-soft);padding:.75rem 1rem;margin:1rem 0;border-radius:0 6px 6px 0;font-size:.95rem}
+.flow{font-family:"IBM Plex Mono",monospace;font-size:.85rem;background:var(--panel);padding:1rem 1.25rem;border-radius:6px;overflow-x:auto;white-space:pre;line-height:1.6}
+pre.mermaid{background:var(--panel);padding:1rem;border-radius:6px;overflow-x:auto}
+.note{color:var(--muted);font-size:.9rem}
+.changelog{margin:1rem 0;font-size:.9rem;border:1px solid var(--line);border-radius:6px;padding:.5rem .9rem}
+.changelog summary{cursor:pointer;font-family:"Kanit",sans-serif;font-weight:500;color:var(--accent-ink)}
+.changelog summary:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+hr{border:0;border-top:1px solid var(--line);margin:2rem 0}
+</style>
+
+<div class="wrap">
+<nav aria-label="สารบัญ">
+  <a href="#s1">1 ภาพรวม</a><a href="#s2">2 ข้อตกลงใจ</a><a href="#s3">3 บทบาทผู้ใช้</a><a href="#s4">4 ทะเบียนห้อง/ทรัพยากร</a><a href="#s5">5 กฎรายห้อง</a><a href="#s6">6 การจอง</a><a href="#s7">7 การอนุมัติ</a><a href="#s8">8 บังคับย้าย</a><a href="#s9">9 สถานะ</a><a href="#s10">10 ความปลอดภัย</a><a href="#s11">11 การแจ้งเตือน</a><a href="#s12">12 แบบจำลองข้อมูล</a><a href="#s13">13 รายงาน</a><a href="#s14">14 คุณภาพและสถาปัตยกรรม</a><a href="#s15">15 Pilot และเกณฑ์รับมอบ</a><a href="#s16">16 ประเด็นคงค้าง</a>
+</nav>
+
+<main>
+<div class="eyebrow">System Requirements Specification · ฉบับร่าง 0.4</div>
+<h1>ข้อกำหนดระบบจองและบริหารการใช้ห้อง โรงเรียนทหารสื่อสาร</h1>
+<p>เอกสารนี้แปลงแผนและข้อตกลงใจที่ผ่านการตรวจสอบแล้วให้เป็นข้อกำหนดที่ทีมพัฒนานำไปออกแบบและสร้างระบบระยะที่ 1 ได้โดยตรง ข้อกำหนดที่ขึ้นต้นด้วยรหัส (เช่น <code>FR-06</code>) เป็นข้อบังคับของระยะที่ 1 เว้นแต่ระบุว่าเป็นระยะถัดไป</p>
+<div class="meta">
+  <div><b>หน่วยงาน</b>โรงเรียนทหารสื่อสาร (รร.ส.สส.)</div>
+  <div><b>ขอบเขตระยะที่ 1</b>ห้องเรียน ห้องสอน ห้องประชุม และอุปกรณ์ส่วนกลาง</div>
+  <div><b>วันที่</b>23 ส.ค. 2569</div>
+  <div><b>สถานะ</b>ร่างเพื่อขอความเห็นชอบ</div>
+</div>
+<details class="changelog" open>
+<summary>สิ่งที่เปลี่ยนจาก 0.3 → 0.4</summary>
+<ul>
+<li>เพิ่ม <strong>แบบจำลองการแก้ไขหลังอนุมัติ (Amendment)</strong> — ข้อ 6.4, FR-34–38, เอนทิตี <code>BOOKING_AMENDMENT</code> ใน ER การจองเดิมคงช่วงถือครองไว้จนกว่าการแก้ไขจะได้รับอนุมัติ ปฏิเสธแล้วการจองเดิมไม่เปลี่ยน · FR-05 ปรับให้อ้างข้อ 6.4 · <code>APPROVAL</code> อ้างถึง amendment ได้</li>
+<li>ตัด "ระดับการมองเห็น" ออกจาก workflow อนุมัติห้อง: ปกติ→จำกัด ทำได้ทันที จำกัด→ปกติ ต้องยืนยันซ้ำ ข้อมูลอ่อนไหวใช้สิทธิ์ด้านความมั่นคงสารสนเทศแยก (SR-07)</li>
+<li>NF-05 เหลือเฉพาะจำนวนผู้ใช้ อ้าง NF-19–20 สำหรับเวลาตอบสนองและ load test</li>
+<li>NF-17/NF-25 กำหนด expand/contract migration เพื่อให้ rollback 30 นาทีทำได้จริง</li>
+<li>NF-18 แบ่งเอกสารสถาปัตยกรรมเป็นช่วง (ก่อน sprint แรก / ระหว่าง sprint แรก / หลัง O6 / ก่อนรับมอบ)</li>
+<li>เกณฑ์รับมอบความพึงพอใจคืนเป็น ≥ 3.5/5 ตามข้อตกลง 0.1 ใช้ SUS ≥ 75 เป็นเกณฑ์คุณภาพหลัก และตั้ง 4.0/5 เป็นเป้าหมายหลังขยายระบบ · เพิ่มเกณฑ์ทดสอบ amendment</li>
+<li>บันทึกย้อนหลัง: O8 (Design Context) ถูกเพิ่มตั้งแต่ 0.3</li>
+</ul>
+</details>
+<details class="changelog">
+<summary>สิ่งที่เปลี่ยนจาก 0.2 → 0.3</summary>
+<ul>
+<li>เพิ่มข้อกำหนด UX/UI และการเข้าถึงตาม WCAG 2.2 ระดับ AA พร้อมเกณฑ์ทดสอบกับผู้ใช้จริง</li>
+<li>กำหนดสถาปัตยกรรมระยะที่ 1 เป็น modular monolith แยกโมดูลตามงาน พร้อมเอกสาร C4, API contract และ ADR</li>
+<li>เพิ่มเกณฑ์ OWASP ASVS 5.0.0 ระดับ 2 และ OWASP Top 10:2025 สำหรับระบบที่เปิดผ่านอินเทอร์เน็ต</li>
+<li>เพิ่มเกณฑ์ Core Web Vitals, API latency, load test และการเฝ้าระวังประสิทธิภาพ</li>
+<li>เพิ่ม quality gate, automated test, code coverage, deployment rollback และข้อกำหนดเพื่อให้แก้ไขระบบได้ง่าย</li>
+<li>ปรับ FR-05 ให้แยกการตรวจทรัพยากรชนออกจากการพิจารณาว่าต้องอนุมัติใหม่หรือไม่</li>
+</ul>
+</details>
+<details class="changelog">
+<summary>สิ่งที่เปลี่ยนจาก 0.1 → 0.2</summary>
+<ul>
+<li>นโยบายถือครองเวลา: ยืนยัน "มาก่อนได้ก่อน" ตัด FR-19 (การจัดสรรอัตโนมัติระหว่างคำขอที่ชน) เพราะขัดกับ FR-09/FR-10</li>
+<li>FR-05 กำหนดรายการฟิลด์ที่กระทบการอนุมัติ ปิดช่องแก้ไขหลังอนุมัติ</li>
+<li>ระยะที่ 1 จำกัด หนึ่งห้องต่อคำขอ + อุปกรณ์ส่วนกลางหลายรายการ (FR-06, FR-18) อุปกรณ์ส่วนกลางไม่มีผู้อนุมัติ</li>
+<li>FR-23 นิยาม "คำขอเร่งด่วน" ใหม่ ปิดช่องว่าง 25–47 ชม. ที่หมดอายุก่อนครบ SLA</li>
+<li>FR-27 ปลดช่วงถือครองของการจองเดิมใน transaction เดียวกัน และกำหนดสิทธิ์ห้องทดแทนต่างเจ้าของ (FR-26)</li>
+<li>เพิ่ม SR-11–SR-17: เข้ารหัสข้อมูล, session cookie, recovery code, ลืมรหัสผ่าน/กู้บัญชี, เฝ้าระวัง, pentest, RPO/RTO และแผนตอบสนองเหตุการณ์</li>
+<li>SR-04 เตือนล่วงหน้าก่อนระงับบัญชี 180 วัน และโอนผู้รับผิดชอบการจองในอนาคต</li>
+<li>ER diagram: เพิ่ม PK/FK และ <code>released_at</code> ใน BOOKING_RESOURCE แยกความสัมพันธ์ PREEMPTION เป็นสามบทบาท</li>
+</ul>
+</details>
+
+<h2 id="s1">1. ภาพรวมและขอบเขต</h2>
+<h3>1.1 เป้าหมาย</h3>
+<ul>
+<li>ตรวจสอบห้องว่างได้ทันที และป้องกันการจองเวลาซ้ำ</li>
+<li>รองรับการอนุมัติตามสายงาน พร้อมผู้อนุมัติสำรองและเส้นตาย</li>
+<li>แสดงตารางใช้ห้องรายวัน รายสัปดาห์ รายเดือน</li>
+<li>เก็บประวัติทุกการกระทำ: ใครจอง ใครอนุมัติ ใครแก้ไข ใครสั่งย้าย</li>
+<li>ให้เจ้าหน้าที่บริหารห้องและอุปกรณ์จากจุดเดียว</li>
+<li>ใช้งานง่ายบนคอมพิวเตอร์และมือถือ รองรับผู้ใช้ที่มีทักษะดิจิทัลต่างกัน</li>
+<li>วางสถาปัตยกรรมให้กฎการจอง การอนุมัติ และการตรวจเวลาชนทำงานถูกต้องภายใต้ภาระใช้งานจริง</li>
+<li>พัฒนา ทดสอบ และดูแลระบบตามมาตรฐานความปลอดภัยและคุณภาพซอฟต์แวร์ที่ตรวจรับได้</li>
+</ul>
+<h3>1.2 อยู่ในขอบเขตระยะที่ 1</h3>
+<p>ทะเบียนห้องและอุปกรณ์ส่วนกลาง · ปฏิทิน · จองครั้งเดียวและจองเป็นชุด · ตรวจเวลาชนรวม buffer · อนุมัติ/ปฏิเสธ/สำรอง/หมดอายุ · บังคับย้าย · บันทึก no-show โดยเจ้าหน้าที่ · แจ้งเตือนในระบบและ LINE · audit log · รายงานพื้นฐาน · 2FA</p>
+<h3>1.3 นอกขอบเขตระยะที่ 1</h3>
+<p>เช็กอิน QR Code · รายการเตรียมห้อง (checklist) · เชื่อม AD/LDAP · เชื่อมตารางเรียนและปฏิทินองค์กร · จอหน้าห้อง — กำหนดไว้ในระยะที่ 2–3</p>
+
+<h2 id="s2">2. ข้อตกลงใจที่ยืนยันแล้ว</h2>
+<p>ค่าต่อไปนี้เป็นค่าเริ่มต้นของระบบ ค่าที่ระบุว่า "ตั้งค่าได้" ผู้ดูแลระบบเปลี่ยนได้โดยไม่ต้องแก้โค้ด</p>
+<div class="tbl"><table>
+<tr><th style="width:3rem">ข้อ</th><th>เรื่อง</th><th>ข้อตกลงใจ</th></tr>
+<tr><td>D1</td><td>นโยบายอนุมัติ</td><td>ห้องเรียนทั่วไปอนุมัติอัตโนมัติเมื่อว่าง · ห้องประชุมและห้องพิเศษต้องผ่านผู้อนุมัติ (ตั้งค่าได้รายห้อง)</td></tr>
+<tr><td>D2</td><td>SLA และหมดอายุ</td><td>เกิน 2 วันทำการ → เปิดสิทธิ์ผู้อนุมัติสำรอง · เหลือ 24 ชม. ก่อนใช้งานยังไม่มีผล → หมดอายุ</td></tr>
+<tr><td>D3</td><td>ผู้อนุมัติสำรอง</td><td>ผู้อนุมัติหลักตั้งผู้รักษาการเองพร้อมช่วงวันที่ ระบบบันทึกว่าใครอนุมัติแทนใคร</td></tr>
+<tr><td>D4</td><td>ผู้สั่งบังคับย้าย</td><td>ผู้ดูแลระบบ และผู้อนุมัติหลักของห้องนั้น ต้องระบุเหตุผลและเลขอ้างอิง</td></tr>
+<tr><td>D5</td><td>ผู้จองเดิมเมื่อถูกย้าย</td><td>ระบบเสนอห้อง/เวลาทดแทน ผู้จองเดิมกดรับทราบ ไม่ตอบใน 24 ชม. ถือว่ารับทราบ</td></tr>
+<tr><td>D6</td><td>ช่องทางแจ้งเตือน</td><td>ในระบบ (หลัก) + LINE Official (สำรอง) LINE ส่งเฉพาะสถานะ ไม่ส่งรายละเอียดกิจกรรม</td></tr>
+<tr><td>D7</td><td>เครือข่าย</td><td><strong>เปิดใช้ผ่านอินเทอร์เน็ต พร้อมบังคับ 2FA ทุกบัญชี</strong> (ต้องขออนุมัติด้านความมั่นคงสารสนเทศก่อนเปิดใช้จริง)</td></tr>
+<tr><td>D8</td><td>บัญชีผู้ใช้</td><td>ผู้ดูแลระบบสร้างตามบัญชีกำลังพล ผูกหมายเลขประจำตัว <strong>อีเมลต้องเป็น @signalschool.ac.th เท่านั้น</strong> ระงับตามรายการพ้นหน้าที่รายเดือน</td></tr>
+<tr><td>D9</td><td>การมองเห็น</td><td>ทั่วไปเห็น "ไม่ว่าง + หน่วยที่จอง" · ผู้เกี่ยวข้องเห็นเต็ม · ผู้จองเลือกปิดเป็น "ไม่ว่าง" อย่างเดียวได้</td></tr>
+<tr><td>D10</td><td>จองเป็นชุดที่ชน</td><td>แสดงรายการที่ชน ให้เลือก จองเฉพาะวันว่าง / แก้เวลา / ยกเลิกทั้งชุด · อนุมัติทั้งชุดครั้งเดียว</td></tr>
+<tr><td>D11</td><td>ล่วงหน้า/ยกเลิก</td><td>จองล่วงหน้าได้ 90 วัน · แก้ไข/ยกเลิกได้ถึง 4 ชม. ก่อนใช้งาน · หลังจากนั้นไม่มาถือเป็น no-show</td></tr>
+<tr><td>D12</td><td>เก็บข้อมูล</td><td>ประวัติการจอง 3 ปี · audit log 5 ปี · สำรองรายวัน เก็บ 30 ชุด บนเครื่องแยก</td></tr>
+<tr><td>D13</td><td>Pilot</td><td>8 ห้อง (ห้องเรียน 4 / ห้องสอนปฏิบัติ 2 / ห้องประชุม 2 รวมห้องผู้บังคับบัญชา 1) ระยะ 1 เดือน</td></tr>
+</table></div>
+
+<h2 id="s3">3. บทบาทผู้ใช้และสิทธิ์</h2>
+<p>บัญชีหนึ่งมีได้หลายบทบาท สิทธิ์ของบทบาท "ผู้อนุมัติ" และ "เจ้าหน้าที่ดูแลห้อง" ผูกกับห้องที่ได้รับมอบหมายเท่านั้น</p>
+<div class="tbl"><table>
+<tr><th>สิทธิ์</th><th>ผู้ขอใช้</th><th>ผู้อนุมัติ</th><th>จนท.ดูแลห้อง</th><th>ผู้ดูแลระบบ</th><th>ผู้บังคับบัญชา</th></tr>
+<tr><td>ดูปฏิทินห้องว่าง</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td></tr>
+<tr><td>จอง / แก้ไข / ยกเลิกของตนเอง</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>—</td></tr>
+<tr><td>เห็นรายละเอียดเต็มของการจอง</td><td>ของตน/หน่วยตน</td><td>ห้องที่ดูแล</td><td>ห้องที่ดูแล</td><td>ทั้งหมด</td><td>ทั้งหมด (อ่าน)</td></tr>
+<tr><td>อนุมัติ / ปฏิเสธ</td><td>—</td><td>ห้องที่ดูแล</td><td>—</td><td>✓</td><td>—</td></tr>
+<tr><td>ตั้งผู้รักษาการแทน</td><td>—</td><td>ของตน</td><td>—</td><td>✓</td><td>—</td></tr>
+<tr><td>สั่งบังคับย้าย</td><td>—</td><td>ห้องที่ดูแล</td><td>—</td><td>✓</td><td>—</td></tr>
+<tr><td>บันทึก no-show / ใช้งานแล้ว</td><td>—</td><td>—</td><td>ห้องที่ดูแล</td><td>✓</td><td>—</td></tr>
+<tr><td>ตั้งสถานะงดใช้ห้อง</td><td>—</td><td>—</td><td>ห้องที่ดูแล</td><td>✓</td><td>—</td></tr>
+<tr><td>จัดการทะเบียนห้อง / กฎ / ผู้ใช้</td><td>—</td><td>—</td><td>—</td><td>✓</td><td>—</td></tr>
+<tr><td>รายงานภาพรวม</td><td>—</td><td>ห้องที่ดูแล</td><td>ห้องที่ดูแล</td><td>✓</td><td>✓</td></tr>
+<tr><td>อ่าน audit log</td><td>—</td><td>—</td><td>—</td><td>✓</td><td>✓</td></tr>
+</table></div>
+<p class="note">บทบาทเสริม <strong>เจ้าหน้าที่ความมั่นคงสารสนเทศ</strong>: จัดกิจกรรมเป็นข้อมูลอ่อนไหว/ยกเลิก และเห็นรายละเอียดกิจกรรมอ่อนไหว (SR-07) · อ่าน audit log และรายงานการเฝ้าระวัง (SR-15) · ไม่มีสิทธิ์จอง อนุมัติ หรือแก้ทะเบียน ผู้ดูแลระบบมอบบทบาทนี้ได้ไม่เกิน 2 บัญชี</p>
+
+<h2 id="s4">4. ทะเบียนห้องและทรัพยากร</h2>
+<p>ระบบถือว่า "ห้อง" และ "อุปกรณ์ส่วนกลาง" เป็น <em>ทรัพยากรที่จองได้</em> ชนิดเดียวกัน ใช้กลไกตรวจเวลาชนร่วมกัน อุปกรณ์ประจำห้องไม่ต้องจองแยก ระบุเป็นรายการประกอบห้อง</p>
+<p>ระยะที่ 1 <strong>อุปกรณ์ส่วนกลางไม่มีผู้อนุมัติ</strong> — ระบบตรวจเวลาชนและแจ้ง <code>custodians</code> ของอุปกรณ์เท่านั้น คำขอหนึ่งจึงมีผู้อนุมัติเพียงคนเดียวคือผู้อนุมัติของห้อง (ดู FR-06, FR-18)</p>
+<div class="tbl"><table>
+<tr><th>ฟิลด์</th><th>ชนิด</th><th>หมายเหตุ</th></tr>
+<tr><td><code>resource_type</code></td><td>ห้อง / อุปกรณ์ส่วนกลาง</td><td></td></tr>
+<tr><td><code>code</code>, <code>name</code></td><td>ข้อความ</td><td>รหัสไม่ซ้ำ เช่น <code>B2-301</code>, <code>PROJ-05</code></td></tr>
+<tr><td><code>building</code>, <code>floor</code>, <code>location_note</code></td><td>ข้อความ</td><td>ใช้กรองและกำหนดขอบเขตปฏิทินส่วนกลาง</td></tr>
+<tr><td><code>room_category</code></td><td>ห้องเรียน / ห้องสอนปฏิบัติ / ห้องประชุม / ห้องพิเศษ</td><td>ใช้เป็นค่าตั้งต้นของนโยบายอนุมัติ</td></tr>
+<tr><td><code>capacity</code></td><td>จำนวนเต็ม</td><td>ระบบเตือนเมื่อผู้เข้าร่วมเกิน ไม่บล็อก</td></tr>
+<tr><td><code>fixed_equipment[]</code></td><td>รายการ</td><td>โปรเจกเตอร์ เครื่องเสียง ระบบประชุมออนไลน์ ฯลฯ</td></tr>
+<tr><td><code>layouts[]</code></td><td>รายการ</td><td>รูปแบบจัดโต๊ะที่รองรับ</td></tr>
+<tr><td><code>owner_unit</code></td><td>หน่วย</td><td>หน่วยเจ้าของห้อง</td></tr>
+<tr><td><code>custodians[]</code></td><td>ผู้ใช้</td><td>เจ้าหน้าที่ดูแลห้อง</td></tr>
+<tr><td><code>primary_approver</code>, <code>backup_approvers[]</code></td><td>ผู้ใช้</td><td>เฉพาะห้อง แยกจากเจ้าของห้อง (ข้อ 7) · อุปกรณ์ส่วนกลางเว้นว่าง</td></tr>
+<tr><td><code>status</code></td><td>ใช้งาน / งดใช้ชั่วคราว / ปลดระวาง</td><td>งดใช้ต้องมีช่วงวันที่และเหตุผล</td></tr>
+</table></div>
+
+<h2 id="s5">5. กฎรายห้อง</h2>
+<p>ทุกค่าด้านล่างกำหนดรายทรัพยากร มีค่าเริ่มต้นตามประเภทห้อง ผู้ดูแลระบบแก้ได้</p>
+<div class="tbl"><table>
+<tr><th>กฎ</th><th>ค่าเริ่มต้น: ห้องเรียน</th><th>ค่าเริ่มต้น: ห้องประชุม / พิเศษ</th></tr>
+<tr><td>นโยบายอนุมัติ</td><td>อัตโนมัติ</td><td>ต้องอนุมัติ</td></tr>
+<tr><td>บทบาทที่จองได้</td><td>ทุกผู้ใช้</td><td>ทุกผู้ใช้ (ห้องผู้บังคับบัญชา: เฉพาะหน่วยที่กำหนด)</td></tr>
+<tr><td>จองล่วงหน้าสูงสุด</td><td>90 วัน</td><td>90 วัน</td></tr>
+<tr><td>แก้ไข/ยกเลิกได้ถึง</td><td>4 ชม. ก่อนเริ่ม</td><td>4 ชม. ก่อนเริ่ม</td></tr>
+<tr><td>Buffer ก่อน / หลัง</td><td>0 / 0 นาที</td><td>15 / 30 นาที</td></tr>
+<tr><td>ช่วงเวลาให้บริการ</td><td>จ–ศ 07:30–17:00</td><td>จ–ศ 07:30–17:00 (ขยายได้ตามคำขอ)</td></tr>
+<tr><td>ระยะจองขั้นต่ำ / สูงสุดต่อครั้ง</td><td>30 นาที / 1 วัน</td><td>30 นาที / 1 วัน</td></tr>
+<tr><td>จองเป็นชุดได้</td><td>ได้ สูงสุด 1 ภาคการศึกษา</td><td>ได้ สูงสุด 12 ครั้ง</td></tr>
+<tr><td>ค่าเริ่มต้นการมองเห็น</td><td>ไม่ว่าง + หน่วย</td><td>ไม่ว่าง + หน่วย</td></tr>
+</table></div>
+
+<h2 id="s6">6. กระบวนการจอง</h2>
+<div class="flow">เลือกวัน-เวลา และจำนวนผู้เข้าร่วม
+  ↓
+ระบบแสดงทรัพยากรที่ว่าง (คำนวณรวม buffer และปฏิทินส่วนกลาง)
+  ↓
+กรอกรายละเอียดกิจกรรม อุปกรณ์ส่วนกลาง การจัดโต๊ะ การมองเห็น
+  ↓
+ตรวจเวลาชนอีกครั้งขณะบันทึก (ล็อกระดับฐานข้อมูล)
+  ↓
+นโยบาย "อัตโนมัติ"  → อนุมัติ → แจ้งผู้จอง + จนท.ดูแลห้อง
+นโยบาย "ต้องอนุมัติ" → รออนุมัติ → ส่งผู้อนุมัติหลัก (ข้อ 7)
+  ↓
+บันทึก audit log ทุกขั้น</div>
+
+<h3>6.1 ข้อกำหนดฟังก์ชัน</h3>
+<div class="req">
+<span class="id">FR-01</span><span>ผู้ใช้ค้นหาทรัพยากรว่างได้จาก วัน-เวลา ประเภทห้อง อาคาร ความจุ และอุปกรณ์ประจำห้อง</span>
+<span class="id">FR-02</span><span>ปฏิทินแสดงมุมมองรายวัน รายสัปดาห์ รายเดือน ต่อห้องและต่อกลุ่มห้อง</span>
+<span class="id">FR-03</span><span>การจองหนึ่งรายการเก็บข้อมูลตามข้อ 12.2 ครบทุกฟิลด์บังคับจึงส่งได้</span>
+<span class="id">FR-04</span><span>ผู้จองแก้ไขหรือยกเลิกได้เองจนถึงเส้นตายของห้อง หลังเส้นตายต้องให้เจ้าหน้าที่ดูแลห้องหรือผู้ดูแลระบบดำเนินการ และบันทึกเหตุผล</span>
+<span class="id">FR-05</span><span>การแก้ไขหลังอนุมัติแบ่งฟิลด์เป็นสามกลุ่ม: <strong>(ก) ฟิลด์ที่กระทบการจัดสรร</strong> — วัน-เวลา ห้อง รายการอุปกรณ์ส่วนกลาง · <strong>(ข) ฟิลด์ที่กระทบนโยบายอนุมัติ</strong> — หน่วยงานผู้ขอ ผู้เข้าร่วมจากภายนอก จำนวนผู้เข้าร่วมที่ทำให้เกินความจุ (วัน-เวลาและห้องอยู่ทั้งสองกลุ่ม) · <strong>(ค) ฟิลด์ทั่วไป</strong> — ที่เหลือทั้งหมด การแก้กลุ่ม (ก) หรือ (ข) ของการจองที่อนุมัติแล้ว <em>ไม่แก้การจองเดิมโดยตรง</em> แต่สร้าง <strong>คำขอแก้ไข (amendment)</strong> ตามข้อ 6.4 กลุ่ม (ค) แก้ได้ทันทีโดยไม่อนุมัติใหม่ · "ระดับการมองเห็น" ไม่อยู่ใน workflow อนุมัติห้อง: ปกติ→จำกัด ทำได้ทันที จำกัด→ปกติ ต้องยืนยันซ้ำ (SR-07) · ทุกการแก้บันทึกใน audit log</span>
+<span class="id">FR-06</span><span>ระยะที่ 1 คำขอหนึ่งมี <strong>ห้องได้หนึ่งห้อง</strong> และอุปกรณ์ส่วนกลางได้หลายรายการ ระบบตรวจชนทั้งห้องและอุปกรณ์พร้อมกัน ถ้าชนอย่างใดอย่างหนึ่งต้องแจ้งให้ชัดว่าชนที่ไหน การใช้หลายห้องในกิจกรรมเดียวให้ส่งหลายคำขอ (ระบบช่วยคัดลอกรายละเอียดให้) การจองหลายห้องในคำขอเดียวพร้อมอนุมัติจากเจ้าของทุกห้องกำหนดไว้ระยะที่ 2</span>
+</div>
+
+<h3>6.2 การตรวจเวลาชน</h3>
+<div class="req">
+<span class="id">FR-07</span><span>ช่วงเวลาที่ถือครองทรัพยากร = <code>[start − buffer_before, end + buffer_after)</code> สองการจองชนกันเมื่อช่วงถือครองซ้อนทับ</span>
+<span class="id">FR-08</span><span>ปฏิทินและการแจ้งเตือนแสดง <code>start–end</code> ของกิจกรรมจริงเท่านั้น buffer แสดงเป็นแถบจางและไม่แสดงชื่อกิจกรรม</span>
+<span class="id">FR-09</span><span>การตรวจชนต้องทำซ้ำขณะบันทึกภายใต้ล็อก เพื่อป้องกันสองคำขอพร้อมกันผ่านการตรวจทั้งคู่ บังคับที่ฐานข้อมูลด้วย exclusion constraint บน <code>BOOKING_RESOURCE(resource, hold_range)</code> เฉพาะแถวที่ <code>released_at IS NULL</code></span>
+<span class="id">FR-10</span><span><strong>นโยบายมาก่อนได้ก่อน:</strong> สถานะที่ถือครองเวลา: รออนุมัติ, อนุมัติ · ไม่ถือครอง: ร่าง, ปฏิเสธ, ยกเลิก, หมดอายุ คำขอที่ส่งก่อนจึงกันห้องไว้แม้ยังไม่อนุมัติ และผู้อื่นเห็นช่วงนั้นเป็น "รออนุมัติ" เมื่อคำขอถูกปฏิเสธ ยกเลิก หมดอายุ หรือถูกย้าย ระบบตั้ง <code>released_at</code> ให้แถวถือครองทันที ช่วงเวลาจึงว่างให้ผู้อื่น การต่อคิว (waitlist) กำหนดไว้ระยะที่ 2</span>
+<span class="id">FR-11</span><span>ปฏิทินส่วนกลาง (วันหยุดราชการ พิธี กิจกรรมรวม) แต่ละรายการมีขอบเขตเป็น ทุกห้อง / อาคาร / ประเภทห้อง / ห้องที่เลือก และบล็อกเฉพาะขอบเขตนั้น</span>
+<span class="id">FR-12</span><span>ห้องสถานะ "งดใช้ชั่วคราว" บล็อกการจองใหม่ในช่วงนั้น และระบบแสดงรายการจองที่ได้รับผลกระทบให้เจ้าหน้าที่จัดการ (ย้ายหรือยกเลิก) พร้อมแจ้งผู้จองทุกราย</span>
+</div>
+
+<h3>6.3 การจองเป็นชุด</h3>
+<div class="req">
+<span class="id">FR-13</span><span>ชุดการจอง (<code>booking_series</code>) กับการจองรายครั้ง (<code>booking</code>) เป็นคนละเอนทิตี แต่ละครั้งแก้ไข/ยกเลิกได้อิสระโดยไม่กระทบครั้งอื่น</span>
+<span class="id">FR-14</span><span>รองรับรูปแบบ รายวัน รายสัปดาห์ (เลือกหลายวันในสัปดาห์) และรายการวันที่กำหนดเอง พร้อมวันสิ้นสุดหรือจำนวนครั้ง</span>
+<span class="id">FR-15</span><span>ก่อนยืนยัน ระบบแสดงรายการทุกครั้งพร้อมระบุครั้งที่ชน (และชนกับอะไรตามสิทธิ์มองเห็น) ให้ผู้ใช้เลือก: จองเฉพาะครั้งที่ว่าง / กลับไปเปลี่ยนเวลา / ยกเลิกทั้งชุด</span>
+<span class="id">FR-16</span><span>ชุดที่ต้องอนุมัติส่งเป็นคำขอเดียว ผู้อนุมัติอนุมัติ/ปฏิเสธทั้งชุดในครั้งเดียว แต่สามารถตัดบางครั้งออกได้พร้อมเหตุผล</span>
+<span class="id">FR-17</span><span>ครั้งที่ตรงกับปฏิทินส่วนกลางที่บล็อกห้องนั้นจะถูกข้ามอัตโนมัติ และแสดงในรายการว่า "ข้าม: &lt;เหตุผล&gt;"</span>
+</div>
+
+<h3 id="s6-4">6.4 การแก้ไขหลังอนุมัติ (Amendment)</h3>
+<p>หลักการ: ผู้ที่ได้รับอนุมัติแล้วต้องไม่เสียห้องเพราะยื่นขอแก้ไข การจองเดิมจึงคงช่วงถือครองไว้จนกว่าการแก้ไขจะได้รับอนุมัติ</p>
+<div class="flow">ผู้จองยื่น amendment (ค่าใหม่ของฟิลด์กลุ่ม ก/ข)
+  ↓
+ระบบตรวจชนช่วงใหม่ → ถือครองช่วงใหม่ "ชั่วคราว" (แถว BOOKING_RESOURCE ที่มี amendment_id)
+  การจองเดิมยังถือครองช่วงเดิมตามปกติ
+  ↓
+ประเมินนโยบายจากค่าใหม่ (ห้องใหม่ + ฟิลด์กลุ่ม ข)
+  "อัตโนมัติ"   → อนุมัติ amendment ทันที
+  "ต้องอนุมัติ" → ส่งผู้อนุมัติของห้องปลายทาง (SLA/เร่งด่วน/หมดอายุ ตาม FR-21–23)
+  ↓
+อนุมัติ  → transaction เดียว: ปลดช่วงเดิม + เปิดใช้ช่วงใหม่ + เขียนค่าใหม่ลงการจอง
+ปฏิเสธ / หมดอายุ / ผู้จองถอน → ปลดช่วงใหม่ การจองเดิมไม่เปลี่ยน</div>
+<div class="req">
+<span class="id">FR-34</span><span>amendment เป็นเอนทิตีแยก (<code>BOOKING_AMENDMENT</code>) เก็บค่าที่เสนอของฟิลด์กลุ่ม (ก)/(ข) สถานะ รออนุมัติ / อนุมัติ / ปฏิเสธ / หมดอายุ / ถอน ผู้ยื่น เวลายื่น และผลการตัดสิน การจองเดิมไม่ถูกแก้จนกว่า amendment จะอนุมัติ</span>
+<span class="id">FR-35</span><span>ช่วงถือครองที่เสนอเป็นแถว <code>BOOKING_RESOURCE</code> ที่มี <code>amendment_id</code> และอยู่ภายใต้ exclusion constraint เดียวกับ FR-09 หากช่วงใหม่ชน ระบบปฏิเสธการยื่นทันทีและการจองเดิมไม่เปลี่ยน · ช่วงใหม่ที่ซ้อนกับช่วงเดิมของการจองเดียวกัน (เช่น ขยายเวลา) ไม่ถือว่าชนกันเอง</span>
+<span class="id">FR-36</span><span>การจองหนึ่งมี amendment สถานะ "รออนุมัติ" ได้ <strong>ครั้งละหนึ่งรายการ</strong> (unique partial index) ผู้จองต้องถอนรายการเดิมก่อนยื่นใหม่ · amendment หมดอายุตามเกณฑ์ FR-22 โดยนับจากเวลาเริ่มที่ <em>เร็วกว่า</em> ระหว่างช่วงเดิมกับช่วงใหม่ และใช้ SLA/เร่งด่วนตาม FR-21/FR-23 · ข้อจำกัดสองข้อนี้ป้องกันการกันหลายช่วงเวลาไว้พร้อมกัน</span>
+<span class="id">FR-37</span><span>ผู้อนุมัติของ amendment คือผู้อนุมัติของ <em>ห้องปลายทาง</em> (ห้องเดิมถ้าไม่เปลี่ยนห้อง) หากเปลี่ยนห้องข้ามเจ้าของ ผู้อนุมัติของห้องเดิมได้รับแจ้งเพื่อทราบ ไม่ต้องอนุมัติ · ผู้อนุมัติเห็นค่าเดิมและค่าใหม่เทียบกัน · <code>APPROVAL</code> ของ amendment บันทึก <code>amendment_id</code> และผลการตัดสินเช่นเดียวกับคำขอปกติ</span>
+<span class="id">FR-38</span><span>เมื่ออนุมัติ ระบบทำใน transaction เดียว: ตั้ง <code>released_at</code> ให้แถวถือครองเดิม → ล้าง <code>amendment_id</code> ของแถวถือครองใหม่ให้กลายเป็นแถวถือครองหลัก → เขียนค่าใหม่ลง <code>BOOKING</code> → ปิด amendment เป็น "อนุมัติ" ล้มเหลวขั้นใดให้ย้อนกลับทั้งหมด · เมื่อปฏิเสธ/หมดอายุ/ถอน ตั้ง <code>released_at</code> ให้แถวถือครองใหม่เท่านั้น · แจ้งผู้จอง ผู้อนุมัติ และเจ้าหน้าที่ดูแลห้องทั้งห้องเดิมและห้องใหม่ทุกกรณี · การแก้ไขการจองในห้องนโยบายอัตโนมัติที่ผลประเมินยังเป็น "อัตโนมัติ" ใช้กลไกเดียวกันแต่อนุมัติทันทีภายใน transaction เดียวกับการยื่น</span>
+</div>
+
+<h2 id="s7">7. การอนุมัติ</h2>
+<div class="req">
+<span class="id">FR-18</span><span>คำขอถูกส่งให้ <code>primary_approver</code> ของ <em>ห้อง</em> ในคำขอ (คำขอละหนึ่งห้องตาม FR-06 จึงมีผู้อนุมัติคนเดียว) หากอยู่ในช่วงที่ผู้อนุมัติหลักตั้งผู้รักษาการ ส่งตรงผู้รักษาการตาม FR-20 อุปกรณ์ส่วนกลางในคำขอไม่ต้องอนุมัติแยก · กฎเดียวกันใช้กับ amendment โดยยึดห้องปลายทาง (FR-37)</span>
+<span class="id">FR-19</span><span class="note">ยกเลิกใน 0.2 — การจัดสรรอัตโนมัติระหว่างคำขอที่ชนกันขัดกับนโยบายมาก่อนได้ก่อน (FR-10) เพราะคำขอที่สองจะบันทึกไม่ได้ตั้งแต่ต้น คงเลขไว้เพื่อไม่ให้การอ้างอิงเลื่อน</span>
+<span class="id">FR-20</span><span>ผู้อนุมัติหลักตั้งผู้รักษาการแทนได้เอง ระบุช่วงวันที่เริ่ม-สิ้นสุด ทุกการอนุมัติบันทึก <code>acted_by</code> และ <code>on_behalf_of</code></span>
+<span class="id">FR-21</span><span>SLA: คำขอค้างเกิน 2 วันทำการ (ไม่นับวันหยุดตามปฏิทินส่วนกลาง) → แจ้งเตือนผู้อนุมัติหลักซ้ำ และเปิดสิทธิ์ให้ <code>backup_approvers</code> ดำเนินการได้</span>
+<span class="id">FR-22</span><span>หมดอายุ: คำขอยังไม่มีผลเมื่อเหลือ 24 ชม. ก่อนเวลาเริ่ม → สถานะ "หมดอายุ" ปลดช่วงถือครอง แจ้งผู้จองและผู้อนุมัติ</span>
+<span class="id">FR-23</span><span><strong>คำขอเร่งด่วน</strong> = คำขอในห้องต้องอนุมัติที่เวลาเริ่มห่างจากเวลาส่งน้อยกว่า <code>SLA + 24 ชม.</code> (ค่าเริ่มต้น: น้อยกว่า 2 วันทำการ + 24 ชม.) ระบบเตือนผู้จองว่า "อาจไม่ทันอนุมัติ" ไม่บล็อกการส่ง และส่งให้ผู้อนุมัติหลักและ <code>backup_approvers</code> <em>พร้อมกันทันที</em> โดยทุกคนดำเนินการได้โดยไม่ต้องรอ SLA เพื่อปิดช่องว่างที่คำขอหมดอายุก่อนสิทธิ์ผู้อนุมัติสำรองจะเปิด · คำขอที่ส่งล่วงหน้าน้อยกว่า 24 ชม. หมดอายุเมื่อถึงเวลาเริ่มแทนเกณฑ์ FR-22</span>
+<span class="id">FR-24</span><span>การปฏิเสธต้องระบุเหตุผล ระบบแสดงเหตุผลแก่ผู้จอง</span>
+</div>
+
+<h2 id="s8">8. การบังคับย้าย (Preemption)</h2>
+<p>ใช้เมื่อกิจกรรมที่มีลำดับความสำคัญสูงกว่าต้องใช้ห้องที่มีการจองอนุมัติแล้ว เป็นกระบวนการแยก ไม่ใช่การลบหรือแก้ไขการจองเดิม</p>
+<div class="req">
+<span class="id">FR-25</span><span>ผู้สั่งได้: ผู้ดูแลระบบ และผู้อนุมัติหลัก (หรือผู้รักษาการ) ของห้องนั้น ต้องกรอก เหตุผล เลขอ้างอิงคำสั่ง/หนังสือ และระบุการจองใหม่ที่จะเข้าแทน</span>
+<span class="id">FR-26</span><span>ระบบเสนอห้องและเวลาทดแทนที่ว่างและความจุพอ อย่างน้อย 3 ตัวเลือก (ถ้ามี) โดยเรียงลำดับ (1) ห้องนโยบายอัตโนมัติ (2) ห้องที่ผู้สั่งมีสิทธิ์อนุมัติ (3) ห้องอื่น ผู้สั่งเลือกหนึ่งหรือระบุว่า "ไม่มีทดแทน" · ห้องทดแทนในกลุ่ม (1)–(2) สร้างเป็นสถานะ "อนุมัติ" ทันที · ห้องทดแทนในกลุ่ม (3) สร้างเป็น "รออนุมัติ" แบบเร่งด่วน (FR-23) ส่งผู้อนุมัติของห้องนั้น และแจ้งผู้จองเดิมว่า "ห้องทดแทนยังรออนุมัติ" ผู้สั่งย้ายไม่มีสิทธิ์อนุมัติแทนเจ้าของห้องทดแทน</span>
+<span class="id">FR-27</span><span>การบังคับย้ายทำใน <strong>transaction เดียว</strong> ตามลำดับ: (1) ตั้ง <code>released_at</code> ให้แถวถือครองทั้งหมดของการจองเดิม และเปลี่ยนสถานะการใช้งานเป็น "ถูกย้าย" (สถานะคำขอคง "อนุมัติ" เพื่อรักษาประวัติ แต่ไม่ถือครองเวลาอีก) (2) สร้างการจองที่เข้าแทนในห้องเดิม (3) สร้างการจองทดแทนให้ผู้จองเดิมตาม FR-26 ถ้ามี ทั้งสามรายการเชื่อมกันด้วย <code>preemption_id</code> หากขั้นใดล้มเหลวให้ย้อนกลับทั้งหมด</span>
+<span class="id">FR-28</span><span>ผู้จองเดิมได้รับแจ้งทันที ต้องกดรับทราบ ถ้าไม่ตอบใน 24 ชม. ระบบบันทึกว่า "ถือว่ารับทราบ" และแจ้งผู้สั่งย้าย</span>
+<span class="id">FR-29</span><span>ข้อความแจ้งไม่เปิดเผยชื่อกิจกรรมที่เข้าแทน ระบุเพียง "ถูกย้ายตามคำสั่ง &lt;เลขอ้างอิง&gt; โดย &lt;ตำแหน่ง&gt;"</span>
+<span class="id">FR-30</span><span>ทุกการบังคับย้ายปรากฏในรายงานแยก และผู้บังคับบัญชาดูได้</span>
+</div>
+
+<h2 id="s9">9. สถานะ</h2>
+<p>แยกเป็นสองแกนอิสระ: <strong>สถานะคำขอ</strong> (ผลของกระบวนการอนุมัติ) และ <strong>สถานะการใช้งาน</strong> (สิ่งที่เกิดขึ้นจริงในวันใช้ห้อง)</p>
+<div class="tbl"><table>
+<tr><th>สถานะคำขอ</th><th>เข้าสู่เมื่อ</th><th>ถือครองเวลา</th></tr>
+<tr><td>ร่าง</td><td>บันทึกแต่ยังไม่ส่ง</td><td>ไม่</td></tr>
+<tr><td>รออนุมัติ</td><td>ส่งในห้องนโยบายต้องอนุมัติ หรือแก้วัน-เวลา-ห้องหลังอนุมัติ</td><td>ใช่</td></tr>
+<tr><td>อนุมัติ</td><td>ผู้อนุมัติอนุมัติ / นโยบายอัตโนมัติ / เกิดจากบังคับย้าย</td><td>ใช่</td></tr>
+<tr><td>ปฏิเสธ</td><td>ผู้อนุมัติปฏิเสธ</td><td>ไม่</td></tr>
+<tr><td>ยกเลิก</td><td>ผู้จองหรือเจ้าหน้าที่ยกเลิก</td><td>ไม่</td></tr>
+<tr><td>หมดอายุ</td><td>ถึงเส้นตาย 24 ชม. โดยไม่มีผล</td><td>ไม่</td></tr>
+</table></div>
+<div class="tbl"><table>
+<tr><th>สถานะการใช้งาน</th><th>เข้าสู่เมื่อ</th><th>ผู้เปลี่ยน</th></tr>
+<tr><td>รอใช้งาน</td><td>ค่าเริ่มต้นเมื่ออนุมัติ</td><td>ระบบ</td></tr>
+<tr><td>ใช้งานแล้ว</td><td>พ้นเวลาสิ้นสุด และไม่มีการบันทึกอื่น (อัตโนมัติ) หรือเจ้าหน้าที่ยืนยัน</td><td>ระบบ / จนท.</td></tr>
+<tr><td>ไม่มาใช้</td><td>เจ้าหน้าที่บันทึกภายใน 3 วันหลังวันใช้งาน (แก้ทับ "ใช้งานแล้ว" ได้)</td><td>จนท.</td></tr>
+<tr><td>ถูกย้าย</td><td>ผ่านกระบวนการบังคับย้าย — ช่วงถือครองถูกปลดแล้ว (FR-27)</td><td>ระบบ</td></tr>
+<tr><td>ห้องใช้งานไม่ได้</td><td>ห้องถูกตั้งงดใช้ทับช่วงการจอง และยังไม่ได้ย้าย (สถานะชั่วคราว รอเจ้าหน้าที่ย้ายหรือยกเลิกตาม FR-12)</td><td>ระบบ</td></tr>
+</table></div>
+<p class="note">สถานะการใช้งานมีความหมายเฉพาะเมื่อสถานะคำขอเป็น "อนุมัติ" · การถือครองเวลาไม่ได้ขึ้นกับสถานะคำขอเพียงอย่างเดียว แต่ขึ้นกับ <code>released_at</code> ของแถวถือครอง (FR-09, FR-10, FR-27) · amendment มีสถานะของตนเอง (รออนุมัติ / อนุมัติ / ปฏิเสธ / หมดอายุ / ถอน — FR-34) และ <em>ไม่เปลี่ยน</em> สถานะคำขอของการจองเดิมระหว่างรอผล ปฏิทินแสดงการจองเดิมตามปกติพร้อมเครื่องหมาย "มีคำขอแก้ไขรออนุมัติ" แก่ผู้มีสิทธิ์เห็นรายละเอียด</p>
+
+<h2 id="s10">10. ความปลอดภัยและการเข้าถึง</h2>
+<div class="decision"><strong>D7 — เปิดใช้ผ่านอินเทอร์เน็ต:</strong> ทางเลือกนี้มีความเสี่ยงสูงสุดในสามทาง ข้อกำหนดในหมวดนี้จึงเป็นเงื่อนไขบังคับของการเปิดใช้ และต้องผ่านการตรวจสอบจากเจ้าหน้าที่ความมั่นคงสารสนเทศของหน่วยก่อนเปิดให้บริการจริง</div>
+<div class="req">
+<span class="id">SR-01</span><span>บังคับ 2FA ทุกบัญชี ใช้ TOTP (แอปยืนยันตัวตน) เป็นหลัก ไม่ใช้ SMS ระบบออกรหัสกู้คืน 10 ชุดเมื่อตั้งค่า ผู้ดูแลระบบรีเซ็ต 2FA ได้เมื่อยืนยันตัวตนนอกระบบแล้ว</span>
+<span class="id">SR-02</span><span>บัญชีสร้างโดยผู้ดูแลระบบเท่านั้น ไม่มีหน้าสมัคร อีเมลต้องลงท้าย <code>@signalschool.ac.th</code> (ตรวจทั้งตอนสร้างและตอนแก้ไข) ผูกหมายเลขประจำตัวกำลังพล</span>
+<span class="id">SR-03</span><span>การเปิดใช้บัญชีครั้งแรกผ่านลิงก์ที่ส่งไปยังอีเมลนั้น อายุ 72 ชม. ผู้ใช้ตั้งรหัสผ่านและ 2FA ให้เสร็จจึงใช้งานได้</span>
+<span class="id">SR-04</span><span>ผู้ดูแลระบบนำเข้ารายการพ้นหน้าที่รายเดือน (CSV) ระบบระงับบัญชีที่ตรงกันทันที บัญชีที่ไม่ได้เข้าใช้ 180 วันถูกระงับอัตโนมัติ โดยแจ้งเตือนผู้ใช้ล่วงหน้า 14 วัน · ทุกกรณีที่ระงับ ระบบแสดงรายการจองในอนาคตของบัญชีนั้นให้ผู้ดูแลระบบ <strong>โอนผู้รับผิดชอบ</strong> ไปยังผู้ใช้อื่นในหน่วยเดียวกัน หรือยกเลิกพร้อมแจ้งผู้เกี่ยวข้อง</span>
+<span class="id">SR-05</span><span>รหัสผ่านอย่างน้อย 12 ตัวอักษร ล็อกบัญชี 15 นาทีหลังผิด 5 ครั้ง session หมดอายุ 12 ชม. หรือไม่ใช้งาน 30 นาที</span>
+<span class="id">SR-06</span><span>HTTPS เท่านั้น (TLS 1.2 ขึ้นไป) เปิด HSTS · หน้าจัดการของผู้ดูแลระบบจำกัดให้เข้าได้จากเครือข่ายภายในเท่านั้น</span>
+<span class="id">SR-07</span><span>การมองเห็น (D9): ค่าเริ่มต้นผู้ใช้ทั่วไปเห็น "ไม่ว่าง" + หน่วยที่จอง · ผู้จอง ผู้ร่วมหน่วย ผู้อนุมัติและเจ้าหน้าที่ของห้องนั้นเห็นเต็ม · ผู้จองตั้ง <code>visibility = restricted</code> ได้เพื่อให้ทั่วไปเห็นแค่ "ไม่ว่าง" · การเปลี่ยนระดับการมองเห็นไม่ผ่านผู้อนุมัติห้อง: <strong>ปกติ → จำกัด</strong> มีผลทันที · <strong>จำกัด → ปกติ</strong> ต้องยืนยันซ้ำด้วยข้อความเตือนว่าจะเปิดเผยชื่อกิจกรรม และบันทึก audit log · กิจกรรมที่ถูกจัดเป็น <strong>ข้อมูลอ่อนไหว</strong> (ตั้งโดยบทบาท "เจ้าหน้าที่ความมั่นคงสารสนเทศ" ซึ่งแยกจากผู้อนุมัติห้อง) ล็อกไว้ที่ "จำกัด" ผู้จองและผู้อนุมัติห้องเปลี่ยนไม่ได้ และรายละเอียดเห็นได้เฉพาะผู้จอง หน่วยผู้จอง และบทบาทนั้น</span>
+<span class="id">SR-08</span><span>ห้ามส่งชื่อกิจกรรม รายละเอียด เอกสารแนบ หรือรายชื่อผู้เข้าร่วม ผ่านช่องทางภายนอก (LINE, อีเมล) ส่งได้เฉพาะ รหัสการจอง ห้อง วัน-เวลา และสถานะ</span>
+<span class="id">SR-09</span><span>เอกสารแนบเก็บนอก web root จำกัดชนิดไฟล์ (PDF, DOCX, XLSX, PNG, JPG) ขนาดไม่เกิน 10 MB และสแกนไวรัสก่อนเก็บ</span>
+<span class="id">SR-10</span><span>rate limit หน้าเข้าสู่ระบบและ API · ป้องกัน CSRF · ตั้ง CSP และ security headers มาตรฐาน</span>
+<span class="id">SR-11</span><span>Session cookie ตั้ง <code>Secure; HttpOnly; SameSite=Strict</code> ออก session ใหม่ทุกครั้งหลังเข้าสู่ระบบสำเร็จ และเพิกถอน session ทั้งหมดเมื่อเปลี่ยนรหัสผ่าน รีเซ็ต 2FA หรือถูกระงับ</span>
+<span class="id">SR-12</span><span>รหัสผ่านเก็บด้วย Argon2id หรือ bcrypt · รหัสกู้คืน 2FA เก็บแบบ hash ใช้ได้ครั้งเดียว และแจ้งผู้ใช้ทุกครั้งที่ถูกใช้ · TOTP secret และข้อมูลอ่อนไหวอื่น (หมายเลขประจำตัวกำลังพล, เอกสารแนบ) เข้ารหัสขณะจัดเก็บ (at rest) ด้วยกุญแจที่เก็บแยกจากฐานข้อมูล</span>
+<span class="id">SR-13</span><span>ลืมรหัสผ่าน: ขอผ่านอีเมล <code>@signalschool.ac.th</code> ที่ผูกไว้ ลิงก์อายุ 30 นาที ใช้ครั้งเดียว และยังต้องผ่าน 2FA ก่อนตั้งรหัสใหม่ · สูญหายทั้ง 2FA และรหัสกู้คืน: ผู้ดูแลระบบรีเซ็ตได้หลังยืนยันตัวตนนอกระบบ (พบตัว/โทรศัพท์ตามเบอร์ในทะเบียน) และบันทึกวิธียืนยันใน audit log · ระบบไม่เปิดเผยว่าอีเมลใดมีบัญชีอยู่หรือไม่</span>
+<span class="id">SR-14</span><span>สำรองข้อมูล (NF-04) ต้องเข้ารหัสก่อนย้ายออกจากเครื่องให้บริการ กุญแจถอดรหัสเก็บแยกและมีผู้ถือสองคน · การเชื่อมต่อระหว่างเว็บ ฐานข้อมูล และเครื่องสำรองเป็นช่องทางเข้ารหัสหรือเครือข่ายแยก</span>
+<span class="id">SR-15</span><span>เฝ้าระวังและแจ้งเตือนผู้ดูแลระบบทันทีเมื่อ: เข้าสู่ระบบล้มเหลวต่อเนื่องเกิน 20 ครั้งจาก IP เดียวใน 10 นาที · เข้าสู่ระบบสำเร็จจากนอกประเทศไทย · มีการเปลี่ยนบทบาทหรือสิทธิ์ · มีการรีเซ็ต 2FA · มีการส่งออกรายงานจำนวนมาก · log ของเว็บเซิร์ฟเวอร์และแอปพลิเคชันเก็บอย่างน้อย 1 ปี</span>
+<span class="id">SR-16</span><span>ก่อนเปิดอินเทอร์เน็ต: สแกนช่องโหว่ทั้งแอปพลิเคชันและระบบปฏิบัติการ แก้ไขช่องโหว่ระดับสูงและวิกฤตทั้งหมด และผ่านการทดสอบเจาะระบบโดยหน่วยงานที่ผู้บังคับบัญชารับรอง · ทำซ้ำทุกปีและทุกครั้งที่มีการเปลี่ยนแปลงใหญ่ · ติดตั้ง security patch ของระบบปฏิบัติการและไลบรารีภายใน 30 วัน (วิกฤตภายใน 7 วัน)</span>
+<span class="id">SR-17</span><span><strong>RPO 24 ชม. / RTO 8 ชม.ทำการ</strong> (สอดคล้องสำรองรายวันตาม NF-04 หากต้องการ RPO ต่ำกว่านี้ต้องเพิ่ม transaction log backup รายชั่วโมง) · แผนตอบสนองเหตุการณ์ระบุ: ผู้รับผิดชอบหลักและสำรอง ช่องทางติดต่อ 24 ชม. ขั้นตอนตัดระบบออกจากอินเทอร์เน็ตภายใน 1 ชม. หลังยืนยันเหตุ การรักษาหลักฐาน การแจ้งผู้บังคับบัญชาและผู้ใช้ และการทบทวนหลังเหตุการณ์ · ซ้อมแผนอย่างน้อยปีละครั้ง</span>
+<span class="id">SR-18</span><span>การออกแบบ พัฒนา และทดสอบต้องอ้างอิง <a href="https://owasp.org/www-project-application-security-verification-standard/">OWASP ASVS 5.0.0</a> ระดับ 2 และครอบคลุมความเสี่ยงตาม <a href="https://owasp.org/Top10/2025/">OWASP Top 10:2025</a> ทีมพัฒนาต้องส่งตาราง mapping ระหว่างข้อควบคุม หลักฐาน และผลทดสอบก่อนเปิด pilot ห้ามมีช่องโหว่ระดับ Critical หรือ High คงค้าง; ระดับ Medium ต้องมีผู้รับความเสี่ยงและกำหนดวันแก้เป็นลายลักษณ์อักษร</span>
+</div>
+
+<h2 id="s11">11. การแจ้งเตือน</h2>
+<div class="tbl"><table>
+<tr><th>เหตุการณ์</th><th>ผู้รับ</th><th>ในระบบ</th><th>LINE</th></tr>
+<tr><td>ส่งคำขอ</td><td>ผู้จอง, ผู้อนุมัติ</td><td>✓</td><td>✓</td></tr>
+<tr><td>อนุมัติ / ปฏิเสธ / หมดอายุ</td><td>ผู้จอง, จนท.ดูแลห้อง</td><td>✓</td><td>✓</td></tr>
+<tr><td>ค้างเกิน SLA</td><td>ผู้อนุมัติหลัก, ผู้อนุมัติสำรอง</td><td>✓</td><td>✓</td></tr>
+<tr><td>แก้ไข / ยกเลิก</td><td>ผู้อนุมัติ (ถ้าเกี่ยว), จนท.ดูแลห้อง</td><td>✓</td><td>—</td></tr>
+<tr><td>บังคับย้าย</td><td>ผู้จองเดิม, จนท.ดูแลห้องทั้งสองห้อง</td><td>✓</td><td>✓</td></tr>
+<tr><td>ห้องงดใช้ทับการจอง</td><td>ผู้จองที่ได้รับผลกระทบ</td><td>✓</td><td>✓</td></tr>
+<tr><td>เตือนก่อนใช้งาน 1 วัน</td><td>ผู้จอง, จนท.ดูแลห้อง</td><td>✓</td><td>✓</td></tr>
+<tr><td>บันทึก no-show</td><td>ผู้จอง, หัวหน้าหน่วยผู้จอง</td><td>✓</td><td>—</td></tr>
+</table></div>
+<div class="req">
+<span class="id">FR-31</span><span>ผู้ใช้ผูกบัญชี LINE เองจากหน้าตั้งค่า (LINE Login / Messaging API) ยกเลิกการผูกได้ทุกเมื่อ การแจ้งเตือนในระบบเป็นช่องทางบันทึกหลัก ไม่ขึ้นกับการผูก LINE</span>
+<span class="id">FR-32</span><span>ข้อความ LINE ใช้รูปแบบ <code>[รหัส] ห้อง · วัน เวลา · สถานะ</code> เท่านั้น พร้อมลิงก์เข้าระบบ</span>
+<span class="id">FR-33</span><span>การส่งล้มเหลวต้อง retry 3 ครั้ง และบันทึกผลใน notification log</span>
+</div>
+
+<h2 id="s12">12. แบบจำลองข้อมูล</h2>
+<h3>12.1 ER Diagram</h3>
+<pre class="mermaid">
+erDiagram
+  UNIT ||--o{ USER : "สังกัด"
+  USER ||--o{ USER_ROLE : "มีบทบาท"
+  UNIT ||--o{ RESOURCE : "เจ้าของ"
+  RESOURCE ||--|| RESOURCE_RULE : "กฎ"
+  RESOURCE ||--o{ RESOURCE_APPROVER : "ผู้อนุมัติ"
+  USER ||--o{ RESOURCE_APPROVER : "เป็น"
+  USER ||--o{ APPROVER_DELEGATION : "มอบหมาย"
+  RESOURCE ||--o{ RESOURCE_OUTAGE : "งดใช้"
+  BLACKOUT ||--o{ BLACKOUT_SCOPE : "ขอบเขต"
+  USER ||--o{ BOOKING_SERIES : "สร้าง"
+  BOOKING_SERIES ||--o{ BOOKING : "ครั้งที่"
+  USER ||--o{ BOOKING : "จอง"
+  UNIT ||--o{ BOOKING : "หน่วยผู้ขอ"
+  RESOURCE ||--o{ BOOKING : "ห้อง (1 ต่อคำขอ)"
+  BOOKING ||--|{ BOOKING_RESOURCE : "ถือครอง"
+  RESOURCE ||--o{ BOOKING_RESOURCE : "ถูกจอง"
+  BOOKING ||--o{ BOOKING_AMENDMENT : "คำขอแก้ไข"
+  BOOKING_AMENDMENT |o--o{ BOOKING_RESOURCE : "ถือครองชั่วคราว"
+  USER ||--o{ BOOKING_AMENDMENT : "ยื่น"
+  BOOKING |o--o{ APPROVAL : "ผลอนุมัติคำขอ"
+  BOOKING_AMENDMENT |o--o{ APPROVAL : "ผลอนุมัติการแก้ไข"
+  BOOKING ||--o{ ATTACHMENT : "แนบ"
+  BOOKING ||--o| PREEMPTION : "ถูกย้าย (displaced)"
+  BOOKING ||--o| PREEMPTION : "เข้าแทน (incoming)"
+  BOOKING |o--o| PREEMPTION : "ทดแทน (replacement)"
+  USER ||--o{ PREEMPTION : "ผู้สั่ง"
+  USER ||--o{ NOTIFICATION : "รับแจ้ง"
+  USER ||--o{ AUDIT_LOG : "ผู้กระทำ"
+
+  RESOURCE {
+    string code PK
+    string resource_type
+    string room_category
+    int capacity
+    string status
+  }
+  RESOURCE_RULE {
+    string approval_policy
+    int buffer_before_min
+    int buffer_after_min
+    int max_advance_days
+    int cancel_cutoff_hours
+  }
+  BOOKING {
+    uuid id PK
+    uuid series_id FK
+    string room_code FK
+    datetime start_at
+    datetime end_at
+    string request_status
+    string usage_status
+    string visibility
+  }
+  BOOKING_RESOURCE {
+    uuid id PK
+    uuid booking_id FK
+    uuid amendment_id FK
+    string resource_code FK
+    datetime hold_start
+    datetime hold_end
+    datetime released_at
+  }
+  BOOKING_AMENDMENT {
+    uuid id PK
+    uuid booking_id FK
+    uuid submitted_by FK
+    string status
+    string proposed_room_code FK
+    datetime proposed_start_at
+    datetime proposed_end_at
+    json proposed_fields
+    datetime submitted_at
+    datetime decided_at
+  }
+  APPROVAL {
+    uuid id PK
+    uuid booking_id FK
+    uuid amendment_id FK
+    string action
+    uuid acted_by FK
+    uuid on_behalf_of FK
+    string reason
+    datetime acted_at
+  }
+  PREEMPTION {
+    uuid id PK
+    uuid displaced_booking FK
+    uuid incoming_booking FK
+    uuid replacement_booking FK
+    uuid ordered_by FK
+    string reference_no
+    string reason
+    datetime acknowledged_at
+    bool deemed_acknowledged
+  }
+  AUDIT_LOG {
+    datetime at
+    uuid actor FK
+    string entity
+    uuid entity_id
+    string action
+    json before
+    json after
+    string ip
+  }
+</pre>
+<p class="note"><code>BOOKING.room_code</code> บังคับหนึ่งห้องต่อคำขอ (FR-06) · <code>BOOKING_RESOURCE</code> มีหนึ่งแถวต่อทรัพยากรที่คำขอถือครอง (ห้อง + อุปกรณ์ส่วนกลางแต่ละชิ้น) <code>hold_start/hold_end</code> คือช่วงถือครองที่รวม buffer แล้ว · exclusion constraint ตั้งบน <code>(resource_code, tstzrange(hold_start, hold_end))</code> เฉพาะแถวที่ <code>released_at IS NULL</code> เพื่อบังคับ FR-09/FR-10/FR-27/FR-35 ที่ระดับฐานข้อมูล · แถวที่ <code>amendment_id</code> ไม่ว่างคือช่วงถือครองชั่วคราวของคำขอแก้ไข อยู่ใต้ constraint เดียวกัน ยกเว้นไม่ชนกับแถวของ <code>booking_id</code> เดียวกัน (PostgreSQL: <code>EXCLUDE USING gist (resource_code WITH =, booking_id WITH &lt;&gt;, tstzrange(hold_start, hold_end) WITH &amp;&amp;) WHERE (released_at IS NULL)</code> ต้องใช้ส่วนขยาย btree_gist — FR-35) · <code>BOOKING_AMENDMENT</code> มี unique partial index บน <code>(booking_id) WHERE status = 'pending'</code> (FR-36) · <code>APPROVAL</code> อ้าง <code>booking_id</code> หรือ <code>amendment_id</code> อย่างใดอย่างหนึ่ง (check constraint) · <code>PREEMPTION</code> เชื่อม BOOKING สามบทบาท: ถูกย้าย (บังคับ), เข้าแทน (บังคับ), ทดแทน (ถ้ามี)</p>
+
+<h3>12.2 ฟิลด์การจอง</h3>
+<div class="tbl"><table>
+<tr><th>ฟิลด์</th><th>บังคับ</th><th>หมายเหตุ</th></tr>
+<tr><td>หน่วยงานผู้ขอ, ผู้รับผิดชอบ (ชื่อ-ตำแหน่ง-โทร)</td><td>✓</td><td>ผู้รับผิดชอบอาจไม่ใช่ผู้กดจอง</td></tr>
+<tr><td>ชื่อกิจกรรม / วิชา</td><td>✓</td><td></td></tr>
+<tr><td>ประเภทการใช้งาน</td><td>✓</td><td>สอน / ประชุม / อบรม / สอบ / พิธี / อื่น ๆ</td></tr>
+<tr><td>วัน เวลาเริ่ม เวลาสิ้นสุด</td><td>✓</td><td>เป็นช่วง 15 นาที</td></tr>
+<tr><td>จำนวนผู้เข้าร่วม, ระดับ/ชั้นผู้เข้าร่วม</td><td>✓</td><td>เตือนเมื่อเกินความจุ</td></tr>
+<tr><td>ทรัพยากรที่ใช้ (ห้อง + อุปกรณ์ส่วนกลาง)</td><td>✓</td><td>ห้อง 1 ห้องเท่านั้น อุปกรณ์ส่วนกลางได้หลายรายการ (FR-06)</td></tr>
+<tr><td>รูปแบบจัดโต๊ะ, อุปกรณ์ประจำห้องที่ต้องใช้</td><td>—</td><td>จากรายการของห้อง</td></tr>
+<tr><td>ผู้เข้าร่วมจากภายนอก (มี/ไม่มี + จำนวน + หน่วย)</td><td>✓</td><td>ถ้ามี บังคับให้ผ่านอนุมัติแม้ห้องเป็นอัตโนมัติ</td></tr>
+<tr><td>ระดับการมองเห็น</td><td>✓</td><td>ปกติ / จำกัด / อ่อนไหว (ตั้งได้เฉพาะ จนท.ความมั่นคงสารสนเทศ) — ไม่ผ่านผู้อนุมัติห้อง (SR-07)</td></tr>
+<tr><td>หมายเหตุ, เอกสารแนบ</td><td>—</td><td>SR-09</td></tr>
+</table></div>
+
+<h3>12.3 Audit log</h3>
+<div class="req">
+<span class="id">NF-01</span><span>บันทึกทุกการสร้าง แก้ไข เปลี่ยนสถานะ อนุมัติ ย้าย เข้าสู่ระบบ ล้มเหลวในการเข้าสู่ระบบ และการเปลี่ยนทะเบียน/กฎ/ผู้ใช้ พร้อมค่าก่อน-หลัง ผู้กระทำ เวลา และ IP</span>
+<span class="id">NF-02</span><span>audit log เป็นแบบเพิ่มอย่างเดียว (append-only) ไม่มีสิทธิ์แก้หรือลบจากแอปพลิเคชัน</span>
+</div>
+
+<h2 id="s13">13. รายงาน</h2>
+<ul>
+<li>อัตราการใช้ห้อง (ชั่วโมงที่ใช้ / ชั่วโมงให้บริการ) รายห้อง รายประเภท รายหน่วย รายเดือน</li>
+<li>การยกเลิกและ no-show รายหน่วยและรายบุคคล พร้อมอัตราส่วนต่อการจองทั้งหมด</li>
+<li>เวลาเฉลี่ยในการอนุมัติ และคำขอที่เกิน SLA / หมดอายุ รายผู้อนุมัติ</li>
+<li>รายการบังคับย้ายทั้งหมด พร้อมเลขอ้างอิง</li>
+<li>ความต้องการอุปกรณ์ส่วนกลาง (จองเต็มกี่วัน / ถูกปฏิเสธเพราะชนกี่ครั้ง)</li>
+<li>ส่งออก CSV และ PDF ได้ทุกรายงาน</li>
+</ul>
+
+<h2 id="s14">14. คุณภาพระบบและสถาปัตยกรรม</h2>
+<p>ข้อกำหนดหมวดนี้ใช้กรอบคุณภาพผลิตภัณฑ์ซอฟต์แวร์ <a href="https://www.iso.org/standard/78176.html">ISO/IEC 25010:2023</a> เป็นแนวทาง และกำหนดค่าที่วัดผลได้สำหรับระยะที่ 1</p>
+<h3>14.1 การให้บริการและข้อมูล</h3>
+<div class="req">
+<span class="id">NF-03</span><span>เก็บประวัติการจอง 3 ปี และ audit log 5 ปี นับจากวันใช้งาน งานลบตามกำหนดต้องบันทึกใน audit log เอง</span>
+<span class="id">NF-04</span><span>สำรองฐานข้อมูลและเอกสารแนบรายวัน เก็บ 30 ชุดบนเครื่องแยกจากเครื่องให้บริการ ทดสอบกู้คืนอย่างน้อยไตรมาสละครั้งและบันทึกผล</span>
+<span class="id">NF-05</span><span>ขนาดระบบระยะที่ 1: ผู้ใช้ลงทะเบียนไม่เกิน 1,000 บัญชี ผู้ใช้พร้อมกัน 200 ราย ทรัพยากร 100 รายการ การจอง 10,000 รายการต่อปี เกณฑ์เวลาตอบสนองและ load test ใช้ตาม NF-19–20</span>
+<span class="id">NF-06</span><span>ใช้งานบนมือถือได้เต็มฟังก์ชันหลัก (ดูปฏิทิน จอง อนุมัติ รับทราบ) ผ่านเว็บเบราว์เซอร์ ไม่ต้องติดตั้งแอป</span>
+<span class="id">NF-07</span><span>ภาษาไทยเป็นหลัก วันที่แสดงเป็น พ.ศ. เก็บในฐานข้อมูลเป็น UTC</span>
+<span class="id">NF-08</span><span>ระบบพร้อมใช้ 99% ในเวลาราชการ มีหน้าแจ้งปิดปรับปรุง</span>
+<span class="id">NF-09</span><span>งานตามเวลา (SLA, หมดอายุ, ถือว่ารับทราบ, ใช้งานแล้วอัตโนมัติ, เตือนล่วงหน้า) ทำงานเป็น job ทุก 5 นาที และทนต่อการรันซ้ำ (idempotent)</span>
+</div>
+
+<h3>14.2 UX/UI และการเข้าถึง</h3>
+<div class="req">
+<span class="id">NF-10</span><span>ฟังก์ชันหลักต้องผ่าน <a href="https://www.w3.org/TR/WCAG22/">WCAG 2.2 ระดับ AA</a>: ใช้งานด้วยแป้นพิมพ์ได้ทั้งหมด มี focus ที่มองเห็นชัด ไม่ใช้สีเพียงอย่างเดียวสื่อความหมาย อัตราส่วน contrast ผ่านเกณฑ์ ป้ายกำกับและข้อความผิดพลาดเชื่อมกับช่องกรอก และพื้นที่กดหลักไม่น้อยกว่า 44×44 CSS pixels</span>
+<span class="id">NF-11</span><span>หน้าจอหลักต้องทำงานได้ที่ความกว้าง 360, 768, 1280 และ 1920 CSS pixels รวมถึงเมื่อขยายข้อความ 200% โดยไม่สูญเสียข้อมูลหรือฟังก์ชันหลัก และไม่มีการเลื่อนแนวนอนยกเว้นตารางหรือแผนภาพที่จัดพื้นที่เลื่อนให้โดยเฉพาะ</span>
+<span class="id">NF-12</span><span>ทุกกระบวนการมีสถานะกำลังโหลด ว่าง สำเร็จ ผิดพลาด และลองใหม่ที่สื่อความหมายด้วยภาษาไทย ระบบต้องรักษาข้อมูลในฟอร์มเมื่อเกิดข้อผิดพลาดที่กู้คืนได้ ป้องกันการส่งซ้ำ และขอยืนยันเฉพาะการกระทำที่ยกเลิกหรือกู้คืนได้ยาก</span>
+<span class="id">NF-13</span><span>ก่อนรับมอบ ให้ทดสอบ usability กับผู้ใช้ตัวแทนอย่างน้อย 8 คน ครบผู้ขอใช้ ผู้อนุมัติ เจ้าหน้าที่ดูแลห้อง และผู้ดูแลระบบ งานค้นหาและจองห้อง อนุมัติ และจัดการห้องงดใช้ต้องสำเร็จโดยไม่รับความช่วยเหลืออย่างน้อย 90% เวลากลางของการค้นหาและส่งคำขอไม่เกิน 3 นาที การอนุมัติไม่เกิน 1 นาที และคะแนน System Usability Scale (SUS) ไม่น้อยกว่า 75</span>
+<span class="id">NF-14</span><span>ใช้ design system กลางสำหรับสี ตัวอักษร ระยะห่าง ปุ่ม ฟอร์ม ตาราง ปฏิทิน สถานะ และข้อความแจ้งเตือน แต่ละสถานะใช้ชื่อ สี และรูปแบบเดียวกันทุกหน้าจอ หน้าหลักของแต่ละบทบาทแสดงงานที่ต้องทำก่อนข้อมูลรอง และไม่ซ่อนฟังก์ชันหลักบนมือถือ</span>
+</div>
+
+<h3>14.3 สถาปัตยกรรมและความถูกต้อง</h3>
+<div class="req">
+<span class="id">NF-15</span><span>ระยะที่ 1 ใช้สถาปัตยกรรม <strong>modular monolith</strong> แยกโมดูลอย่างน้อยเป็น Identity &amp; Access, Resource, Booking, Approval, Preemption, Notification และ Reporting แต่ละโมดูลมีขอบเขตข้อมูลและบริการชัดเจน ห้ามข้ามชั้นไปแก้ตารางของโมดูลอื่นโดยตรง การแยกเป็นบริการย่อยทำได้ภายหลังโดยไม่เปลี่ยนกฎธุรกิจ</span>
+<span class="id">NF-16</span><span>กฎสิทธิ์ การตรวจเวลาชน การเปลี่ยนสถานะ และ transaction boundary ต้องบังคับที่ฝั่งเซิร์ฟเวอร์ UI ใช้เพื่อรับข้อมูลและแสดงผลเท่านั้น เหตุการณ์ที่ต้องแจ้งภายนอกใช้ transactional outbox หรือกลไกเทียบเท่า เพื่อไม่ให้ธุรกรรมจองสำเร็จแต่เหตุการณ์แจ้งเตือนสูญหาย</span>
+<span class="id">NF-17</span><span>ฐานข้อมูลต้องรองรับ constraint และ transaction ตาม FR-09/FR-27 โดยตรง ใช้ PostgreSQL กับ range exclusion หรือเทคโนโลยีเทียบเท่าที่พิสูจน์ผลทดสอบ concurrent booking ได้ การเปลี่ยน schema ทุกครั้งใช้ migration ที่มีเลขรุ่น ทดสอบเดินหน้า/ย้อนกลับ และไม่แก้ฐานข้อมูลผลิตด้วยคำสั่งเฉพาะกิจ · migration ใช้รูปแบบ <strong>expand/contract</strong>: รุ่น N+1 เพิ่มคอลัมน์/ตารางใหม่โดยรุ่น N ยังอ่าน-เขียนได้ (ไม่ลบ ไม่เปลี่ยนชื่อ ไม่เปลี่ยนชนิดคอลัมน์ที่รุ่น N ใช้ และคอลัมน์ใหม่ต้องมีค่าเริ่มต้นหรือ nullable) ส่วน contract (ลบของเก่า) ทำในรุ่นถัดไปหลังยืนยันว่าไม่ต้อง rollback แล้ว</span>
+<span class="id">NF-18</span><span>เอกสารสถาปัตยกรรมส่งมอบเป็นช่วงเพื่อไม่ให้เป็นคอขวด: <strong>ก่อน sprint แรก</strong> — C4 System Context และ Container, ER diagram, ADR หลัก (ฐานข้อมูล การยืนยันตัวตน การแจ้งเตือน) · <strong>ระหว่าง sprint แรก</strong> — API contract แบบ OpenAPI และ sequence diagram สำหรับ จอง/แก้ไข (amendment)/อนุมัติ/บังคับย้าย · <strong>หลัง O6 สรุป</strong> — C4 Deployment diagram และ ADR การติดตั้งใช้งาน · <strong>ก่อนรับมอบ</strong> — เอกสารทั้งหมดต้องตรงกับระบบที่ส่งมอบ เอกสารเก็บรุ่นเดียวกับซอร์สโค้ดและแก้พร้อมระบบ</span>
+</div>
+
+<h3>14.4 ประสิทธิภาพและความลื่นไหล</h3>
+<div class="req">
+<span class="id">NF-19</span><span>หน้าหลักต้องผ่าน Core Web Vitals ที่ percentile 75 ทั้งมือถือและคอมพิวเตอร์: LCP ≤ 2.5 วินาที, INP ≤ 200 มิลลิวินาที และ CLS ≤ 0.1 วัดในสภาพเครือข่ายที่กำหนดสำหรับ pilot และเก็บค่าจากการใช้งานจริงหลังเปิดระบบ</span>
+<span class="id">NF-20</span><span>ทดสอบโหลดด้วยผู้ใช้พร้อมกัน 200 รายและข้อมูลอย่างน้อย 100 ห้อง/อุปกรณ์ 10,000 การจอง โดยมีสัดส่วน อ่านปฏิทิน 70% ค้นหาห้อง 20% และสร้าง/แก้ไข/อนุมัติ 10% API อ่านมี p95 ≤ 500 มิลลิวินาที API เขียนมี p95 ≤ 1 วินาที (ไม่รวมการส่ง LINE) อัตรา HTTP 5xx ต่ำกว่า 0.1% และต้องไม่เกิดการจองซ้อน</span>
+<span class="id">NF-21</span><span>การส่ง LINE การสร้างรายงาน และงานที่ใช้เวลานานทำแบบ asynchronous ไม่บล็อกการตอบผู้ใช้ ปฏิทินโหลดเฉพาะช่วงและห้องที่ผู้ใช้กำลังดู ระบบเก็บ metric ของ latency, error rate, queue lag, job failure และ database connection พร้อมแจ้งเตือนเมื่อเกินเกณฑ์</span>
+</div>
+
+<h3>14.5 โค้ดสะอาดและบำรุงรักษาง่าย</h3>
+<div class="req">
+<span class="id">NF-22</span><span>ซอร์สโค้ดต้องผ่าน formatter, linter, type checker, static analysis และ secret scan อัตโนมัติใน CI ก่อนรวมโค้ด ห้ามมีข้อผิดพลาดระดับสูงคงค้าง ทุกการเปลี่ยนแปลงผ่าน code review อย่างน้อย 1 คนและเชื่อมโยงกับข้อกำหนดหรือรายการงาน</span>
+<span class="id">NF-23</span><span>โมดูล Booking, conflict detection, Approval และ Preemption ต้องมี branch coverage ไม่น้อยกว่า 90% โค้ด domain/application รวมไม่น้อยกว่า 80% พร้อม integration test ของฐานข้อมูลและ end-to-end test สำหรับเส้นทางหลัก Coverage ใช้เป็นเกณฑ์ขั้นต่ำและไม่แทนการตรวจคุณภาพ test case</span>
+<span class="id">NF-24</span><span>ห้ามมี circular dependency ระหว่างโมดูล กฎธุรกิจต้องไม่มีสำเนาซ้ำใน UI, API และ job ค่าที่เปลี่ยนตามหน่วยงานอยู่ใน configuration หรือทะเบียนระบบ ไม่ hard-code และห้ามเก็บ secret ในซอร์สโค้ด เอกสาร public API และเหตุผลของกฎที่ซับซ้อนต้องอยู่ใกล้โค้ดที่เกี่ยวข้อง</span>
+<span class="id">NF-25</span><span>ทุก release ต้องสร้าง artifact แบบทำซ้ำได้ มีเลขรุ่น release note database migration แผน rollback และผลทดสอบอัตโนมัติ สามารถย้อนกลับรุ่นแอปพลิเคชันภายใน 30 นาทีโดยไม่สูญเสียการจองที่ยืนยันแล้ว — เงื่อนไขคือ migration ของรุ่นนั้นเป็นแบบ expand/contract ตาม NF-17 (rollback แอปพลิเคชันอย่างเดียว ไม่ย้อน schema) release ที่มีขั้น contract ต้องระบุใน release note ว่า rollback ได้ถึงรุ่นใด · ต้องทดสอบ rollback อย่างน้อยหนึ่งครั้งก่อนเปิด pilot</span>
+</div>
+
+<h2 id="s15">15. Pilot และเกณฑ์รับมอบ</h2>
+<h3>15.1 ขอบเขต</h3>
+<p>8 ห้อง: ห้องเรียน 4 (อัตโนมัติ), ห้องสอนปฏิบัติ 2 (อัตโนมัติ), ห้องประชุม 2 (ต้องอนุมัติ; 1 ห้องเป็นห้องผู้บังคับบัญชา จำกัดหน่วยที่จองได้) + อุปกรณ์ส่วนกลางอย่างน้อย 2 รายการ ระยะ 1 เดือน ผู้ใช้ประมาณ 30–50 บัญชี</p>
+<h3>15.2 เกณฑ์รับมอบระยะที่ 1</h3>
+<ol>
+<li>ไม่มีการจองซ้อนทับเกิดขึ้นตลอด pilot (ตรวจจากฐานข้อมูล)</li>
+<li>ทุกคำขอในห้องต้องอนุมัติได้ผลภายในเส้นตาย หรือหมดอายุอย่างถูกต้อง ไม่มีคำขอค้างไร้สถานะ</li>
+<li>ทดสอบสถานการณ์: ผู้อนุมัติลา → ผู้รักษาการอนุมัติได้ และ log แสดง on_behalf_of</li>
+<li>ทดสอบบังคับย้ายอย่างน้อย 2 ครั้ง (ห้องทดแทนที่ผู้สั่งมีสิทธิ์ และห้องทดแทนต่างเจ้าของ) ครบตาม FR-25–30 และยืนยันว่าช่วงเวลาเดิมว่างให้การจองที่เข้าแทนได้ทันที</li>
+<li>ทดสอบ amendment ตาม FR-34–38 อย่างน้อย 3 กรณี: (ก) เพิ่มบุคคลภายนอกในห้องอัตโนมัติ → amendment เข้า "รออนุมัติ" การจองเดิมยังถือครองช่วงเดิม (ข) ผู้อนุมัติ <em>ปฏิเสธ</em> amendment → การจองเดิมไม่เปลี่ยนและช่วงใหม่ว่างให้ผู้อื่น (ค) ย้ายห้องข้ามเจ้าของแล้วอนุมัติ → ช่วงเดิมถูกปลดและช่วงใหม่เป็นหลักใน transaction เดียว · ยืนยันว่ายื่น amendment ซ้อนรายการที่รออยู่ไม่ได้ (FR-36)</li>
+<li>ทดสอบคำขอเร่งด่วนที่ส่งล่วงหน้า 30 ชม. → ผู้อนุมัติสำรองดำเนินการได้ทันทีตาม FR-23</li>
+<li>ทดสอบจองชุดที่ชนบางครั้ง ผู้ใช้เลือก "เฉพาะครั้งที่ว่าง" ได้ถูกต้อง</li>
+<li>ห้องงดใช้ → ผู้จองที่ได้รับผลกระทบได้รับแจ้งทุกราย</li>
+<li>ผู้ใช้ทั่วไปไม่เห็นชื่อกิจกรรมที่ตั้ง visibility จำกัด (ทดสอบด้วยบัญชีต่างหน่วย)</li>
+<li>ข้อความ LINE ไม่มีชื่อกิจกรรม (ตรวจ log การส่งทั้งหมด)</li>
+<li>ทดสอบกู้คืนจากสำรองข้อมูลสำเร็จ 1 ครั้ง</li>
+<li>ผ่านการตรวจสอบความปลอดภัยจากหน่วยก่อนเปิดอินเทอร์เน็ต (SR-01–18) รวม ASVS mapping ผลสแกนช่องโหว่ และรายงานทดสอบเจาะระบบ โดยไม่มี Critical/High คงค้าง</li>
+<li>ผ่านการตรวจ WCAG 2.2 ระดับ AA ทั้งอัตโนมัติและทดสอบด้วยแป้นพิมพ์/โปรแกรมอ่านหน้าจอในฟังก์ชันหลักตาม NF-10–12 โดยไม่มีข้อบกพร่องระดับ A หรือ AA คงค้าง</li>
+<li>ผ่าน usability test ตาม NF-13 (SUS ≥ 75 เป็นเกณฑ์คุณภาพหลัก) และแบบสอบถามผู้ใช้หลัง pilot มีความพึงพอใจเฉลี่ย ≥ 3.5 / 5 ตามข้อตกลง 0.1 — เป้าหมาย ≥ 4.0 / 5 ใช้หลังขยายทั้งโรงเรียน</li>
+<li>ผ่าน architecture review ตาม NF-15–18 เอกสาร C4, ER, sequence, OpenAPI และ ADR ตรงกับระบบที่ส่งมอบ</li>
+<li>ผ่าน Core Web Vitals และ load test ตาม NF-19–21 พร้อมรายงาน p75/p95, error rate และผลตรวจว่าไม่มีการจองซ้อน</li>
+<li>CI ผ่าน quality gate และ automated test ตาม NF-22–24 พร้อมสาธิต deployment และ rollback ตาม NF-25</li>
+</ol>
+
+<h2 id="s16">16. ประเด็นคงค้าง</h2>
+<div class="tbl"><table>
+<tr><th>#</th><th>ประเด็น</th><th>ผู้ตัดสิน</th><th>ต้องได้ก่อน</th></tr>
+<tr><td>O1</td><td>การอนุมัติให้เปิดระบบผ่านอินเทอร์เน็ต และข้อกำหนดเพิ่มเติมจากฝ่ายความมั่นคงสารสนเทศ</td><td>ผบ.รร. / จนท.ความมั่นคง</td><td>เปิดใช้ pilot</td></tr>
+<tr><td>O2</td><td>ยืนยันว่าทุกกำลังพลที่จะใช้ระบบมีอีเมล @signalschool.ac.th แล้ว หรือต้องออกเพิ่ม</td><td>ฝ่ายสารสนเทศ</td><td>สร้างบัญชี</td></tr>
+<tr><td>O3</td><td>รายชื่อ 8 ห้อง pilot พร้อมเจ้าของ ผู้อนุมัติ และเจ้าหน้าที่ดูแล</td><td>ฝ่ายอาคารสถานที่</td><td>ตั้งค่าระบบ</td></tr>
+<tr><td>O4</td><td>หน่วยที่มีสิทธิ์จองห้องประชุมผู้บังคับบัญชา</td><td>ผบ.รร.</td><td>ตั้งค่าระบบ</td></tr>
+<tr><td>O5</td><td>บัญชี LINE Official ของหน่วย และผู้ดูแล</td><td>ฝ่ายสารสนเทศ</td><td>ทดสอบแจ้งเตือน</td></tr>
+<tr><td>O6</td><td>เครื่องให้บริการและเครื่องสำรองข้อมูล: อยู่ในหน่วยหรือใช้บริการคลาวด์ภาครัฐ</td><td>ฝ่ายสารสนเทศ</td><td>เริ่มพัฒนา</td></tr>
+<tr><td>O7</td><td>ฟอร์มหรือหนังสือราชการที่ต้องออกจากระบบ (เช่น ใบขอใช้ห้องพิมพ์ได้) — ยังไม่อยู่ในข้อกำหนด</td><td>ฝ่ายธุรการ</td><td>ก่อนขยายทั้งโรงเรียน</td></tr>
+<tr><td>O8</td><td>Design Context: ผู้รับผิดชอบอัตลักษณ์ สี/ตราหน่วย โทนภาษา แนวทาง light/dark mode และตัวแทนผู้ใช้ที่จะร่วมทดสอบ UX</td><td>ฝ่ายสารสนเทศ / ประชาสัมพันธ์ / ตัวแทนผู้ใช้</td><td>ก่อนออกแบบหน้าจอ</td></tr>
+</table></div>
+<hr>
+<p class="note">เอกสารนี้เป็นฉบับร่าง 0.4 (เพิ่มแบบจำลอง amendment แยกการมองเห็นออกจากการอนุมัติห้อง และปรับ NF-05/17/18/25 ตามผลตรวจ 0.3) เมื่อประเด็น O1–O6 และ O8 ได้ข้อสรุป ให้ปรับเป็นฉบับ 1.0 เพื่อใช้เป็นฐานในการออกแบบรายละเอียดและแผนพัฒนา</p>
+</main>
+</div>
