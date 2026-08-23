@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% load thaidate %}
+{% block title %}การจองของฉัน · SIGROOM{% endblock %}
+{% block content %}
+<div class="page-heading"><div><p class="eyebrow">รายการส่วนตัว</p><h1>การจองของฉัน</h1></div><a role="button" href="{% url 'bookings:book_search' %}">จองห้อง</a></div>
+<nav class="tabs" aria-label="ตัวกรองการจอง">
+  <a {% if tab == 'upcoming' %}aria-current="page"{% endif %} href="?tab=upcoming">กำลังจะถึง ({{ groups.upcoming|length }})</a>
+  <a {% if tab == 'drafts' %}aria-current="page"{% endif %} href="?tab=drafts">ร่าง ({{ groups.drafts|length }})</a>
+  <a {% if tab == 'past' %}aria-current="page"{% endif %} href="?tab=past">ที่ผ่านมา</a>
+  <a {% if tab == 'closed' %}aria-current="page"{% endif %} href="?tab=closed">ยกเลิก/ปฏิเสธ</a>
+</nav>
+<div class="table-wrap"><table><thead><tr><th>วันที่-เวลา</th><th>ห้อง</th><th>กิจกรรม</th><th>สถานะ</th><th>อุปกรณ์ส่วนกลาง</th><th></th></tr></thead><tbody>
+{% for booking in bookings %}<tr><td>{{ booking.start_at|thai_datetime }}</td><td>{{ booking.room.code }}</td><td>{{ booking.title }}</td><td><span class="status status-{{ booking.request_status }}">{{ booking.get_request_status_display }}</span></td><td>{% for item in booking.equipment.all %}{{ item.code }}{% if not forloop.last %}, {% endif %}{% empty %}—{% endfor %}</td><td><a href="{% url 'bookings:booking_detail' booking.id %}">ดู</a></td></tr>{% empty %}<tr><td colspan="6" class="empty-state">ยังไม่มีรายการในหมวดนี้</td></tr>{% endfor %}
+</tbody></table></div>
+{% endblock %}

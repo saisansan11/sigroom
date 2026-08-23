@@ -3,11 +3,12 @@
 รันซ้ำได้ — ถ้ามีรหัสเดิมอยู่แล้วจะไม่สร้างซ้ำ
 
 ใช้: uv run manage.py seed_pilot
+     uv run manage.py seed_pilot --demo-users
 """
 from django.core.management.base import BaseCommand
 
-from accounts.models import Unit
-from resources.models import Resource, ResourceRule
+from accounts.models import Unit, User
+from resources.models import Resource, ResourceApprover, ResourceRule
 
 R = Resource
 P = ResourceRule.ApprovalPolicy
@@ -38,6 +39,13 @@ ROOMS = [
 class Command(BaseCommand):
     help = "ใส่ข้อมูลตั้งต้น pilot: หน่วยงาน 5 หน่วย ห้อง 8 ห้อง อุปกรณ์ส่วนกลาง 2 รายการ"
 
+    def add_arguments(self, parser):
+        parser.add_argument(
+            "--demo-users",
+            action="store_true",
+            help="สร้างบัญชี somchai และ wanida สำหรับทดลอง M2",
+        )
+
     def handle(self, *args, **options):
         units = {}
         for code, name, parent in UNITS:
@@ -60,4 +68,34 @@ class Command(BaseCommand):
                 res.rule.allowed_units.set([units["HQ"]])  # ห้องผู้บังคับบัญชา: เฉพาะหน่วยที่กำหนด (O4 ค่าชั่วคราว)
             self.stdout.write(f"{'สร้าง' if created else 'มีแล้ว'} {code} {name} [{ResourceRule.ApprovalPolicy(policy).label}]")
 
-        self.stdout.write(self.style.SUCCESS("เสร็จ — เปิด http://127.0.0.1:8000/admin/resources/resource/ เพื่อดู"))
+        if options["demo_users"]:
+            demo_users = (
+                ("somchai", "สมชาย", "ใจดี", "ร.อ.", "COMM"),
+                ("wanida", "วนิดา", "มั่นคง", "ร.อ.", "EW"),
+            )
+            users = {}
+            for username, first_name, last_name, rank, unit_code in demo_users:
+                user, created = User.objects.get_or_create(
+                    username=username,
+                    defaults={
+                        "email": f"{username}@signalschool.ac.th",
+                        "first_name": first_name,
+                        "last_name": last_name,
+                        "rank": rank,
+                        "unit": units[unit_code],
+                    },
+                )
+                user.set_password("Demo-Sigroom-2569")
+                user.save()
+                users[username] = user
+                self.stdout.write(f"{'สร้าง' if created else 'อัปเดต'} บัญชีทดลอง {username}")
+
+            meeting_room = Resource.objects.get(code="MTG-1")
+            ResourceApprover.objects.update_or_create(
+                resource=meeting_room,
+                user=users["wanida"],
+                defaults={"is_primary": True},
+            )
+            self.stdout.write("กำหนด wanida เป็นผู้อนุมัติหลักของ MTG-1")
+
+        self.stdout.write(self.style.SUCCESS("เสร็จ — เปิด http://127.0.0.1:8000/ เพื่อดู SIGROOM"))

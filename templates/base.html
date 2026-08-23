@@ -1,0 +1,44 @@
+{% load static %}
+<!doctype html>
+<html lang="th" data-theme="light">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}SIGROOM{% endblock %}</title>
+  <link rel="stylesheet" href="{% static 'vendor/pico/pico.min.css' %}">
+  <link rel="stylesheet" href="{% static 'css/app.css' %}">
+  {% block head %}{% endblock %}
+</head>
+<body>
+  {% if user.is_authenticated %}
+    <header class="site-header">
+      <nav class="container-fluid" aria-label="เมนูหลัก">
+        <ul><li><a class="brand" href="{% url 'bookings:calendar' %}">SIGROOM</a></li></ul>
+        <ul class="main-nav">
+          <li><a href="{% url 'bookings:calendar' %}">ปฏิทิน</a></li>
+          <li><a href="{% url 'bookings:book_search' %}">จองห้อง</a></li>
+          <li><a href="{% url 'bookings:my_bookings' %}">การจองของฉัน</a></li>
+        </ul>
+        <ul>
+          <li class="user-label">{{ user.display_name }}{% if user.unit %} ({{ user.unit.code }}){% endif %}</li>
+          <li>
+            <form class="logout-form" action="{% url 'logout' %}" method="post">
+              {% csrf_token %}<button class="link-button" type="submit">ออกจากระบบ</button>
+            </form>
+          </li>
+        </ul>
+      </nav>
+    </header>
+  {% endif %}
+  <main class="container page-shell">
+    {% if messages %}
+      <div aria-live="polite">
+        {% for message in messages %}<div class="notice {{ message.tags }}">{{ message }}</div>{% endfor %}
+      </div>
+    {% endif %}
+    {% block content %}{% endblock %}
+  </main>
+  <script src="{% static 'vendor/htmx/htmx.min.js' %}"></script>
+  {% block scripts %}{% endblock %}
+</body>
+</html>

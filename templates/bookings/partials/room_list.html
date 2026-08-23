@@ -1,0 +1,17 @@
+{% if error %}<div class="notice error">{{ error }}</div>{% endif %}
+{% if searched and not error %}
+<section class="results-section">
+  <div class="section-title"><div><p class="eyebrow">ขั้นที่ 2</p><h2>ห้องที่ว่าง</h2></div><span class="count-badge">{{ available|length }} ห้อง</span></div>
+  {% for result in available %}
+    <article class="room-card">
+      <div><h3>{{ result.room.code }} · {{ result.room.name }}</h3><p>{{ result.room.building }}{% if result.room.floor %} ชั้น {{ result.room.floor }}{% endif %} · จุ {{ result.room.capacity }} คน</p><p>{{ result.room.fixed_equipment|linebreaksbr }}</p><span class="policy">{{ result.approval_label }}</span>{% if result.capacity_warning %}<span class="warning-text">⚠ ความจุน้อยกว่าจำนวนที่ระบุ</span>{% endif %}</div>
+      <a role="button" href="{% url 'bookings:book_form' result.room.code %}?{{ query_string }}">จองห้องนี้</a>
+    </article>
+  {% empty %}<div class="empty-state">ไม่มีห้องที่พร้อมใช้ในช่วงเวลานี้ ลองเปลี่ยนเวลาหรืออุปกรณ์ที่เลือก</div>{% endfor %}
+</section>
+{% if unavailable %}
+<details class="unavailable-list"><summary>ดูห้องที่ใช้ไม่ได้ ({{ unavailable|length }})</summary>
+  {% for result in unavailable %}<article class="room-card muted"><div><h3>{{ result.room.code }} · {{ result.room.name }}</h3><p>{{ result.reason }}</p></div></article>{% endfor %}
+</details>
+{% endif %}
+{% endif %}

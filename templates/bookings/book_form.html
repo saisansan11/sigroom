@@ -1,0 +1,7 @@
+{% extends "base.html" %}
+{% block title %}จอง {{ room.code }} · SIGROOM{% endblock %}
+{% block content %}
+<div class="page-heading"><div><p class="eyebrow">ขั้นตอนสุดท้าย</p><h1>จอง {{ room.code }} · {{ room.name }}</h1><p>{{ room.building }}{% if room.floor %} ชั้น {{ room.floor }}{% endif %} · จุ {{ room.capacity }} คน</p></div><a class="secondary" role="button" href="{% url 'bookings:book_search' %}">เปลี่ยนเวลา/ห้อง</a></div>
+<div class="policy-banner">{% if room.rule.approval_policy == 'required' %}🕒 ห้องนี้ต้องผ่านผู้อนุมัติ{% else %}✓ อนุมัติอัตโนมัติเมื่อว่าง{% endif %}{% if room.rule.buffer_before_min or room.rule.buffer_after_min %} · เตรียมห้อง {{ room.rule.buffer_before_min }} นาที / เก็บห้อง {{ room.rule.buffer_after_min }} นาที{% endif %}</div>
+{% include "bookings/partials/booking_fields.html" with submit_label="ส่งคำขอ" show_draft=True %}
+{% endblock %}

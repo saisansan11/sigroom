@@ -1,0 +1,6 @@
+{% extends "base.html" %}
+{% block title %}แก้ไขการจอง · SIGROOM{% endblock %}
+{% block content %}
+<div class="page-heading"><div><p class="eyebrow">{{ booking.room.code }}</p><h1>แก้ไขรายละเอียดการจอง</h1>{% if booking.request_status != 'draft' %}<p>หลังส่งคำขอแล้วแก้ได้เฉพาะรายละเอียดกิจกรรม หากต้องเปลี่ยนเวลา ห้อง หรืออุปกรณ์ส่วนกลาง กรุณายกเลิกแล้วจองใหม่</p>{% endif %}</div></div>
+{% include "bookings/partials/booking_fields.html" with submit_label="บันทึกการแก้ไข" show_draft=False %}
+{% endblock %}

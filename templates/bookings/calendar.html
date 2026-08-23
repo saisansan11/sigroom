@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}ปฏิทินห้อง · SIGROOM{% endblock %}
+{% block head %}<script src="{% static 'vendor/fullcalendar/index.global.min.js' %}"></script><script src="{% static 'vendor/fullcalendar/locales-all.global.min.js' %}"></script>{% endblock %}
+{% block content %}
+<div class="page-heading">
+  <div><p class="eyebrow">ภาพรวมห้อง</p><h1>ปฏิทินการใช้ห้อง</h1></div>
+  <a role="button" href="{% url 'bookings:book_search' %}">ค้นหาห้องว่าง</a>
+</div>
+<div class="filter-bar">
+  <label>ห้อง
+    <select id="room-filter"><option value="">ทุกห้อง</option>{% for room in rooms %}<option value="{{ room.code }}">{{ room.code }} {{ room.name }}</option>{% endfor %}</select>
+  </label>
+  <label>อาคาร
+    <select id="building-filter"><option value="">ทั้งหมด</option>{% for building in buildings %}<option>{{ building }}</option>{% endfor %}</select>
+  </label>
+  <span class="legend"><i class="approved"></i> อนุมัติ <i class="pending"></i> รออนุมัติ <i class="buffer-key"></i> เวลาเตรียม/เก็บห้อง</span>
+</div>
+<div id="calendar" aria-label="ปฏิทินการจอง"></div>
+{% endblock %}
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  const room = document.getElementById('room-filter');
+  const building = document.getElementById('building-filter');
+  const calendar = new FullCalendar.Calendar(document.getElementById('calendar'), {
+    locale: 'th', initialView: 'timeGridWeek', firstDay: 1, selectable: true,
+    slotMinTime: '07:00:00', slotMaxTime: '21:00:00', nowIndicator: true,
+    headerToolbar: {left: 'prev,next today', center: 'title', right: 'timeGridDay,timeGridWeek,dayGridMonth'},
+    buttonText: {today: 'วันนี้', month: 'เดือน', week: 'สัปดาห์', day: 'วัน'},
+    events: {url: '{% url "bookings:calendar_events" %}', extraParams: () => ({room: room.value, building: building.value})},
+    select: function (info) {
+      const local = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+      const clock = d => `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+      window.location = `{% url "bookings:book_search" %}?date=${local(info.start)}&start=${clock(info.start)}&end=${clock(info.end)}`;
+    }
+  });
+  calendar.render();
+  room.addEventListener('change', () => calendar.refetchEvents());
+  building.addEventListener('change', () => calendar.refetchEvents());
+});
+</script>
+{% endblock %}

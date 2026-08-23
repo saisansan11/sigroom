@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% load thaidate %}
+{% block title %}{{ booking.title }} · SIGROOM{% endblock %}
+{% block content %}
+<div class="page-heading"><div><span class="status status-{{ booking.request_status }}">{{ booking.get_request_status_display }}</span><h1>{{ booking.title }}</h1><p>{{ booking.room.code }} · {{ booking.room.name }}</p></div><a class="secondary" role="button" href="{% url 'bookings:my_bookings' %}">การจองของฉัน</a></div>
+<article class="detail-card">
+  <dl class="detail-grid">
+    <div><dt>วันและเวลา</dt><dd>{{ booking.start_at|thai_datetime }}–{{ booking.end_at|date:"H:i" }} น.</dd></div>
+    <div><dt>หน่วยงาน</dt><dd>{{ booking.unit.name }}</dd></div>
+    <div><dt>ผู้รับผิดชอบ</dt><dd>{{ booking.responsible_name }} · {{ booking.responsible_phone }}</dd></div>
+    <div><dt>ผู้เข้าร่วม</dt><dd>{{ booking.attendees }} คน{% if booking.attendee_level %} · {{ booking.attendee_level }}{% endif %}</dd></div>
+    <div><dt>ประเภท / จัดโต๊ะ</dt><dd>{{ booking.get_purpose_display }}{% if booking.layout %} · {{ booking.layout }}{% endif %}</dd></div>
+    <div><dt>อุปกรณ์ประจำห้อง</dt><dd>{{ booking.fixed_equipment_needed|default:"—"|linebreaksbr }}</dd></div>
+    <div><dt>อุปกรณ์ส่วนกลาง</dt><dd>{% for item in booking.equipment.all %}{{ item.name }}{% if not forloop.last %}, {% endif %}{% empty %}—{% endfor %}</dd></div>
+    <div><dt>การมองเห็น</dt><dd>{{ booking.get_visibility_display }}</dd></div>
+    <div><dt>รหัสการจอง</dt><dd><code>{{ booking.id|stringformat:"s"|slice:":8" }}</code> · รุ่น {{ booking.revision }}</dd></div>
+    <div><dt>ส่งเมื่อ</dt><dd>{{ booking.submitted_at|thai_datetime }}</dd></div>
+    {% if booking.note %}<div class="wide"><dt>หมายเหตุ</dt><dd>{{ booking.note|linebreaksbr }}</dd></div>{% endif %}
+  </dl>
+</article>
+{% if deadline_message %}<div class="notice warning">{{ deadline_message }}</div>{% endif %}
+<div class="form-actions">
+  {% if can_edit %}<a role="button" href="{% url 'bookings:booking_edit' booking.id %}">แก้ไขรายละเอียด</a>{% endif %}
+  {% if booking.request_status == 'draft' %}
+    <form method="post" action="{% url 'bookings:booking_submit' booking.id %}">{% csrf_token %}<button type="submit">ส่งคำขอ</button></form>
+    <form method="post" action="{% url 'bookings:booking_delete_draft' booking.id %}" onsubmit="return confirm('ลบร่างนี้ใช่หรือไม่')">{% csrf_token %}<button class="outline danger" type="submit">ลบร่าง</button></form>
+  {% elif can_cancel %}
+    <form method="post" action="{% url 'bookings:booking_cancel' booking.id %}" onsubmit="return confirm('ยืนยันยกเลิกการจองและคืนช่วงเวลานี้ใช่หรือไม่')">{% csrf_token %}<button class="outline danger" type="submit">ยกเลิกการจอง</button></form>
+  {% endif %}
+</div>
+{% endblock %}

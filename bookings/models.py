@@ -53,6 +53,13 @@ class Booking(models.Model):
         "resources.Resource", verbose_name="ห้อง", on_delete=models.PROTECT, related_name="bookings",
         limit_choices_to={"resource_type": "room"},
     )
+    equipment = models.ManyToManyField(
+        "resources.Resource",
+        verbose_name="อุปกรณ์ส่วนกลางที่ขอ",
+        blank=True,
+        related_name="bookings_as_equipment",
+        limit_choices_to={"resource_type": "equipment"},
+    )
     requester = models.ForeignKey(
         settings.AUTH_USER_MODEL, verbose_name="ผู้จอง", on_delete=models.PROTECT, related_name="bookings"
     )

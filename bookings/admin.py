@@ -21,11 +21,12 @@ class BookingAdmin(admin.ModelAdmin):
     date_hierarchy = "start_at"
     readonly_fields = ("id", "revision", "created_at", "updated_at", "submitted_at", "is_urgent")
     autocomplete_fields = ("requester",)
+    filter_horizontal = ("equipment",)
     inlines = [BookingResourceInline]
     fieldsets = (
         ("กิจกรรม", {"fields": ("title", "purpose", "room", ("start_at", "end_at"), ("attendees", "attendee_level"))}),
         ("ผู้ขอ", {"fields": ("requester", "unit", ("responsible_name", "responsible_phone"))}),
-        ("รายละเอียด", {"fields": ("layout", "fixed_equipment_needed", ("has_external_attendees", "external_attendees_note"), "visibility", "note")}),
+        ("รายละเอียด", {"fields": ("layout", "fixed_equipment_needed", "equipment", ("has_external_attendees", "external_attendees_note"), "visibility", "note")}),
         ("สถานะ", {"fields": (("request_status", "usage_status"), "is_urgent", "revision", "submitted_at")}),
         ("ระบบ", {"classes": ("collapse",), "fields": ("id", "created_at", "updated_at")}),
     )

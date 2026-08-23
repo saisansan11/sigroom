@@ -53,28 +53,34 @@ def _booking(user, unit, room, start, hours=1, **kw) -> Booking:
     )
 
 
+def _future_start():
+    """เวลา 10:00 วันถัดไป ทำให้เทส M1 สอดคล้องกฎช่วง 15 นาทีที่เพิ่มใน M2"""
+    local = timezone.localtime() + timedelta(days=1)
+    return local.replace(hour=10, minute=0, second=0, microsecond=0)
+
+
 def test_auto_policy_room_is_approved_on_submit(user, unit, room):
-    start = timezone.now() + timedelta(days=1)
+    start = _future_start()
     b = submit_booking(_booking(user, unit, room, start))
     assert b.request_status == Booking.RequestStatus.APPROVED
     assert b.holds.count() == 1
 
 
 def test_required_policy_room_is_pending_on_submit(user, unit, meeting_room):
-    start = timezone.now() + timedelta(days=1)
+    start = _future_start()
     b = submit_booking(_booking(user, unit, meeting_room, start))
     assert b.request_status == Booking.RequestStatus.PENDING
 
 
 def test_external_attendees_force_approval_even_in_auto_room(user, unit, room):
-    start = timezone.now() + timedelta(days=1)
+    start = _future_start()
     b = submit_booking(_booking(user, unit, room, start, has_external_attendees=True))
     assert b.request_status == Booking.RequestStatus.PENDING
 
 
 def test_overlapping_booking_is_rejected_by_database(user, unit, room):
     """FR-09: การจองที่สองที่ชนเวลาต้องถูกปฏิเสธ และไม่มีอะไรถูกบันทึกค้าง"""
-    start = timezone.now() + timedelta(days=1)
+    start = _future_start()
     submit_booking(_booking(user, unit, room, start, hours=2))
     second = _booking(user, unit, room, start + timedelta(hours=1))
     with pytest.raises(BookingConflict) as exc:
@@ -87,7 +93,7 @@ def test_overlapping_booking_is_rejected_by_database(user, unit, room):
 
 def test_adjacent_bookings_do_not_conflict(user, unit, room):
     """ช่วง [) — จบ 10:00 กับเริ่ม 10:00 ไม่ชนกันเมื่อ buffer = 0"""
-    start = timezone.now() + timedelta(days=1)
+    start = _future_start()
     submit_booking(_booking(user, unit, room, start, hours=1))
     submit_booking(_booking(user, unit, room, start + timedelta(hours=1), hours=1))
     assert Booking.objects.filter(request_status=Booking.RequestStatus.APPROVED).count() == 2
@@ -95,18 +101,18 @@ def test_adjacent_bookings_do_not_conflict(user, unit, room):
 
 def test_buffer_is_included_in_hold(user, unit, meeting_room):
     """FR-07: buffer 15 ก่อน / 30 หลัง ถูกรวมในช่วงถือครอง และทำให้การจองที่ติดกันชน"""
-    start = timezone.now() + timedelta(days=1)
+    start = _future_start()
     b = submit_booking(_booking(user, unit, meeting_room, start, hours=1))
     hold = b.holds.get().hold
     assert hold.lower == start - timedelta(minutes=15)
     assert hold.upper == start + timedelta(hours=1, minutes=30)
     with pytest.raises(BookingConflict):
-        submit_booking(_booking(user, unit, meeting_room, start + timedelta(hours=1, minutes=10)))
+        submit_booking(_booking(user, unit, meeting_room, start + timedelta(hours=1, minutes=15)))
 
 
 def test_released_hold_frees_the_slot(user, unit, room):
     """FR-10: ยกเลิกแล้วช่วงเวลาว่างให้ผู้อื่น"""
-    start = timezone.now() + timedelta(days=1)
+    start = _future_start()
     first = submit_booking(_booking(user, unit, room, start))
     first.request_status = Booking.RequestStatus.CANCELLED
     first.save()
@@ -117,7 +123,7 @@ def test_released_hold_frees_the_slot(user, unit, room):
 
 def test_equipment_conflict_reports_which_resource(user, unit, room, meeting_room, projector):
     """FR-06: ห้องต่างกันแต่โปรเจกเตอร์ตัวเดียวกัน → ชนที่โปรเจกเตอร์ และบอกได้ว่าชนที่ไหน"""
-    start = timezone.now() + timedelta(days=1)
+    start = _future_start()
     submit_booking(_booking(user, unit, room, start), equipment=[projector])
     second = _booking(user, unit, meeting_room, start)
     with pytest.raises(BookingConflict) as exc:

@@ -1,0 +1,6 @@
+{% extends "base.html" %}
+{% load thaidate %}
+{% block title %}ไม่ว่าง · SIGROOM{% endblock %}
+{% block content %}
+<section class="masked-card"><p class="eyebrow">ข้อมูลเวลาว่าง</p><h1>ไม่ว่าง{% if booking.visibility == 'normal' %} — {{ booking.unit.name }}{% endif %}</h1><p>{{ booking.room.code }} · {{ booking.room.name }}</p><p>{{ booking.start_at|thai_datetime }}–{{ booking.end_at|date:"H:i" }} น.</p><p class="muted-text">รายละเอียดกิจกรรมถูกปกปิดตามระดับการมองเห็น</p><a class="secondary" role="button" href="{% url 'bookings:calendar' %}">กลับปฏิทิน</a></section>
+{% endblock %}

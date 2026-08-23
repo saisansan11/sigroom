@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}เข้าสู่ระบบ · SIGROOM{% endblock %}
+{% block content %}
+<section class="login-card">
+  <header>
+    <p class="eyebrow">โรงเรียนทหารสื่อสาร</p>
+    <h1>SIGROOM</h1>
+    <p>ระบบจองห้อง รร.ส.สส.</p>
+  </header>
+  <form method="post">
+    {% csrf_token %}
+    {% if form.errors %}<div class="notice error">ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง กรุณาลองอีกครั้ง</div>{% endif %}
+    <label for="id_username">ชื่อผู้ใช้</label>
+    <input id="id_username" name="username" autocomplete="username" required autofocus>
+    <label for="id_password">รหัสผ่าน</label>
+    <input id="id_password" name="password" type="password" autocomplete="current-password" required>
+    <input type="hidden" name="next" value="{{ next }}">
+    <button type="submit">เข้าสู่ระบบ</button>
+  </form>
+  <small>ลืมรหัสผ่าน กรุณาติดต่อผู้ดูแลระบบ</small>
+</section>
+{% endblock %}
