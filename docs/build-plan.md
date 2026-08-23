@@ -23,11 +23,19 @@
 - Django Admin สำหรับทะเบียนห้อง/กฎ/ผู้ใช้
 - **ดูผล:** `uv run manage.py runserver` → เปิด http://127.0.0.1:8000/admin เพิ่มห้องได้
 
-### M1 — ฐานข้อมูลจริง + ทดสอบกันจองซ้อน
-- ติดตั้ง PostgreSQL, `migrate`, สร้าง superuser
-- test: จอง 2 รายการเวลาชนกันในห้องเดียว → รายการที่สองต้องถูกปฏิเสธที่ฐานข้อมูล
-- test: buffer ก่อน/หลัง ถูกรวมในช่วงถือครอง (FR-07)
-- **ดูผล:** `uv run pytest` เขียว · ใน Admin ลองสร้างการจองชนกันแล้วเห็นข้อความเตือน
+### M1 — ฐานข้อมูลจริง + ทดสอบกันจองซ้อน ✅ (24 ส.ค. 2569)
+- PostgreSQL 16 ติดตั้งแล้ว (รหัสผ่านเริ่มต้น `postgres` — **ต้องเปลี่ยนก่อน M6** ดูด้านล่าง)
+- ฐานข้อมูล `ogn_room` + migrate + `btree_gist` + exclusion constraint ใช้งานจริง
+- `uv run pytest` → 9/9 ผ่าน (ชนเวลา, ติดกันไม่ชน, buffer, ยกเลิกแล้วว่าง, อุปกรณ์ชน, นโยบายอนุมัติ)
+- บัญชีผู้ดูแล `admin` + ข้อมูล pilot จาก `uv run manage.py seed_pilot` (5 หน่วย, 8 ห้อง, อุปกรณ์ 2)
+- **ดูผล:** `uv run manage.py runserver` → http://127.0.0.1:8000/admin → ทรัพยากร (ห้อง/อุปกรณ์)
+
+**ค้างจาก M1 — ทำก่อนเริ่ม pilot (M6):**
+1. เปลี่ยนรหัสผ่าน `postgres` ใน PowerShell:
+   `& "C:\Program Files\PostgreSQL\16\bin\psql.exe" -U postgres -c "\password"` (ถามรหัสเดิม `postgres` แล้วให้ตั้งใหม่) → แก้ `DB_PASSWORD` ใน `.env` ให้ตรง
+2. จำกัด PostgreSQL ให้รับเฉพาะเครื่องตัวเอง: แก้ `listen_addresses = 'localhost'` ใน
+   `C:\Program Files\PostgreSQL\16\data\postgresql.conf` แล้ว restart service `postgresql-x64-16`
+3. เปลี่ยนรหัสผ่านบัญชี `admin` ของเว็บใน Admin → ผู้ใช้ → admin → เปลี่ยนรหัสผ่าน
 
 ### M2 — หน้าปฏิทินและจองห้อง (ผู้ขอใช้)
 - เข้าสู่ระบบ · ปฏิทินรายวัน/สัปดาห์/เดือน (FullCalendar) · ค้นห้องว่าง (FR-01/02)
