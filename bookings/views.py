@@ -12,6 +12,8 @@ from django.utils.dateparse import parse_datetime
 from django.views.decorators.http import require_POST
 
 from resources.models import Resource, ResourceRule
+from approvals.services import can_decide, recent_rejection_reasons
+from notifications.services import notify_submitted
 
 from .forms import BookingForm, BuddhistDateField, time_choices
 from .models import Booking
@@ -211,6 +213,7 @@ def book_form(request, code):
                 for message in exc.messages:
                     form.add_error(None, message)
             else:
+                notify_submitted(booking)
                 messages.success(request, "ส่งคำขอจองห้องแล้ว")
                 return redirect("bookings:booking_detail", id=booking.id)
     else:
@@ -222,6 +225,10 @@ def book_form(request, code):
 def booking_detail(request, id):
     booking = get_object_or_404(_booking_queryset(), id=id)
     full_details = can_view_details(request.user, booking)
+    approval_access = can_decide(request.user, booking)
+    can_approve = booking.request_status == Booking.RequestStatus.PENDING and approval_access
+    if approval_access:
+        full_details = True
     if not full_details:
         return render(request, "bookings/booking_masked.html", {"booking": booking})
     owner = booking.requester_id == request.user.pk or request.user.is_superuser
@@ -238,6 +245,9 @@ def booking_detail(request, id):
                 Booking.RequestStatus.EXPIRED,
             },
             "deadline_message": self_service_message(booking) if owner else "",
+            "can_approve": can_approve,
+            "approval_history": booking.approvals.select_related("acted_by", "on_behalf_of").all(),
+            "rejection_reasons": recent_rejection_reasons(request.user) if can_approve else [],
         },
     )
 
@@ -287,6 +297,7 @@ def booking_submit(request, id):
         text = "; ".join(exc.messages) if isinstance(exc, ValidationError) else str(exc)
         messages.error(request, text)
     else:
+        notify_submitted(booking)
         messages.success(request, "ส่งคำขอจองห้องแล้ว")
     return redirect("bookings:booking_detail", id=booking.id)
 

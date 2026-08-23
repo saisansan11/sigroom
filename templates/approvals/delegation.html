@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% load thaidate %}
+{% block title %}ผู้รักษาการ · SIGROOM{% endblock %}
+{% block content %}
+<div class="page-heading"><div><p class="eyebrow">ระบบอนุมัติ</p><h1>มอบหมายผู้รักษาการเมื่อฉันไม่อยู่</h1></div><a class="secondary" role="button" href="{% url 'approvals:queue' %}">กลับคิวอนุมัติ</a></div>
+<article class="detail-card">
+  <form method="post">
+    {% csrf_token %}
+    {% if form.non_field_errors %}<div class="notice error">{{ form.non_field_errors }}</div>{% endif %}
+    <div class="form-grid four">
+      {% for field in form %}<label>{{ field.label }}{{ field }}{% for error in field.errors %}<small class="field-error">{{ error }}</small>{% endfor %}</label>{% endfor %}
+    </div>
+    <p class="muted-text">ช่วงวันที่ทับซ้อนกันไม่ได้ และไม่สามารถมอบหมายให้ตนเองได้</p>
+    <button type="submit">บันทึก</button>
+  </form>
+</article>
+<section>
+  <div class="section-title"><h2>รายการมอบหมายของฉัน</h2></div>
+  <div class="table-wrap"><table><thead><tr><th>ผู้รักษาการ</th><th>ช่วงวันที่</th><th>สถานะ</th><th></th></tr></thead><tbody>
+  {% for item in delegations %}<tr><td>{{ item.delegate.display_name }}</td><td>{{ item.start_date|thai_date }}–{{ item.end_date|thai_date }}</td><td>{{ item.display_status }}</td><td>{% if item.end_date >= today %}<form method="post" action="{% url 'approvals:delegation_delete' item.id %}" onsubmit="return confirm('ยืนยันยกเลิกการมอบหมายนี้ใช่หรือไม่')">{% csrf_token %}<button class="outline danger" type="submit">ยกเลิก</button></form>{% endif %}</td></tr>
+  {% empty %}<tr><td colspan="4" class="empty-state">ยังไม่มีรายการมอบหมาย</td></tr>{% endfor %}
+  </tbody></table></div>
+</section>
+{% endblock %}

@@ -43,7 +43,7 @@ class Command(BaseCommand):
         parser.add_argument(
             "--demo-users",
             action="store_true",
-            help="สร้างบัญชี somchai และ wanida สำหรับทดลอง M2",
+            help="สร้างบัญชี somchai, wanida และ somsak สำหรับทดลอง M2–M3",
         )
 
     def handle(self, *args, **options):
@@ -72,6 +72,7 @@ class Command(BaseCommand):
             demo_users = (
                 ("somchai", "สมชาย", "ใจดี", "ร.อ.", "COMM"),
                 ("wanida", "วนิดา", "มั่นคง", "ร.อ.", "EW"),
+                ("somsak", "สมศักดิ์", "พร้อมรบ", "พ.ต.", "HQ"),
             )
             users = {}
             for username, first_name, last_name, rank, unit_code in demo_users:
@@ -97,5 +98,18 @@ class Command(BaseCommand):
                 defaults={"is_primary": True},
             )
             self.stdout.write("กำหนด wanida เป็นผู้อนุมัติหลักของ MTG-1")
+
+            command_room = Resource.objects.get(code="MTG-CO")
+            ResourceApprover.objects.update_or_create(
+                resource=command_room,
+                user=users["somsak"],
+                defaults={"is_primary": True},
+            )
+            ResourceApprover.objects.update_or_create(
+                resource=meeting_room,
+                user=users["somsak"],
+                defaults={"is_primary": False},
+            )
+            self.stdout.write("กำหนด somsak เป็นผู้อนุมัติหลักของ MTG-CO และผู้อนุมัติสำรองของ MTG-1")
 
         self.stdout.write(self.style.SUCCESS("เสร็จ — เปิด http://127.0.0.1:8000/ เพื่อดู SIGROOM"))

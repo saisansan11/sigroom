@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% load thaidate %}
+{% block title %}การแจ้งเตือน · SIGROOM{% endblock %}
+{% block content %}
+<div class="page-heading">
+  <div><p class="eyebrow">รายการส่วนตัว</p><h1>การแจ้งเตือน</h1><p>แสดง 50 รายการล่าสุด</p></div>
+  <form method="post" action="{% url 'notifications:read_all' %}">{% csrf_token %}<button class="secondary" type="submit">ทำเครื่องหมายอ่านทั้งหมด</button></form>
+</div>
+<div class="notification-list">
+{% for item in notifications %}
+  <a class="notification-item {% if not item.read_at %}unread{% endif %}" href="{% url 'notifications:open' item.id %}">
+    <span>{{ item.text }}</span><small>{{ item.created_at|thai_datetime }}</small>
+  </a>
+{% empty %}<div class="empty-state detail-card">ยังไม่มีการแจ้งเตือน</div>{% endfor %}
+</div>
+{% endblock %}

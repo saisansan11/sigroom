@@ -8,5 +8,7 @@ admin.site.index_title = "ทะเบียนและการตั้งค
 urlpatterns = [
     path("admin/", admin.site.urls),
     path("accounts/", include("django.contrib.auth.urls")),
+    path("approvals/", include("approvals.urls")),
+    path("notifications/", include("notifications.urls")),
     path("", include("bookings.urls")),
 ]

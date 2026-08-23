@@ -88,6 +88,8 @@ class Booking(models.Model):
     created_at = models.DateTimeField("สร้างเมื่อ", auto_now_add=True)
     updated_at = models.DateTimeField("แก้ไขล่าสุด", auto_now=True)
     submitted_at = models.DateTimeField("ส่งคำขอเมื่อ", null=True, blank=True)
+    sla_escalated_at = models.DateTimeField("เปิดสิทธิ์ผู้อนุมัติสำรองเมื่อ", null=True, blank=True)
+    decision_reason = models.TextField("เหตุผลการพิจารณาล่าสุด", blank=True)
 
     class Meta:
         verbose_name = "การจอง"

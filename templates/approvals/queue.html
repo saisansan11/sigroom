@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% load thaidate %}
+{% block title %}คิวรออนุมัติ · SIGROOM{% endblock %}
+{% block content %}
+<div class="page-heading">
+  <div><p class="eyebrow">ระบบอนุมัติ</p><h1>รายการรอการอนุมัติของฉัน</h1><p>เรียงรายการที่ใกล้วันใช้งานก่อน</p></div>
+  {% if can_delegate %}<a class="secondary" role="button" href="{% url 'approvals:delegation' %}">ตั้งผู้รักษาการ</a>{% endif %}
+</div>
+<datalist id="rejection-reasons">
+  {% for reason in rejection_reasons %}<option value="{{ reason }}"></option>{% endfor %}
+</datalist>
+<div class="approval-list">
+{% for booking in bookings %}
+  <article class="approval-card">
+    <div class="approval-card-main">
+      <p class="approval-flags">
+        {% if booking.is_urgent %}<span class="urgent-flag">🔴 เร่งด่วน</span>{% endif %}
+        {% if booking.is_over_sla %}<span class="sla-flag">🟡 เกิน SLA{% if booking.acting_as_backup %} · ฉันเป็นสำรอง{% endif %}</span>{% endif %}
+      </p>
+      <h2><a href="{% url 'bookings:booking_detail' booking.id %}">{{ booking.title }}</a></h2>
+      <p><strong>{{ booking.room.code }} {{ booking.room.name }}</strong> · {{ booking.start_at|thai_datetime }}–{{ booking.end_at|date:"H:i" }} น.</p>
+      <p>{{ booking.unit.name }} · {{ booking.requester.display_name }}{% if booking.responsible_phone %} (โทร {{ booking.responsible_phone }}){% endif %}</p>
+      <p>ผู้เข้าร่วม {{ booking.attendees }} คน · อุปกรณ์: {% for item in booking.equipment.all %}{{ item.name }}{% if not forloop.last %}, {% endif %}{% empty %}—{% endfor %} · ส่งเมื่อ {{ booking.submitted_at|thai_datetime }}</p>
+      <p class="expiry-text">หมดอายุใน {{ booking.expires_in_hours }} ชม.</p>
+    </div>
+    <div class="approval-actions">
+      <form method="post" action="{% url 'approvals:approve' booking.id %}">
+        {% csrf_token %}<button type="submit">อนุมัติ</button>
+      </form>
+      <details>
+        <summary role="button" class="outline danger">ปฏิเสธ</summary>
+        <form method="post" action="{% url 'approvals:reject' booking.id %}">
+          {% csrf_token %}
+          <label>เหตุผล (จำเป็น)<input name="reason" required maxlength="500" list="rejection-reasons" placeholder="เลือกเหตุผลที่เคยใช้หรือพิมพ์เอง"></label>
+          <button class="danger" type="submit">ยืนยันการปฏิเสธ</button>
+        </form>
+      </details>
+    </div>
+  </article>
+{% empty %}
+  <div class="empty-state detail-card">ไม่มีคำขอรออนุมัติ</div>
+{% endfor %}
+</div>
+{% endblock %}

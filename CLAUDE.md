@@ -37,6 +37,7 @@ accounts/    ผู้ใช้ หน่วยงาน บทบาท
 resources/   ทะเบียนห้อง/อุปกรณ์ กฎรายห้อง ผู้อนุมัติ
 bookings/    การจอง ช่วงถือครอง ชุดการจอง amendment
 approvals/   อนุมัติ/ปฏิเสธ SLA ผู้รักษาการ (M3)
+notifications/ แจ้งเตือนในระบบและตัวเลขกระดิ่ง (M3)
 docs/        SRS, build plan, ADR
 ```
 

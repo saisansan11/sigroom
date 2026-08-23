@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block title %}ไม่มีสิทธิ์เข้าถึง · SIGROOM{% endblock %}
+{% block content %}
+<article class="masked-card">
+  <p class="eyebrow">ไม่สามารถเปิดหน้านี้ได้</p>
+  <h1>คุณไม่มีสิทธิ์เข้าถึง</h1>
+  <p>{{ exception|default:"บัญชีนี้ไม่ได้รับสิทธิ์สำหรับรายการที่เลือก" }}</p>
+  <a role="button" href="{% url 'bookings:calendar' %}">กลับหน้าปฏิทิน</a>
+</article>
+{% endblock %}

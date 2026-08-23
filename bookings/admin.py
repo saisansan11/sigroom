@@ -19,7 +19,7 @@ class BookingAdmin(admin.ModelAdmin):
     list_filter = ("request_status", "usage_status", "visibility", "room", "unit")
     search_fields = ("title", "responsible_name", "requester__username", "room__code")
     date_hierarchy = "start_at"
-    readonly_fields = ("id", "revision", "created_at", "updated_at", "submitted_at", "is_urgent")
+    readonly_fields = ("id", "revision", "created_at", "updated_at", "submitted_at", "is_urgent", "sla_escalated_at", "decision_reason")
     autocomplete_fields = ("requester",)
     filter_horizontal = ("equipment",)
     inlines = [BookingResourceInline]
@@ -27,6 +27,6 @@ class BookingAdmin(admin.ModelAdmin):
         ("กิจกรรม", {"fields": ("title", "purpose", "room", ("start_at", "end_at"), ("attendees", "attendee_level"))}),
         ("ผู้ขอ", {"fields": ("requester", "unit", ("responsible_name", "responsible_phone"))}),
         ("รายละเอียด", {"fields": ("layout", "fixed_equipment_needed", "equipment", ("has_external_attendees", "external_attendees_note"), "visibility", "note")}),
-        ("สถานะ", {"fields": (("request_status", "usage_status"), "is_urgent", "revision", "submitted_at")}),
+        ("สถานะ", {"fields": (("request_status", "usage_status"), "is_urgent", "revision", "submitted_at", "sla_escalated_at", "decision_reason")}),
         ("ระบบ", {"classes": ("collapse",), "fields": ("id", "created_at", "updated_at")}),
     )

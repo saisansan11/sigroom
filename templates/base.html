@@ -18,8 +18,10 @@
           <li><a href="{% url 'bookings:calendar' %}">ปฏิทิน</a></li>
           <li><a href="{% url 'bookings:book_search' %}">จองห้อง</a></li>
           <li><a href="{% url 'bookings:my_bookings' %}">การจองของฉัน</a></li>
+          {% if nav_can_access_approvals %}<li><a href="{% url 'approvals:queue' %}">รออนุมัติ ({{ nav_pending_approval_count }})</a></li>{% endif %}
         </ul>
         <ul>
+          <li><a class="notification-link" href="{% url 'notifications:list' %}" aria-label="การแจ้งเตือน">🔔{% if nav_unread_count %}<span class="notification-count">{{ nav_unread_count }}</span>{% endif %}</a></li>
           <li class="user-label">{{ user.display_name }}{% if user.unit %} ({{ user.unit.code }}){% endif %}</li>
           <li>
             <form class="logout-form" action="{% url 'logout' %}" method="post">

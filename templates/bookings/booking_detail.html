@@ -18,8 +18,25 @@
     {% if booking.note %}<div class="wide"><dt>หมายเหตุ</dt><dd>{{ booking.note|linebreaksbr }}</dd></div>{% endif %}
   </dl>
 </article>
+<article class="detail-card">
+  <h2>ประวัติการพิจารณา</h2>
+  <ol class="history-list">
+  {% for item in approval_history %}
+    <li><strong>{{ item.get_action_display }}</strong> เมื่อ {{ item.acted_at|thai_datetime }}
+      {% if item.acted_by %}โดย {{ item.acted_by.display_name }}{% else %}{% if item.action == 'expired' %}โดยระบบ{% endif %}{% endif %}
+      {% if item.on_behalf_of %} (รักษาการแทน {{ item.on_behalf_of.display_name }}){% endif %}
+      {% if item.reason %}<div>เหตุผล: {{ item.reason }}</div>{% endif %}
+    </li>
+  {% empty %}<li>ยังไม่มีประวัติการพิจารณา</li>{% endfor %}
+  </ol>
+</article>
 {% if deadline_message %}<div class="notice warning">{{ deadline_message }}</div>{% endif %}
 <div class="form-actions">
+  {% if can_approve %}
+    <form method="post" action="{% url 'approvals:approve' booking.id %}">{% csrf_token %}<input type="hidden" name="next" value="{{ request.path }}"><button type="submit">อนุมัติ</button></form>
+    <details class="inline-reject"><summary role="button" class="outline danger">ปฏิเสธ</summary><form method="post" action="{% url 'approvals:reject' booking.id %}">{% csrf_token %}<input type="hidden" name="next" value="{{ request.path }}"><label>เหตุผล (จำเป็น)<input name="reason" required maxlength="500" list="detail-rejection-reasons" placeholder="เลือกเหตุผลที่เคยใช้หรือพิมพ์เอง"></label><button class="danger" type="submit">ยืนยันการปฏิเสธ</button></form></details>
+    <datalist id="detail-rejection-reasons">{% for reason in rejection_reasons %}<option value="{{ reason }}"></option>{% endfor %}</datalist>
+  {% endif %}
   {% if can_edit %}<a role="button" href="{% url 'bookings:booking_edit' booking.id %}">แก้ไขรายละเอียด</a>{% endif %}
   {% if booking.request_status == 'draft' %}
     <form method="post" action="{% url 'bookings:booking_submit' booking.id %}">{% csrf_token %}<button type="submit">ส่งคำขอ</button></form>
