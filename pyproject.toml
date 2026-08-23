@@ -1,7 +1,7 @@
 [project]
-name = "ogn-room"
+name = "sigroom"
 version = "0.1.0"
-description = "ระบบจองและบริหารการใช้ห้อง โรงเรียนทหารสื่อสาร"
+description = "SIGROOM — ระบบจองและบริหารการใช้ห้อง โรงเรียนทหารสื่อสาร"
 requires-python = ">=3.12"
 dependencies = [
     "django>=5.2,<5.3",
