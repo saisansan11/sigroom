@@ -17,8 +17,8 @@
 <section>
   <div class="section-title"><h2>รายการมอบหมายของฉัน</h2></div>
   <div class="table-wrap"><table><thead><tr><th>ผู้รักษาการ</th><th>ช่วงวันที่</th><th>สถานะ</th><th></th></tr></thead><tbody>
-  {% for item in delegations %}<tr><td>{{ item.delegate.display_name }}</td><td>{{ item.start_date|thai_date }}–{{ item.end_date|thai_date }}</td><td>{{ item.display_status }}</td><td>{% if item.end_date >= today %}<form method="post" action="{% url 'approvals:delegation_delete' item.id %}" onsubmit="return confirm('ยืนยันยกเลิกการมอบหมายนี้ใช่หรือไม่')">{% csrf_token %}<button class="outline danger" type="submit">ยกเลิก</button></form>{% endif %}</td></tr>
-  {% empty %}<tr><td colspan="4" class="empty-state">ยังไม่มีรายการมอบหมาย</td></tr>{% endfor %}
+  {% for item in delegations %}<tr><td>{{ item.delegate.display_name }}</td><td>{{ item.start_date|thai_date }}–{{ item.end_date|thai_date }}</td><td><span class="status {% if item.end_date < today %}status-draft{% elif item.start_date > today %}status-pending{% else %}status-active{% endif %}">{{ item.display_status }}</span></td><td>{% if item.end_date >= today %}<form method="post" action="{% url 'approvals:delegation_delete' item.id %}" onsubmit="return confirm('ยืนยันยกเลิกการมอบหมายนี้ใช่หรือไม่')">{% csrf_token %}<button class="outline danger" type="submit">ยกเลิก</button></form>{% endif %}</td></tr>
+  {% empty %}<tr><td colspan="4" class="empty-state"><strong>ยังไม่มีรายการมอบหมาย</strong>ตั้งผู้รักษาการล่วงหน้าเมื่อคุณไม่อยู่</td></tr>{% endfor %}
   </tbody></table></div>
 </section>
 {% endblock %}

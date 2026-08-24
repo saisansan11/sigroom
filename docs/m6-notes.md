@@ -107,3 +107,29 @@ backup/restore test: ผ่าน
 ## งานต่อไปหลังตรวจรับ 6A
 
 เริ่ม 6B ตามลำดับ: B1 ขัด UX/UI → B2 runbook ติดตั้ง/DB REVOKE/ความปลอดภัย → B3 pilot checklist ห้าม deploy หรือเริ่ม pilot ก่อนตรวจรับและทำรายการเหล่านี้ครบ
+
+## B1 ขัด UX/UI — ทำแล้ว รอผู้ใช้เดินตรวจรับ
+
+- บันทึก design context ที่ `.impeccable.md`: สุขุม · แม่นยำ · มั่นใจ และใช้ AstroGrid เป็นภาษาภาพอ้างอิงโดยปรับให้เหมาะกับระบบงานราชการไทย
+- เปลี่ยนระบบกลางเป็น command-center dark theme แบบ navy/เขียวหม่น ใช้ cyan/green/amber/red ตามความหมายเดียวกันทั้งระบบ ขอบบาง ไม่มี glow/gradient text/card accent stripe
+- ปรับ navigation แยก desktop/mobile, เพิ่ม skip link, focus ring, touch target 44px, reduced motion และหน้า logout ของ SIGROOM
+- หน้าแรกแสดงคิวอนุมัติ รายการใช้งานวันนี้ และการจองถัดไปตามบทบาทก่อนปฏิทิน
+- ปรับ S1–S17 ให้ hierarchy, ปุ่มหลัก/รอง, status badge, form error, loading, empty state และกรอบตารางสม่ำเสมอ
+- ปฏิทินใช้มุมมองรายวันบนมือถือและรายสัปดาห์บนจอใหญ่ ตารางเลื่อนเฉพาะภายในกรอบของตน
+- ตรวจ browser ที่ 360/768/1280: login, หน้าแรก/ปฏิทิน, ค้นหา, ฟอร์มจอง, รายละเอียด, การจองของฉัน, คิว/ผู้รักษาการ, notifications และ reports ไม่มี document horizontal overflow; report table เลื่อนในกรอบ; console ไม่มี error/warning; keyboard focus เห็นชัด
+- Django check ผ่าน และ pytest 80/80 ผ่าน
+- การเดิน browser ใช้บัญชี demo ในฐานพัฒนา จึงเกิด AuditLog ตามพฤติกรรมจริง 5 แถว (login 3, logout 2); ไม่ลบเพราะตารางเป็น append-only และไม่ได้สร้าง/แก้/ยกเลิกการจอง
+
+ผู้ใช้เดินตรวจรับครบ 6 journeys บนจอจริงแล้ว (24 ส.ค. 2569) รวม custodian (เพิ่ม/ถอดสิทธิ์ชั่วคราวระหว่างตรวจ — AuditLog เพิ่ม 6 แถวตามปกติ: login/logout 4, สิทธิ์ 2) → **B1 ปิด**
+
+## B1.5 Design Uplift — Tactical HUD (ผู้ใช้เลือกทิศทางจาก mockup แล้วสั่ง "เอาเลย")
+
+- ผู้ใช้ให้ความเห็นว่า B1 เดิม "ดูธรรมดา เหมือน AI สร้าง" จึงทำ mockup `docs/mockups/sigroom-hud-mockup.html` เทียบก่อน แล้วอนุมัติทิศทาง Tactical HUD (24 ส.ค. 2569)
+- ฟอนต์ self-host ที่ `static/fonts/` (11 ไฟล์ woff2 ~215KB): IBM Plex Sans Thai (เนื้อหา) + JetBrains Mono (ตัวเลข/เวลา/รหัสห้อง/ป้ายกำกับ) — ประกาศใน `static/css/fonts.css` ใช้บน LAN ไม่ต้องต่อเน็ต
+- app.css: พื้นเข้มขึ้น, วงเล็บมุม cyan บนแผงสำคัญ, glow เฉพาะจุดที่มีความหมาย (ตัวเลข statusband, เส้นขณะนี้, จุดสถานะ pending/active, hover ปุ่มหลัก), th ตารางเป็น mono uppercase
+- โลโก้ใหม่: กรอบสี่เหลี่ยม + เส้นคลื่นสัญญาณ (inline SVG ใน base.html), "ROOM" สี cyan
+- login/logout: พื้นหลังจอเรดาร์กวาด (SVG animation, เคารพ prefers-reduced-motion)
+- หน้าแรก: statusband (Mission Clock เดินจริง + กำลังใช้ x/y + รออนุมัติ/คำขอของฉัน + ว่างตอนนี้) + ปุ่ม "จองห้องด่วน" + today-board แถบเวลารายห้อง 07:00–21:00 มีเส้น "ขณะนี้" — ข้อมูลจาก `_today_board()` ใน bookings/views.py เคารพ visibility (ใช้ can_view_details)
+- เทสใหม่ `bookings/tests_m6b.py`: ตัวเลขสถิติ/ชนิดแท่ง/การปิดบังชื่อเรื่อง restricted; pytest 82/82 ผ่าน; ตรวจ browser 360px และ desktop ไม่มี overflow, console ไม่มี error, ฟอนต์โหลดจาก local ทั้งหมด
+- แก้ตามผลตรวจรับรอบแรก: "ว่างตอนนี้" เดิมนับห้องที่มีรายการ pending คร่อมเวลาปัจจุบันเป็นว่าง และหักซ้ำเมื่อห้องเดียวมีทั้ง booking และ outage — เปลี่ยนเป็น set เดียว `busy_now` (booking ถือครองเวลาใด ๆ ตาม FR-10 หรือ outage คร่อมตอนนี้) แล้ว `stat_free_now = total - len(busy_now)`; เทสทั้งไฟล์ freeze เวลาไว้ 10:00 วันนี้ (monkeypatch `timezone.now`) จึงไม่ skip ตามเวลาจริงอีก และเพิ่มกรณี pending-now กับ booking+outage ซ้อนกัน
+- เพิ่ม launch config `django-8001` สำหรับตรวจคู่ขนานกับ server หลัก

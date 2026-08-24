@@ -1,40 +1,68 @@
 {% load static %}
 <!doctype html>
-<html lang="th" data-theme="light">
+<html lang="th" data-theme="dark">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{% block title %}SIGROOM{% endblock %}</title>
   <link rel="stylesheet" href="{% static 'vendor/pico/pico.min.css' %}">
+  <link rel="stylesheet" href="{% static 'css/fonts.css' %}">
   <link rel="stylesheet" href="{% static 'css/app.css' %}">
   {% block head %}{% endblock %}
 </head>
 <body>
+  <a class="skip-link" href="#main-content">ข้ามไปเนื้อหาหลัก</a>
   {% if user.is_authenticated %}
     <header class="site-header">
-      <nav class="container-fluid" aria-label="เมนูหลัก">
-        <ul><li><a class="brand" href="{% url 'bookings:calendar' %}">SIGROOM</a></li></ul>
-        <ul class="main-nav">
-          <li><a href="{% url 'bookings:calendar' %}">ปฏิทิน</a></li>
-          <li><a href="{% url 'bookings:book_search' %}">จองห้อง</a></li>
-          <li><a href="{% url 'bookings:my_bookings' %}">การจองของฉัน</a></li>
-          {% if nav_can_access_approvals %}<li><a href="{% url 'approvals:queue' %}">รออนุมัติ ({{ nav_pending_approval_count }})</a></li>{% endif %}
-          {% if nav_can_manage_usage %}<li><a href="{% url 'usage:list' %}">การใช้งานห้อง</a></li>{% endif %}
-          {% if nav_can_access_reports %}<li><a href="{% url 'reports:dashboard' %}">รายงาน</a></li>{% endif %}
-        </ul>
-        <ul>
-          <li><a class="notification-link" href="{% url 'notifications:list' %}" aria-label="การแจ้งเตือน">🔔{% if nav_unread_count %}<span class="notification-count">{{ nav_unread_count }}</span>{% endif %}</a></li>
-          <li class="user-label">{{ user.display_name }}{% if user.unit %} ({{ user.unit.code }}){% endif %}</li>
-          <li>
-            <form class="logout-form" action="{% url 'logout' %}" method="post">
-              {% csrf_token %}<button class="link-button" type="submit">ออกจากระบบ</button>
-            </form>
-          </li>
-        </ul>
-      </nav>
+      <div class="header-shell">
+        <a class="brand" href="{% url 'bookings:calendar' %}"><svg class="brand-mark" viewBox="0 0 48 48" aria-hidden="true"><g fill="none" stroke="var(--cyan)" stroke-width="3"><rect x="2" y="2" width="44" height="44"/><path d="M8 30 L15 30 L19 18 L24 36 L29 24 L33 30 L40 30" stroke-linecap="round" stroke-linejoin="round"/></g></svg>SIG<span class="brand-accent">ROOM</span></a>
+        <nav class="desktop-nav" aria-label="เมนูหลัก">
+          <ul class="main-nav">
+            <li><a {% if request.resolver_match.url_name == 'calendar' %}aria-current="page"{% endif %} href="{% url 'bookings:calendar' %}">ปฏิทิน</a></li>
+            <li><a {% if request.resolver_match.url_name == 'book_search' or request.resolver_match.url_name == 'book_form' %}aria-current="page"{% endif %} href="{% url 'bookings:book_search' %}">จองห้อง</a></li>
+            <li><a {% if request.resolver_match.url_name == 'my_bookings' %}aria-current="page"{% endif %} href="{% url 'bookings:my_bookings' %}">การจองของฉัน</a></li>
+            {% if nav_can_access_approvals %}<li><a {% if request.resolver_match.namespace == 'approvals' %}aria-current="page"{% endif %} href="{% url 'approvals:queue' %}">รออนุมัติ <span class="count-badge">{{ nav_pending_approval_count }}</span></a></li>{% endif %}
+            {% if nav_can_manage_usage %}<li><a {% if request.resolver_match.namespace == 'usage' %}aria-current="page"{% endif %} href="{% url 'usage:list' %}">การใช้งานห้อง</a></li>{% endif %}
+            {% if nav_can_access_reports %}<li><a {% if request.resolver_match.namespace == 'reports' %}aria-current="page"{% endif %} href="{% url 'reports:dashboard' %}">รายงาน</a></li>{% endif %}
+          </ul>
+        </nav>
+        <div class="header-tools">
+          <a class="notification-link" href="{% url 'notifications:list' %}" aria-label="การแจ้งเตือน{% if nav_unread_count %}ที่ยังไม่ได้อ่าน {{ nav_unread_count }} รายการ{% endif %}">●{% if nav_unread_count %}<span class="notification-count">{{ nav_unread_count }}</span>{% endif %}</a>
+          <details class="account-menu">
+            <summary>{{ user.display_name }}</summary>
+            <div class="account-popover">
+              <p><strong>{{ user.display_name }}</strong>{% if user.unit %}<br><small>{{ user.unit.code }} · {{ user.unit.name }}</small>{% endif %}</p>
+              <form class="logout-form" action="{% url 'logout' %}" method="post">
+                {% csrf_token %}<button class="link-button" type="submit">ออกจากระบบ</button>
+              </form>
+            </div>
+          </details>
+          <details class="mobile-menu">
+            <summary>เมนู</summary>
+            <div class="mobile-menu-panel">
+              <nav aria-label="เมนูหลักสำหรับมือถือ">
+                <ul class="main-nav">
+                  <li><a {% if request.resolver_match.url_name == 'calendar' %}aria-current="page"{% endif %} href="{% url 'bookings:calendar' %}">ปฏิทิน</a></li>
+                  <li><a {% if request.resolver_match.url_name == 'book_search' or request.resolver_match.url_name == 'book_form' %}aria-current="page"{% endif %} href="{% url 'bookings:book_search' %}">จองห้อง</a></li>
+                  <li><a {% if request.resolver_match.url_name == 'my_bookings' %}aria-current="page"{% endif %} href="{% url 'bookings:my_bookings' %}">การจองของฉัน</a></li>
+                  {% if nav_can_access_approvals %}<li><a {% if request.resolver_match.namespace == 'approvals' %}aria-current="page"{% endif %} href="{% url 'approvals:queue' %}">รออนุมัติ ({{ nav_pending_approval_count }})</a></li>{% endif %}
+                  {% if nav_can_manage_usage %}<li><a {% if request.resolver_match.namespace == 'usage' %}aria-current="page"{% endif %} href="{% url 'usage:list' %}">การใช้งานห้อง</a></li>{% endif %}
+                  {% if nav_can_access_reports %}<li><a {% if request.resolver_match.namespace == 'reports' %}aria-current="page"{% endif %} href="{% url 'reports:dashboard' %}">รายงาน</a></li>{% endif %}
+                </ul>
+              </nav>
+              <div class="mobile-account">
+                <span>{{ user.display_name }}{% if user.unit %}<br><small>{{ user.unit.code }}</small>{% endif %}</span>
+                <form class="logout-form" action="{% url 'logout' %}" method="post">
+                  {% csrf_token %}<button class="link-button" type="submit">ออกจากระบบ</button>
+                </form>
+              </div>
+            </div>
+          </details>
+        </div>
+      </div>
     </header>
   {% endif %}
-  <main class="container page-shell">
+  <main id="main-content" class="container page-shell" tabindex="-1">
     {% if messages %}
       <div aria-live="polite">
         {% for message in messages %}<div class="notice {{ message.tags }}">{{ message }}</div>{% endfor %}

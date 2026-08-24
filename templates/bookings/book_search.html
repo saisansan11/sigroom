@@ -11,7 +11,7 @@
     <label>จำนวนคน<input type="number" name="attendees" min="1" value="{{ attendees }}" placeholder="เช่น 30"></label>
   </div>
   {% if equipment %}<fieldset><legend>อุปกรณ์ส่วนกลางที่ต้องการ</legend><div class="check-grid">{% for item in equipment %}<label><input type="checkbox" name="equipment" value="{{ item.code }}" {% if item.code in equipment_codes %}checked{% endif %}> {{ item.code }} {{ item.name }}</label>{% endfor %}</div></fieldset>{% endif %}
-  <button type="submit">ค้นหาห้องว่าง</button> <small id="searching" class="htmx-indicator">กำลังตรวจสอบห้องและอุปกรณ์…</small>
+  <div class="form-actions"><button type="submit">ค้นหาห้องว่าง</button><small id="searching" class="htmx-indicator" role="status">กำลังตรวจสอบห้องและอุปกรณ์…</small></div>
 </form>
-<div id="room-results">{% include "bookings/partials/room_list.html" %}</div>
+<div id="room-results" aria-live="polite">{% include "bookings/partials/room_list.html" %}</div>
 {% endblock %}

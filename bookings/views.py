@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import datetime, time, timedelta
 
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
@@ -16,6 +16,7 @@ from resources.services import active_outages
 from approvals.services import can_decide, recent_rejection_reasons
 from notifications.services import notify_submitted
 from audit.services import audit, model_snapshot
+from usage.services import can_manage_usage, recent_bookings_for
 
 from .amendment_services import amendment_ref, evaluate_amendment_policy, submit_amendment, withdraw_amendment
 from .forms import AmendmentForm, BookingForm, BuddhistDateField, PreemptionForm, time_choices
@@ -61,11 +62,117 @@ def _booking_queryset():
     return Booking.objects.select_related("room", "room__rule", "unit", "requester").prefetch_related("equipment")
 
 
+def _today_board(request, rooms, now):
+    """แถวเวลารายห้องของวันนี้ (07:00–21:00) พร้อมตัวเลขสรุปสถานการณ์"""
+    zone = timezone.get_current_timezone()
+    day = timezone.localdate(now)
+    board_start = timezone.make_aware(datetime.combine(day, time(7)), zone)
+    board_end = timezone.make_aware(datetime.combine(day, time(21)), zone)
+    span = (board_end - board_start).total_seconds()
+
+    def pct(dt):
+        return max(0.0, min(100.0, (dt - board_start).total_seconds() / span * 100))
+
+    bookings_by_room = {}
+    todays = (
+        _booking_queryset()
+        .filter(
+            room__in=rooms,
+            request_status__in=Booking.HOLDING_STATUSES,
+            start_at__lt=board_end,
+            end_at__gt=board_start,
+        )
+        .order_by("start_at")
+    )
+    for booking in todays:
+        bookings_by_room.setdefault(booking.room_id, []).append(booking)
+
+    rows, in_use, busy_now = [], set(), set()
+    for room in rooms:
+        blocks = []
+        for outage in active_outages(room, board_start, board_end):
+            blocks.append({
+                "cls": "outage",
+                "left": pct(outage.start_at),
+                "width": max(1.5, pct(outage.end_at) - pct(outage.start_at)),
+                "label": f"งดใช้ — {outage.reason}",
+            })
+            if outage.start_at <= now < outage.end_at:
+                busy_now.add(room.id)
+        for booking in bookings_by_room.get(room.id, []):
+            if can_view_details(request.user, booking):
+                label = booking.title
+            elif booking.visibility == Booking.Visibility.NORMAL:
+                label = f"ไม่ว่าง — {booking.unit.name}"
+            else:
+                label = "ไม่ว่าง"
+            active_now = booking.start_at <= now < booking.end_at
+            if booking.request_status == Booking.RequestStatus.PENDING:
+                cls = "pending"
+            elif active_now:
+                cls = "in-use"
+            else:
+                cls = "approved"
+            if active_now:
+                # ทั้งอนุมัติแล้วและรออนุมัติถือครองเวลา (FR-10) จึงไม่ว่างทั้งคู่
+                busy_now.add(room.id)
+                if booking.request_status == Booking.RequestStatus.APPROVED:
+                    in_use.add(room.id)
+            blocks.append({
+                "cls": cls,
+                "left": pct(booking.start_at),
+                "width": max(1.5, pct(booking.end_at) - pct(booking.start_at)),
+                "label": label,
+            })
+        rows.append({"room": room, "blocks": blocks})
+
+    now_pct = pct(now) if board_start <= now <= board_end else None
+    total = len(rows)
+    return {
+        "board_today": day,
+        "board_rows": rows,
+        "board_hours": list(range(7, 21)),
+        "board_now_pct": now_pct,
+        "board_now_label": timezone.localtime(now).strftime("%H:%M"),
+        "stat_total": total,
+        "stat_in_use": len(in_use),
+        "stat_free_now": total - len(busy_now),
+    }
+
+
 @login_required
 def calendar_view(request):
-    rooms = Resource.objects.filter(resource_type=Resource.Type.ROOM, status=Resource.Status.ACTIVE)
+    rooms = Resource.objects.filter(resource_type=Resource.Type.ROOM, status=Resource.Status.ACTIVE).order_by("code")
     buildings = rooms.exclude(building="").values_list("building", flat=True).distinct().order_by("building")
-    return render(request, "bookings/calendar.html", {"rooms": rooms, "buildings": buildings})
+    now = timezone.now()
+    next_booking = (
+        _booking_queryset()
+        .filter(
+            requester=request.user,
+            request_status__in=Booking.HOLDING_STATUSES,
+            end_at__gt=now,
+        )
+        .order_by("start_at")
+        .first()
+    )
+    usage_today_count = None
+    if can_manage_usage(request.user):
+        today = timezone.localdate(now)
+        usage_today_count = sum(
+            1 for booking in recent_bookings_for(request.user, now) if timezone.localdate(booking.end_at) == today
+        )
+    my_pending_count = _booking_queryset().filter(
+        requester=request.user, request_status=Booking.RequestStatus.PENDING, end_at__gt=now
+    ).count()
+    context = {
+        "rooms": rooms,
+        "buildings": buildings,
+        "next_booking": next_booking,
+        "usage_today_count": usage_today_count,
+        "my_pending_count": my_pending_count,
+    }
+    context.update(_today_board(request, rooms, now))
+    return render(request, "bookings/calendar.html", context)
 
 
 @login_required

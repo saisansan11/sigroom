@@ -4,7 +4,7 @@
 {% block content %}
 <div class="page-heading"><div><p class="eyebrow">ตรวจสอบก่อนยืนยัน</p><h1>{{ booking.title }} — {{ room.code }}</h1><p>{{ preview.items.0.start_at|date:"H:i" }}–{{ preview.items.0.end_at|date:"H:i" }} น. · รวม {{ preview.items|length }} ครั้ง</p></div><a class="secondary" role="button" href="{% url 'bookings:book_form' room.code %}">← กลับไปเปลี่ยนเวลา</a></div>
 <div class="table-wrap"><table><thead><tr><th>ครั้ง</th><th>วันที่</th><th>ผลตรวจ</th></tr></thead><tbody>
-{% for item in preview.items %}<tr><td>{{ item.index }}</td><td>{{ item.occur_date|thai_date }}</td><td>{% if item.status == 'free' %}<span class="success-text">✅ ว่าง</span>{% elif item.status == 'blackout' %}<span>⏭ ข้าม: {{ item.reason }}</span>{% else %}<span class="danger-text">❌ ชน: {{ item.reason }}</span>{% endif %}</td></tr>{% endfor %}
+{% for item in preview.items %}<tr><td>{{ item.index }}</td><td>{{ item.occur_date|thai_date }}</td><td>{% if item.status == 'free' %}<span class="status status-approved">ว่าง</span>{% elif item.status == 'blackout' %}<span class="status status-draft">ข้าม</span> {{ item.reason }}{% else %}<span class="status status-rejected">เวลาชน</span> {{ item.reason }}{% endif %}</td></tr>{% endfor %}
 </tbody></table></div>
 <article class="detail-card"><strong>สรุป:</strong> ว่าง {{ preview.free_count }} · ชน {{ preview.conflict_count }} · ข้ามอัตโนมัติ {{ preview.skipped_count }}
 <p class="muted-text">ถ้ามีคนจองตัดหน้าระหว่างยืนยัน ครั้งนั้นจะถูกข้ามและแจ้งในผลลัพธ์</p></article>

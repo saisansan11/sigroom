@@ -11,6 +11,6 @@
   <a class="notification-item {% if not item.read_at %}unread{% endif %}" href="{% url 'notifications:open' item.id %}">
     <span>{{ item.text }}</span><small>{{ item.created_at|thai_datetime }}</small>
   </a>
-{% empty %}<div class="empty-state detail-card">ยังไม่มีการแจ้งเตือน</div>{% endfor %}
+{% empty %}<div class="empty-state detail-card"><strong>ยังไม่มีการแจ้งเตือน</strong>เมื่อสถานะการจองเปลี่ยนหรือมีงานที่เกี่ยวข้อง รายการจะแสดงที่นี่</div>{% endfor %}
 </div>
 {% endblock %}

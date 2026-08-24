@@ -1,20 +1,102 @@
 {% extends "base.html" %}
 {% load static %}
+{% load thaidate %}
 {% block title %}ปฏิทินห้อง · SIGROOM{% endblock %}
 {% block head %}<script src="{% static 'vendor/fullcalendar/index.global.min.js' %}"></script><script src="{% static 'vendor/fullcalendar/locales-all.global.min.js' %}"></script>{% endblock %}
 {% block content %}
 <div class="page-heading">
-  <div><p class="eyebrow">ภาพรวมห้อง</p><h1>ปฏิทินการใช้ห้อง</h1></div>
-  <a role="button" href="{% url 'bookings:book_search' %}">ค้นหาห้องว่าง</a>
+  <div><p class="eyebrow">ศูนย์งาน SIGROOM</p><h1>วันนี้ต้องทำอะไร</h1><p>งานตามบทบาทของคุณมาก่อน แล้วจึงดูภาพรวมห้องทั้งหมด</p></div>
 </div>
+<section class="statusband" aria-label="สถานการณ์ขณะนี้">
+  <article class="stat">
+    <span class="stat-label">Mission Clock</span>
+    <div class="stat-value" id="mission-clock" aria-hidden="true">--:--:--</div>
+    <p class="stat-detail">{{ board_today|thai_date }}</p>
+  </article>
+  <article class="stat stat-cyan">
+    <span class="stat-label">กำลังใช้งาน</span>
+    <div class="stat-value">{{ stat_in_use }}<small>/{{ stat_total }} ห้อง</small></div>
+    <p class="stat-detail">จากห้องที่เปิดใช้ทั้งหมด</p>
+  </article>
+  <article class="stat stat-amber">
+    {% if nav_can_access_approvals %}
+    <a href="{% url 'approvals:queue' %}">
+      <span class="stat-label">รออนุมัติ</span>
+      <div class="stat-value">{{ nav_pending_approval_count }}<small> รายการ</small></div>
+      <p class="stat-detail">เปิดคิวอนุมัติ →</p>
+    </a>
+    {% else %}
+    <a href="{% url 'bookings:my_bookings' %}">
+      <span class="stat-label">คำขอของฉันที่รอ</span>
+      <div class="stat-value">{{ my_pending_count }}<small> รายการ</small></div>
+      <p class="stat-detail">ดูการจองของฉัน →</p>
+    </a>
+    {% endif %}
+  </article>
+  <article class="stat stat-green">
+    <span class="stat-label">ว่างตอนนี้</span>
+    <div class="stat-value">{{ stat_free_now }}<small> ห้อง</small></div>
+    <p class="stat-detail">พร้อมจองทันที</p>
+  </article>
+</section>
+<div class="quickrow">
+  <a role="button" href="{% url 'bookings:book_search' %}">⊕ จองห้องด่วน</a>
+  <span class="quick-hint">เลือกวัน เวลา แล้วระบบแสดงเฉพาะห้องที่ว่างจริง</span>
+</div>
+<section class="role-actions" aria-label="งานของฉัน">
+  {% if nav_can_access_approvals %}
+  <article class="role-action">
+    <div><p class="action-label">งานผู้อนุมัติ</p><h2>{% if nav_pending_approval_count %}มี {{ nav_pending_approval_count }} รายการรอตัดสิน{% else %}คิวอนุมัติเรียบร้อย{% endif %}</h2><p>{% if nav_pending_approval_count %}รายการใกล้วันใช้งานจะอยู่ก่อน{% else %}ขณะนี้ไม่มีคำขอที่ต้องดำเนินการ{% endif %}</p></div>
+    <a href="{% url 'approvals:queue' %}">เปิดคิวอนุมัติ →</a>
+  </article>
+  {% endif %}
+  {% if nav_can_manage_usage %}
+  <article class="role-action">
+    <div><p class="action-label">งานเจ้าหน้าที่ดูแลห้อง</p><h2>{% if usage_today_count %}วันนี้มี {{ usage_today_count }} รายการให้ตรวจ{% else %}งานบันทึกวันนี้เรียบร้อย{% endif %}</h2><p>ตรวจสถานะใช้งานแล้วหรือไม่มาใช้ภายในกำหนด</p></div>
+    <a href="{% url 'usage:list' %}">เปิดการใช้งานห้อง →</a>
+  </article>
+  {% endif %}
+  <article class="role-action">
+    <div><p class="action-label">การจองของฉัน</p>{% if next_booking %}<h2>{{ next_booking.title }}</h2><p>{{ next_booking.room.code }} · {{ next_booking.start_at|thai_datetime }} · {{ next_booking.get_request_status_display }}</p>{% else %}<h2>ยังไม่มีการจองที่กำลังจะถึง</h2><p>ค้นหาห้องว่างจากวัน เวลา และจำนวนผู้เข้าร่วม</p>{% endif %}</div>
+    {% if next_booking %}<a href="{% url 'bookings:booking_detail' next_booking.id %}">ดูรายละเอียด →</a>{% else %}<a href="{% url 'bookings:book_search' %}">เริ่มจองห้อง →</a>{% endif %}
+  </article>
+</section>
+<section class="today-board" aria-label="สถานการณ์ห้องวันนี้">
+  <div class="board-head">
+    <span class="hud-tag mono">Today</span>
+    <h2>สถานการณ์ห้องวันนี้</h2>
+    <a href="{% url 'bookings:book_search' %}">จองช่วงที่ว่าง →</a>
+  </div>
+  <div class="tl-scroll">
+    <div class="tl-grid">
+      <div></div>
+      <div class="tl-hours" style="grid-template-columns: repeat({{ board_hours|length }}, 1fr);">
+        {% for h in board_hours %}<span>{{ h|stringformat:"02d" }}</span>{% endfor %}
+      </div>
+      {% for row in board_rows %}
+      <div class="tl-room"><b>{{ row.room.code }}</b>{{ row.room.name }}</div>
+      <div class="tl-track">
+        {% for block in row.blocks %}
+        <span class="tl-block {{ block.cls }}" style="left:{{ block.left|floatformat:2 }}%;width:{{ block.width|floatformat:2 }}%" title="{{ block.label }}">{{ block.label }}</span>
+        {% endfor %}
+      </div>
+      {% endfor %}
+      {% if board_now_pct is not None %}
+      <span class="tl-now" data-label="ขณะนี้ {{ board_now_label }}" style="left: calc(9.5rem + (100% - 9.5rem) * {{ board_now_pct|floatformat:2 }} / 100);" aria-hidden="true"></span>
+      {% endif %}
+    </div>
+  </div>
+  <span class="legend" aria-label="คำอธิบายสถานะ"><span class="legend-item"><i style="background:var(--cyan)"></i> กำลังใช้</span><span class="legend-item"><i class="approved"></i> อนุมัติแล้ว</span><span class="legend-item"><i class="pending"></i> รออนุมัติ</span><span class="legend-item"><i style="background:var(--red)"></i> งดใช้</span></span>
+</section>
+<div class="section-title"><div><p class="eyebrow">ภาพรวมห้อง</p><h2>ปฏิทินการใช้ห้อง</h2></div></div>
 <div class="filter-bar">
-  <label>ห้อง
+  <label for="room-filter">ห้อง
     <select id="room-filter"><option value="">ทุกห้อง</option>{% for room in rooms %}<option value="{{ room.code }}">{{ room.code }} {{ room.name }}</option>{% endfor %}</select>
   </label>
-  <label>อาคาร
+  <label for="building-filter">อาคาร
     <select id="building-filter"><option value="">ทั้งหมด</option>{% for building in buildings %}<option>{{ building }}</option>{% endfor %}</select>
   </label>
-  <span class="legend"><i class="approved"></i> อนุมัติ <i class="pending"></i> รออนุมัติ <i class="buffer-key"></i> เวลาเตรียม/เก็บห้อง</span>
+  <span class="legend" aria-label="คำอธิบายสถานะ"><span class="legend-item"><i class="approved"></i> อนุมัติ</span><span class="legend-item"><i class="pending"></i> รออนุมัติ</span><span class="legend-item"><i class="buffer-key"></i> เวลาเตรียม/เก็บห้อง</span></span>
 </div>
 <div id="calendar" aria-label="ปฏิทินการจอง"></div>
 {% endblock %}
@@ -23,10 +105,14 @@
 document.addEventListener('DOMContentLoaded', function () {
   const room = document.getElementById('room-filter');
   const building = document.getElementById('building-filter');
+  const compact = window.matchMedia('(max-width: 640px)').matches;
   const calendar = new FullCalendar.Calendar(document.getElementById('calendar'), {
-    locale: 'th', initialView: 'timeGridWeek', firstDay: 1, selectable: true,
+    locale: 'th', initialView: compact ? 'timeGridDay' : 'timeGridWeek', firstDay: 1, selectable: true,
     slotMinTime: '07:00:00', slotMaxTime: '21:00:00', nowIndicator: true,
-    headerToolbar: {left: 'prev,next today', center: 'title', right: 'timeGridDay,timeGridWeek,dayGridMonth'},
+    height: 'auto',
+    headerToolbar: compact
+      ? {left: 'prev,next', center: 'title', right: 'today'}
+      : {left: 'prev,next today', center: 'title', right: 'timeGridDay,timeGridWeek,dayGridMonth'},
     buttonText: {today: 'วันนี้', month: 'เดือน', week: 'สัปดาห์', day: 'วัน'},
     events: {url: '{% url "bookings:calendar_events" %}', extraParams: () => ({room: room.value, building: building.value})},
     select: function (info) {
@@ -38,6 +124,17 @@ document.addEventListener('DOMContentLoaded', function () {
   calendar.render();
   room.addEventListener('change', () => calendar.refetchEvents());
   building.addEventListener('change', () => calendar.refetchEvents());
+
+  const clock = document.getElementById('mission-clock');
+  if (clock) {
+    const tick = () => {
+      const d = new Date();
+      const z = n => String(n).padStart(2, '0');
+      clock.textContent = `${z(d.getHours())}:${z(d.getMinutes())}:${z(d.getSeconds())}`;
+    };
+    tick();
+    setInterval(tick, 1000);
+  }
 });
 </script>
 {% endblock %}

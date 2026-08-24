@@ -1,22 +1,44 @@
 {% extends "base.html" %}
 {% block title %}เข้าสู่ระบบ · SIGROOM{% endblock %}
 {% block content %}
-<section class="login-card">
-  <header>
-    <p class="eyebrow">โรงเรียนทหารสื่อสาร</p>
-    <h1>SIGROOM</h1>
-    <p>ระบบจองห้อง รร.ส.สส.</p>
-  </header>
-  <form method="post">
-    {% csrf_token %}
-    {% if form.errors %}<div class="notice error">ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง กรุณาลองอีกครั้ง</div>{% endif %}
-    <label for="id_username">ชื่อผู้ใช้</label>
-    <input id="id_username" name="username" autocomplete="username" required autofocus>
-    <label for="id_password">รหัสผ่าน</label>
-    <input id="id_password" name="password" type="password" autocomplete="current-password" required>
-    <input type="hidden" name="next" value="{{ next }}">
-    <button type="submit">เข้าสู่ระบบ</button>
-  </form>
-  <small>ลืมรหัสผ่าน กรุณาติดต่อผู้ดูแลระบบ</small>
-</section>
+<div class="auth-stage">
+  <div class="radar-bg" aria-hidden="true">
+    <svg viewBox="0 0 400 400">
+      <defs>
+        <linearGradient id="radar-sweep-fill" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0" stop-color="oklch(0.78 0.13 207 / 0)"/>
+          <stop offset="1" stop-color="oklch(0.78 0.13 207 / 0.28)"/>
+        </linearGradient>
+      </defs>
+      <g stroke="var(--line)" fill="none">
+        <circle cx="200" cy="200" r="70"/><circle cx="200" cy="200" r="120"/>
+        <circle cx="200" cy="200" r="170"/><line x1="200" y1="20" x2="200" y2="380"/>
+        <line x1="20" y1="200" x2="380" y2="200"/>
+        <line x1="72" y1="72" x2="328" y2="328"/><line x1="328" y1="72" x2="72" y2="328"/>
+      </g>
+      <path class="radar-sweep" d="M200 200 L200 30 A170 170 0 0 1 322 78 Z" fill="url(#radar-sweep-fill)"/>
+      <circle class="radar-blip" cx="262" cy="140" r="3" fill="var(--cyan)"/>
+      <circle class="radar-blip" cx="150" cy="255" r="2.5" fill="var(--cyan)" opacity=".6" style="animation-delay:1.4s"/>
+    </svg>
+  </div>
+  <section class="login-card">
+    <header>
+      <p class="eyebrow">โรงเรียนทหารสื่อสาร</p>
+      <h1>SIG<span class="brand-accent">ROOM</span></h1>
+      <p>ระบบจองและบริหารการใช้ห้อง รร.ส.สส.</p>
+      <div class="sysline">Secure · Internal Network</div>
+    </header>
+    <form method="post">
+      {% csrf_token %}
+      {% if form.errors %}<div id="login-error" class="notice error" role="alert">ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง กรุณาตรวจสอบแล้วลองอีกครั้ง</div>{% endif %}
+      <label for="id_username">ชื่อผู้ใช้</label>
+      <input id="id_username" name="username" autocomplete="username" required autofocus{% if form.errors %} aria-invalid="true" aria-describedby="login-error"{% endif %}>
+      <label for="id_password">รหัสผ่าน</label>
+      <input id="id_password" name="password" type="password" autocomplete="current-password" required{% if form.errors %} aria-invalid="true" aria-describedby="login-error"{% endif %}>
+      <input type="hidden" name="next" value="{{ next }}">
+      <button type="submit">เข้าสู่ระบบ</button>
+    </form>
+    <small class="muted-text">ลืมรหัสผ่านหรือลงชื่อเข้าใช้ไม่ได้ กรุณาติดต่อผู้ดูแลระบบของหน่วย</small>
+  </section>
+</div>
 {% endblock %}

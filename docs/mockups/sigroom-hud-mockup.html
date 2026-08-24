@@ -1,0 +1,435 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SIGROOM — Tactical HUD Mockup</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#070d14;            /* พื้นหลังลึกสุด */
+  --bg-grid:#0b141f;
+  --panel:#0d1622;         /* แผงหลัก */
+  --panel-2:#111d2c;       /* แผงยกระดับ */
+  --line:#1c2f44;          /* เส้นขอบบาง */
+  --line-bright:#2a4a6b;
+  --ink:#dbe7f3;           /* ตัวหนังสือหลัก */
+  --ink-dim:#8fa7bf;       /* รอง */
+  --ink-faint:#5a7290;     /* จาง */
+  --cyan:#35e0d2;          /* action / active */
+  --cyan-dim:rgba(53,224,210,.14);
+  --amber:#ffb347;         /* รออนุมัติ / เตือน */
+  --amber-dim:rgba(255,179,71,.13);
+  --green:#5ee98a;         /* สำเร็จ / ว่าง */
+  --green-dim:rgba(94,233,138,.12);
+  --red:#ff6b6b;           /* ปฏิเสธ / งดใช้ */
+  --red-dim:rgba(255,107,107,.12);
+  --mono:'JetBrains Mono',monospace;
+  --thai:'IBM Plex Sans Thai',system-ui,sans-serif;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{
+  font-family:var(--thai);color:var(--ink);background:var(--bg);
+  min-height:100vh;font-size:15px;line-height:1.55;
+  background-image:
+    linear-gradient(rgba(28,47,68,.28) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(28,47,68,.28) 1px,transparent 1px);
+  background-size:44px 44px;
+}
+/* ---------- สลับหน้า (เฉพาะ mockup) ---------- */
+.switcher{position:fixed;top:10px;right:10px;z-index:99;display:flex;gap:6px;background:var(--panel);border:1px solid var(--line);padding:5px;border-radius:6px}
+.switcher button{font-family:var(--thai);font-size:12px;padding:5px 12px;background:transparent;border:1px solid transparent;color:var(--ink-dim);cursor:pointer;border-radius:4px}
+.switcher button.on{color:var(--cyan);border-color:var(--cyan);background:var(--cyan-dim)}
+.page{display:none}.page.on{display:block}
+
+/* ---------- HUD primitives ---------- */
+.hud-panel{position:relative;background:var(--panel);border:1px solid var(--line)}
+.hud-panel::before,.hud-panel::after{content:"";position:absolute;width:14px;height:14px;pointer-events:none}
+.hud-panel::before{top:-1px;left:-1px;border-top:2px solid var(--cyan);border-left:2px solid var(--cyan)}
+.hud-panel::after{bottom:-1px;right:-1px;border-bottom:2px solid var(--cyan);border-right:2px solid var(--cyan)}
+.panel-head{display:flex;align-items:center;gap:10px;padding:12px 16px;border-bottom:1px solid var(--line)}
+.panel-head .tag{font-family:var(--mono);font-size:10px;letter-spacing:.18em;color:var(--cyan);text-transform:uppercase}
+.panel-head h2{font-size:16px;font-weight:600}
+.panel-head .spacer{flex:1}
+.panel-head a{color:var(--ink-dim);font-size:13px;text-decoration:none}
+.panel-head a:hover{color:var(--cyan)}
+.chip{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;font-weight:500;padding:3px 10px;border-radius:3px;border:1px solid}
+.chip .dot{width:7px;height:7px;border-radius:50%}
+.chip.wait{color:var(--amber);border-color:rgba(255,179,71,.4);background:var(--amber-dim)}
+.chip.wait .dot{background:var(--amber);box-shadow:0 0 6px var(--amber)}
+.chip.ok{color:var(--green);border-color:rgba(94,233,138,.4);background:var(--green-dim)}
+.chip.ok .dot{background:var(--green)}
+.chip.use{color:var(--cyan);border-color:rgba(53,224,210,.4);background:var(--cyan-dim)}
+.chip.use .dot{background:var(--cyan);box-shadow:0 0 6px var(--cyan);animation:pulse 1.6s infinite}
+.chip.off{color:var(--red);border-color:rgba(255,107,107,.4);background:var(--red-dim)}
+.chip.off .dot{background:var(--red)}
+@keyframes pulse{50%{opacity:.35}}
+.mono{font-family:var(--mono)}
+.btn{display:inline-flex;align-items:center;gap:8px;font-family:var(--thai);font-size:14.5px;font-weight:600;padding:10px 20px;border-radius:4px;cursor:pointer;text-decoration:none;border:1px solid transparent}
+.btn-primary{background:var(--cyan);color:#04211e}
+.btn-primary:hover{box-shadow:0 0 18px rgba(53,224,210,.45)}
+.btn-ghost{background:transparent;color:var(--cyan);border-color:var(--line-bright)}
+.btn-ghost:hover{border-color:var(--cyan);background:var(--cyan-dim)}
+
+/* ---------- LOGIN ---------- */
+#login{min-height:100vh;display:grid;place-items:center;position:relative;overflow:hidden}
+.radar{position:absolute;inset:0;display:grid;place-items:center;opacity:.5;pointer-events:none}
+.radar svg{width:min(120vmin,900px);height:min(120vmin,900px)}
+.sweep{transform-origin:center;animation:sweep 7s linear infinite}
+@keyframes sweep{to{transform:rotate(360deg)}}
+.login-card{position:relative;width:min(420px,92vw);padding:40px 36px 34px;background:rgba(13,22,34,.92);backdrop-filter:blur(3px)}
+.wordmark{display:flex;align-items:center;gap:14px;margin-bottom:6px}
+.wordmark .mark{width:46px;height:46px;flex:none}
+.wordmark h1{font-family:var(--mono);font-size:30px;font-weight:700;letter-spacing:.12em;color:#fff}
+.wordmark h1 .accent{color:var(--cyan)}
+.sub{color:var(--ink-dim);font-size:13.5px;margin-bottom:6px}
+.sysline{font-family:var(--mono);font-size:10px;letter-spacing:.22em;color:var(--ink-faint);text-transform:uppercase;display:flex;align-items:center;gap:8px;margin-bottom:26px}
+.sysline::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,var(--line-bright),transparent)}
+.field{margin-bottom:16px}
+.field label{display:block;font-size:13px;color:var(--ink-dim);margin-bottom:6px}
+.field input{width:100%;font-family:var(--thai);font-size:15px;color:var(--ink);background:var(--bg-grid);border:1px solid var(--line);border-radius:4px;padding:11px 13px;outline:none}
+.field input:focus{border-color:var(--cyan);box-shadow:0 0 0 2px var(--cyan-dim)}
+.login-card .btn{width:100%;justify-content:center;margin-top:8px}
+.login-foot{margin-top:22px;font-size:12px;color:var(--ink-faint);display:flex;justify-content:space-between}
+.login-foot .live{color:var(--green)}
+
+/* ---------- DASHBOARD ---------- */
+.topbar{position:sticky;top:0;z-index:50;background:rgba(7,13,20,.94);backdrop-filter:blur(6px);border-bottom:1px solid var(--line)}
+.topbar-in{max-width:1180px;margin:0 auto;display:flex;align-items:center;gap:22px;padding:0 20px;height:56px}
+.topbar .brand{display:flex;align-items:center;gap:10px;font-family:var(--mono);font-weight:700;letter-spacing:.1em;color:#fff;font-size:17px;text-decoration:none}
+.topbar .brand .mark{width:26px;height:26px}
+.topbar nav{display:flex;gap:2px}
+.topbar nav a{color:var(--ink-dim);text-decoration:none;font-size:14px;padding:7px 13px;border-radius:4px;border-bottom:2px solid transparent}
+.topbar nav a:hover{color:var(--ink);background:var(--panel-2)}
+.topbar nav a.now{color:var(--cyan);border-bottom-color:var(--cyan)}
+.topbar .spacer{flex:1}
+.bell{position:relative;color:var(--ink-dim);text-decoration:none;font-size:18px}
+.bell .n{position:absolute;top:-6px;right:-9px;font-family:var(--mono);font-size:10px;background:var(--amber);color:#3a2500;border-radius:8px;padding:1px 5px;font-weight:700}
+.userbox{font-size:13px;color:var(--ink-dim)}
+.userbox b{color:var(--ink);font-weight:500}
+
+.statusband{border-bottom:1px solid var(--line);background:linear-gradient(180deg,rgba(13,22,34,.7),transparent)}
+.statusband-in{max-width:1180px;margin:0 auto;padding:18px 20px 16px;display:flex;flex-wrap:wrap;gap:14px;align-items:stretch}
+.stat{flex:1;min-width:150px;position:relative;background:var(--panel);border:1px solid var(--line);padding:12px 16px 10px}
+.stat .lb{font-family:var(--mono);font-size:9.5px;letter-spacing:.18em;color:var(--ink-faint);text-transform:uppercase;display:block;margin-bottom:2px}
+.stat .v{font-family:var(--mono);font-size:30px;font-weight:700;line-height:1.1}
+.stat .v small{font-size:14px;color:var(--ink-faint);font-weight:400}
+.stat .d{font-size:12px;color:var(--ink-dim)}
+.stat.c-cyan .v{color:var(--cyan);text-shadow:0 0 14px rgba(53,224,210,.35)}
+.stat.c-amber .v{color:var(--amber);text-shadow:0 0 14px rgba(255,179,71,.3)}
+.stat.c-green .v{color:var(--green)}
+.stat.clock{flex:1.3}
+.stat.clock .v{font-size:30px;color:#fff}
+.stat.clock .d{color:var(--ink-dim)}
+.stat::before{content:"";position:absolute;top:-1px;left:-1px;width:10px;height:10px;border-top:2px solid var(--line-bright);border-left:2px solid var(--line-bright)}
+
+.wrap{max-width:1180px;margin:0 auto;padding:22px 20px 60px;display:grid;gap:20px}
+.quickrow{display:flex;gap:12px;flex-wrap:wrap;align-items:center}
+.quickrow .hint{font-size:13px;color:var(--ink-faint)}
+
+table{width:100%;border-collapse:collapse;font-size:14px}
+th{font-family:var(--mono);font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-faint);text-align:left;padding:10px 16px;border-bottom:1px solid var(--line)}
+td{padding:11px 16px;border-bottom:1px solid rgba(28,47,68,.55)}
+tr:hover td{background:rgba(53,224,210,.045)}
+td .who{color:var(--ink)}
+td .unit{font-size:12px;color:var(--ink-faint)}
+.sla{font-family:var(--mono);font-size:12.5px}
+.sla.hot{color:var(--amber)}
+.rowact{display:flex;gap:8px}
+.rowact a{font-size:13px;text-decoration:none;padding:5px 12px;border-radius:3px;border:1px solid var(--line-bright);color:var(--ink-dim)}
+.rowact a.ap{color:var(--green);border-color:rgba(94,233,138,.45)}
+.rowact a.ap:hover{background:var(--green-dim)}
+.rowact a:hover{color:var(--ink);border-color:var(--ink-dim)}
+
+/* timeline ปฏิทินวันนี้ */
+.tl{padding:18px 16px 22px;overflow-x:auto}
+.tl-grid{min-width:760px;display:grid;grid-template-columns:120px 1fr;row-gap:10px;position:relative}
+.tl-hours{grid-column:2;display:grid;grid-template-columns:repeat(10,1fr);margin-bottom:2px}
+.tl-hours span{font-family:var(--mono);font-size:10px;color:var(--ink-faint)}
+.tl-room{font-size:13px;color:var(--ink-dim);display:flex;flex-direction:column;justify-content:center}
+.tl-room b{font-family:var(--mono);font-size:12.5px;color:var(--ink);font-weight:500}
+.tl-track{position:relative;height:34px;background:var(--bg-grid);border:1px solid var(--line);border-radius:3px;background-image:linear-gradient(90deg,rgba(28,47,68,.5) 1px,transparent 1px);background-size:10% 100%}
+.blk{position:absolute;top:3px;bottom:3px;border-radius:2px;font-size:11.5px;display:flex;align-items:center;padding:0 8px;white-space:nowrap;overflow:hidden;border:1px solid}
+.blk.use{background:var(--cyan-dim);border-color:rgba(53,224,210,.5);color:var(--cyan)}
+.blk.ok{background:var(--green-dim);border-color:rgba(94,233,138,.4);color:var(--green)}
+.blk.wait{background:var(--amber-dim);border-color:rgba(255,179,71,.45);color:var(--amber);background-image:repeating-linear-gradient(45deg,transparent 0 6px,rgba(255,179,71,.08) 6px 12px)}
+.blk.off{background:var(--red-dim);border-color:rgba(255,107,107,.4);color:var(--red)}
+.nowline{position:absolute;top:26px;bottom:0;left:calc(120px + (1fr));width:0;pointer-events:none}
+.nowline-abs{position:absolute;top:-4px;bottom:-6px;width:2px;background:var(--cyan);box-shadow:0 0 10px var(--cyan);z-index:5}
+.nowline-abs::before{content:"ขณะนี้ 10:42";position:absolute;top:-18px;left:-32px;font-family:var(--mono);font-size:10px;color:var(--cyan);white-space:nowrap}
+.legend{display:flex;gap:16px;flex-wrap:wrap;padding:0 16px 14px;font-size:12px;color:var(--ink-dim)}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:6px;vertical-align:-1px}
+
+.grid2{display:grid;grid-template-columns:1.35fr 1fr;gap:20px}
+@media(max-width:860px){.grid2{grid-template-columns:1fr}.topbar nav{display:none}}
+.mylist{list-style:none}
+.mylist li{display:flex;gap:14px;padding:13px 16px;border-bottom:1px solid rgba(28,47,68,.55);align-items:center}
+.mylist .when{font-family:var(--mono);font-size:12.5px;color:var(--cyan);width:92px;flex:none;line-height:1.4}
+.mylist .when small{display:block;color:var(--ink-faint)}
+.mylist .what{flex:1}
+.mylist .what b{font-weight:600;color:var(--ink)}
+.mylist .what span{display:block;font-size:12.5px;color:var(--ink-faint)}
+.empty{padding:26px 16px;text-align:center;color:var(--ink-faint);font-size:13.5px}
+.empty a{color:var(--cyan)}
+</style>
+</head>
+<body>
+
+<div class="switcher">
+  <button class="on" onclick="go('dash',this)">หน้าแรก</button>
+  <button onclick="go('login',this)">หน้า Login</button>
+</div>
+
+<!-- ==================== LOGIN ==================== -->
+<section id="login" class="page">
+  <div class="radar" aria-hidden="true">
+    <svg viewBox="0 0 400 400">
+      <defs>
+        <linearGradient id="swp" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0" stop-color="rgba(53,224,210,0)"/>
+          <stop offset="1" stop-color="rgba(53,224,210,.28)"/>
+        </linearGradient>
+      </defs>
+      <g stroke="#1c2f44" fill="none">
+        <circle cx="200" cy="200" r="70"/><circle cx="200" cy="200" r="120"/>
+        <circle cx="200" cy="200" r="170"/><line x1="200" y1="20" x2="200" y2="380"/>
+        <line x1="20" y1="200" x2="380" y2="200"/>
+        <line x1="72" y1="72" x2="328" y2="328"/><line x1="328" y1="72" x2="72" y2="328"/>
+      </g>
+      <path class="sweep" d="M200 200 L200 30 A170 170 0 0 1 322 78 Z" fill="url(#swp)"/>
+      <circle cx="262" cy="140" r="3" fill="#35e0d2"><animate attributeName="opacity" values="1;.1;1" dur="3s" repeatCount="indefinite"/></circle>
+      <circle cx="150" cy="255" r="2.5" fill="#35e0d2" opacity=".6"><animate attributeName="opacity" values=".6;.05;.6" dur="4s" repeatCount="indefinite"/></circle>
+    </svg>
+  </div>
+  <div class="login-card hud-panel">
+    <div class="wordmark">
+      <svg class="mark" viewBox="0 0 48 48" aria-hidden="true">
+        <rect x="2" y="2" width="44" height="44" fill="none" stroke="#35e0d2" stroke-width="2"/>
+        <path d="M8 30 L15 30 L19 18 L24 36 L29 24 L33 30 L40 30" fill="none" stroke="#35e0d2" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <h1>SIG<span class="accent">ROOM</span></h1>
+    </div>
+    <p class="sub">ระบบจองและบริหารการใช้ห้อง โรงเรียนทหารสื่อสาร</p>
+    <div class="sysline">Secure · Internal Network</div>
+    <form onsubmit="return false">
+      <div class="field">
+        <label>ชื่อผู้ใช้</label>
+        <input type="text" placeholder="เช่น somchai">
+      </div>
+      <div class="field">
+        <label>รหัสผ่าน</label>
+        <input type="password" placeholder="••••••••••">
+      </div>
+      <button class="btn btn-primary">เข้าสู่ระบบ</button>
+    </form>
+    <div class="login-foot">
+      <span>ลืมรหัสผ่าน ติดต่อเจ้าหน้าที่ธุรการ</span>
+      <span class="mono live">● ONLINE</span>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== DASHBOARD ==================== -->
+<section id="dash" class="page on">
+  <header class="topbar">
+    <div class="topbar-in">
+      <a class="brand" href="#">
+        <svg class="mark" viewBox="0 0 48 48" aria-hidden="true">
+          <rect x="2" y="2" width="44" height="44" fill="none" stroke="#35e0d2" stroke-width="3"/>
+          <path d="M8 30 L15 30 L19 18 L24 36 L29 24 L33 30 L40 30" fill="none" stroke="#35e0d2" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        SIGROOM
+      </a>
+      <nav>
+        <a class="now" href="#">หน้าแรก</a>
+        <a href="#">ค้นหา/จองห้อง</a>
+        <a href="#">การจองของฉัน</a>
+        <a href="#">คิวอนุมัติ</a>
+        <a href="#">รายงาน</a>
+      </nav>
+      <div class="spacer"></div>
+      <a class="bell" href="#">🔔<span class="n">3</span></a>
+      <div class="userbox">ร.อ. <b>วนิดา มั่นคง</b> · กศว.</div>
+    </div>
+  </header>
+
+  <div class="statusband">
+    <div class="statusband-in">
+      <div class="stat clock">
+        <span class="lb">Mission Clock</span>
+        <div class="v mono" id="clk">10:42:07</div>
+        <div class="d">จันทร์ 24 สิงหาคม 2569</div>
+      </div>
+      <div class="stat c-cyan">
+        <span class="lb">กำลังใช้งาน</span>
+        <div class="v">3<small>/8 ห้อง</small></div>
+        <div class="d">MTG-1 · LAB-2 · TRN-1</div>
+      </div>
+      <div class="stat c-amber">
+        <span class="lb">รออนุมัติ</span>
+        <div class="v">4<small> รายการ</small></div>
+        <div class="d">เร่งด่วนภายใน 4 ชม. — 1</div>
+      </div>
+      <div class="stat c-green">
+        <span class="lb">ว่างตอนนี้</span>
+        <div class="v">5<small> ห้อง</small></div>
+        <div class="d">พร้อมจองทันที</div>
+      </div>
+    </div>
+  </div>
+
+  <main class="wrap">
+
+    <div class="quickrow">
+      <a class="btn btn-primary" href="#">⊕ จองห้องด่วน</a>
+      <a class="btn btn-ghost" href="#">ดูปฏิทินรวม</a>
+      <span class="hint">กด "จองด่วน" เลือกห้องว่างตอนนี้ได้ใน 2 ขั้น</span>
+    </div>
+
+    <!-- คิวอนุมัติ -->
+    <section class="hud-panel">
+      <div class="panel-head">
+        <span class="tag">Queue</span>
+        <h2>คิวรออนุมัติของคุณ</h2>
+        <span class="chip wait"><span class="dot"></span>4 รายการ</span>
+        <div class="spacer"></div>
+        <a href="#">ไปหน้าคิวทั้งหมด →</a>
+      </div>
+      <div style="overflow-x:auto">
+      <table>
+        <thead><tr>
+          <th>ห้อง / ช่วงเวลา</th><th>ผู้ขอ</th><th>ประเภท</th><th>SLA คงเหลือ</th><th></th>
+        </tr></thead>
+        <tbody>
+          <tr>
+            <td><b class="mono">MTG-1</b> · <span class="mono">พรุ่งนี้ 09:00–12:00</span></td>
+            <td><span class="who">ร.อ. สมชาย ใจดี</span><div class="unit">กสส.</div></td>
+            <td>ประชุมหน่วย</td>
+            <td class="sla hot">⏱ 03:12 ชม.</td>
+            <td><div class="rowact"><a class="ap" href="#">อนุมัติ</a><a href="#">ดู</a></div></td>
+          </tr>
+          <tr>
+            <td><b class="mono">MTG-1</b> · <span class="mono">พฤ. 27 ส.ค. 13:00–16:00</span></td>
+            <td><span class="who">จ.ส.อ. ปรีชา กล้าหาญ</span><div class="unit">กปก.</div></td>
+            <td>ฝึกอบรม (ชุด 4 ครั้ง)</td>
+            <td class="sla">⏱ 21:40 ชม.</td>
+            <td><div class="rowact"><a class="ap" href="#">อนุมัติ</a><a href="#">ดู</a></div></td>
+          </tr>
+          <tr>
+            <td><b class="mono">MTG-1</b> · <span class="mono">ศ. 28 ส.ค. 09:00–11:00</span></td>
+            <td><span class="who">ร.ท. อารีย์ สื่อสัตย์</span><div class="unit">กศว.</div></td>
+            <td>ขอแก้ไขการจอง</td>
+            <td class="sla">⏱ 46:05 ชม.</td>
+            <td><div class="rowact"><a class="ap" href="#">อนุมัติ</a><a href="#">ดู</a></div></td>
+          </tr>
+        </tbody>
+      </table>
+      </div>
+    </section>
+
+    <div class="grid2">
+      <!-- ปฏิทินวันนี้ -->
+      <section class="hud-panel">
+        <div class="panel-head">
+          <span class="tag">Today</span>
+          <h2>สถานการณ์ห้องวันนี้</h2>
+          <div class="spacer"></div>
+          <a href="#">ปฏิทินเต็ม →</a>
+        </div>
+        <div class="tl">
+          <div class="tl-grid" style="position:relative">
+            <div></div>
+            <div class="tl-hours">
+              <span>08</span><span>09</span><span>10</span><span>11</span><span>12</span><span>13</span><span>14</span><span>15</span><span>16</span><span>17</span>
+            </div>
+
+            <div class="tl-room"><b>MTG-1</b>ห้องประชุม 1</div>
+            <div class="tl-track">
+              <div class="blk use" style="left:12%;width:26%">ประชุม กสส. · กำลังใช้</div>
+              <div class="blk wait" style="left:52%;width:20%">รออนุมัติ</div>
+            </div>
+
+            <div class="tl-room"><b>MTG-CO</b>ห้อง ผบ.</div>
+            <div class="tl-track">
+              <div class="blk ok" style="left:62%;width:28%">บรรยายสรุป ผบ.</div>
+            </div>
+
+            <div class="tl-room"><b>LAB-2</b>ห้องปฏิบัติการ 2</div>
+            <div class="tl-track">
+              <div class="blk use" style="left:2%;width:48%">ฝึกอบรม EW · กำลังใช้</div>
+            </div>
+
+            <div class="tl-room"><b>TRN-1</b>ห้องเรียนรวม</div>
+            <div class="tl-track">
+              <div class="blk use" style="left:22%;width:18%">นนส. รุ่น 58</div>
+              <div class="blk ok" style="left:64%;width:24%">สอบวัดผล</div>
+            </div>
+
+            <div class="tl-room"><b>LAB-1</b>ห้องปฏิบัติการ 1</div>
+            <div class="tl-track">
+              <div class="blk off" style="left:0;width:100%">งดใช้ — ซ่อมเครื่องปรับอากาศ</div>
+            </div>
+
+            <div class="nowline-abs" style="left:calc(120px + (100% - 120px)*0.287)"></div>
+          </div>
+        </div>
+        <div class="legend">
+          <span><i style="background:var(--cyan)"></i>กำลังใช้</span>
+          <span><i style="background:var(--green)"></i>อนุมัติแล้ว</span>
+          <span><i style="background:var(--amber)"></i>รออนุมัติ</span>
+          <span><i style="background:var(--red)"></i>งดใช้</span>
+        </div>
+      </section>
+
+      <!-- การจองของฉัน -->
+      <section class="hud-panel">
+        <div class="panel-head">
+          <span class="tag">My Bookings</span>
+          <h2>การจองถัดไปของคุณ</h2>
+          <div class="spacer"></div>
+          <a href="#">ทั้งหมด →</a>
+        </div>
+        <ul class="mylist">
+          <li>
+            <div class="when">พรุ่งนี้<small>13:00–15:00</small></div>
+            <div class="what"><b>ประชุมเตรียมการฝึก</b><span>MTG-1 · ห้องประชุม 1</span></div>
+            <span class="chip ok"><span class="dot"></span>อนุมัติแล้ว</span>
+          </li>
+          <li>
+            <div class="when">พ. 26 ส.ค.<small>09:00–12:00</small></div>
+            <div class="what"><b>สอนวิชา EMSO</b><span>TRN-1 · ห้องเรียนรวม</span></div>
+            <span class="chip wait"><span class="dot"></span>รออนุมัติ</span>
+          </li>
+          <li>
+            <div class="when">ศ. 28 ส.ค.<small>13:00–16:00</small></div>
+            <div class="what"><b>ประชุมชุดวิชา (ครั้ง 2/4)</b><span>MTG-1 · ห้องประชุม 1</span></div>
+            <span class="chip ok"><span class="dot"></span>อนุมัติแล้ว</span>
+          </li>
+        </ul>
+        <div class="empty" style="border-top:1px solid var(--line)">
+          วางแผนสัปดาห์หน้าไว้ก่อน — <a href="#">จองล่วงหน้าได้ถึง 60 วัน</a>
+        </div>
+      </section>
+    </div>
+
+  </main>
+</section>
+
+<script>
+function go(id,btn){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('on'));
+  document.getElementById(id).classList.add('on');
+  document.querySelectorAll('.switcher button').forEach(b=>b.classList.remove('on'));
+  btn.classList.add('on');
+}
+/* mission clock เดินจริง */
+setInterval(()=>{
+  const d=new Date();
+  const z=n=>String(n).padStart(2,'0');
+  const el=document.getElementById('clk');
+  if(el)el.textContent=`${z(d.getHours())}:${z(d.getMinutes())}:${z(d.getSeconds())}`;
+},1000);
+</script>
+</body>
+</html>

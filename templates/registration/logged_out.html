@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}ออกจากระบบแล้ว · SIGROOM{% endblock %}
+{% block content %}
+<div class="auth-stage">
+  <div class="radar-bg" aria-hidden="true">
+    <svg viewBox="0 0 400 400">
+      <g stroke="var(--line)" fill="none">
+        <circle cx="200" cy="200" r="70"/><circle cx="200" cy="200" r="120"/>
+        <circle cx="200" cy="200" r="170"/><line x1="200" y1="20" x2="200" y2="380"/>
+        <line x1="20" y1="200" x2="380" y2="200"/>
+      </g>
+    </svg>
+  </div>
+  <section class="login-card">
+    <p class="eyebrow">สิ้นสุดการใช้งาน</p>
+    <h1>ออกจากระบบแล้ว</h1>
+    <div class="sysline">Session Closed</div>
+    <p>เซสชันของคุณสิ้นสุดเรียบร้อย คุณสามารถปิดหน้าต่างนี้หรือเข้าสู่ระบบอีกครั้ง</p>
+    <a role="button" href="{% url 'login' %}">เข้าสู่ระบบอีกครั้ง</a>
+  </section>
+</div>
+{% endblock %}

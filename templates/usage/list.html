@@ -2,11 +2,10 @@
 {% load thaidate %}
 {% block title %}การใช้งานห้อง — SIGROOM{% endblock %}
 {% block content %}
-<h1>การใช้งานห้อง</h1>
-<p>รายการที่สิ้นสุดในวันนี้และ 3 วันที่ผ่านมา เจ้าหน้าที่แก้สถานะได้ไม่เกิน 3 วันหลังวันใช้ห้อง</p>
+<div class="page-heading"><div><p class="eyebrow">งานเจ้าหน้าที่ดูแลห้อง</p><h1>บันทึกการใช้งานห้อง</h1><p>รายการที่สิ้นสุดในวันนี้และ 3 วันที่ผ่านมา แก้สถานะได้ไม่เกิน 3 วันหลังวันใช้ห้อง</p></div></div>
 {% if bookings %}
 <div class="table-scroll">
-  <table>
+  <table><caption class="visually-hidden">รายการรอบใช้ห้องที่บันทึกสถานะได้</caption>
     <thead><tr><th>วันเวลา</th><th>ห้อง</th><th>ผู้จอง / หน่วย</th><th>สถานะ</th><th>บันทึก</th></tr></thead>
     <tbody>
     {% for booking in bookings %}
@@ -14,7 +13,7 @@
         <td>{{ booking.start_at|thai_datetime }}–{{ booking.end_at|date:"H:i" }}</td>
         <td>{{ booking.room.code }} {{ booking.room.name }}</td>
         <td>{{ booking.requester.display_name }}{% if booking.unit %}<br><small>{{ booking.unit.code }}</small>{% endif %}</td>
-        <td>{{ booking.get_usage_status_display }}</td>
+        <td><span class="status status-{{ booking.usage_status }}">{{ booking.get_usage_status_display }}</span></td>
         <td>
           {% if booking.usage_change_open %}
           <form method="post" action="{% url 'usage:update' booking.pk %}" class="inline-actions">
@@ -29,5 +28,5 @@
     </tbody>
   </table>
 </div>
-{% else %}<p class="notice">ไม่มีรายการที่ต้องบันทึกในช่วงนี้</p>{% endif %}
+{% else %}<div class="empty-state detail-card"><strong>ไม่มีรายการที่ต้องบันทึกในช่วงนี้</strong>รายการที่สิ้นสุดแล้วจะปรากฏที่นี่และแก้ไขได้ภายใน 3 วัน</div>{% endif %}
 {% endblock %}

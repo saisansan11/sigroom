@@ -15,9 +15,9 @@
     {% for field in form %}<label{% if field.name == 'equipment' or field.name == 'reason' %} class="wide"{% endif %}>{{ field.label }}{{ field }}{{ field.errors }}{% if field.help_text %}<small>{{ field.help_text }}</small>{% endif %}</label>{% endfor %}
   </div>
   {% if policy_required %}
-    <div class="notice warning">🕒 การแก้ไขนี้ต้องผ่านผู้อนุมัติของห้องปลายทาง</div>
+    <div class="notice warning">การแก้ไขนี้ต้องผ่านผู้อนุมัติของห้องปลายทาง</div>
   {% else %}
-    <div class="notice success">✅ การแก้ไขนี้มีผลทันทีเมื่อกดส่ง หากข้อมูลปลายทางยังว่าง</div>
+    <div class="notice success">การแก้ไขนี้มีผลทันทีเมื่อกดส่ง หากข้อมูลปลายทางยังว่าง</div>
   {% endif %}
   <div class="notice warning">ระหว่างรอผล ช่วงเวลาใหม่จะถูกกันไว้ชั่วคราว และช่วงเวลาเดิมยังเป็นของคุณ</div>
   <div class="form-actions"><button type="submit">ส่งคำขอแก้ไข</button><a role="button" class="secondary" href="{% url 'bookings:booking_detail' booking.id %}">ยกเลิก</a></div>

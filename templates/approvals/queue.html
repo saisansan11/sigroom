@@ -3,7 +3,7 @@
 {% block title %}คิวรออนุมัติ · SIGROOM{% endblock %}
 {% block content %}
 <div class="page-heading">
-  <div><p class="eyebrow">ระบบอนุมัติ</p><h1>รายการรอการอนุมัติของฉัน</h1><p>เรียงรายการที่ใกล้วันใช้งานก่อน</p></div>
+  <div><p class="eyebrow">ระบบอนุมัติ</p><h1>รายการรอการอนุมัติของฉัน</h1><p>มี {{ bookings|length }} รายการ · เรียงรายการที่ใกล้วันใช้งานก่อน</p></div>
   {% if can_delegate %}<a class="secondary" role="button" href="{% url 'approvals:delegation' %}">ตั้งผู้รักษาการ</a>{% endif %}
 </div>
 <datalist id="rejection-reasons">
@@ -62,7 +62,7 @@
     {% endif %}
   </article>
 {% empty %}
-  <div class="empty-state detail-card">ไม่มีคำขอรออนุมัติ</div>
+  <div class="empty-state detail-card"><strong>คิวอนุมัติเรียบร้อย</strong>ขณะนี้ไม่มีคำขอที่ต้องพิจารณา</div>
 {% endfor %}
 </div>
 {% endblock %}
