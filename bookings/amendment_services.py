@@ -6,6 +6,7 @@ from django.db import IntegrityError, transaction
 from django.utils import timezone
 
 from approvals.models import Approval
+from audit.services import audit
 from notifications.services import booking_summary, notify
 from resources.models import Resource, ResourceRule
 
@@ -200,6 +201,7 @@ def submit_amendment(booking: Booking, user, proposed, now: datetime | None = No
         locked.start_at, values["start_at"]
     ) < _urgent_deadline(now)
     amendment.save(update_fields=["is_urgent"])
+    audit(user, "bookings.bookingamendment", amendment.pk, "amendment_submitted", after={"status": amendment.status, "booking_id": str(locked.pk)})
 
     if policy == ResourceRule.ApprovalPolicy.AUTO:
         return apply_amendment(amendment, user, None, now)
@@ -297,6 +299,7 @@ def apply_amendment(
         acted_by=acted_by,
         on_behalf_of=on_behalf_of,
     )
+    audit(acted_by, "bookings.bookingamendment", locked_amendment.pk, "amendment_approved", before={"status": BookingAmendment.Status.PENDING}, after={"status": locked_amendment.status})
     recipients = {item.pk: item for item in [booking.requester, *old_room.custodians.all(), *final_room.custodians.all()]}
     notify(
         recipients.values(),
@@ -341,6 +344,7 @@ def withdraw_amendment(
         acted_by=user,
         reason=locked.decision_reason,
     )
+    audit(user, "bookings.bookingamendment", locked.pk, "amendment_withdrawn", before={"status": BookingAmendment.Status.PENDING}, after={"status": locked.status, "reason": locked.decision_reason})
     notify(
         [locked.submitted_by],
         f"ถอนคำขอแก้ไข {amendment_ref(locked)} แล้ว",
@@ -383,6 +387,7 @@ def reject_amendment(
         on_behalf_of=on_behalf_of_for(user, locked, now),
         reason=reason,
     )
+    audit(user, "bookings.bookingamendment", locked.pk, "amendment_rejected", before={"status": BookingAmendment.Status.PENDING}, after={"status": locked.status, "reason": reason})
     notify(
         [locked.submitted_by],
         f"คำขอแก้ไข {amendment_ref(locked)} ถูกปฏิเสธ: {reason}",
@@ -409,6 +414,7 @@ def expire_amendment(amendment: BookingAmendment, now: datetime | None = None) -
         action=Approval.Action.EXPIRED,
         reason=locked.decision_reason,
     )
+    audit(None, "bookings.bookingamendment", locked.pk, "amendment_expired", before={"status": BookingAmendment.Status.PENDING}, after={"status": locked.status})
     notify(
         [locked.submitted_by],
         f"คำขอแก้ไข {amendment_ref(locked)} หมดอายุแล้ว การจองเดิมยังคงอยู่",

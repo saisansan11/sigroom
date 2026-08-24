@@ -48,6 +48,11 @@ class User(AbstractUser):
     is_infosec_officer = models.BooleanField(
         "เจ้าหน้าที่ความมั่นคงสารสนเทศ", default=False, help_text="จัดกิจกรรมเป็นข้อมูลอ่อนไหวได้ (SRS SR-07)"
     )
+    must_change_password = models.BooleanField(
+        "ต้องเปลี่ยนรหัสผ่านเมื่อเข้าสู่ระบบครั้งถัดไป",
+        default=False,
+        help_text="ใช้กับบัญชีที่นำเข้าและบัญชีทดลอง ห้ามปิดจนกว่าผู้ใช้จะตั้งรหัสผ่านของตนเอง",
+    )
 
     REQUIRED_FIELDS = ["email"]
 

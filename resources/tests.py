@@ -1,6 +1,7 @@
 from datetime import datetime, time
 
 import pytest
+from django.core.exceptions import ValidationError
 from django.urls import reverse
 from django.utils import timezone
 
@@ -125,3 +126,12 @@ def test_calendar_returns_blackout_and_selected_room_outage_as_background(client
     backgrounds = {item["title"]: item for item in events if item.get("display") == "background"}
     assert "วันหยุดส่วนกลาง (ทุกห้อง)" in backgrounds
     assert "งดใช้: ซ่อมแอร์" in backgrounds
+
+
+def test_resource_rule_rejects_cross_midnight_service_hours(resource_setup):
+    room = resource_setup[3]
+    rule = room.rule
+    rule.service_start = time(22, 0)
+    rule.service_end = time(6, 0)
+    with pytest.raises(ValidationError):
+        rule.full_clean()

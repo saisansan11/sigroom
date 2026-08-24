@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block title %}รายงาน — SIGROOM{% endblock %}
+{% block content %}
+<h1>รายงาน</h1>
+{% if error %}<div class="notice error">{{ error }}</div>{% endif %}
+<form method="get" class="filter-grid">
+  <label>เดือน (พ.ศ.)<input name="month" value="{{ month_value }}" placeholder="2569-08"></label>
+  <label>ห้อง<select name="room"><option value="">ทุกห้องที่มีสิทธิ์</option>{% for room in rooms %}<option value="{{ room.code }}"{% if selected_room == room.code %} selected{% endif %}>{{ room.code }} {{ room.name }}</option>{% endfor %}</select></label>
+  <label>หน่วย<select name="unit"><option value="">ทุกหน่วย</option>{% for unit in units %}<option value="{{ unit.pk }}"{% if selected_unit == unit.pk %} selected{% endif %}>{{ unit.code }} {{ unit.name }}</option>{% endfor %}</select></label>
+  <button type="submit">กรองรายงาน</button>
+</form>
+
+<section><div class="section-heading"><h2>1. อัตราการใช้ห้อง</h2><a role="button" class="secondary" href="?month={{ month_value }}&room={{ selected_room }}&unit={{ selected_unit|default:'' }}&format=csv&report=room_usage">CSV</a></div>
+<div class="table-scroll"><table><thead><tr><th>ห้อง</th><th>ประเภท</th><th>หน่วย</th><th>ใช้จริง (ชม.)</th><th>อนุมัติ (ชม.)</th><th>ให้บริการ (ชม.)</th><th>ใช้จริง</th><th>อนุมัติ</th></tr></thead><tbody>{% for row in reports.room_usage %}<tr><td>{{ row.room }}</td><td>{{ row.purpose }}</td><td>{{ row.unit }}</td><td>{{ row.used_hours }}</td><td>{{ row.approved_hours }}</td><td>{{ row.service_hours }}</td><td>{{ row.used_rate }}%</td><td>{{ row.approved_rate }}%</td></tr>{% empty %}<tr><td colspan="8">ไม่มีข้อมูล</td></tr>{% endfor %}</tbody></table></div></section>
+
+<section><div class="section-heading"><h2>2. ยกเลิกและไม่มาใช้</h2><a role="button" class="secondary" href="?month={{ month_value }}&room={{ selected_room }}&unit={{ selected_unit|default:'' }}&format=csv&report=cancellation">CSV</a></div>
+<div class="table-scroll"><table><thead><tr><th>หน่วย</th><th>บุคคล</th><th>ทั้งหมด</th><th>ยกเลิก</th><th>ไม่มาใช้</th><th>อัตรารวม</th></tr></thead><tbody>{% for row in reports.cancellation %}<tr><td>{{ row.unit }}</td><td>{{ row.person }}</td><td>{{ row.total }}</td><td>{{ row.cancelled }} ({{ row.cancelled_rate }}%)</td><td>{{ row.no_show }} ({{ row.no_show_rate }}%)</td><td>{{ row.combined_rate }}%</td></tr>{% empty %}<tr><td colspan="6">ไม่มีข้อมูล</td></tr>{% endfor %}</tbody></table></div></section>
+
+<section><div class="section-heading"><h2>3. การอนุมัติ</h2><a role="button" class="secondary" href="?month={{ month_value }}&room={{ selected_room }}&unit={{ selected_unit|default:'' }}&format=csv&report=approval">CSV</a></div>
+<div class="table-scroll"><table><thead><tr><th>ผู้อนุมัติ</th><th>ตัดสิน</th><th>เฉลี่ย (ชม.)</th><th>เกิน SLA</th><th>หมดอายุ</th></tr></thead><tbody>{% for row in reports.approval %}<tr><td>{{ row.approver }}</td><td>{{ row.decisions }}</td><td>{{ row.average_hours }}</td><td>{{ row.over_sla }}</td><td>{{ row.expired }}</td></tr>{% empty %}<tr><td colspan="5">ไม่มีข้อมูล</td></tr>{% endfor %}</tbody></table></div></section>
+
+<section><div class="section-heading"><h2>4. บังคับย้าย</h2><a role="button" class="secondary" href="?month={{ month_value }}&room={{ selected_room }}&unit={{ selected_unit|default:'' }}&format=csv&report=preemption">CSV</a></div>
+<div class="table-scroll"><table><thead><tr><th>วันเวลา</th><th>ห้อง</th><th>การจอง</th><th>เลขอ้างอิง</th><th>ผู้สั่ง</th><th>รับทราบ</th></tr></thead><tbody>{% for row in reports.preemption %}<tr><td>{{ row.at }}</td><td>{{ row.room }}</td><td>{{ row.booking }}</td><td>{{ row.reference_no }}</td><td>{{ row.ordered_by }}</td><td>{{ row.acknowledged }}</td></tr>{% empty %}<tr><td colspan="6">ไม่มีข้อมูล</td></tr>{% endfor %}</tbody></table></div></section>
+
+<section><div class="section-heading"><h2>5. อุปกรณ์ส่วนกลาง</h2><a role="button" class="secondary" href="?month={{ month_value }}&room={{ selected_room }}&unit={{ selected_unit|default:'' }}&format=csv&report=equipment">CSV</a></div>
+<p><small>ข้อจำกัด pilot: ยังไม่เก็บจำนวนครั้งที่ค้นหาแล้วอุปกรณ์ชน และยังไม่มี PDF</small></p>
+<div class="table-scroll"><table><thead><tr><th>อุปกรณ์</th><th>จำนวนครั้ง</th><th>ชั่วโมง</th></tr></thead><tbody>{% for row in reports.equipment %}<tr><td>{{ row.equipment }}</td><td>{{ row.uses }}</td><td>{{ row.hours }}</td></tr>{% empty %}<tr><td colspan="3">ไม่มีข้อมูล</td></tr>{% endfor %}</tbody></table></div></section>
+{% endblock %}

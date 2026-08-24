@@ -6,4 +6,6 @@ __pycache__/
 /staticfiles/
 /media/
 .pytest_cache/
+/backups/
+/imported-users-*.csv
 docs/room-booking-srs.standalone.html

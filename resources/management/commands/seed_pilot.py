@@ -89,10 +89,12 @@ class Command(BaseCommand):
                         "unit": units[unit_code],
                     },
                 )
-                user.set_password("Demo-Sigroom-2569")
-                user.save()
+                if created:
+                    user.set_password("Demo-Sigroom-2569")
+                    user.must_change_password = True
+                    user.save()
                 users[username] = user
-                self.stdout.write(f"{'สร้าง' if created else 'อัปเดต'} บัญชีทดลอง {username}")
+                self.stdout.write(f"{'สร้าง' if created else 'มีแล้ว (ไม่เปลี่ยนรหัส)'} บัญชีทดลอง {username}")
 
             meeting_room = Resource.objects.get(code="MTG-1")
             ResourceApprover.objects.update_or_create(

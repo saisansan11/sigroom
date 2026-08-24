@@ -5,6 +5,7 @@
 อุปกรณ์ส่วนกลางไม่มีผู้อนุมัติ (ระยะที่ 1)
 """
 from django.conf import settings
+from django.core.exceptions import ValidationError
 from django.db import models
 
 
@@ -82,6 +83,11 @@ class ResourceRule(models.Model):
     class Meta:
         verbose_name = "กฎรายห้อง"
         verbose_name_plural = "กฎรายห้อง"
+
+    def clean(self):
+        super().clean()
+        if self.service_start and self.service_end and self.service_end <= self.service_start:
+            raise ValidationError({"service_end": "เวลาปิดให้บริการต้องอยู่หลังเวลาเปิดในวันเดียวกัน"})
 
     def __str__(self) -> str:
         return f"กฎของ {self.resource.code}"

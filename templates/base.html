@@ -19,6 +19,8 @@
           <li><a href="{% url 'bookings:book_search' %}">จองห้อง</a></li>
           <li><a href="{% url 'bookings:my_bookings' %}">การจองของฉัน</a></li>
           {% if nav_can_access_approvals %}<li><a href="{% url 'approvals:queue' %}">รออนุมัติ ({{ nav_pending_approval_count }})</a></li>{% endif %}
+          {% if nav_can_manage_usage %}<li><a href="{% url 'usage:list' %}">การใช้งานห้อง</a></li>{% endif %}
+          {% if nav_can_access_reports %}<li><a href="{% url 'reports:dashboard' %}">รายงาน</a></li>{% endif %}
         </ul>
         <ul>
           <li><a class="notification-link" href="{% url 'notifications:list' %}" aria-label="การแจ้งเตือน">🔔{% if nav_unread_count %}<span class="notification-count">{{ nav_unread_count }}</span>{% endif %}</a></li>

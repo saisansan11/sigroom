@@ -20,9 +20,9 @@ class UserAdmin(DjangoUserAdmin):
     fieldsets = (
         (None, {"fields": ("username", "password")}),
         ("ข้อมูลกำลังพล", {"fields": ("rank", "first_name", "last_name", "service_number", "position", "phone", "email", "unit")}),
-        ("สิทธิ์", {"fields": ("is_active", "is_staff", "is_superuser", "is_infosec_officer", "groups", "user_permissions")}),
+        ("สิทธิ์", {"fields": ("is_active", "is_staff", "is_superuser", "is_infosec_officer", "must_change_password", "groups", "user_permissions")}),
         ("วันที่", {"fields": ("last_login", "date_joined")}),
     )
     add_fieldsets = (
-        (None, {"classes": ("wide",), "fields": ("username", "email", "rank", "first_name", "last_name", "unit", "password1", "password2")}),
+        (None, {"classes": ("wide",), "fields": ("username", "email", "rank", "first_name", "last_name", "unit", "must_change_password", "password1", "password2")}),
     )

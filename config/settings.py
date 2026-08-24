@@ -3,9 +3,12 @@
 ค่าที่เปลี่ยนตามเครื่อง/หน่วยงานอ่านจากไฟล์ .env (ดู .env.example) — ห้ามเขียน secret ในไฟล์นี้
 """
 import os
+import warnings
 from pathlib import Path
 
 from dotenv import load_dotenv
+
+from .security import secure_configuration_warning
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 load_dotenv(BASE_DIR / ".env")
@@ -16,6 +19,11 @@ SITE_NAME_TH = "ระบบจองห้อง รร.ส.สส."
 SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY", "dev-only-change-me")
 DEBUG = os.environ.get("DJANGO_DEBUG", "0") == "1"
 ALLOWED_HOSTS = [h for h in os.environ.get("DJANGO_ALLOWED_HOSTS", "127.0.0.1,localhost").split(",") if h]
+CSRF_TRUSTED_ORIGINS = [
+    origin.strip()
+    for origin in os.environ.get("CSRF_TRUSTED_ORIGINS", "").split(",")
+    if origin.strip()
+]
 
 INSTALLED_APPS = [
     "django.contrib.admin",
@@ -32,14 +40,20 @@ INSTALLED_APPS = [
     "bookings",
     "approvals",
     "notifications",
+    "audit",
+    "usage",
+    "reports",
 ]
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
+    "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
+    "audit.middleware.AuditActorMiddleware",
+    "accounts.middleware.MustChangePasswordMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "django_htmx.middleware.HtmxMiddleware",
@@ -104,17 +118,25 @@ USE_TZ = True
 STATIC_URL = "static/"
 STATICFILES_DIRS = [BASE_DIR / "static"]
 STATIC_ROOT = BASE_DIR / "staticfiles"
+STORAGES = {
+    "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},
+    "staticfiles": {"BACKEND": "whitenoise.storage.CompressedStaticFilesStorage"},
+}
 
 # --- ความปลอดภัย session/cookie (SRS SR-11) ----------------------------------
 SESSION_COOKIE_HTTPONLY = True
 SESSION_COOKIE_SAMESITE = "Strict"
 CSRF_COOKIE_SAMESITE = "Strict"
 SESSION_COOKIE_AGE = 12 * 60 * 60  # 12 ชั่วโมง (SR-05)
-if not DEBUG:
-    SESSION_COOKIE_SECURE = True
-    CSRF_COOKIE_SECURE = True
-    SECURE_SSL_REDIRECT = True
-    SECURE_HSTS_SECONDS = 31536000
+DJANGO_SECURE_RAW = os.environ.get("DJANGO_SECURE")
+DJANGO_SECURE = (DJANGO_SECURE_RAW if DJANGO_SECURE_RAW is not None else ("0" if DEBUG else "1")) == "1"
+security_warning = secure_configuration_warning(DEBUG, DJANGO_SECURE_RAW)
+if security_warning:
+    warnings.warn(security_warning, RuntimeWarning, stacklevel=2)
+SESSION_COOKIE_SECURE = DJANGO_SECURE
+CSRF_COOKIE_SECURE = DJANGO_SECURE
+SECURE_SSL_REDIRECT = DJANGO_SECURE
+SECURE_HSTS_SECONDS = 31536000 if DJANGO_SECURE else 0
 
 # --- กฎการจองค่าเริ่มต้น (SRS ข้อ 5; ค่ารายห้องอยู่ใน ResourceRule) ------------
 BOOKING_SLOT_MINUTES = 15  # ช่วงเวลาขั้นต่ำของการเลือกเวลา (SRS 12.2)

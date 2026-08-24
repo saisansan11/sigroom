@@ -9,6 +9,7 @@ from django.utils import timezone
 from bookings.models import Booking, BookingAmendment, Preemption
 from bookings.services import release_holds
 from resources.models import ResourceApprover
+from audit.services import audit
 
 from .models import Approval, ApproverDelegation
 
@@ -162,6 +163,7 @@ def approve_booking(booking: Booking, user, now: datetime | None = None) -> Book
         acted_by=user,
         on_behalf_of=_on_behalf_of(user, locked, now),
     )
+    audit(user, "bookings.booking", locked.pk, "booking_approved", before={"request_status": Booking.RequestStatus.PENDING}, after={"request_status": locked.request_status})
     recipients = [locked.requester, *locked.room.custodians.all()]
     notify(
         recipients,
@@ -196,6 +198,7 @@ def reject_booking(booking: Booking, user, reason: str, now: datetime | None = N
         on_behalf_of=_on_behalf_of(user, locked, now),
         reason=reason,
     )
+    audit(user, "bookings.booking", locked.pk, "booking_rejected", before={"request_status": Booking.RequestStatus.PENDING}, after={"request_status": locked.request_status, "reason": reason})
     notify(
         [locked.requester],
         f"คำขอ {booking_summary(locked)} ถูกปฏิเสธ: {reason}",
@@ -340,6 +343,7 @@ def decide_series(series, user, action, excluded=None, reason_excluded="", reaso
                 on_behalf_of=_on_behalf_of(user, booking, now),
                 reason=reason,
             )
+            audit(user, "bookings.booking", booking.pk, "booking_rejected", before={"request_status": Booking.RequestStatus.PENDING}, after={"request_status": booking.request_status, "reason": reason})
             rejected_count += 1
         else:
             booking.request_status = Booking.RequestStatus.APPROVED
@@ -351,6 +355,7 @@ def decide_series(series, user, action, excluded=None, reason_excluded="", reaso
                 acted_by=user,
                 on_behalf_of=_on_behalf_of(user, booking, now),
             )
+            audit(user, "bookings.booking", booking.pk, "booking_approved", before={"request_status": Booking.RequestStatus.PENDING}, after={"request_status": booking.request_status})
             approved_count += 1
 
     if action == "reject":
@@ -432,6 +437,7 @@ def run_scheduled_jobs(now: datetime | None = None) -> dict[str, int]:
     from bookings.amendment_services import amendment_expiry_deadline, amendment_ref, expire_amendment
     from bookings.series_services import series_ref
     from notifications.services import booking_summary, notify
+    from usage.services import mark_finished_bookings_used
 
     now = now or timezone.now()
     counts = {
@@ -440,6 +446,7 @@ def run_scheduled_jobs(now: datetime | None = None) -> dict[str, int]:
         "amendment_expired": 0,
         "amendment_escalated": 0,
         "deemed_acknowledged": 0,
+        "usage_used": 0,
     }
     pending_ids = list(
         Booking.objects.filter(request_status=Booking.RequestStatus.PENDING)
@@ -475,6 +482,7 @@ def run_scheduled_jobs(now: datetime | None = None) -> dict[str, int]:
                         occurrence.save(update_fields=["request_status", "updated_at"])
                         release_holds(occurrence)
                         Approval.objects.create(booking=occurrence, action=Approval.Action.EXPIRED)
+                        audit(None, "bookings.booking", occurrence.pk, "booking_expired", before={"request_status": Booking.RequestStatus.PENDING}, after={"request_status": occurrence.request_status})
                     recipients = [first.requester, *_approval_users(first, now)]
                     notify(
                         recipients,
@@ -502,6 +510,7 @@ def run_scheduled_jobs(now: datetime | None = None) -> dict[str, int]:
                 booking.save(update_fields=["request_status", "updated_at"])
                 release_holds(booking)
                 Approval.objects.create(booking=booking, action=Approval.Action.EXPIRED)
+                audit(None, "bookings.booking", booking.pk, "booking_expired", before={"request_status": Booking.RequestStatus.PENDING}, after={"request_status": booking.request_status})
                 recipients = [booking.requester, *_approval_users(booking, now)]
                 notify(
                     recipients,
@@ -568,6 +577,7 @@ def run_scheduled_jobs(now: datetime | None = None) -> dict[str, int]:
                 continue
             preemption.deemed_acknowledged = True
             preemption.save(update_fields=["deemed_acknowledged"])
+            audit(None, "bookings.preemption", preemption.pk, "preemption_deemed_acknowledged", after={"deemed_acknowledged": True})
             notify(
                 [preemption.ordered_by],
                 f"ผู้จองเดิมของคำสั่ง {preemption.reference_no} ถือว่ารับทราบแล้วเมื่อครบ 24 ชม.",
@@ -575,4 +585,5 @@ def run_scheduled_jobs(now: datetime | None = None) -> dict[str, int]:
                 preemption.displaced,
             )
             counts["deemed_acknowledged"] += 1
+    counts["usage_used"] = mark_finished_bookings_used(now)
     return counts

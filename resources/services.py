@@ -3,6 +3,7 @@ from datetime import datetime
 from django.core.exceptions import ValidationError
 from django.db import transaction
 from django.utils import timezone
+from audit.services import audit
 
 from .models import Blackout, Resource, ResourceOutage
 
@@ -71,6 +72,7 @@ def create_outage(
         reason=reason,
         created_by=user,
     )
+    audit(user, "resources.resourceoutage", outage.pk, "outage_created", after={"resource_id": resource.pk, "start_at": start, "end_at": end, "reason": reason})
     affected = list(affected_bookings(resource, start, end))
     for booking in affected:
         booking.usage_status = Booking.UsageStatus.ROOM_UNAVAILABLE
@@ -101,6 +103,7 @@ def end_outage_early(outage: ResourceOutage, user, now: datetime | None = None) 
     now = now or timezone.now()
     outage.ended_early_at = now
     outage.save(update_fields=["ended_early_at"])
+    audit(user, "resources.resourceoutage", outage.pk, "outage_ended", after={"ended_early_at": now})
 
     restored = []
     candidates = Booking.objects.filter(

@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% load thaidate %}
+{% block title %}การใช้งานห้อง — SIGROOM{% endblock %}
+{% block content %}
+<h1>การใช้งานห้อง</h1>
+<p>รายการที่สิ้นสุดในวันนี้และ 3 วันที่ผ่านมา เจ้าหน้าที่แก้สถานะได้ไม่เกิน 3 วันหลังวันใช้ห้อง</p>
+{% if bookings %}
+<div class="table-scroll">
+  <table>
+    <thead><tr><th>วันเวลา</th><th>ห้อง</th><th>ผู้จอง / หน่วย</th><th>สถานะ</th><th>บันทึก</th></tr></thead>
+    <tbody>
+    {% for booking in bookings %}
+      <tr>
+        <td>{{ booking.start_at|thai_datetime }}–{{ booking.end_at|date:"H:i" }}</td>
+        <td>{{ booking.room.code }} {{ booking.room.name }}</td>
+        <td>{{ booking.requester.display_name }}{% if booking.unit %}<br><small>{{ booking.unit.code }}</small>{% endif %}</td>
+        <td>{{ booking.get_usage_status_display }}</td>
+        <td>
+          {% if booking.usage_change_open %}
+          <form method="post" action="{% url 'usage:update' booking.pk %}" class="inline-actions">
+            {% csrf_token %}
+            <button type="submit" name="status" value="used"{% if booking.usage_status == 'used' %} disabled{% endif %}>ใช้งานแล้ว</button>
+            <button type="submit" name="status" value="no_show" class="secondary"{% if booking.usage_status == 'no_show' %} disabled{% endif %}>ไม่มาใช้</button>
+          </form>
+          {% else %}<small>พ้นกำหนดแก้ไข</small>{% endif %}
+        </td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}<p class="notice">ไม่มีรายการที่ต้องบันทึกในช่วงนี้</p>{% endif %}
+{% endblock %}

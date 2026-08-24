@@ -15,6 +15,7 @@ from resources.models import Blackout, Resource, ResourceRule
 from resources.services import active_outages
 from approvals.services import can_decide, recent_rejection_reasons
 from notifications.services import notify_submitted
+from audit.services import audit, model_snapshot
 
 from .amendment_services import amendment_ref, evaluate_amendment_policy, submit_amendment, withdraw_amendment
 from .forms import AmendmentForm, BookingForm, BuddhistDateField, PreemptionForm, time_choices
@@ -278,6 +279,7 @@ def book_form(request, code):
             booking.requester = request.user
             booking.save(update_fields=["requester"])
             if request.POST.get("action") == "draft":
+                audit(request.user, "bookings.booking", booking.pk, "booking_created", after=model_snapshot(booking))
                 messages.success(request, "บันทึกร่างแล้ว")
                 return redirect("bookings:booking_detail", id=booking.id)
             try:
@@ -290,6 +292,7 @@ def book_form(request, code):
                 for message in exc.messages:
                     form.add_error(None, message)
             else:
+                audit(request.user, "bookings.booking", booking.pk, "booking_created", after=model_snapshot(booking))
                 notify_submitted(booking)
                 messages.success(request, "ส่งคำขอจองห้องแล้ว")
                 return redirect("bookings:booking_detail", id=booking.id)
@@ -479,9 +482,11 @@ def booking_edit(request, id):
     if request.method == "POST":
         form = BookingForm(request.POST, user=request.user, room=booking.room, instance=booking, allowed_fields=fields)
         if form.is_valid():
+            before = model_snapshot(booking)
             booking = form.save()
             booking.revision += 1
             booking.save(update_fields=["revision", "updated_at"])
+            audit(request.user, "bookings.booking", booking.pk, "booking_updated", before=before, after=model_snapshot(booking))
             messages.success(request, "แก้ไขรายละเอียดแล้ว")
             return redirect("bookings:booking_detail", id=booking.id)
     else:
@@ -612,7 +617,9 @@ def booking_delete_draft(request, id):
     booking = get_object_or_404(Booking, id=id, requester=request.user)
     if booking.request_status != Booking.RequestStatus.DRAFT:
         raise Http404
+    before = model_snapshot(booking)
     booking.delete()
+    audit(request.user, "bookings.booking", id, "booking_draft_deleted", before=before)
     messages.success(request, "ลบร่างแล้ว")
     return redirect("bookings:my_bookings")
 

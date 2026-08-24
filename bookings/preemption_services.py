@@ -7,6 +7,7 @@ from django.utils import timezone
 
 from accounts.models import Unit
 from approvals.services import effective_approver_ids
+from audit.services import audit
 from notifications.services import booking_summary, notify
 from resources.models import Resource, ResourceRule
 
@@ -225,6 +226,7 @@ def execute_preemption(
     )
     Preemption.objects.filter(pk=preemption.pk).update(created_at=now)
     preemption.created_at = now
+    audit(actor, "bookings.preemption", preemption.pk, "preemption_executed", after={"displaced_id": str(displaced.pk), "incoming_id": str(incoming.pk), "replacement_id": str(replacement.pk) if replacement else None, "reference_no": reference_no})
     replacement_text = (
         f" · ห้องทดแทน {booking_summary(replacement)}"
         if replacement
@@ -258,6 +260,7 @@ def acknowledge(preemption: Preemption, user, now: datetime | None = None) -> Pr
         return locked
     locked.acknowledged_at = now
     locked.save(update_fields=["acknowledged_at"])
+    audit(user, "bookings.preemption", locked.pk, "preemption_acknowledged", after={"acknowledged_at": now})
     notify(
         [locked.ordered_by],
         f"ผู้จองเดิมรับทราบคำสั่ง {locked.reference_no} แล้ว",

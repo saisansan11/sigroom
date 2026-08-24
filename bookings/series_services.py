@@ -7,6 +7,7 @@ from django.utils import timezone
 
 from resources.models import Resource, ResourceRule
 from resources.services import active_blackouts
+from audit.services import audit
 
 from .models import Booking, BookingResource, BookingSeries, SeriesSkip
 from .services import (
@@ -278,6 +279,11 @@ def create_series(room, series_params, booking_template, user, mode="only_free",
         created.append(booking)
     if not created:
         raise ValidationError("ไม่มีครั้งที่ว่างให้สร้างชุดการจอง")
+
+    audit(user, "bookings.bookingseries", series.pk, "booking_series_created", after={"created_count": len(created), "room_id": room.pk})
+    for booking in created:
+        audit(user, "bookings.booking", booking.pk, "booking_created", after={"series_id": str(series.pk), "series_index": booking.series_index})
+        audit(user, "bookings.booking", booking.pk, "booking_submitted", after={"request_status": booking.request_status})
 
     url = f"/series/{series.pk}/"
     state = "อนุมัติอัตโนมัติ" if policy == ResourceRule.ApprovalPolicy.AUTO else "รออนุมัติ"

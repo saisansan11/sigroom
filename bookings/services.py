@@ -14,6 +14,7 @@ from django.db.models import QuerySet
 from django.utils import timezone
 
 from resources.models import Resource, ResourceRule
+from audit.services import audit
 
 from .models import Booking, BookingResource
 
@@ -227,6 +228,7 @@ def cancel_booking(booking: Booking, user, now: datetime | None = None) -> Booki
             "พ้นเวลาแก้ไข/ยกเลิกด้วยตนเอง กรุณาติดต่อเจ้าหน้าที่ดูแลห้อง: "
             + _contact_for_room(booking.room)
         )
+    before_status = booking.request_status
     booking.request_status = Booking.RequestStatus.CANCELLED
     booking.revision += 1
     booking.save(update_fields=["request_status", "revision", "updated_at"])
@@ -241,6 +243,7 @@ def cancel_booking(booking: Booking, user, now: datetime | None = None) -> Booki
             now,
         )
     release_holds(booking)
+    audit(user, "bookings.booking", booking.pk, "booking_cancelled", before={"request_status": before_status}, after={"request_status": booking.request_status})
     return booking
 
 
@@ -371,4 +374,5 @@ def submit_booking(booking: Booking, equipment: list[Resource] | None = None) ->
     booking.save()
     selected_equipment = list(equipment) if equipment is not None else list(booking.equipment.all())
     place_holds(booking, selected_equipment)
+    audit(booking.requester, "bookings.booking", booking.pk, "booking_submitted", before={"request_status": Booking.RequestStatus.DRAFT}, after={"request_status": booking.request_status})
     return booking
