@@ -16,8 +16,10 @@ from resources.services import active_outages
 from approvals.services import can_decide, recent_rejection_reasons
 from notifications.services import notify_submitted
 
-from .forms import BookingForm, BuddhistDateField, time_choices
-from .models import Booking, BookingSeries
+from .amendment_services import amendment_ref, evaluate_amendment_policy, submit_amendment, withdraw_amendment
+from .forms import AmendmentForm, BookingForm, BuddhistDateField, PreemptionForm, time_choices
+from .models import Booking, BookingAmendment, BookingSeries, Preemption
+from .preemption_services import acknowledge, can_preempt, execute_preemption, replacement_options
 from .series_services import cancel_remaining, create_series, preview_series, series_ref
 from .services import (
     BookingConflict,
@@ -119,6 +121,44 @@ def calendar_events(request):
                 }
             )
 
+    amendments = (
+        BookingAmendment.objects.filter(
+            status=BookingAmendment.Status.PENDING,
+        )
+        .select_related("booking", "booking__room", "booking__unit", "proposed_room")
+    )
+    for amendment in amendments:
+        proposed_start = amendment.proposed_start_at or amendment.booking.start_at
+        proposed_end = amendment.proposed_end_at or amendment.booking.end_at
+        proposed_room = amendment.proposed_room or amendment.booking.room
+        if proposed_start >= end or proposed_end <= start:
+            continue
+        if request.GET.get("room") and proposed_room.code != request.GET["room"]:
+            continue
+        if request.GET.get("building") and proposed_room.building != request.GET["building"]:
+            continue
+        can_open = can_view_details(request.user, amendment.booking)
+        if can_open:
+            title = f"รออนุมัติแก้ไข: {amendment.booking.title} — {proposed_room.code}"
+        elif amendment.booking.visibility == Booking.Visibility.NORMAL:
+            title = f"รออนุมัติแก้ไข: ไม่ว่าง — {amendment.booking.unit.name}"
+        else:
+            title = "รออนุมัติแก้ไข: ไม่ว่าง"
+        events.append(
+            {
+                "id": f"amendment-{amendment.pk}",
+                "title": title,
+                "start": proposed_start.isoformat(),
+                "end": proposed_end.isoformat(),
+                "url": reverse("bookings:booking_detail", args=[amendment.booking_id]),
+                "classNames": ["amendment-pending", *([] if can_open else ["masked"])],
+                "extendedProps": {
+                    "status": "amendment_pending",
+                    "room": proposed_room.code,
+                    "amendment": amendment_ref(amendment),
+                },
+            }
+        )
     selected_room = None
     if request.GET.get("room"):
         selected_room = Resource.objects.filter(code=request.GET["room"], resource_type=Resource.Type.ROOM).first()
@@ -367,8 +407,16 @@ def series_cancel_remaining(request, id):
 @login_required
 def booking_detail(request, id):
     booking = get_object_or_404(_booking_queryset(), id=id)
+    pending_amendment = (
+        booking.amendments.filter(status=BookingAmendment.Status.PENDING)
+        .select_related("proposed_room", "submitted_by")
+        .prefetch_related("proposed_equipment")
+        .first()
+    )
     full_details = can_view_details(request.user, booking)
-    approval_access = can_decide(request.user, booking)
+    approval_access = can_decide(request.user, booking) or bool(
+        pending_amendment and can_decide(request.user, pending_amendment)
+    )
     can_approve = booking.request_status == Booking.RequestStatus.PENDING and approval_access and not booking.series_id
     if approval_access:
         full_details = True
@@ -376,17 +424,41 @@ def booking_detail(request, id):
         return render(request, "bookings/booking_masked.html", {"booking": booking})
     owner = booking.requester_id == request.user.pk or request.user.is_superuser
     fields = editable_fields(booking) if owner else set()
+    if pending_amendment:
+        pending_amendment.display_ref = amendment_ref(pending_amendment)
+        pending_amendment.new_room = pending_amendment.proposed_room or booking.room
+        pending_amendment.new_start_at = pending_amendment.proposed_start_at or booking.start_at
+        pending_amendment.new_end_at = pending_amendment.proposed_end_at or booking.end_at
+    preemption = booking.preemption_as_displaced.select_related(
+        "incoming", "replacement", "replacement__room", "ordered_by"
+    ).first()
     return render(
         request,
         "bookings/booking_detail.html",
         {
             "booking": booking,
             "can_edit": bool(fields),
+            "can_amend": (
+                owner
+                and booking.request_status == Booking.RequestStatus.APPROVED
+                and booking.usage_status == Booking.UsageStatus.UPCOMING
+                and not self_service_message(booking)
+                and pending_amendment is None
+            ),
+            "pending_amendment": pending_amendment,
+            "preemption": preemption,
+            "can_preempt": can_preempt(request.user, booking),
+            "can_acknowledge": bool(
+                preemption
+                and preemption.acknowledged_at is None
+                and not preemption.deemed_acknowledged
+                and booking.requester_id == request.user.pk
+            ),
             "can_cancel": owner and not self_service_message(booking) and booking.request_status not in {
                 Booking.RequestStatus.CANCELLED,
                 Booking.RequestStatus.REJECTED,
                 Booking.RequestStatus.EXPIRED,
-            },
+            } and booking.usage_status == Booking.UsageStatus.UPCOMING,
             "deadline_message": self_service_message(booking) if owner else "",
             "can_approve": can_approve,
             "approval_history": booking.approvals.select_related("acted_by", "on_behalf_of").all(),
@@ -428,6 +500,95 @@ def booking_cancel(request, id):
     else:
         messages.success(request, "ยกเลิกการจองและคืนช่วงเวลาแล้ว")
     return redirect("bookings:booking_detail", id=booking.id)
+
+
+@login_required
+def booking_amend(request, id):
+    booking = get_object_or_404(_booking_queryset(), id=id)
+    if booking.requester_id != request.user.pk and not request.user.is_superuser:
+        raise PermissionDenied("คุณไม่มีสิทธิ์ขอแก้ไขการจองนี้")
+    form = AmendmentForm(request.POST or None, booking=booking, user=request.user)
+    if request.method == "POST" and form.is_valid():
+        try:
+            amendment = submit_amendment(booking, request.user, form.proposed())
+        except (BookingConflict, PermissionError, ValueError, ValidationError) as exc:
+            text = "; ".join(exc.messages) if isinstance(exc, ValidationError) else str(exc)
+            form.add_error(None, text)
+        else:
+            if amendment.status == BookingAmendment.Status.APPROVED:
+                messages.success(request, "การแก้ไขมีผลทันทีแล้ว")
+            else:
+                messages.success(request, f"ส่งคำขอแก้ไข {amendment_ref(amendment)} แล้ว")
+            return redirect("bookings:booking_detail", id=booking.pk)
+    proposed = form.proposed() if form.is_bound and form.is_valid() else {
+        "room": booking.room,
+        "has_external": booking.has_external_attendees,
+    }
+    policy = evaluate_amendment_policy(booking, proposed)
+    return render(
+        request,
+        "bookings/amend_form.html",
+        {
+            "booking": booking,
+            "form": form,
+            "policy_required": policy == ResourceRule.ApprovalPolicy.REQUIRED,
+        },
+    )
+
+
+@login_required
+@require_POST
+def amendment_withdraw(request, id):
+    amendment = get_object_or_404(BookingAmendment.objects.select_related("booking", "submitted_by"), pk=id)
+    try:
+        withdraw_amendment(amendment, request.user, request.POST.get("reason", ""))
+    except (PermissionError, ValueError) as exc:
+        messages.error(request, str(exc))
+    else:
+        messages.success(request, "ถอนคำขอแก้ไขและคืนช่วงเวลาปลายทางแล้ว")
+    return redirect("bookings:booking_detail", id=amendment.booking_id)
+
+
+@login_required
+def booking_preempt(request, id):
+    booking = get_object_or_404(_booking_queryset(), id=id)
+    if not can_preempt(request.user, booking):
+        raise PermissionDenied("คุณไม่มีสิทธิ์บังคับย้ายการจองนี้")
+    options = replacement_options(booking, request.user)
+    form = PreemptionForm(request.POST or None, booking=booking, actor=request.user, options=options)
+    if request.method == "POST" and form.is_valid():
+        try:
+            execute_preemption(
+                booking,
+                request.user,
+                form.cleaned_data["reason"],
+                form.cleaned_data["reference_no"],
+                form.incoming_data(),
+                form.cleaned_data["replacement_room_object"],
+            )
+        except (BookingConflict, PermissionError, ValueError, ValidationError) as exc:
+            text = "; ".join(exc.messages) if isinstance(exc, ValidationError) else str(exc)
+            form.add_error(None, text)
+        else:
+            messages.success(request, "บังคับย้ายและแจ้งผู้เกี่ยวข้องแล้ว")
+            return redirect("bookings:booking_detail", id=booking.pk)
+    return render(
+        request,
+        "bookings/preempt_form.html",
+        {"booking": booking, "form": form, "options": options},
+    )
+
+
+@login_required
+@require_POST
+def preemption_acknowledge(request, id):
+    preemption = get_object_or_404(Preemption.objects.select_related("displaced", "ordered_by"), pk=id)
+    try:
+        acknowledge(preemption, request.user)
+    except PermissionError as exc:
+        raise PermissionDenied(str(exc))
+    messages.success(request, "บันทึกการรับทราบแล้ว")
+    return redirect("bookings:booking_detail", id=preemption.displaced_id)
 
 
 @login_required

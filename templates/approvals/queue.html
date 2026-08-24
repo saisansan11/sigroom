@@ -12,7 +12,15 @@
 <div class="approval-list">
 {% for booking in bookings %}
   <article class="approval-card">
-    {% if booking.is_series_card %}
+    {% if booking.is_amendment_card %}
+    <div class="approval-card-main">
+      <p class="approval-flags"><span class="policy">✏ คำขอแก้ไข</span>{% if booking.is_urgent %}<span class="urgent-flag">🔴 เร่งด่วน</span>{% endif %}{% if booking.is_over_sla %}<span class="sla-flag">🟡 เกิน SLA{% if booking.acting_as_backup %} · ฉันเป็นสำรอง{% endif %}</span>{% endif %}</p>
+      <h2><a href="{% url 'bookings:booking_detail' booking.booking_id %}">{{ booking.booking.title }}</a> · {{ booking.id|stringformat:"s"|slice:":4"|upper }}</h2>
+      <div class="comparison-grid"><div><strong>เดิม</strong><p>{{ booking.old_room.code }} · {{ booking.old_start_at|thai_datetime }}–{{ booking.old_end_at|date:"H:i" }}</p><p>อุปกรณ์: {% for item in booking.old_equipment %}{{ item.name }}{% if not forloop.last %}, {% endif %}{% empty %}—{% endfor %}</p></div><div><strong>ใหม่</strong><p>{{ booking.new_room.code }} · {{ booking.new_start_at|thai_datetime }}–{{ booking.new_end_at|date:"H:i" }}</p><p>อุปกรณ์: {% for item in booking.new_equipment %}{{ item.name }}{% if not forloop.last %}, {% endif %}{% empty %}—{% endfor %}</p></div></div>
+      <p>{{ booking.booking.unit.name }} · {{ booking.booking.requester.display_name }} · หมดอายุใน {{ booking.expires_in_hours }} ชม.</p>{% if booking.reason %}<p>เหตุผล: {{ booking.reason }}</p>{% endif %}
+    </div>
+    <div class="approval-actions"><form method="post" action="{% url 'approvals:amendment_approve' booking.id %}">{% csrf_token %}<button type="submit">อนุมัติ</button></form><details><summary role="button" class="outline danger">ปฏิเสธ</summary><form method="post" action="{% url 'approvals:amendment_reject' booking.id %}">{% csrf_token %}<label>เหตุผล (จำเป็น)<input name="reason" required maxlength="500" list="rejection-reasons"></label><button class="danger" type="submit">ยืนยันการปฏิเสธ</button></form></details></div>
+    {% elif booking.is_series_card %}
     <div class="approval-card-main">
       <p class="approval-flags"><span class="policy">ชุดการจอง</span>{% if booking.is_urgent %}<span class="urgent-flag">🔴 เร่งด่วน</span>{% endif %}{% if booking.is_over_sla %}<span class="sla-flag">🟡 เกิน SLA</span>{% endif %}</p>
       <h2><a href="{% url 'bookings:series_detail' booking.series_id %}">{{ booking.title }}</a></h2>

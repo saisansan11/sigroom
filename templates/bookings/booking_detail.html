@@ -19,6 +19,22 @@
     {% if booking.note %}<div class="wide"><dt>หมายเหตุ</dt><dd>{{ booking.note|linebreaksbr }}</dd></div>{% endif %}
   </dl>
 </article>
+{% if pending_amendment %}
+<article class="detail-card amendment-card">
+  <h2>✏ คำขอแก้ไข {{ pending_amendment.display_ref }} รออนุมัติ</h2>
+  <div class="comparison-grid"><div><strong>เดิม</strong><p>{{ booking.room.code }} · {{ booking.start_at|thai_datetime }}–{{ booking.end_at|date:"H:i" }}</p><p>อุปกรณ์: {% for item in booking.equipment.all %}{{ item.name }}{% if not forloop.last %}, {% endif %}{% empty %}—{% endfor %}</p></div><div><strong>ใหม่</strong><p>{{ pending_amendment.new_room.code }} · {{ pending_amendment.new_start_at|thai_datetime }}–{{ pending_amendment.new_end_at|date:"H:i" }}</p><p>อุปกรณ์: {% for item in pending_amendment.proposed_equipment.all %}{{ item.name }}{% if not forloop.last %}, {% endif %}{% empty %}—{% endfor %}</p></div></div>
+  {% if pending_amendment.reason %}<p>เหตุผล: {{ pending_amendment.reason }}</p>{% endif %}
+  <form method="post" action="{% url 'bookings:amendment_withdraw' pending_amendment.id %}">{% csrf_token %}<label>เหตุผลที่ถอน (ถ้ามี)<input name="reason" maxlength="500"></label><button class="outline danger" type="submit">ถอนคำขอแก้ไข</button></form>
+</article>
+{% endif %}
+{% if preemption %}
+<article class="detail-card preemption-card">
+  <h2>ถูกย้ายตามคำสั่ง {{ preemption.reference_no }}</h2>
+  <p>โดย {{ preemption.ordered_by_position }} · เหตุผล {{ preemption.reason }}</p>
+  {% if preemption.replacement %}<p><strong>ห้องทดแทน:</strong> {{ preemption.replacement.room.code }} {{ preemption.replacement.room.name }} · {{ preemption.replacement.start_at|thai_datetime }}–{{ preemption.replacement.end_at|date:"H:i" }}</p>{% else %}<p>ไม่มีห้องทดแทน</p>{% endif %}
+  {% if preemption.acknowledged_at %}<p>รับทราบแล้วเมื่อ {{ preemption.acknowledged_at|thai_datetime }}</p>{% elif preemption.deemed_acknowledged %}<p>ครบ 24 ชม. ถือว่ารับทราบแล้ว</p>{% elif can_acknowledge %}<form method="post" action="{% url 'bookings:preemption_acknowledge' preemption.id %}">{% csrf_token %}<button type="submit">รับทราบ</button></form>{% endif %}
+</article>
+{% endif %}
 <article class="detail-card">
   <h2>ประวัติการพิจารณา</h2>
   <ol class="history-list">
@@ -39,6 +55,8 @@
     <datalist id="detail-rejection-reasons">{% for reason in rejection_reasons %}<option value="{{ reason }}"></option>{% endfor %}</datalist>
   {% endif %}
   {% if can_edit %}<a role="button" href="{% url 'bookings:booking_edit' booking.id %}">แก้ไขรายละเอียด</a>{% endif %}
+  {% if can_amend %}<a role="button" href="{% url 'bookings:booking_amend' booking.id %}">ขอแก้ไขเวลา/ห้อง/อุปกรณ์ →</a>{% endif %}
+  {% if can_preempt and booking.request_status == 'approved' and booking.usage_status == 'upcoming' %}<a role="button" class="danger" href="{% url 'bookings:booking_preempt' booking.id %}">บังคับย้าย</a>{% endif %}
   {% if booking.request_status == 'draft' %}
     <form method="post" action="{% url 'bookings:booking_submit' booking.id %}">{% csrf_token %}<button type="submit">ส่งคำขอ</button></form>
     <form method="post" action="{% url 'bookings:booking_delete_draft' booking.id %}" onsubmit="return confirm('ลบร่างนี้ใช่หรือไม่')">{% csrf_token %}<button class="outline danger" type="submit">ลบร่าง</button></form>

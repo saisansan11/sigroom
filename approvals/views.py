@@ -7,13 +7,15 @@ from django.utils import timezone
 from django.utils.http import url_has_allowed_host_and_scheme
 from django.views.decorators.http import require_POST
 
-from bookings.models import Booking, BookingSeries
+from bookings.amendment_services import reject_amendment
+from bookings.models import Booking, BookingAmendment, BookingSeries
 from resources.models import ResourceApprover
 
 from .forms import DelegationForm
 from .models import ApproverDelegation
 from .services import (
     approve_booking,
+    approve_amendment,
     decide_series,
     has_approval_role,
     pending_for,
@@ -76,6 +78,39 @@ def reject(request, id):
         messages.error(request, text)
     else:
         messages.success(request, "ปฏิเสธคำขอและคืนช่วงเวลาแล้ว")
+    return _return_to(request)
+
+
+@login_required
+@require_POST
+def amendment_approve(request, id):
+    amendment = get_object_or_404(
+        BookingAmendment.objects.select_related("booking", "booking__room", "proposed_room"),
+        pk=id,
+    )
+    try:
+        approve_amendment(amendment, request.user)
+    except (PermissionError, ValueError) as exc:
+        messages.error(request, str(exc))
+    else:
+        messages.success(request, "อนุมัติคำขอแก้ไขแล้ว")
+    return _return_to(request)
+
+
+@login_required
+@require_POST
+def amendment_reject(request, id):
+    amendment = get_object_or_404(
+        BookingAmendment.objects.select_related("booking", "booking__room", "proposed_room"),
+        pk=id,
+    )
+    try:
+        reject_amendment(amendment, request.user, request.POST.get("reason", ""))
+    except (PermissionError, ValueError, ValidationError) as exc:
+        text = "; ".join(exc.messages) if isinstance(exc, ValidationError) else str(exc)
+        messages.error(request, text)
+    else:
+        messages.success(request, "ปฏิเสธคำขอแก้ไขแล้ว การจองเดิมยังคงอยู่")
     return _return_to(request)
 
 

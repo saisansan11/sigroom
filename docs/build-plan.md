@@ -54,9 +54,12 @@
 - BookingSeries (FR-13–17) · Blackout ตามขอบเขต (FR-11) · ResourceOutage (FR-12)
 - **ดูผล:** จองทุกวันจันทร์ 1 ภาคเรียน ระบบแสดงครั้งที่ชนให้เลือกข้าม
 
-### M5 — แก้ไขหลังอนุมัติ (Amendment) + บังคับย้าย
+### M5 — แก้ไขหลังอนุมัติ (Amendment) + บังคับย้าย ✅ (24 ส.ค. 2569)
 - BookingAmendment ตาม FR-34–38 และ P1 ทั้ง 3 ข้อ (ชุดปลายทางครบ, constraint ครบ, base_revision + FOR UPDATE)
 - Preemption ตาม FR-25–30
+- หน้า S13/S14 · การ์ดเทียบเดิม→ใหม่ใน S5/S7 · ปฏิทินแสดงช่วง amendment แบบลายเส้น
+- `Approval.Action.WITHDRAWN` เก็บประวัติการถอนทุกกรณีตามคำตัดสินใน `docs/m5-notes.md`
+- เทสเดิม 43 ข้อ + M5 ใหม่ 16 ข้อผ่านครบ · Django check ผ่าน · ไม่มี migration ค้าง
 - **ดูผล:** ขอแก้เวลาแล้วผู้อนุมัติปฏิเสธ → การจองเดิมยังอยู่
 
 ### M6 — no-show, รายงาน, audit log, สำรองข้อมูล → เริ่ม pilot

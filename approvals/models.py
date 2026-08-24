@@ -8,10 +8,19 @@ class Approval(models.Model):
         APPROVED = "approved", "อนุมัติ"
         REJECTED = "rejected", "ปฏิเสธ"
         EXPIRED = "expired", "หมดอายุ"
+        WITHDRAWN = "withdrawn", "ถอนคำขอแก้ไข"
 
     booking = models.ForeignKey(
         "bookings.Booking",
         verbose_name="การจอง",
+        on_delete=models.PROTECT,
+        related_name="approvals",
+    )
+    amendment = models.ForeignKey(
+        "bookings.BookingAmendment",
+        verbose_name="คำขอแก้ไข",
+        null=True,
+        blank=True,
         on_delete=models.PROTECT,
         related_name="approvals",
     )
@@ -40,6 +49,12 @@ class Approval(models.Model):
         verbose_name_plural = "ประวัติการพิจารณา"
         ordering = ["acted_at", "pk"]
         indexes = [models.Index(fields=["booking", "acted_at"])]
+        constraints = [
+            models.CheckConstraint(
+                condition=models.Q(booking__isnull=False) | models.Q(amendment__isnull=False),
+                name="approval_has_booking_or_amendment",
+            )
+        ]
 
     def __str__(self):
         return f"{self.booking_id} — {self.get_action_display()}"

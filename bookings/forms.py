@@ -268,3 +268,183 @@ class BookingForm(forms.ModelForm):
             booking.save()
             self.save_m2m()
         return booking
+
+
+class AmendmentForm(forms.Form):
+    date = BuddhistDateField(label="วันที่", widget=forms.TextInput(attrs={"placeholder": "27/08/2569"}))
+    start_time = forms.TimeField(label="เริ่ม", widget=forms.Select(choices=time_choices()), input_formats=["%H:%M"])
+    end_time = forms.TimeField(label="สิ้นสุด", widget=forms.Select(choices=time_choices()), input_formats=["%H:%M"])
+    room = forms.ModelChoiceField(label="ห้อง", queryset=Resource.objects.none())
+    equipment = forms.ModelMultipleChoiceField(
+        label="อุปกรณ์ส่วนกลางชุดเต็มที่จะใช้จริง",
+        queryset=Resource.objects.none(),
+        required=False,
+        widget=forms.CheckboxSelectMultiple,
+    )
+    attendees = forms.IntegerField(label="จำนวนผู้เข้าร่วม", min_value=1)
+    has_external = forms.TypedChoiceField(
+        label="ผู้เข้าร่วมภายนอก",
+        choices=((False, "ไม่มี"), (True, "มี")),
+        coerce=lambda value: str(value).lower() == "true",
+        widget=forms.RadioSelect,
+    )
+    external_note = forms.CharField(label="รายละเอียดผู้เข้าร่วมภายนอก", required=False, max_length=200)
+    reason = forms.CharField(
+        label="เหตุผลที่ขอแก้ไข",
+        required=False,
+        max_length=300,
+        widget=forms.TextInput(attrs={"placeholder": "เลือกเหตุผลที่เคยใช้หรือพิมพ์เอง", "list": "amendment-reasons"}),
+    )
+
+    def __init__(self, *args, booking: Booking, user, now=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        from .amendment_services import available_amendment_rooms
+
+        self.booking = booking
+        self.user = user
+        self.now = now or timezone.now()
+        local_start = timezone.localtime(booking.start_at)
+        local_end = timezone.localtime(booking.end_at)
+        self.initial.update(
+            {
+                "date": local_start.date(),
+                "start_time": local_start.strftime("%H:%M"),
+                "end_time": local_end.strftime("%H:%M"),
+                "room": booking.room_id,
+                "equipment": list(booking.equipment.values_list("pk", flat=True)),
+                "attendees": booking.attendees,
+                "has_external": booking.has_external_attendees,
+                "external_note": booking.external_attendees_note,
+            }
+        )
+        candidate_start, candidate_end = booking.start_at, booking.end_at
+        if self.is_bound:
+            try:
+                day = BuddhistDateField().clean(self.data.get("date"))
+                start_time = time.fromisoformat(self.data.get("start_time", ""))
+                end_time = time.fromisoformat(self.data.get("end_time", ""))
+                zone = timezone.get_current_timezone()
+                candidate_start = timezone.make_aware(datetime.combine(day, start_time), zone)
+                candidate_end = timezone.make_aware(datetime.combine(day, end_time), zone)
+            except (TypeError, ValueError, forms.ValidationError):
+                pass
+        self.fields["room"].queryset = available_amendment_rooms(
+            booking, candidate_start, candidate_end, user, self.now
+        )
+        self.fields["equipment"].queryset = Resource.objects.filter(
+            resource_type=Resource.Type.EQUIPMENT,
+            status=Resource.Status.ACTIVE,
+        ).order_by("code")
+        self.recent_reasons = list(
+            booking.amendments.exclude(reason="").order_by("-submitted_at").values_list("reason", flat=True)[:10]
+        )
+
+    def clean(self):
+        cleaned = super().clean()
+        day = cleaned.get("date")
+        start_time = cleaned.get("start_time")
+        end_time = cleaned.get("end_time")
+        if day and start_time and end_time:
+            zone = timezone.get_current_timezone()
+            cleaned["start_at"] = timezone.make_aware(datetime.combine(day, start_time), zone)
+            cleaned["end_at"] = timezone.make_aware(datetime.combine(day, end_time), zone)
+            if cleaned["end_at"] <= cleaned["start_at"]:
+                raise forms.ValidationError("เวลาสิ้นสุดต้องอยู่หลังเวลาเริ่ม")
+        if cleaned.get("has_external") and not (cleaned.get("external_note") or "").strip():
+            self.add_error("external_note", "กรุณาระบุจำนวนหรือหน่วยของผู้เข้าร่วมภายนอก")
+        return cleaned
+
+    def proposed(self):
+        return {
+            "room": self.cleaned_data["room"],
+            "start_at": self.cleaned_data["start_at"],
+            "end_at": self.cleaned_data["end_at"],
+            "equipment": list(self.cleaned_data["equipment"]),
+            "attendees": self.cleaned_data["attendees"],
+            "has_external": self.cleaned_data["has_external"],
+            "external_note": self.cleaned_data.get("external_note", ""),
+            "reason": self.cleaned_data.get("reason", ""),
+        }
+
+
+class PreemptionForm(forms.Form):
+    reason = forms.CharField(
+        label="เหตุผล",
+        max_length=300,
+        widget=forms.TextInput(attrs={"list": "preemption-reasons", "placeholder": "เลือกเหตุผลที่เคยใช้หรือพิมพ์เอง"}),
+    )
+    reference_no = forms.CharField(label="เลขอ้างอิงคำสั่ง/หนังสือ", max_length=100)
+    title = forms.CharField(label="ชื่อกิจกรรมที่จะเข้าแทน", max_length=200)
+    unit = forms.ModelChoiceField(label="หน่วย", queryset=Unit.objects.filter(is_active=True).order_by("code"))
+    responsible_name = forms.CharField(label="ผู้รับผิดชอบ", max_length=200)
+    responsible_phone = forms.CharField(label="โทรศัพท์", max_length=30)
+    date = BuddhistDateField(label="วันที่", widget=forms.TextInput(attrs={"placeholder": "27/08/2569"}))
+    start_time = forms.TimeField(label="เริ่ม", widget=forms.Select(choices=time_choices()), input_formats=["%H:%M"])
+    end_time = forms.TimeField(label="สิ้นสุด", widget=forms.Select(choices=time_choices()), input_formats=["%H:%M"])
+    visibility = forms.ChoiceField(label="การมองเห็น", choices=Booking.Visibility.choices)
+    replacement_room = forms.ChoiceField(label="ห้องทดแทน", required=False, widget=forms.RadioSelect)
+
+    def __init__(self, *args, booking: Booking, actor, options, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.booking = booking
+        self.actor = actor
+        self.options = options
+        local_start = timezone.localtime(booking.start_at)
+        local_end = timezone.localtime(booking.end_at)
+        self.initial.update(
+            {
+                "date": local_start.date(),
+                "start_time": local_start.strftime("%H:%M"),
+                "end_time": local_end.strftime("%H:%M"),
+                "unit": actor.unit_id,
+                "responsible_name": actor.display_name,
+                "responsible_phone": actor.phone,
+                "visibility": Booking.Visibility.RESTRICTED,
+            }
+        )
+        self.fields["replacement_room"].choices = [
+            (str(item.room.pk), f"{item.room.code} {item.room.name} — {item.approval_label}") for item in options
+        ] + [("", "ไม่มีห้องทดแทน")]
+        self.recent_reasons = list(
+            actor.ordered_preemptions.exclude(reason="").order_by("-created_at").values_list("reason", flat=True)[:10]
+        )
+        unit = getattr(actor, "unit", None)
+        self.datalists = {
+            name: frequent_values(unit, name)
+            for name in ("title", "responsible_name", "responsible_phone")
+        }
+        for name in self.datalists:
+            self.fields[name].widget.attrs["list"] = f"preemption-{name}"
+
+    def clean(self):
+        cleaned = super().clean()
+        day = cleaned.get("date")
+        start_time = cleaned.get("start_time")
+        end_time = cleaned.get("end_time")
+        if day and start_time and end_time:
+            zone = timezone.get_current_timezone()
+            start_at = timezone.make_aware(datetime.combine(day, start_time), zone)
+            end_at = timezone.make_aware(datetime.combine(day, end_time), zone)
+            cleaned["start_at"] = start_at
+            cleaned["end_at"] = end_at
+            if end_at <= start_at:
+                raise forms.ValidationError("เวลาสิ้นสุดต้องอยู่หลังเวลาเริ่ม")
+            if end_at <= self.booking.start_at or start_at >= self.booking.end_at:
+                raise forms.ValidationError("เวลาของงานที่เข้าแทนต้องซ้อนกับการจองเดิม")
+        room_id = cleaned.get("replacement_room")
+        allowed = {str(item.room.pk): item.room for item in self.options}
+        if room_id and room_id not in allowed:
+            self.add_error("replacement_room", "ห้องทดแทนที่เลือกไม่อยู่ในรายการที่ระบบเสนอ")
+        cleaned["replacement_room_object"] = allowed.get(room_id)
+        return cleaned
+
+    def incoming_data(self):
+        return {
+            "title": self.cleaned_data["title"],
+            "unit": self.cleaned_data["unit"],
+            "responsible_name": self.cleaned_data["responsible_name"],
+            "responsible_phone": self.cleaned_data["responsible_phone"],
+            "start_at": self.cleaned_data["start_at"],
+            "end_at": self.cleaned_data["end_at"],
+            "visibility": self.cleaned_data["visibility"],
+        }

@@ -6,7 +6,7 @@ from django.db import transaction
 from django.db.models import Min
 from django.utils import timezone
 
-from bookings.models import Booking
+from bookings.models import Booking, BookingAmendment, Preemption
 from bookings.services import release_holds
 from resources.models import ResourceApprover
 
@@ -94,13 +94,19 @@ def expiry_deadline(booking: Booking) -> datetime:
     return booking.start_at - timedelta(hours=24)
 
 
-def can_decide(user, booking: Booking, now: datetime | None = None) -> bool:
+def _decision_room(item):
+    if isinstance(item, BookingAmendment):
+        return item.proposed_room or item.booking.room
+    return item.room
+
+
+def can_decide(user, booking: Booking | BookingAmendment, now: datetime | None = None) -> bool:
     if not getattr(user, "is_authenticated", False):
         return False
     if user.is_superuser:
         return True
     now = now or timezone.now()
-    approvers = effective_approver_ids(booking.room, now)
+    approvers = effective_approver_ids(_decision_room(booking), now)
     if user.pk in approvers["primary_ids"]:
         return True
     return user.pk in approvers["backup_ids"] and (
@@ -108,9 +114,10 @@ def can_decide(user, booking: Booking, now: datetime | None = None) -> bool:
     )
 
 
-def _on_behalf_of(user, booking: Booking, now: datetime):
+def on_behalf_of_for(user, booking: Booking | BookingAmendment, now: datetime):
+    room = _decision_room(booking)
     primary = (
-        ResourceApprover.objects.filter(resource=booking.room, is_primary=True)
+        ResourceApprover.objects.filter(resource=room, is_primary=True)
         .select_related("user")
         .first()
     )
@@ -120,6 +127,9 @@ def _on_behalf_of(user, booking: Booking, now: datetime):
     if delegate and delegate.pk == user.pk:
         return primary.user
     return None
+
+
+_on_behalf_of = on_behalf_of_for
 
 
 def _locked_pending(booking: Booking) -> Booking:
@@ -195,7 +205,22 @@ def reject_booking(booking: Booking, user, reason: str, now: datetime | None = N
     return locked
 
 
+def approve_amendment(amendment: BookingAmendment, user, now: datetime | None = None) -> BookingAmendment:
+    from bookings.amendment_services import amendment_expiry_deadline, apply_amendment
+
+    now = now or timezone.now()
+    if amendment.status != BookingAmendment.Status.PENDING:
+        raise ValueError("คำขอแก้ไขนี้ถูกดำเนินการแล้ว")
+    if not can_decide(user, amendment, now):
+        raise PermissionError("คุณไม่มีสิทธิ์อนุมัติคำขอแก้ไขนี้")
+    if now >= amendment_expiry_deadline(amendment):
+        raise ValueError("คำขอแก้ไขหมดอายุแล้ว")
+    return apply_amendment(amendment, user, on_behalf_of_for(user, amendment, now), now)
+
+
 def pending_for(user, now: datetime | None = None) -> list[Booking]:
+    from bookings.amendment_services import amendment_expiry_deadline
+
     now = now or timezone.now()
     bookings = (
         Booking.objects.filter(request_status=Booking.RequestStatus.PENDING)
@@ -236,7 +261,33 @@ def pending_for(user, now: datetime | None = None) -> list[Booking]:
             booking.expires_in_hours = max(0, int((booking.expires_at - now).total_seconds() // 3600))
             approvers = effective_approver_ids(booking.room, now)
             booking.acting_as_backup = user.pk in approvers["backup_ids"] and user.pk not in approvers["primary_ids"]
+            booking.display_sort_at = booking.start_at
             result.append(booking)
+    amendments = (
+        BookingAmendment.objects.filter(status=BookingAmendment.Status.PENDING)
+        .select_related("booking", "booking__room", "booking__unit", "booking__requester", "proposed_room", "submitted_by")
+        .prefetch_related("booking__equipment", "proposed_equipment")
+    )
+    for amendment in amendments:
+        if not can_decide(user, amendment, now):
+            continue
+        amendment.is_amendment_card = True
+        amendment.old_room = amendment.booking.room
+        amendment.new_room = amendment.proposed_room or amendment.booking.room
+        amendment.old_start_at = amendment.booking.start_at
+        amendment.old_end_at = amendment.booking.end_at
+        amendment.new_start_at = amendment.proposed_start_at or amendment.booking.start_at
+        amendment.new_end_at = amendment.proposed_end_at or amendment.booking.end_at
+        amendment.old_equipment = list(amendment.booking.equipment.all())
+        amendment.new_equipment = list(amendment.proposed_equipment.all())
+        amendment.is_over_sla = now >= sla_deadline(amendment)
+        amendment.expires_at = amendment_expiry_deadline(amendment)
+        amendment.expires_in_hours = max(0, int((amendment.expires_at - now).total_seconds() // 3600))
+        approvers = effective_approver_ids(amendment.new_room, now)
+        amendment.acting_as_backup = user.pk in approvers["backup_ids"] and user.pk not in approvers["primary_ids"]
+        amendment.display_sort_at = min(amendment.old_start_at, amendment.new_start_at)
+        result.append(amendment)
+    result.sort(key=lambda item: item.display_sort_at)
     return result
 
 
@@ -372,17 +423,24 @@ def create_delegation(delegator, delegate, start: date, end: date) -> ApproverDe
     return delegation
 
 
-def _approval_users(booking: Booking, now: datetime):
-    ids = effective_approver_ids(booking.room, now)
+def _approval_users(booking: Booking | BookingAmendment, now: datetime):
+    ids = effective_approver_ids(_decision_room(booking), now)
     return get_user_model().objects.filter(pk__in=ids["primary_ids"] | ids["backup_ids"])
 
 
 def run_scheduled_jobs(now: datetime | None = None) -> dict[str, int]:
+    from bookings.amendment_services import amendment_expiry_deadline, amendment_ref, expire_amendment
     from bookings.series_services import series_ref
     from notifications.services import booking_summary, notify
 
     now = now or timezone.now()
-    counts = {"expired": 0, "escalated": 0}
+    counts = {
+        "expired": 0,
+        "escalated": 0,
+        "amendment_expired": 0,
+        "amendment_escalated": 0,
+        "deemed_acknowledged": 0,
+    }
     pending_ids = list(
         Booking.objects.filter(request_status=Booking.RequestStatus.PENDING)
         .order_by("pk")
@@ -463,4 +521,58 @@ def run_scheduled_jobs(now: datetime | None = None) -> dict[str, int]:
                     booking,
                 )
                 counts["escalated"] += 1
+    amendment_ids = list(
+        BookingAmendment.objects.filter(status=BookingAmendment.Status.PENDING)
+        .order_by("pk")
+        .values_list("pk", flat=True)
+    )
+    for amendment_id in amendment_ids:
+        with transaction.atomic():
+            amendment = (
+                BookingAmendment.objects.select_for_update()
+                .select_related("booking", "booking__room", "booking__requester")
+                .get(pk=amendment_id)
+            )
+            if amendment.status != BookingAmendment.Status.PENDING:
+                continue
+            if now >= amendment_expiry_deadline(amendment):
+                expire_amendment(amendment, now)
+                counts["amendment_expired"] += 1
+                continue
+            if now >= sla_deadline(amendment) and amendment.sla_escalated_at is None:
+                amendment.sla_escalated_at = now
+                amendment.save(update_fields=["sla_escalated_at"])
+                notify(
+                    _approval_users(amendment, now),
+                    f"คำขอแก้ไข {amendment_ref(amendment)} เกิน SLA และเปิดสิทธิ์ผู้อนุมัติสำรองแล้ว",
+                    "/approvals/",
+                    amendment.booking,
+                )
+                counts["amendment_escalated"] += 1
+
+    preemption_ids = list(
+        Preemption.objects.filter(
+            acknowledged_at__isnull=True,
+            deemed_acknowledged=False,
+            created_at__lte=now - timedelta(hours=24),
+        ).values_list("pk", flat=True)
+    )
+    for preemption_id in preemption_ids:
+        with transaction.atomic():
+            preemption = (
+                Preemption.objects.select_for_update()
+                .select_related("ordered_by", "displaced")
+                .get(pk=preemption_id)
+            )
+            if preemption.acknowledged_at is not None or preemption.deemed_acknowledged:
+                continue
+            preemption.deemed_acknowledged = True
+            preemption.save(update_fields=["deemed_acknowledged"])
+            notify(
+                [preemption.ordered_by],
+                f"ผู้จองเดิมของคำสั่ง {preemption.reference_no} ถือว่ารับทราบแล้วเมื่อครบ 24 ชม.",
+                f"/bookings/{preemption.displaced_id}/",
+                preemption.displaced,
+            )
+            counts["deemed_acknowledged"] += 1
     return counts

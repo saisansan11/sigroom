@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% load thaidate %}
+{% block title %}บังคับย้ายการจอง · SIGROOM{% endblock %}
+{% block content %}
+<div class="page-heading"><div><p class="eyebrow">คำสั่งบังคับย้าย</p><h1>{{ booking.room.code }} · {{ booking.start_at|thai_datetime }}</h1><p>ทุกขั้นทำใน transaction เดียว หากส่วนใดล้มเหลวจะไม่มีการเปลี่ยนแปลง</p></div></div>
+<form method="post">
+  {% csrf_token %}{{ form.non_field_errors }}
+  <datalist id="preemption-reasons">{% for value in form.recent_reasons %}<option value="{{ value }}"></option>{% endfor %}</datalist>
+  {% for name, values in form.datalists.items %}<datalist id="preemption-{{ name }}">{% for value in values %}<option value="{{ value }}"></option>{% endfor %}</datalist>{% endfor %}
+  <article class="detail-card"><h2>ขั้น 1 · เหตุผลและอ้างอิง</h2>{{ form.reason.as_field_group }}{{ form.reference_no.as_field_group }}</article>
+  <article class="detail-card"><h2>ขั้น 2 · งานที่จะเข้าแทน</h2><div class="form-grid">{{ form.title.as_field_group }}{{ form.unit.as_field_group }}{{ form.responsible_name.as_field_group }}{{ form.responsible_phone.as_field_group }}{{ form.date.as_field_group }}{{ form.start_time.as_field_group }}{{ form.end_time.as_field_group }}{{ form.visibility.as_field_group }}</div><small>เวลาต้องซ้อนกับการจองเดิม</small></article>
+  <article class="detail-card"><h2>ขั้น 3 · ห้องทดแทนให้ผู้จองเดิม</h2>{{ form.replacement_room.errors }}{{ form.replacement_room }}{% if not options %}<p>ไม่พบห้องทดแทนที่ผ่านเงื่อนไขในขณะนี้</p>{% endif %}</article>
+  <div class="notice warning">ผู้จองเดิมจะได้รับแจ้งทันทีและต้องกดรับทราบ หากไม่ตอบภายใน 24 ชม. ระบบจะถือว่ารับทราบ</div>
+  <div class="form-actions"><button class="danger" type="submit">ยืนยันบังคับย้าย</button><a role="button" class="secondary" href="{% url 'bookings:booking_detail' booking.id %}">ยกเลิก</a></div>
+</form>
+{% endblock %}

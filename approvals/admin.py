@@ -5,10 +5,10 @@ from .models import Approval, ApproverDelegation
 
 @admin.register(Approval)
 class ApprovalAdmin(admin.ModelAdmin):
-    list_display = ("booking", "action", "acted_by", "on_behalf_of", "acted_at")
+    list_display = ("booking", "amendment", "action", "acted_by", "on_behalf_of", "acted_at")
     list_filter = ("action", "acted_at")
     search_fields = ("booking__title", "booking__room__code", "acted_by__username", "reason")
-    readonly_fields = ("booking", "action", "acted_by", "on_behalf_of", "reason", "acted_at")
+    readonly_fields = ("booking", "amendment", "action", "acted_by", "on_behalf_of", "reason", "acted_at")
 
     def has_add_permission(self, request):
         return False

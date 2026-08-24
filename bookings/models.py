@@ -154,6 +154,76 @@ class Booking(models.Model):
         return self.request_status in self.HOLDING_STATUSES
 
 
+class BookingAmendment(models.Model):
+    class Status(models.TextChoices):
+        PENDING = "pending", "รออนุมัติ"
+        APPROVED = "approved", "อนุมัติ"
+        REJECTED = "rejected", "ปฏิเสธ"
+        EXPIRED = "expired", "หมดอายุ"
+        WITHDRAWN = "withdrawn", "ถอน"
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    booking = models.ForeignKey(Booking, verbose_name="การจอง", on_delete=models.PROTECT, related_name="amendments")
+    submitted_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        verbose_name="ผู้ยื่น",
+        on_delete=models.PROTECT,
+        related_name="submitted_booking_amendments",
+    )
+    status = models.CharField("สถานะ", max_length=20, choices=Status.choices, default=Status.PENDING)
+    base_revision = models.PositiveIntegerField("รุ่นข้อมูลตั้งต้น")
+    proposed_room = models.ForeignKey(
+        "resources.Resource",
+        verbose_name="ห้องที่เสนอ",
+        null=True,
+        blank=True,
+        on_delete=models.PROTECT,
+        related_name="proposed_amendments",
+        limit_choices_to={"resource_type": "room"},
+    )
+    proposed_start_at = models.DateTimeField("เวลาเริ่มที่เสนอ", null=True, blank=True)
+    proposed_end_at = models.DateTimeField("เวลาสิ้นสุดที่เสนอ", null=True, blank=True)
+    proposed_equipment = models.ManyToManyField(
+        "resources.Resource",
+        verbose_name="อุปกรณ์ชุดเต็มที่เสนอ",
+        blank=True,
+        related_name="proposed_equipment_amendments",
+        limit_choices_to={"resource_type": "equipment"},
+    )
+    proposed_attendees = models.PositiveIntegerField("จำนวนผู้เข้าร่วมที่เสนอ", null=True, blank=True)
+    proposed_has_external = models.BooleanField("มีผู้เข้าร่วมภายนอกที่เสนอ", null=True, blank=True)
+    proposed_external_note = models.CharField("รายละเอียดผู้เข้าร่วมภายนอกที่เสนอ", max_length=200, blank=True)
+    reason = models.CharField("เหตุผลของผู้ขอ", max_length=300, blank=True)
+    decision_reason = models.TextField("เหตุผลการพิจารณา", blank=True)
+    submitted_at = models.DateTimeField("ยื่นเมื่อ", auto_now_add=True)
+    decided_at = models.DateTimeField("พิจารณาเมื่อ", null=True, blank=True)
+    is_urgent = models.BooleanField("เร่งด่วน", default=False)
+    sla_escalated_at = models.DateTimeField("เปิดสิทธิ์ผู้อนุมัติสำรองเมื่อ", null=True, blank=True)
+
+    class Meta:
+        verbose_name = "คำขอแก้ไขการจอง"
+        verbose_name_plural = "คำขอแก้ไขการจอง"
+        ordering = ["-submitted_at"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["booking"],
+                condition=models.Q(status="pending"),
+                name="one_pending_amendment_per_booking",
+            ),
+            models.UniqueConstraint(fields=["id", "booking"], name="uniq_amendment_id_booking"),
+            models.CheckConstraint(
+                condition=(
+                    models.Q(proposed_start_at__isnull=True, proposed_end_at__isnull=True)
+                    | models.Q(proposed_start_at__isnull=False, proposed_end_at__isnull=False)
+                ),
+                name="amendment_times_together",
+            ),
+        ]
+
+    def __str__(self):
+        return f"{self.booking_id} — {self.get_status_display()}"
+
+
 class BookingResource(models.Model):
     """
     ช่วงถือครองทรัพยากร — หนึ่งแถวต่อ (การจอง, ทรัพยากร)
@@ -163,6 +233,14 @@ class BookingResource(models.Model):
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     booking = models.ForeignKey(Booking, verbose_name="การจอง", on_delete=models.CASCADE, related_name="holds")
+    amendment = models.ForeignKey(
+        BookingAmendment,
+        verbose_name="คำขอแก้ไข",
+        null=True,
+        blank=True,
+        on_delete=models.PROTECT,
+        related_name="holds",
+    )
     resource = models.ForeignKey("resources.Resource", verbose_name="ทรัพยากร", on_delete=models.PROTECT, related_name="holds")
     hold = DateTimeRangeField("ช่วงถือครอง (รวม buffer)")
     released_at = models.DateTimeField("ปลดเมื่อ", null=True, blank=True)
@@ -185,13 +263,64 @@ class BookingResource(models.Model):
             # P1.2: ห้ามช่วงว่าง และห้ามทรัพยากรซ้ำในการจองเดียวกันขณะยังถือครอง
             models.CheckConstraint(condition=~models.Q(hold__isempty=True), name="hold_not_empty"),
             models.UniqueConstraint(
-                fields=["booking", "resource"], condition=models.Q(released_at__isnull=True), name="uniq_active_hold_per_booking_resource"
+                fields=["booking", "resource"],
+                condition=models.Q(released_at__isnull=True, amendment__isnull=True),
+                name="uniq_active_hold_per_booking_resource",
+            ),
+            models.UniqueConstraint(
+                fields=["amendment", "resource"],
+                condition=models.Q(released_at__isnull=True),
+                name="uniq_active_amendment_hold",
             ),
         ]
 
     def __str__(self) -> str:
         state = "ปลดแล้ว" if self.released_at else "ถือครอง"
         return f"{self.resource.code} {self.hold.lower:%Y-%m-%d %H:%M}–{self.hold.upper:%H:%M} ({state})"
+
+
+class Preemption(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    displaced = models.ForeignKey(
+        Booking,
+        verbose_name="การจองที่ถูกย้าย",
+        on_delete=models.PROTECT,
+        related_name="preemption_as_displaced",
+    )
+    incoming = models.ForeignKey(
+        Booking,
+        verbose_name="การจองที่เข้าแทน",
+        on_delete=models.PROTECT,
+        related_name="preemption_as_incoming",
+    )
+    replacement = models.ForeignKey(
+        Booking,
+        verbose_name="การจองทดแทน",
+        null=True,
+        blank=True,
+        on_delete=models.PROTECT,
+        related_name="preemption_as_replacement",
+    )
+    ordered_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        verbose_name="ผู้สั่ง",
+        on_delete=models.PROTECT,
+        related_name="ordered_preemptions",
+    )
+    ordered_by_position = models.CharField("ตำแหน่งผู้สั่ง ณ วันสั่ง", max_length=200)
+    reference_no = models.CharField("เลขอ้างอิงคำสั่ง/หนังสือ", max_length=100)
+    reason = models.CharField("เหตุผล", max_length=300)
+    acknowledged_at = models.DateTimeField("รับทราบเมื่อ", null=True, blank=True)
+    deemed_acknowledged = models.BooleanField("ถือว่ารับทราบแล้ว", default=False)
+    created_at = models.DateTimeField("สร้างเมื่อ", auto_now_add=True)
+
+    class Meta:
+        verbose_name = "การบังคับย้าย"
+        verbose_name_plural = "การบังคับย้าย"
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return f"{self.reference_no} — {self.displaced_id}"
 
 
 class SeriesSkip(models.Model):

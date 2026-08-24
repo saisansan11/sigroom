@@ -80,18 +80,23 @@ def release_holds(booking: Booking) -> int:
     return booking.holds.filter(released_at__isnull=True).update(released_at=timezone.now())
 
 
+def approval_policy_for_values(room: Resource, has_external_attendees: bool) -> str:
+    """แกนประเมินนโยบายที่ใช้ร่วมกันระหว่างการจองปกติและ amendment"""
+    rule = getattr(room, "rule", None)
+    if rule and rule.approval_policy == ResourceRule.ApprovalPolicy.REQUIRED:
+        return ResourceRule.ApprovalPolicy.REQUIRED
+    if has_external_attendees:
+        return ResourceRule.ApprovalPolicy.REQUIRED
+    return ResourceRule.ApprovalPolicy.AUTO
+
+
 def approval_policy_for(booking: Booking) -> str:
     """
     ประเมินนโยบายอนุมัติจากห้องและข้อมูลคำขอ (D1, SRS 12.2)
     - ห้องนโยบาย "ต้องอนุมัติ" → ต้องอนุมัติ
     - มีผู้เข้าร่วมจากภายนอก → ต้องอนุมัติ แม้ห้องเป็นอัตโนมัติ
     """
-    rule = getattr(booking.room, "rule", None)
-    if rule and rule.approval_policy == ResourceRule.ApprovalPolicy.REQUIRED:
-        return ResourceRule.ApprovalPolicy.REQUIRED
-    if booking.has_external_attendees:
-        return ResourceRule.ApprovalPolicy.REQUIRED
-    return ResourceRule.ApprovalPolicy.AUTO
+    return approval_policy_for_values(booking.room, booking.has_external_attendees)
 
 
 def validate_booking_window(
@@ -225,6 +230,16 @@ def cancel_booking(booking: Booking, user, now: datetime | None = None) -> Booki
     booking.request_status = Booking.RequestStatus.CANCELLED
     booking.revision += 1
     booking.save(update_fields=["request_status", "revision", "updated_at"])
+    pending_amendment = booking.amendments.filter(status="pending").first()
+    if pending_amendment:
+        from .amendment_services import withdraw_amendment
+
+        withdraw_amendment(
+            pending_amendment,
+            user,
+            "ถอนอัตโนมัติ: การจองถูกยกเลิก",
+            now,
+        )
     release_holds(booking)
     return booking
 
@@ -238,6 +253,8 @@ def _is_room_staff(user, room: Resource) -> bool:
 def can_view_details(user, booking: Booking) -> bool:
     """คืน True เฉพาะผู้ที่ดูชื่อกิจกรรมและรายละเอียดเต็มได้"""
     if not getattr(user, "is_authenticated", False):
+        return False
+    if booking.preemption_as_incoming.filter(displaced__requester_id=user.pk).exists():
         return False
     if user.is_superuser or user.is_infosec_officer or booking.requester_id == user.pk:
         return True

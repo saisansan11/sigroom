@@ -1,12 +1,12 @@
 from django.contrib import admin
 
-from .models import Booking, BookingResource, BookingSeries, SeriesSkip
+from .models import Booking, BookingAmendment, BookingResource, BookingSeries, Preemption, SeriesSkip
 
 
 class BookingResourceInline(admin.TabularInline):
     model = BookingResource
     extra = 0
-    readonly_fields = ("resource", "hold", "released_at")
+    readonly_fields = ("resource", "amendment", "hold", "released_at")
     can_delete = False
 
     def has_add_permission(self, request, obj=None):
@@ -52,6 +52,34 @@ class BookingSeriesAdmin(admin.ModelAdmin):
         "end_date", "requested_count", "time_start", "time_end", "created_at",
     )
     inlines = [SeriesSkipInline]
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+
+@admin.register(BookingAmendment)
+class BookingAmendmentAdmin(admin.ModelAdmin):
+    list_display = ("id", "booking", "status", "submitted_by", "proposed_room", "submitted_at", "decided_at")
+    list_filter = ("status", "is_urgent", "submitted_at")
+    search_fields = ("id", "booking__title", "booking__room__code", "submitted_by__username", "reason")
+    readonly_fields = tuple(field.name for field in BookingAmendment._meta.fields) + ("proposed_equipment",)
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+
+@admin.register(Preemption)
+class PreemptionAdmin(admin.ModelAdmin):
+    list_display = ("reference_no", "displaced", "incoming", "replacement", "ordered_by", "created_at", "acknowledged_at", "deemed_acknowledged")
+    list_filter = ("deemed_acknowledged", "created_at")
+    search_fields = ("reference_no", "reason", "displaced__title", "ordered_by__username")
+    readonly_fields = tuple(field.name for field in Preemption._meta.fields)
 
     def has_add_permission(self, request):
         return False
