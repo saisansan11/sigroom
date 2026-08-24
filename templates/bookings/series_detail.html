@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% load thaidate %}
+{% block title %}{{ series_code }} · SIGROOM{% endblock %}
+{% block content %}
+<div class="page-heading"><div><p class="eyebrow">ชุดการจอง {{ series_code }}</p><h1>{{ title }}</h1><p>{{ series.room.code }} · {{ series.get_freq_display }} · {{ series.start_date|thai_date }}{% if series.end_date %}–{{ series.end_date|thai_date }}{% endif %}</p></div><a class="secondary" role="button" href="{% url 'bookings:my_bookings' %}">การจองของฉัน</a></div>
+<article class="detail-card"><strong>สรุปสถานะ:</strong> รออนุมัติ {{ counts.pending|default:0 }} · อนุมัติ {{ counts.approved|default:0 }} · ปฏิเสธ {{ counts.rejected|default:0 }} · ยกเลิก {{ counts.cancelled|default:0 }} · หมดอายุ {{ counts.expired|default:0 }} · ข้าม {{ skips|length }}</article>
+<div class="table-wrap"><table><thead><tr><th>ครั้ง</th><th>วันที่-เวลา</th><th>สถานะ</th><th>หมายเหตุ</th><th></th></tr></thead><tbody>
+{% for booking in occurrences %}<tr><td>{{ booking.series_index }}</td><td>{{ booking.start_at|thai_datetime }}</td><td><span class="status status-{{ booking.request_status }}">{{ booking.get_request_status_display }}</span></td><td>{{ booking.decision_reason|default:"—" }}</td><td><a href="{% url 'bookings:booking_detail' booking.id %}">ดู</a>{% if can_cancel and booking.start_at > now and booking.request_status == 'pending' or can_cancel and booking.start_at > now and booking.request_status == 'approved' %}<form class="inline-form" method="post" action="{% url 'bookings:booking_cancel' booking.id %}">{% csrf_token %}<button class="outline danger compact-button" type="submit">ยกเลิกครั้งนี้</button></form>{% endif %}</td></tr>{% endfor %}
+{% for item in skips %}<tr class="muted-row"><td>—</td><td>{{ item.occur_date|thai_date }}</td><td>ข้าม</td><td>{{ item.reason }}</td><td></td></tr>{% endfor %}
+</tbody></table></div>
+{% if can_cancel %}<form method="post" action="{% url 'bookings:series_cancel_remaining' series.id %}" onsubmit="return confirm('ยืนยันยกเลิกครั้งที่เหลือทั้งหมดใช่หรือไม่')">{% csrf_token %}<button class="outline danger" type="submit">ยกเลิกครั้งที่เหลือทั้งหมด</button></form>{% endif %}
+{% endblock %}

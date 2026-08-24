@@ -11,12 +11,14 @@ from django.utils import timezone
 from django.utils.dateparse import parse_datetime
 from django.views.decorators.http import require_POST
 
-from resources.models import Resource, ResourceRule
+from resources.models import Blackout, Resource, ResourceRule
+from resources.services import active_outages
 from approvals.services import can_decide, recent_rejection_reasons
 from notifications.services import notify_submitted
 
 from .forms import BookingForm, BuddhistDateField, time_choices
-from .models import Booking
+from .models import Booking, BookingSeries
+from .series_services import cancel_remaining, create_series, preview_series, series_ref
 from .services import (
     BookingConflict,
     calendar_label,
@@ -114,6 +116,41 @@ def calendar_events(request):
                     "display": "background",
                     "classNames": ["buffer"],
                     "title": "",
+                }
+            )
+
+    selected_room = None
+    if request.GET.get("room"):
+        selected_room = Resource.objects.filter(code=request.GET["room"], resource_type=Resource.Type.ROOM).first()
+    blackouts = Blackout.objects.filter(start_at__lt=end, end_at__gt=start).prefetch_related("rooms")
+    for blackout in blackouts:
+        if selected_room and not blackout.applies_to(selected_room):
+            continue
+        if request.GET.get("building") and blackout.scope != Blackout.Scope.ALL:
+            building_rooms = Resource.objects.filter(
+                resource_type=Resource.Type.ROOM,
+                building=request.GET["building"],
+            )
+            if not any(blackout.applies_to(room) for room in building_rooms):
+                continue
+        events.append(
+            {
+                "title": f"{blackout.title} ({blackout.get_scope_display()})",
+                "start": blackout.start_at.isoformat(),
+                "end": blackout.end_at.isoformat(),
+                "display": "background",
+                "classNames": ["blackout-event"],
+            }
+        )
+    if selected_room:
+        for outage in active_outages(selected_room, start, end):
+            events.append(
+                {
+                    "title": f"งดใช้: {outage.reason}",
+                    "start": outage.start_at.isoformat(),
+                    "end": outage.end_at.isoformat(),
+                    "display": "background",
+                    "classNames": ["outage-event"],
                 }
             )
     return JsonResponse(events, safe=False)
@@ -221,12 +258,118 @@ def book_form(request, code):
     return render(request, "bookings/book_form.html", {"form": form, "room": room})
 
 
+def _series_form_booking(form, room, user):
+    booking = form.save(commit=False)
+    booking.room = room
+    booking.requester = user
+    booking._series_equipment = list(form.cleaned_data.get("equipment", []))
+    return booking
+
+
+@login_required
+@require_POST
+def series_preview(request, code):
+    room = get_object_or_404(Resource.objects.select_related("rule"), code=code, resource_type=Resource.Type.ROOM)
+    booking = Booking(room=room, requester=request.user, unit=request.user.unit)
+    form = BookingForm(request.POST, user=request.user, room=room, instance=booking)
+    if not form.is_valid() or not form.cleaned_data.get("is_series"):
+        if form.is_valid():
+            form.add_error("is_series", "กรุณาเลือกจองเป็นชุด")
+        return render(request, "bookings/book_form.html", {"form": form, "room": room}, status=400)
+    booking = _series_form_booking(form, room, request.user)
+    try:
+        preview = preview_series(room, form.series_params(), booking, request.user)
+    except ValidationError as exc:
+        for message in exc.messages:
+            form.add_error(None, message)
+        return render(request, "bookings/book_form.html", {"form": form, "room": room}, status=400)
+    return render(
+        request,
+        "bookings/series_preview.html",
+        {"form": form, "room": room, "booking": booking, "preview": preview},
+    )
+
+
+@login_required
+@require_POST
+def series_create(request, code):
+    room = get_object_or_404(Resource.objects.select_related("rule"), code=code, resource_type=Resource.Type.ROOM)
+    booking = Booking(room=room, requester=request.user, unit=request.user.unit)
+    form = BookingForm(request.POST, user=request.user, room=room, instance=booking)
+    if not form.is_valid() or not form.cleaned_data.get("is_series"):
+        messages.error(request, "ข้อมูลชุดการจองไม่ครบ กรุณาตรวจสอบอีกครั้ง")
+        return render(request, "bookings/book_form.html", {"form": form, "room": room}, status=400)
+    booking = _series_form_booking(form, room, request.user)
+    try:
+        params = form.series_params()
+        params["preview_free_dates"] = request.POST.getlist("_preview_free_dates")
+        series = create_series(room, params, booking, request.user)
+    except ValidationError as exc:
+        for message in exc.messages:
+            form.add_error(None, message)
+        return render(request, "bookings/book_form.html", {"form": form, "room": room}, status=400)
+    messages.success(
+        request,
+        f"สร้างชุดการจองแล้ว {series.occurrences.count()} ครั้ง · ข้าม {series.skips.count()} ครั้ง",
+    )
+    return redirect("bookings:series_detail", id=series.pk)
+
+
+@login_required
+def series_detail(request, id):
+    series = get_object_or_404(
+        BookingSeries.objects.select_related("room", "room__rule", "created_by", "unit"),
+        pk=id,
+    )
+    occurrences = list(
+        series.occurrences.select_related("room", "requester", "unit").prefetch_related("equipment").order_by("start_at")
+    )
+    if not occurrences:
+        raise Http404
+    first = occurrences[0]
+    if not (can_view_details(request.user, first) or can_decide(request.user, first)):
+        raise PermissionDenied("คุณไม่มีสิทธิ์ดูชุดการจองนี้")
+    counts = {}
+    for booking in occurrences:
+        counts[booking.request_status] = counts.get(booking.request_status, 0) + 1
+    return render(
+        request,
+        "bookings/series_detail.html",
+        {
+            "series": series,
+            "series_code": series_ref(series),
+            "occurrences": occurrences,
+            "skips": series.skips.all(),
+            "counts": counts,
+            "can_cancel": series.created_by_id == request.user.pk or request.user.is_superuser,
+            "now": timezone.now(),
+            "title": first.title,
+        },
+    )
+
+
+@login_required
+@require_POST
+def series_cancel_remaining(request, id):
+    series = get_object_or_404(BookingSeries, pk=id)
+    try:
+        result = cancel_remaining(series, request.user)
+    except PermissionError as exc:
+        messages.error(request, str(exc))
+    else:
+        text = f"ยกเลิกครั้งที่เหลือแล้ว {result['cancelled']} ครั้ง"
+        if result["skipped"]:
+            text += f" · ข้าม {len(result['skipped'])} ครั้งที่พ้นเส้นตาย"
+        messages.success(request, text)
+    return redirect("bookings:series_detail", id=series.pk)
+
+
 @login_required
 def booking_detail(request, id):
     booking = get_object_or_404(_booking_queryset(), id=id)
     full_details = can_view_details(request.user, booking)
     approval_access = can_decide(request.user, booking)
-    can_approve = booking.request_status == Booking.RequestStatus.PENDING and approval_access
+    can_approve = booking.request_status == Booking.RequestStatus.PENDING and approval_access and not booking.series_id
     if approval_access:
         full_details = True
     if not full_details:
@@ -316,7 +459,7 @@ def booking_delete_draft(request, id):
 @login_required
 def my_bookings(request):
     now = timezone.now()
-    bookings = _booking_queryset().filter(requester=request.user)
+    bookings = _booking_queryset().filter(requester=request.user, series__isnull=True)
     groups = {
         "upcoming": bookings.filter(start_at__gte=now).exclude(request_status__in=[Booking.RequestStatus.DRAFT, Booking.RequestStatus.CANCELLED, Booking.RequestStatus.REJECTED]),
         "drafts": bookings.filter(request_status=Booking.RequestStatus.DRAFT),
@@ -326,4 +469,18 @@ def my_bookings(request):
     tab = request.GET.get("tab", "upcoming")
     if tab not in groups:
         tab = "upcoming"
-    return render(request, "bookings/my_bookings.html", {"groups": groups, "tab": tab, "bookings": groups[tab]})
+    series_items = list(
+        BookingSeries.objects.filter(created_by=request.user)
+        .select_related("room")
+        .prefetch_related("occurrences", "skips")
+    )
+    for series in series_items:
+        occurrences = list(series.occurrences.all())
+        series.display_ref = series_ref(series)
+        series.display_total = len(occurrences)
+        series.display_next = min((item.start_at for item in occurrences if item.start_at >= now), default=None)
+    return render(
+        request,
+        "bookings/my_bookings.html",
+        {"groups": groups, "tab": tab, "bookings": groups[tab], "series_items": series_items},
+    )

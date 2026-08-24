@@ -16,6 +16,39 @@ from django.contrib.postgres.fields import DateTimeRangeField, RangeOperators
 from django.db import models
 
 
+class BookingSeries(models.Model):
+    class Frequency(models.TextChoices):
+        WEEKLY = "weekly", "รายสัปดาห์"
+        WORKDAYS = "workdays", "ทุกวันราชการ"
+        CUSTOM = "custom", "กำหนดวันเอง"
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    room = models.ForeignKey(
+        "resources.Resource", verbose_name="ห้อง", on_delete=models.PROTECT, related_name="booking_series"
+    )
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, verbose_name="ผู้สร้าง", on_delete=models.PROTECT, related_name="booking_series"
+    )
+    unit = models.ForeignKey("accounts.Unit", verbose_name="หน่วยงาน", on_delete=models.PROTECT, related_name="booking_series")
+    freq = models.CharField("รูปแบบ", max_length=20, choices=Frequency.choices)
+    weekdays = models.JSONField("วันในสัปดาห์", default=list, blank=True)
+    custom_dates = models.JSONField("วันที่กำหนดเอง", default=list, blank=True)
+    start_date = models.DateField("วันที่เริ่ม")
+    end_date = models.DateField("วันที่สิ้นสุด", null=True, blank=True)
+    requested_count = models.PositiveIntegerField("จำนวนครั้งที่ขอ", null=True, blank=True)
+    time_start = models.TimeField("เวลาเริ่ม")
+    time_end = models.TimeField("เวลาสิ้นสุด")
+    created_at = models.DateTimeField("สร้างเมื่อ", auto_now_add=True)
+
+    class Meta:
+        verbose_name = "ชุดการจอง"
+        verbose_name_plural = "ชุดการจอง"
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return f"{self.room.code} {self.start_date} ({self.get_freq_display()})"
+
+
 class Booking(models.Model):
     class RequestStatus(models.TextChoices):
         DRAFT = "draft", "ร่าง"
@@ -90,6 +123,15 @@ class Booking(models.Model):
     submitted_at = models.DateTimeField("ส่งคำขอเมื่อ", null=True, blank=True)
     sla_escalated_at = models.DateTimeField("เปิดสิทธิ์ผู้อนุมัติสำรองเมื่อ", null=True, blank=True)
     decision_reason = models.TextField("เหตุผลการพิจารณาล่าสุด", blank=True)
+    series = models.ForeignKey(
+        BookingSeries,
+        verbose_name="ชุดการจอง",
+        null=True,
+        blank=True,
+        on_delete=models.PROTECT,
+        related_name="occurrences",
+    )
+    series_index = models.PositiveIntegerField("ลำดับในชุด", null=True, blank=True)
 
     class Meta:
         verbose_name = "การจอง"
@@ -150,3 +192,24 @@ class BookingResource(models.Model):
     def __str__(self) -> str:
         state = "ปลดแล้ว" if self.released_at else "ถือครอง"
         return f"{self.resource.code} {self.hold.lower:%Y-%m-%d %H:%M}–{self.hold.upper:%H:%M} ({state})"
+
+
+class SeriesSkip(models.Model):
+    class Kind(models.TextChoices):
+        BLACKOUT = "blackout", "ข้ามตามปฏิทินส่วนกลาง"
+        CONFLICT = "conflict", "เวลาชน"
+        CONFLICT_AT_SUBMIT = "conflict_at_submit", "มีผู้จองตัดหน้าขณะยืนยัน"
+
+    series = models.ForeignKey(BookingSeries, verbose_name="ชุดการจอง", on_delete=models.CASCADE, related_name="skips")
+    occur_date = models.DateField("วันที่ไม่ได้สร้าง")
+    kind = models.CharField("สาเหตุ", max_length=30, choices=Kind.choices)
+    reason = models.CharField("รายละเอียด", max_length=200)
+
+    class Meta:
+        verbose_name = "ครั้งที่ข้ามในชุด"
+        verbose_name_plural = "ครั้งที่ข้ามในชุด"
+        ordering = ["occur_date", "pk"]
+        constraints = [models.UniqueConstraint(fields=["series", "occur_date"], name="uniq_series_skip_date")]
+
+    def __str__(self):
+        return f"{self.series_id} {self.occur_date}: {self.reason}"

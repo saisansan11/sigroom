@@ -8,6 +8,7 @@ urlpatterns = [
     path("", views.queue, name="queue"),
     path("<uuid:id>/approve/", views.approve, name="approve"),
     path("<uuid:id>/reject/", views.reject, name="reject"),
+    path("series/<uuid:id>/decide/", views.series_decide, name="series_decide"),
     path("delegation/", views.delegation, name="delegation"),
     path("delegation/<int:id>/delete/", views.delegation_delete, name="delegation_delete"),
 ]

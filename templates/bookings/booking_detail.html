@@ -15,6 +15,7 @@
     <div><dt>การมองเห็น</dt><dd>{{ booking.get_visibility_display }}</dd></div>
     <div><dt>รหัสการจอง</dt><dd><code>{{ booking.id|stringformat:"s"|slice:":8" }}</code> · รุ่น {{ booking.revision }}</dd></div>
     <div><dt>ส่งเมื่อ</dt><dd>{{ booking.submitted_at|thai_datetime }}</dd></div>
+    {% if booking.series_id %}<div class="wide"><dt>ชุดการจอง</dt><dd>ส่วนหนึ่งของชุด <a href="{% url 'bookings:series_detail' booking.series_id %}">ดูทั้งชุด</a> · ครั้งที่ {{ booking.series_index }}</dd></div>{% endif %}
     {% if booking.note %}<div class="wide"><dt>หมายเหตุ</dt><dd>{{ booking.note|linebreaksbr }}</dd></div>{% endif %}
   </dl>
 </article>

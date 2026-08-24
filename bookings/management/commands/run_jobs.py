@@ -5,7 +5,7 @@ from approvals.services import run_scheduled_jobs
 
 
 class Command(BaseCommand):
-    help = "หมดอายุคำขอและเปิดสิทธิ์ผู้อนุมัติสำรองสำหรับคำขอที่เกิน SLA"
+    help = "หมดอายุคำขอ/ชุดการจอง และเปิดสิทธิ์ผู้อนุมัติสำรองสำหรับรายการที่เกิน SLA"
 
     def handle(self, *args, **options):
         counts = run_scheduled_jobs(timezone.now())

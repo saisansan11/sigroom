@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import Resource, ResourceApprover, ResourceRule
+from .models import Blackout, Resource, ResourceApprover, ResourceOutage, ResourceRule
 
 
 class ResourceRuleInline(admin.StackedInline):
@@ -34,3 +34,24 @@ class ResourceAdmin(admin.ModelAdmin):
         ("คุณลักษณะห้อง", {"fields": ("room_category", "capacity", "fixed_equipment", "layouts")}),
         ("ผู้รับผิดชอบ", {"fields": ("owner_unit", "custodians")}),
     )
+
+
+@admin.register(Blackout)
+class BlackoutAdmin(admin.ModelAdmin):
+    list_display = ("title", "start_at", "end_at", "scope", "building", "room_category")
+    list_filter = ("scope", "building", "room_category")
+    search_fields = ("title", "building", "rooms__code")
+    filter_horizontal = ("rooms",)
+
+    def save_model(self, request, obj, form, change):
+        if not obj.created_by_id:
+            obj.created_by = request.user
+        super().save_model(request, obj, form, change)
+
+
+@admin.register(ResourceOutage)
+class ResourceOutageAdmin(admin.ModelAdmin):
+    list_display = ("resource", "start_at", "end_at", "reason", "created_by", "ended_early_at")
+    list_filter = ("resource", "ended_early_at")
+    search_fields = ("resource__code", "reason", "created_by__username")
+    autocomplete_fields = ("resource", "created_by")

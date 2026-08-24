@@ -107,3 +107,85 @@ class ResourceApprover(models.Model):
     def __str__(self) -> str:
         role = "หลัก" if self.is_primary else "สำรอง"
         return f"{self.user} ({role}) — {self.resource.code}"
+
+
+class Blackout(models.Model):
+    class Scope(models.TextChoices):
+        ALL = "all", "ทุกห้อง"
+        BUILDING = "building", "อาคาร"
+        CATEGORY = "category", "ประเภทห้อง"
+        ROOMS = "rooms", "ห้องที่เลือก"
+
+    title = models.CharField("ชื่อวันหยุด/กิจกรรม", max_length=200)
+    start_at = models.DateTimeField("เริ่ม")
+    end_at = models.DateTimeField("สิ้นสุด")
+    scope = models.CharField("ขอบเขต", max_length=20, choices=Scope.choices, default=Scope.ALL)
+    building = models.CharField("อาคาร", max_length=100, blank=True)
+    room_category = models.CharField("ประเภทห้อง", max_length=20, choices=Resource.Category.choices, blank=True)
+    rooms = models.ManyToManyField(
+        Resource,
+        verbose_name="ห้องที่เลือก",
+        blank=True,
+        related_name="blackouts",
+        limit_choices_to={"resource_type": Resource.Type.ROOM},
+    )
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        verbose_name="สร้างโดย",
+        null=True,
+        blank=True,
+        on_delete=models.PROTECT,
+        related_name="created_blackouts",
+    )
+
+    class Meta:
+        verbose_name = "ปฏิทินส่วนกลาง"
+        verbose_name_plural = "ปฏิทินส่วนกลาง"
+        ordering = ["start_at", "title"]
+        constraints = [
+            models.CheckConstraint(condition=models.Q(end_at__gt=models.F("start_at")), name="blackout_end_after_start")
+        ]
+
+    def applies_to(self, resource: Resource) -> bool:
+        if self.scope == self.Scope.ALL:
+            return True
+        if self.scope == self.Scope.BUILDING:
+            return bool(self.building and resource.building == self.building)
+        if self.scope == self.Scope.CATEGORY:
+            return bool(self.room_category and resource.room_category == self.room_category)
+        return self.rooms.filter(pk=resource.pk).exists()
+
+    def __str__(self):
+        return f"{self.title} ({self.get_scope_display()})"
+
+
+class ResourceOutage(models.Model):
+    resource = models.ForeignKey(
+        Resource,
+        verbose_name="ห้อง",
+        on_delete=models.PROTECT,
+        related_name="outages",
+        limit_choices_to={"resource_type": Resource.Type.ROOM},
+    )
+    start_at = models.DateTimeField("เริ่มงดใช้")
+    end_at = models.DateTimeField("สิ้นสุดงดใช้")
+    reason = models.CharField("เหตุผล", max_length=200)
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        verbose_name="สร้างโดย",
+        on_delete=models.PROTECT,
+        related_name="created_resource_outages",
+    )
+    created_at = models.DateTimeField("สร้างเมื่อ", auto_now_add=True)
+    ended_early_at = models.DateTimeField("สิ้นสุดก่อนกำหนดเมื่อ", null=True, blank=True)
+
+    class Meta:
+        verbose_name = "ช่วงงดใช้ห้อง"
+        verbose_name_plural = "ช่วงงดใช้ห้อง"
+        ordering = ["-start_at"]
+        constraints = [
+            models.CheckConstraint(condition=models.Q(end_at__gt=models.F("start_at")), name="outage_end_after_start")
+        ]
+
+    def __str__(self):
+        return f"{self.resource.code} {self.start_at}–{self.end_at}: {self.reason}"

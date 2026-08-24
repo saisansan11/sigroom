@@ -5,3 +5,16 @@
 <div class="policy-banner">{% if room.rule.approval_policy == 'required' %}🕒 ห้องนี้ต้องผ่านผู้อนุมัติ{% else %}✓ อนุมัติอัตโนมัติเมื่อว่าง{% endif %}{% if room.rule.buffer_before_min or room.rule.buffer_after_min %} · เตรียมห้อง {{ room.rule.buffer_before_min }} นาที / เก็บห้อง {{ room.rule.buffer_after_min }} นาที{% endif %}</div>
 {% include "bookings/partials/booking_fields.html" with submit_label="ส่งคำขอ" show_draft=True %}
 {% endblock %}
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  const toggle = document.getElementById('id_is_series');
+  if (!toggle) return;
+  const update = () => {
+    document.querySelectorAll('.series-field,.series-booking-action').forEach(el => el.hidden = !toggle.checked);
+    document.querySelectorAll('.single-booking-action').forEach(el => el.hidden = toggle.checked);
+  };
+  toggle.addEventListener('change', update); update();
+});
+</script>
+{% endblock %}

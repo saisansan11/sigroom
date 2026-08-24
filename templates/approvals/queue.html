@@ -12,6 +12,21 @@
 <div class="approval-list">
 {% for booking in bookings %}
   <article class="approval-card">
+    {% if booking.is_series_card %}
+    <div class="approval-card-main">
+      <p class="approval-flags"><span class="policy">ชุดการจอง</span>{% if booking.is_urgent %}<span class="urgent-flag">🔴 เร่งด่วน</span>{% endif %}{% if booking.is_over_sla %}<span class="sla-flag">🟡 เกิน SLA</span>{% endif %}</p>
+      <h2><a href="{% url 'bookings:series_detail' booking.series_id %}">{{ booking.title }}</a></h2>
+      <p><strong>{{ booking.room.code }} {{ booking.room.name }}</strong> · {{ booking.series_occurrences|length }} ครั้ง · {{ booking.series_occurrences.0.start_at|thai_datetime }}–{{ booking.series_last_at|thai_date }}</p>
+      <p>{{ booking.unit.name }} · {{ booking.requester.display_name }} · หมดอายุใน {{ booking.expires_in_hours }} ชม.</p>
+      <form method="post" action="{% url 'approvals:series_decide' booking.series_id %}">
+        {% csrf_token %}
+        <details><summary>ดูรายการทุกครั้ง / ตัดบางครั้งออก</summary>{% for item in booking.series_occurrences %}<label><input type="checkbox" name="excluded" value="{{ item.id }}"> ตัดครั้งที่ {{ item.series_index }} · {{ item.start_at|thai_datetime }}</label>{% endfor %}</details>
+        <label>เหตุผลของครั้งที่ตัดออก<input name="reason_excluded" maxlength="500" list="rejection-reasons" placeholder="จำเป็นเมื่อเลือกตัดบางครั้ง"></label>
+        <label>เหตุผลปฏิเสธทั้งชุด<input name="reason_reject" maxlength="500" list="rejection-reasons" placeholder="จำเป็นเมื่อปฏิเสธทั้งชุด"></label>
+        <div class="form-actions"><button type="submit" name="action" value="approve">อนุมัติทั้งชุด</button><button class="danger" type="submit" name="action" value="reject">ปฏิเสธทั้งชุด</button></div>
+      </form>
+    </div>
+    {% else %}
     <div class="approval-card-main">
       <p class="approval-flags">
         {% if booking.is_urgent %}<span class="urgent-flag">🔴 เร่งด่วน</span>{% endif %}
@@ -36,6 +51,7 @@
         </form>
       </details>
     </div>
+    {% endif %}
   </article>
 {% empty %}
   <div class="empty-state detail-card">ไม่มีคำขอรออนุมัติ</div>

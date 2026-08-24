@@ -3,6 +3,7 @@ from datetime import date, datetime, timedelta
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
 from django.db import transaction
+from django.db.models import Min
 from django.utils import timezone
 
 from bookings.models import Booking
@@ -45,17 +46,48 @@ def effective_approver_ids(room, now: datetime) -> dict[str, set[int]]:
     return {"primary_ids": primary_ids, "backup_ids": backup_ids}
 
 
+def is_business_day(value: date) -> bool:
+    from resources.models import Blackout
+
+    if value.weekday() >= 5:
+        return False
+    zone = timezone.get_current_timezone()
+    day_start = timezone.make_aware(datetime.combine(value, datetime.min.time()), zone)
+    day_end = day_start + timedelta(days=1)
+    return not Blackout.objects.filter(
+        scope=Blackout.Scope.ALL,
+        start_at__lt=day_end,
+        end_at__gt=day_start,
+    ).exists()
+
+
 def sla_deadline(booking: Booking) -> datetime:
     cursor = booking.submitted_at or booking.created_at
     business_days = 0
     while business_days < 2:
         cursor += timedelta(days=1)
-        if timezone.localtime(cursor).weekday() < 5:
+        if is_business_day(timezone.localtime(cursor).date()):
             business_days += 1
     return cursor
 
 
+def series_expiry_deadline(series) -> datetime:
+    earliest = series.occurrences.filter(
+        request_status__in=[Booking.RequestStatus.PENDING, Booking.RequestStatus.APPROVED]
+    ).aggregate(value=Min("start_at"))["value"]
+    if earliest is None:
+        earliest = series.occurrences.aggregate(value=Min("start_at"))["value"]
+    if earliest is None:
+        raise ValueError("ชุดการจองนี้ไม่มีรายการ")
+    submitted_at = series.occurrences.order_by("submitted_at").values_list("submitted_at", flat=True).first()
+    if submitted_at and earliest - submitted_at < timedelta(hours=24):
+        return earliest
+    return earliest - timedelta(hours=24)
+
+
 def expiry_deadline(booking: Booking) -> datetime:
+    if booking.series_id:
+        return series_expiry_deadline(booking.series)
     submitted_at = booking.submitted_at or booking.created_at
     if booking.start_at - submitted_at < timedelta(hours=24):
         return booking.start_at
@@ -185,8 +217,20 @@ def pending_for(user, now: datetime | None = None) -> list[Booking]:
         ).values_list("resource_id", flat=True)
         bookings = bookings.filter(room_id__in=set(room_ids) | set(delegated_room_ids))
     result = []
+    seen_series = set()
     for booking in bookings:
         if can_decide(user, booking, now):
+            if booking.series_id:
+                if booking.series_id in seen_series:
+                    continue
+                seen_series.add(booking.series_id)
+                booking.is_series_card = True
+                booking.series_occurrences = list(
+                    booking.series.occurrences.filter(request_status=Booking.RequestStatus.PENDING)
+                    .select_related("room", "requester", "unit")
+                    .order_by("start_at")
+                )
+                booking.series_last_at = booking.series_occurrences[-1].start_at
             booking.is_over_sla = now >= sla_deadline(booking)
             booking.expires_at = expiry_deadline(booking)
             booking.expires_in_hours = max(0, int((booking.expires_at - now).total_seconds() // 3600))
@@ -194,6 +238,79 @@ def pending_for(user, now: datetime | None = None) -> list[Booking]:
             booking.acting_as_backup = user.pk in approvers["backup_ids"] and user.pk not in approvers["primary_ids"]
             result.append(booking)
     return result
+
+
+@transaction.atomic
+def decide_series(series, user, action, excluded=None, reason_excluded="", reason_reject="", now=None):
+    from bookings.series_services import series_ref
+    from notifications.services import notify
+
+    now = now or timezone.now()
+    occurrences = list(
+        Booking.objects.select_for_update()
+        .filter(series=series, request_status=Booking.RequestStatus.PENDING)
+        .select_related("room", "requester")
+        .order_by("pk")
+    )
+    if not occurrences:
+        raise ValueError("ชุดการจองนี้ถูกดำเนินการแล้ว")
+    first = min(occurrences, key=lambda item: item.start_at)
+    if not can_decide(user, first, now):
+        raise PermissionError("คุณไม่มีสิทธิ์พิจารณาชุดการจองนี้")
+    if now >= series_expiry_deadline(series):
+        raise ValueError("ชุดการจองหมดอายุแล้ว")
+    if action not in {"approve", "reject"}:
+        raise ValidationError("การพิจารณาไม่ถูกต้อง")
+
+    excluded_ids = {str(item) for item in (excluded or [])}
+    occurrence_ids = {str(item.pk) for item in occurrences}
+    if not excluded_ids.issubset(occurrence_ids):
+        raise ValidationError("รายการที่ตัดออกไม่อยู่ในชุดนี้")
+    reason_excluded = (reason_excluded or "").strip()
+    reason_reject = (reason_reject or "").strip()
+    if action == "approve" and excluded_ids and not reason_excluded:
+        raise ValidationError("กรุณาระบุเหตุผลของครั้งที่ตัดออก")
+    if action == "reject" and not reason_reject:
+        raise ValidationError("กรุณาระบุเหตุผลปฏิเสธทั้งชุด")
+
+    approved_count = rejected_count = 0
+    for booking in occurrences:
+        reject_this = action == "reject" or str(booking.pk) in excluded_ids
+        if reject_this:
+            reason = reason_reject if action == "reject" else reason_excluded
+            booking.request_status = Booking.RequestStatus.REJECTED
+            booking.decision_reason = reason
+            booking.save(update_fields=["request_status", "decision_reason", "updated_at"])
+            release_holds(booking)
+            Approval.objects.create(
+                booking=booking,
+                action=Approval.Action.REJECTED,
+                acted_by=user,
+                on_behalf_of=_on_behalf_of(user, booking, now),
+                reason=reason,
+            )
+            rejected_count += 1
+        else:
+            booking.request_status = Booking.RequestStatus.APPROVED
+            booking.decision_reason = ""
+            booking.save(update_fields=["request_status", "decision_reason", "updated_at"])
+            Approval.objects.create(
+                booking=booking,
+                action=Approval.Action.APPROVED,
+                acted_by=user,
+                on_behalf_of=_on_behalf_of(user, booking, now),
+            )
+            approved_count += 1
+
+    if action == "reject":
+        text = f"ชุด {series_ref(series)} {series.room.code} ถูกปฏิเสธ {rejected_count} ครั้ง: {reason_reject}"
+    else:
+        text = f"ชุด {series_ref(series)} {series.room.code} อนุมัติ {approved_count} · ตัดออก {rejected_count} ครั้ง"
+    recipients = [first.requester]
+    if approved_count:
+        recipients.extend(first.room.custodians.all())
+    notify(recipients, text, f"/series/{series.pk}/", first)
+    return {"approved": approved_count, "rejected": rejected_count}
 
 
 def recent_rejection_reasons(user, limit: int = 10) -> list[str]:
@@ -261,6 +378,7 @@ def _approval_users(booking: Booking, now: datetime):
 
 
 def run_scheduled_jobs(now: datetime | None = None) -> dict[str, int]:
+    from bookings.series_services import series_ref
     from notifications.services import booking_summary, notify
 
     now = now or timezone.now()
@@ -270,6 +388,7 @@ def run_scheduled_jobs(now: datetime | None = None) -> dict[str, int]:
         .order_by("pk")
         .values_list("pk", flat=True)
     )
+    processed_series = set()
     for booking_id in pending_ids:
         with transaction.atomic():
             booking = (
@@ -278,6 +397,47 @@ def run_scheduled_jobs(now: datetime | None = None) -> dict[str, int]:
                 .get(pk=booking_id)
             )
             if booking.request_status != Booking.RequestStatus.PENDING:
+                continue
+            if booking.series_id:
+                if booking.series_id in processed_series:
+                    continue
+                processed_series.add(booking.series_id)
+                occurrences = list(
+                    Booking.objects.select_for_update()
+                    .filter(series_id=booking.series_id, request_status=Booking.RequestStatus.PENDING)
+                    .select_related("room", "requester", "series")
+                    .order_by("pk")
+                )
+                if not occurrences:
+                    continue
+                first = min(occurrences, key=lambda item: item.start_at)
+                if now >= series_expiry_deadline(first.series):
+                    for occurrence in occurrences:
+                        occurrence.request_status = Booking.RequestStatus.EXPIRED
+                        occurrence.save(update_fields=["request_status", "updated_at"])
+                        release_holds(occurrence)
+                        Approval.objects.create(booking=occurrence, action=Approval.Action.EXPIRED)
+                    recipients = [first.requester, *_approval_users(first, now)]
+                    notify(
+                        recipients,
+                        f"ชุด {series_ref(first.series)} {first.room.code} หมดอายุแล้ว {len(occurrences)} ครั้ง",
+                        f"/series/{first.series_id}/",
+                        first,
+                    )
+                    counts["expired"] += len(occurrences)
+                    continue
+                to_escalate = [item for item in occurrences if item.sla_escalated_at is None]
+                if now >= sla_deadline(first) and to_escalate:
+                    for occurrence in to_escalate:
+                        occurrence.sla_escalated_at = now
+                        occurrence.save(update_fields=["sla_escalated_at", "updated_at"])
+                    notify(
+                        _approval_users(first, now),
+                        f"ชุด {series_ref(first.series)} {first.room.code} เกิน SLA และเปิดสิทธิ์ผู้อนุมัติสำรองแล้ว",
+                        f"/series/{first.series_id}/",
+                        first,
+                    )
+                    counts["escalated"] += len(to_escalate)
                 continue
             if now >= expiry_deadline(booking):
                 booking.request_status = Booking.RequestStatus.EXPIRED

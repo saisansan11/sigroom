@@ -141,6 +141,15 @@ def validate_booking_window(
         user_unit_id = getattr(user, "unit_id", None)
         if not user_unit_id or not rule.allowed_units.filter(pk=user_unit_id).exists():
             errors.append("หน่วยงานของคุณไม่มีสิทธิ์จองห้องนี้")
+
+    from resources.services import active_blackouts, active_outages
+
+    blackouts = active_blackouts(resource, start, end)
+    if blackouts:
+        errors.append(f"ติดวันหยุด/กิจกรรมส่วนกลาง: {blackouts[0].title}")
+    outages = active_outages(resource, start, end)
+    if outages:
+        errors.append(f"ห้องงดใช้: {outages[0].reason}")
     return errors
 
 
@@ -312,12 +321,14 @@ def editable_fields(booking: Booking, now: datetime | None = None) -> set[str]:
 
 
 def _urgent_deadline(now: datetime) -> datetime:
-    """ประมาณ 2 วันทำการ + 24 ชม.; ปฏิทินวันหยุดส่วนกลางจะเพิ่มใน M4"""
+    """สองวันทำการ (ข้ามวันหยุดส่วนกลาง) + 24 ชม. สำหรับจัดธงเร่งด่วน"""
+    from approvals.services import is_business_day
+
     cursor = now
     business_days = 0
     while business_days < 2:
         cursor += timedelta(days=1)
-        if timezone.localtime(cursor).weekday() < 5:
+        if is_business_day(timezone.localtime(cursor).date()):
             business_days += 1
     return cursor + timedelta(hours=24)
 

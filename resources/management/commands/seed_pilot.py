@@ -5,10 +5,13 @@
 ใช้: uv run manage.py seed_pilot
      uv run manage.py seed_pilot --demo-users
 """
+from datetime import datetime, time, timedelta
+
 from django.core.management.base import BaseCommand
+from django.utils import timezone
 
 from accounts.models import Unit, User
-from resources.models import Resource, ResourceApprover, ResourceRule
+from resources.models import Blackout, Resource, ResourceApprover, ResourceRule
 
 R = Resource
 P = ResourceRule.ApprovalPolicy
@@ -43,7 +46,7 @@ class Command(BaseCommand):
         parser.add_argument(
             "--demo-users",
             action="store_true",
-            help="สร้างบัญชี somchai, wanida และ somsak สำหรับทดลอง M2–M3",
+            help="สร้างบัญชี somchai, wanida และ somsak สำหรับทดลอง M2–M4",
         )
 
     def handle(self, *args, **options):
@@ -111,5 +114,22 @@ class Command(BaseCommand):
                 defaults={"is_primary": False},
             )
             self.stdout.write("กำหนด somsak เป็นผู้อนุมัติหลักของ MTG-CO และผู้อนุมัติสำรองของ MTG-1")
+
+        today = timezone.localdate()
+        days_to_monday = (7 - today.weekday()) % 7 or 7
+        next_monday = today + timedelta(days=days_to_monday)
+        zone = timezone.get_current_timezone()
+        blackout_start = timezone.make_aware(datetime.combine(next_monday, time.min), zone)
+        Blackout.objects.update_or_create(
+            title="วันหยุดชดเชย",
+            defaults={
+                "start_at": blackout_start,
+                "end_at": blackout_start + timedelta(days=1),
+                "scope": Blackout.Scope.ALL,
+                "building": "",
+                "room_category": "",
+            },
+        )
+        self.stdout.write("เพิ่มปฏิทินส่วนกลางตัวอย่าง: วันหยุดชดเชย (วันจันทร์หน้า)")
 
         self.stdout.write(self.style.SUCCESS("เสร็จ — เปิด http://127.0.0.1:8000/ เพื่อดู SIGROOM"))

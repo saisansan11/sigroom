@@ -6,7 +6,7 @@ from django.utils import timezone
 from accounts.models import Unit
 from resources.models import Resource
 
-from .models import Booking
+from .models import Booking, BookingSeries
 from .services import frequent_values
 
 
@@ -80,6 +80,38 @@ class BookingForm(forms.ModelForm):
         required=False,
         widget=forms.TextInput(attrs={"placeholder": "พิมพ์เพิ่มเติม (ถ้ามี)"}),
     )
+    is_series = forms.BooleanField(label="จองเป็นชุด", required=False)
+    series_freq = forms.ChoiceField(
+        label="รูปแบบชุด",
+        required=False,
+        choices=BookingSeries.Frequency.choices,
+        initial=BookingSeries.Frequency.WEEKLY,
+    )
+    series_weekdays = forms.MultipleChoiceField(
+        label="วันในสัปดาห์",
+        required=False,
+        choices=((0, "จ"), (1, "อ"), (2, "พ"), (3, "พฤ"), (4, "ศ")),
+        widget=forms.CheckboxSelectMultiple,
+    )
+    series_end_mode = forms.ChoiceField(
+        label="สิ้นสุดด้วย",
+        required=False,
+        choices=(("date", "วันที่"), ("count", "จำนวนครั้ง")),
+        widget=forms.RadioSelect,
+        initial="count",
+    )
+    series_end_date = BuddhistDateField(
+        label="วันที่สิ้นสุดชุด",
+        required=False,
+        widget=forms.TextInput(attrs={"placeholder": "28/11/2569"}),
+    )
+    series_count = forms.IntegerField(label="จำนวนครั้ง", required=False, min_value=1)
+    series_custom_dates = forms.CharField(
+        label="วันที่กำหนดเอง",
+        required=False,
+        widget=forms.Textarea(attrs={"rows": 3, "placeholder": "25/08/2569, 27/08/2569"}),
+        help_text="คั่นแต่ละวันด้วยจุลภาคหรือขึ้นบรรทัดใหม่",
+    )
 
     class Meta:
         model = Booking
@@ -99,6 +131,8 @@ class BookingForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         self.user = user
         self.room = room
+        self.series_enabled = bool(getattr(room, "rule", None) and room.rule.allow_series)
+        self.fields["series_count"].help_text = f"สูงสุด {room.rule.max_series_occurrences} ครั้ง" if self.series_enabled else ""
         self.fields["equipment"].queryset = Resource.objects.filter(
             resource_type=Resource.Type.EQUIPMENT,
             status=Resource.Status.ACTIVE,
@@ -121,6 +155,11 @@ class BookingForm(forms.ModelForm):
             selected = [line.strip() for line in self.instance.fixed_equipment_needed.splitlines() if line.strip()]
             self.initial.setdefault("fixed_equipment_choices", [item for item in selected if item in fixed_items])
             self.initial.setdefault("fixed_equipment_extra", "\n".join(item for item in selected if item not in fixed_items))
+        elif self.series_enabled:
+            initial_date = self.initial.get("date")
+            if isinstance(initial_date, date):
+                self.initial.setdefault("series_weekdays", [str(min(initial_date.weekday(), 4))])
+            self.initial.setdefault("series_count", min(4, room.rule.max_series_occurrences))
 
         datalist_fields = ("title", "responsible_name", "responsible_phone", "attendee_level", "layout")
         unit = self.instance.unit if self.instance.pk else getattr(user, "unit", None)
@@ -137,14 +176,35 @@ class BookingForm(forms.ModelForm):
             for name in list(self.fields):
                 if name not in keep:
                     self.fields.pop(name)
+            self.series_enabled = False
+        elif not self.series_enabled:
+            for name in list(self.fields):
+                if name.startswith("series_") or name == "is_series":
+                    self.fields.pop(name)
         self.order_fields(
             [
                 "date", "start_time", "end_time", "title", "purpose", "unit", "responsible_name",
                 "responsible_phone", "attendees", "attendee_level", "layout", "fixed_equipment_choices",
                 "fixed_equipment_extra", "equipment", "has_external_attendees", "external_attendees_note",
                 "visibility", "note",
+                "is_series", "series_freq", "series_weekdays", "series_end_mode", "series_end_date",
+                "series_count", "series_custom_dates",
             ]
         )
+
+    def clean_series_custom_dates(self):
+        value = self.cleaned_data.get("series_custom_dates", "")
+        if not value.strip():
+            self._parsed_series_custom_dates = []
+            return ""
+        values = value.replace(",", "\n").splitlines()
+        field = BuddhistDateField()
+        result = []
+        for item in values:
+            if item.strip():
+                result.append(field.clean(item.strip()))
+        self._parsed_series_custom_dates = sorted(set(result))
+        return value
 
     def clean(self):
         cleaned = super().clean()
@@ -162,7 +222,35 @@ class BookingForm(forms.ModelForm):
             self.add_error("external_attendees_note", "กรุณาระบุจำนวนหรือหน่วยของผู้เข้าร่วมภายนอก")
         if cleaned.get("visibility") == Booking.Visibility.SENSITIVE and not self.user.is_infosec_officer:
             self.add_error("visibility", "เฉพาะเจ้าหน้าที่ความมั่นคงสารสนเทศที่กำหนดกิจกรรมอ่อนไหวได้")
+        if cleaned.get("is_series"):
+            freq = cleaned.get("series_freq")
+            if freq == BookingSeries.Frequency.WEEKLY and not cleaned.get("series_weekdays"):
+                self.add_error("series_weekdays", "กรุณาเลือกอย่างน้อย 1 วัน")
+            if freq == BookingSeries.Frequency.CUSTOM and not getattr(self, "_parsed_series_custom_dates", []):
+                self.add_error("series_custom_dates", "กรุณาระบุวันที่อย่างน้อย 1 วัน")
+            if freq != BookingSeries.Frequency.CUSTOM:
+                if cleaned.get("series_end_mode") == "date" and not cleaned.get("series_end_date"):
+                    self.add_error("series_end_date", "กรุณาระบุวันที่สิ้นสุดชุด")
+                if cleaned.get("series_end_mode") == "count" and not cleaned.get("series_count"):
+                    self.add_error("series_count", "กรุณาระบุจำนวนครั้ง")
+                if cleaned.get("series_count") and cleaned["series_count"] > self.room.rule.max_series_occurrences:
+                    self.add_error("series_count", f"ห้องนี้จองเป็นชุดได้ไม่เกิน {self.room.rule.max_series_occurrences} ครั้ง")
         return cleaned
+
+    def series_params(self):
+        cleaned = self.cleaned_data
+        start_date = cleaned["start_at"].date()
+        end_mode = cleaned.get("series_end_mode")
+        return {
+            "freq": cleaned.get("series_freq"),
+            "weekdays": [int(item) for item in cleaned.get("series_weekdays", [])],
+            "custom_dates": getattr(self, "_parsed_series_custom_dates", []),
+            "start_date": start_date,
+            "end_date": cleaned.get("series_end_date") if end_mode == "date" else None,
+            "requested_count": cleaned.get("series_count") if end_mode == "count" else None,
+            "time_start": cleaned["start_time"],
+            "time_end": cleaned["end_time"],
+        }
 
     def save(self, commit=True):
         booking = super().save(commit=False)
