@@ -133,3 +133,11 @@ backup/restore test: ผ่าน
 - เทสใหม่ `bookings/tests_m6b.py`: ตัวเลขสถิติ/ชนิดแท่ง/การปิดบังชื่อเรื่อง restricted; pytest 82/82 ผ่าน; ตรวจ browser 360px และ desktop ไม่มี overflow, console ไม่มี error, ฟอนต์โหลดจาก local ทั้งหมด
 - แก้ตามผลตรวจรับรอบแรก: "ว่างตอนนี้" เดิมนับห้องที่มีรายการ pending คร่อมเวลาปัจจุบันเป็นว่าง และหักซ้ำเมื่อห้องเดียวมีทั้ง booking และ outage — เปลี่ยนเป็น set เดียว `busy_now` (booking ถือครองเวลาใด ๆ ตาม FR-10 หรือ outage คร่อมตอนนี้) แล้ว `stat_free_now = total - len(busy_now)`; เทสทั้งไฟล์ freeze เวลาไว้ 10:00 วันนี้ (monkeypatch `timezone.now`) จึงไม่ skip ตามเวลาจริงอีก และเพิ่มกรณี pending-now กับ booking+outage ซ้อนกัน
 - เพิ่ม launch config `django-8001` สำหรับตรวจคู่ขนานกับ server หลัก
+
+## B2/B3 เอกสารติดตั้งและ pilot (เขียนโดย Claude ผ่านตรวจ 2 รอบ 25 ส.ค. 2569)
+
+- `docs/deploy-guide.md`: runbook ติดตั้งเครื่องหน่วย 10 หมวด + ภาคผนวกออฟไลน์/แก้ปัญหา — หัวใจคือลำดับ DB role: bootstrap/migrate ด้วย `postgres` → ทดสอบ backup/restore → แล้วค่อยล็อก `sigroom_app` (NOSUPERUSER NOCREATEDB, audit ได้แค่ SELECT/INSERT ผ่าน `scripts/db-grants.sql`) · Task Scheduler 3 งาน (Server ตรวจด้วย Status=Running, Jobs/Backup ตรวจ 0x0, ห้ามติ๊ก Do not store password) · backup เป็น UNC path เท่านั้น
+- `docs/pilot-checklist.md`: mapping SRS §15.2 ครบ 17 ข้อ แยก operational pilot acceptance (ข้อ 1–9, 11 + satisfaction ≥3.5 ของข้อ 14) ออกจาก Deferred by pilot scope (10, 12, 13, 15, 16, 17 + SUS ของข้อ 14) · กิจวัตรเช้าเช็ก backup 3 ชั้น · restore รายเดือนต้อง Disable Jobs → End Server ก่อน (Disable อย่างเดียวไม่หยุด instance ที่รันอยู่) แล้ว backup สดก่อน restore-test กัน false failure
+- แก้ `scripts/run-server.ps1`: หา uv.exe เองแม้ PATH ไม่ครบ + exit code ส่งกลับ Task Scheduler (UTF-8 BOM สำหรับ PowerShell 5.1)
+- ผลตรวจรับรอบแรกพบและแก้แล้ว: Blackout ตัวอย่างจาก seed ต้องลบก่อนเปิด pilot · urgent ใช้ 30 ชม.ตาม SRS · delegation ตรวจที่ Approval.acted_by/on_behalf_of ไม่ใช่ audit log
+- นโยบายสำรองโค้ด: ผู้ใช้เลือกไม่ใช้คลาวด์ — ใช้ `git bundle` ไปแชร์ backup แทน (อยู่ในกิจวัตรรายเดือนและกติกาอัปเดตเวอร์ชัน)
