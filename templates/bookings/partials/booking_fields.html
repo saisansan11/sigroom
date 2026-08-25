@@ -1,18 +1,86 @@
-<form method="post" novalidate>
+{% load thaidate %}
+<form method="post" novalidate class="booking-form">
   {% csrf_token %}
   {% if form.non_field_errors %}<div class="notice error">{% for error in form.non_field_errors %}<div>{{ error }}</div>{% endfor %}</div>{% endif %}
-  <div class="form-grid two">
-  {% for field in form %}
-    <div class="field {% if field.name == 'note' or field.name == 'equipment' or field.name == 'fixed_equipment_choices' or field.name == 'is_series' %}wide{% endif %} {% if field.name|slice:':7' == 'series_' %}series-field{% endif %}">
-      <label for="{{ field.id_for_label }}">{{ field.label }}{% if field.field.required %}<span class="required-mark" aria-label="จำเป็น"> *</span>{% endif %}</label>
-      {{ field }}
-      {% if field.help_text %}<small>{{ field.help_text }}</small>{% endif %}
-      {% for error in field.errors %}<small class="field-error">{{ error }}</small>{% endfor %}
-    </div>
-  {% endfor %}
-  </div>
+
+  {% if form.show_booking_summary and 'date' in form.fields and 'start_time' in form.fields and 'end_time' in form.fields %}
+    <section class="booking-form-section booking-summary" aria-labelledby="booking-summary-title">
+      <div class="section-title"><div><p class="eyebrow">ส่วน ๑</p><h2 id="booking-summary-title">สรุปการจอง</h2></div></div>
+      <div class="booking-summary-grid">
+        <div><small>ห้อง</small><strong>{{ room.code }} · {{ room.name }}</strong></div>
+        <div><small>วันที่</small><strong>{{ form.date.value|thai_date }}</strong></div>
+        <div><small>เวลา</small><strong>{{ form.start_time.value }}–{{ form.end_time.value }} น.</strong></div>
+      </div>
+      {{ form.date.as_hidden }}{{ form.start_time.as_hidden }}{{ form.end_time.as_hidden }}
+      {% for error in form.date.errors %}<small class="field-error" data-field-id="{{ form.date.id_for_label }}">{{ error }}</small>{% endfor %}
+      {% for error in form.start_time.errors %}<small class="field-error" data-field-id="{{ form.start_time.id_for_label }}">{{ error }}</small>{% endfor %}
+      {% for error in form.end_time.errors %}<small class="field-error" data-field-id="{{ form.end_time.id_for_label }}">{{ error }}</small>{% endfor %}
+      <a class="summary-change-link" href="{% url 'bookings:book_search' %}{% if request.GET.urlencode %}?{{ request.GET.urlencode }}{% endif %}">เปลี่ยนวัน/เวลา ←</a>
+    </section>
+  {% elif 'date' in form.fields or 'start_time' in form.fields or 'end_time' in form.fields %}
+    <section class="booking-form-section">
+      <div class="section-title"><div><h2>วันและเวลา</h2></div></div>
+      <div class="form-grid two">
+        {% for field in form %}{% if field.name == 'date' or field.name == 'start_time' or field.name == 'end_time' %}
+          <div class="field">
+            <label for="{{ field.id_for_label }}">{{ field.label }}{% if field.field.required %}<span class="required-mark" aria-label="จำเป็น"> *</span>{% endif %}</label>
+            {{ field }}{% if field.help_text %}<small>{{ field.help_text }}</small>{% endif %}
+            {% for error in field.errors %}<small class="field-error" data-field-id="{{ field.id_for_label }}">{{ error }}</small>{% endfor %}
+          </div>
+        {% endif %}{% endfor %}
+      </div>
+    </section>
+  {% endif %}
+
+  {% if 'title' in form.fields or 'purpose' in form.fields or 'attendees' in form.fields %}
+    <section class="booking-form-section" aria-labelledby="booking-activity-title">
+      <div class="section-title"><div><p class="eyebrow">ส่วน ๒</p><h2 id="booking-activity-title">กิจกรรม</h2></div></div>
+      <div class="form-grid two">
+        {% for field in form %}{% if field.name == 'title' or field.name == 'purpose' or field.name == 'attendees' %}
+          <div class="field {% if field.name == 'title' %}wide{% endif %}">
+            <label for="{{ field.id_for_label }}">{{ field.label }}{% if field.field.required %}<span class="required-mark" aria-label="จำเป็น"> *</span>{% endif %}</label>
+            {{ field }}{% if field.help_text %}<small>{{ field.help_text }}</small>{% endif %}
+            {% for error in field.errors %}<small class="field-error" data-field-id="{{ field.id_for_label }}">{{ error }}</small>{% endfor %}
+          </div>
+        {% endif %}{% endfor %}
+      </div>
+    </section>
+  {% endif %}
+
+  {% if 'unit' in form.fields or 'responsible_name' in form.fields or 'responsible_phone' in form.fields %}
+    <section class="booking-form-section" aria-labelledby="booking-owner-title">
+      <div class="section-title"><div><p class="eyebrow">ส่วน ๓</p><h2 id="booking-owner-title">ผู้รับผิดชอบ</h2></div></div>
+      <div class="form-grid two">
+        {% for field in form %}{% if field.name == 'unit' or field.name == 'responsible_name' or field.name == 'responsible_phone' %}
+          <div class="field {% if field.name == 'unit' %}wide{% endif %}">
+            <label for="{{ field.id_for_label }}">{{ field.label }}{% if field.field.required %}<span class="required-mark" aria-label="จำเป็น"> *</span>{% endif %}</label>
+            {{ field }}{% if field.help_text %}<small>{{ field.help_text }}</small>{% endif %}
+            {% for error in field.errors %}<small class="field-error" data-field-id="{{ field.id_for_label }}">{{ error }}</small>{% endfor %}
+          </div>
+        {% endif %}{% endfor %}
+      </div>
+    </section>
+  {% endif %}
+
+  {% if 'attendee_level' in form.fields or 'layout' in form.fields or 'equipment' in form.fields or 'fixed_equipment_choices' in form.fields or 'fixed_equipment_extra' in form.fields or 'has_external_attendees' in form.fields or 'external_attendees_note' in form.fields or 'visibility' in form.fields or 'note' in form.fields or 'is_series' in form.fields %}
+    <details class="form-more" {% if form.has_more_data %}open{% endif %}>
+      <summary><span><span class="eyebrow">ส่วน ๔</span>ตัวเลือกเพิ่มเติม</span></summary>
+      <div class="form-grid two form-more-grid">
+        {% for field in form %}
+          {% if field.name == 'attendee_level' or field.name == 'layout' or field.name == 'equipment' or field.name == 'fixed_equipment_choices' or field.name == 'fixed_equipment_extra' or field.name == 'has_external_attendees' or field.name == 'external_attendees_note' or field.name == 'visibility' or field.name == 'note' or field.name == 'is_series' or field.name|slice:':7' == 'series_' %}
+            <div class="field {% if field.name == 'note' or field.name == 'equipment' or field.name == 'fixed_equipment_choices' or field.name == 'is_series' %}wide{% endif %} {% if field.name|slice:':7' == 'series_' %}series-field{% endif %}">
+              <label for="{{ field.id_for_label }}">{{ field.label }}{% if field.field.required %}<span class="required-mark" aria-label="จำเป็น"> *</span>{% endif %}</label>
+              {{ field }}{% if field.help_text %}<small>{{ field.help_text }}</small>{% endif %}
+              {% for error in field.errors %}<small class="field-error" data-field-id="{{ field.id_for_label }}">{{ error }}</small>{% endfor %}
+            </div>
+          {% endif %}
+        {% endfor %}
+      </div>
+    </details>
+  {% endif %}
+
   {% for name, values in form.datalists.items %}<datalist id="frequent-{{ name }}">{% for value in values %}<option value="{{ value }}">{% endfor %}</datalist>{% endfor %}
-  <div class="form-actions">
+  <div class="form-actions booking-submit-bar">
     {% if show_draft %}<button class="secondary single-booking-action" type="submit" name="action" value="draft">บันทึกร่าง</button>{% endif %}
     <button class="single-booking-action" type="submit" name="action" value="submit">{{ submit_label }}</button>
     {% if form.series_enabled %}<button class="series-booking-action" type="submit" formaction="{% url 'bookings:series_preview' room.code %}" name="action" value="series_preview">ตรวจสอบชุดการจอง →</button>{% endif %}

@@ -154,6 +154,32 @@ class Booking(models.Model):
         return self.request_status in self.HOLDING_STATUSES
 
 
+class ReferenceValue(models.Model):
+    """ค่าตั้งต้นสำหรับ datalist ของฟอร์มจอง เก็บใน bookings เพราะใช้กับ BookingForm โดยตรง"""
+
+    FIELD_CHOICES = (
+        ("title", "ชื่อกิจกรรม / วิชา"),
+        ("responsible_name", "ผู้รับผิดชอบ"),
+        ("responsible_phone", "โทรศัพท์ผู้รับผิดชอบ"),
+        ("attendee_level", "ระดับ/ชั้นผู้เข้าร่วม"),
+        ("layout", "รูปแบบจัดโต๊ะ"),
+    )
+
+    field = models.CharField("ฟิลด์", max_length=50, choices=FIELD_CHOICES)
+    value = models.CharField("ค่า", max_length=200)
+    order = models.PositiveIntegerField("ลำดับ", default=0)
+    is_active = models.BooleanField("ใช้งาน", default=True)
+
+    class Meta:
+        verbose_name = "ค่าอ้างอิงฟอร์ม"
+        verbose_name_plural = "ค่าอ้างอิงฟอร์ม"
+        ordering = ["field", "order", "value"]
+        constraints = [models.UniqueConstraint(fields=["field", "value"], name="uniq_reference_field_value")]
+
+    def __str__(self):
+        return f"{self.get_field_display()}: {self.value}"
+
+
 class BookingAmendment(models.Model):
     class Status(models.TextChoices):
         PENDING = "pending", "รออนุมัติ"

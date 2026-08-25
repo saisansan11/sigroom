@@ -141,3 +141,14 @@ backup/restore test: ผ่าน
 - แก้ `scripts/run-server.ps1`: หา uv.exe เองแม้ PATH ไม่ครบ + exit code ส่งกลับ Task Scheduler (UTF-8 BOM สำหรับ PowerShell 5.1)
 - ผลตรวจรับรอบแรกพบและแก้แล้ว: Blackout ตัวอย่างจาก seed ต้องลบก่อนเปิด pilot · urgent ใช้ 30 ชม.ตาม SRS · delegation ตรวจที่ Approval.acted_by/on_behalf_of ไม่ใช่ audit log
 - นโยบายสำรองโค้ด: ผู้ใช้เลือกไม่ใช้คลาวด์ — ใช้ `git bundle` ไปแชร์ backup แทน (อยู่ในกิจวัตรรายเดือนและกติกาอัปเดตเวอร์ชัน)
+
+## Trial Feedback Round 1 (25 ส.ค. 2569 — Codex ทำตาม docs/trial-round1-plan.md, Claude ตรวจรับ, ผู้ใช้ยืนยันบนมือถือจริง)
+
+ที่มา: เปิดทดลองใช้จริงบน LAN จากเครื่องพัฒนา (Waitress + firewall LocalSubnet) ผู้ใช้ให้ feedback 4 ข้อจากมือถือ
+
+- กดค้นหาแล้วจอเลื่อนไปผลลัพธ์เอง: กลไกกลาง `data-scroll-on-swap` + focus หัวข้อ + เลื่อนไปช่องแรกที่ validate ไม่ผ่าน (เคารพ reduced motion)
+- `ReferenceValue` + `import_reference`: รายการวิชาตั้งต้นของ datalist (นำเข้าจริง 57 วิชาจากตารางสอนชั้นนายร้อย 70) รวมกับประวัติหน่วย 10 ค่า — ไม่จำกัดเพดานฝั่ง reference
+- `import_units` + `docs/examples/units-กศ.csv`: นำเข้า 9 แผนก กศ. (idempotent, ผูก parent สองรอบ) และ deploy-guide เพิ่มขั้น 5.6
+- ฟอร์มจองจัดใหม่ 4 ส่วน (สรุปการจองอ่านอย่างเดียว/กิจกรรม/ผู้รับผิดชอบ prefill จากโปรไฟล์/ตัวเลือกเพิ่มเติมพับเก็บ เปิดเองเมื่อมี error) + มือถือคอลัมน์เดียว ปุ่มยืนยัน sticky — ใช้ `_state.adding` แยกรายการใหม่เพราะ Booking เป็น UUID pk
+- Claude แก้เพิ่มระหว่างตรวจรับ: `thai_date` รับ string จากฟอร์ม bound (แถบสรุปเคยโชว์ ค.ศ.), เอาเพดาน 40 ของ reference ออก, `manage.py` บังคับ stdout UTF-8 (console cp1252 เคยทำ import ดูล้มเหลวทั้งที่สำเร็จ), requestAnimationFrame ก่อน scroll
+- pytest 89/89 (พบ flake 1 ครั้งใน test เรียงประวัติจาก updated_at ชนกัน — ควรใส่ tie-breaker รอบหน้า) · ผู้ใช้ยืนยันบนมือถือจริง: เลื่อนเอง + ฟอร์มผ่าน

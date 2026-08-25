@@ -131,6 +131,15 @@ class BookingForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         self.user = user
         self.room = room
+        is_new = self.instance._state.adding
+        self.show_booking_summary = is_new and allowed_fields is None
+        if not self.is_bound and is_new:
+            if getattr(user, "display_name", "") and not self.initial.get("responsible_name"):
+                self.initial["responsible_name"] = user.display_name
+            if getattr(user, "phone", "") and not self.initial.get("responsible_phone"):
+                self.initial["responsible_phone"] = user.phone
+            if getattr(user, "unit_id", None) and not self.initial.get("unit"):
+                self.initial["unit"] = user.unit_id
         self.series_enabled = bool(getattr(room, "rule", None) and room.rule.allow_series)
         self.fields["series_count"].help_text = f"สูงสุด {room.rule.max_series_occurrences} ครั้ง" if self.series_enabled else ""
         self.fields["equipment"].queryset = Resource.objects.filter(
@@ -141,12 +150,12 @@ class BookingForm(forms.ModelForm):
             self.fields["unit"].queryset = Unit.objects.filter(is_active=True)
         else:
             self.fields["unit"].queryset = Unit.objects.filter(pk__in=_unit_ids_with_children(user.unit), is_active=True)
-            if not self.instance.pk and user.unit_id:
+            if is_new and user.unit_id:
                 self.initial.setdefault("unit", user.unit_id)
 
         fixed_items = [line.strip() for line in room.fixed_equipment.splitlines() if line.strip()]
         self.fields["fixed_equipment_choices"].choices = [(item, item) for item in fixed_items]
-        if self.instance.pk:
+        if not is_new:
             local_start = timezone.localtime(self.instance.start_at)
             local_end = timezone.localtime(self.instance.end_at)
             self.initial.setdefault("date", local_start.date())
@@ -162,7 +171,7 @@ class BookingForm(forms.ModelForm):
             self.initial.setdefault("series_count", min(4, room.rule.max_series_occurrences))
 
         datalist_fields = ("title", "responsible_name", "responsible_phone", "attendee_level", "layout")
-        unit = self.instance.unit if self.instance.pk else getattr(user, "unit", None)
+        unit = self.instance.unit if not is_new else getattr(user, "unit", None)
         self.datalists = {name: frequent_values(unit, name) for name in datalist_fields}
         for name in datalist_fields:
             self.fields[name].widget.attrs["list"] = f"frequent-{name}"
@@ -191,6 +200,35 @@ class BookingForm(forms.ModelForm):
                 "series_count", "series_custom_dates",
             ]
         )
+
+    @property
+    def has_more_data(self):
+        more_fields = {
+            "attendee_level", "layout", "equipment", "fixed_equipment_choices", "fixed_equipment_extra",
+            "has_external_attendees", "external_attendees_note", "visibility", "note", "is_series",
+            "series_freq", "series_weekdays", "series_end_mode", "series_end_date", "series_count",
+            "series_custom_dates",
+        }
+        names = more_fields.intersection(self.fields)
+        if self.is_bound and any(name in self.errors for name in names):
+            return True
+        if self.is_bound:
+            for name in names:
+                value = self[name].value()
+                if name == "visibility" and value in (None, "", Booking.Visibility.NORMAL):
+                    continue
+                if name in {"series_freq", "series_end_mode", "series_count"} and not self.data.get("is_series"):
+                    continue
+                if value not in (None, "", False, [], (), "False", "0"):
+                    return True
+            return False
+        if self.instance.pk:
+            return any((
+                self.instance.attendee_level, self.instance.layout, self.instance.equipment.exists(),
+                self.instance.fixed_equipment_needed, self.instance.has_external_attendees,
+                self.instance.external_attendees_note, self.instance.visibility != Booking.Visibility.NORMAL, self.instance.note,
+            ))
+        return False
 
     def clean_series_custom_dates(self):
         value = self.cleaned_data.get("series_custom_dates", "")

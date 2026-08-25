@@ -71,6 +71,33 @@
     {% block content %}{% endblock %}
   </main>
   <script src="{% static 'vendor/htmx/htmx.min.js' %}"></script>
+  <script>
+  (function () {
+    const reducedMotion = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const scrollAndFocus = (element) => {
+      if (!element) return;
+      // รอ layout หลัง swap ให้นิ่งก่อนหนึ่งเฟรม ไม่งั้นตำแหน่งเลื่อนอาจคลาดเคลื่อน
+      requestAnimationFrame(() => {
+        element.scrollIntoView({behavior: reducedMotion() ? 'auto' : 'smooth', block: 'start'});
+        if (!element.hasAttribute('tabindex')) element.setAttribute('tabindex', '-1');
+        element.focus({preventScroll: true});
+      });
+    };
+    document.body.addEventListener('htmx:afterSwap', function (event) {
+      const target = event.detail && event.detail.target;
+      if (!target || !target.hasAttribute('data-scroll-on-swap')) return;
+      const heading = target.querySelector('h1, h2, h3');
+      scrollAndFocus(heading || target);
+    });
+    document.addEventListener('DOMContentLoaded', function () {
+      const error = document.querySelector('.field-error');
+      if (!error) return;
+      const fieldId = error.dataset.fieldId;
+      const field = fieldId ? document.getElementById(fieldId) : error.closest('.field')?.querySelector('input, select, textarea');
+      scrollAndFocus(field || error);
+    });
+  })();
+  </script>
   {% block scripts %}{% endblock %}
 </body>
 </html>

@@ -286,15 +286,23 @@ FREQUENT_FIELDS = {
 
 
 def frequent_values(unit, field: str) -> list[str]:
-    """คืน 10 ค่าล่าสุดที่ไม่ซ้ำของหน่วย สำหรับ datalist"""
-    if field not in FREQUENT_FIELDS or not unit:
+    """รวมค่าอ้างอิงที่เปิดใช้ทั้งหมด (datalist กรองเองตอนพิมพ์) ตามด้วย 10 ค่าล่าสุดของหน่วย โดยไม่ซ้ำ"""
+    if field not in FREQUENT_FIELDS:
         return []
+    from .models import ReferenceValue
+
+    result = list(dict.fromkeys(
+        ReferenceValue.objects.filter(field=field, is_active=True).order_by("order", "value").values_list("value", flat=True)
+    ))
+    if not unit:
+        return result
     values = Booking.objects.filter(unit=unit).exclude(**{field: ""}).order_by("-updated_at").values_list(field, flat=True)
-    result: list[str] = []
+    history_count = 0
     for value in values.iterator():
         if value not in result:
             result.append(value)
-        if len(result) == 10:
+            history_count += 1
+        if history_count == 10:
             break
     return result
 

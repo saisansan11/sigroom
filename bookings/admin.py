@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import Booking, BookingAmendment, BookingResource, BookingSeries, Preemption, SeriesSkip
+from .models import Booking, BookingAmendment, BookingResource, BookingSeries, Preemption, ReferenceValue, SeriesSkip
 
 
 class BookingResourceInline(admin.TabularInline):
@@ -86,3 +86,12 @@ class PreemptionAdmin(admin.ModelAdmin):
 
     def has_delete_permission(self, request, obj=None):
         return False
+
+
+@admin.register(ReferenceValue)
+class ReferenceValueAdmin(admin.ModelAdmin):
+    list_display = ("field", "value", "order", "is_active")
+    list_filter = ("field", "is_active")
+    search_fields = ("value",)
+    list_editable = ("order", "is_active")
+    ordering = ("field", "order", "value")

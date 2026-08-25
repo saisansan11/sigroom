@@ -10,6 +10,9 @@ THAI_MONTHS_SHORT = ("", "ม.ค.", "ก.พ.", "มี.ค.", "เม.ย.", "
 def thai_date(value):
     if not value:
         return "—"
+    if isinstance(value, str):
+        # ค่าจากฟอร์มที่ผู้ใช้พิมพ์เป็น วัน/เดือน/ปี พ.ศ. อยู่แล้ว
+        return value
     if hasattr(value, "hour"):
         value = timezone.localtime(value).date()
     return f"{value.day} {THAI_MONTHS_SHORT[value.month]} {value.year + 543}"
