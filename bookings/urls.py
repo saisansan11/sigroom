@@ -1,6 +1,6 @@
 from django.urls import path
 
-from . import views
+from . import lodging_views, views
 
 app_name = "bookings"
 
@@ -23,4 +23,11 @@ urlpatterns = [
     path("bookings/<uuid:id>/delete/", views.booking_delete_draft, name="booking_delete_draft"),
     path("amendments/<uuid:id>/withdraw/", views.amendment_withdraw, name="amendment_withdraw"),
     path("preemptions/<uuid:id>/acknowledge/", views.preemption_acknowledge, name="preemption_acknowledge"),
+    # ที่พักหลักสูตร
+    path("lodging/manage/", lodging_views.lodging_manage, name="lodging_manage"),
+    path("lodging/cohorts/<slug:slug>/", lodging_views.lodging_cohort_detail, name="lodging_cohort_detail"),
+    path("lodging/cohorts/<slug:slug>/export/", lodging_views.lodging_cohort_export_csv, name="lodging_cohort_export_csv"),
+    path("lodging/c/<slug:slug>/", lodging_views.lodging_portal, name="lodging_portal"),
+    path("lodging/c/<slug:slug>/book/", lodging_views.lodging_book_bed, name="lodging_book_bed"),
+    path("lodging/c/<slug:slug>/pass/<uuid:student_id>/", lodging_views.lodging_pass, name="lodging_pass"),
 ]

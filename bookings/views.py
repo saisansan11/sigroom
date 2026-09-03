@@ -140,33 +140,51 @@ def _today_board(request, rooms, now):
     }
 
 
-@login_required
 def calendar_view(request):
     rooms = Resource.objects.filter(resource_type=Resource.Type.ROOM, status=Resource.Status.ACTIVE).order_by("code")
+    selected_category = request.GET.get("category", "").strip()
+    if selected_category:
+        rooms = rooms.filter(room_category=selected_category)
     buildings = rooms.exclude(building="").values_list("building", flat=True).distinct().order_by("building")
     now = timezone.now()
-    next_booking = (
-        _booking_queryset()
-        .filter(
-            requester=request.user,
-            request_status__in=Booking.HOLDING_STATUSES,
-            end_at__gt=now,
+    if request.user.is_authenticated:
+        next_booking = (
+            _booking_queryset()
+            .filter(
+                requester=request.user,
+                request_status__in=Booking.HOLDING_STATUSES,
+                end_at__gt=now,
+            )
+            .order_by("start_at")
+            .first()
         )
-        .order_by("start_at")
-        .first()
-    )
-    usage_today_count = None
-    if can_manage_usage(request.user):
-        today = timezone.localdate(now)
-        usage_today_count = sum(
-            1 for booking in recent_bookings_for(request.user, now) if timezone.localdate(booking.end_at) == today
-        )
-    my_pending_count = _booking_queryset().filter(
-        requester=request.user, request_status=Booking.RequestStatus.PENDING, end_at__gt=now
-    ).count()
+        usage_today_count = None
+        if can_manage_usage(request.user):
+            today = timezone.localdate(now)
+            usage_today_count = sum(
+                1 for booking in recent_bookings_for(request.user, now) if timezone.localdate(booking.end_at) == today
+            )
+        my_pending_count = _booking_queryset().filter(
+            requester=request.user, request_status=Booking.RequestStatus.PENDING, end_at__gt=now
+        ).count()
+    else:
+        next_booking = None
+        usage_today_count = None
+        my_pending_count = 0
+
+    category_choices = [
+        ("", "ทุกหมวดห้อง"),
+        (Resource.Category.CLASSROOM, "ห้องเรียน"),
+        (Resource.Category.LODGING, "ห้องพัก"),
+        (Resource.Category.MEETING, "ห้องประชุม"),
+        (Resource.Category.LAB, "ห้องสอนปฏิบัติ"),
+    ]
+
     context = {
         "rooms": rooms,
         "buildings": buildings,
+        "selected_category": selected_category,
+        "category_choices": category_choices,
         "next_booking": next_booking,
         "usage_today_count": usage_today_count,
         "my_pending_count": my_pending_count,
@@ -175,7 +193,6 @@ def calendar_view(request):
     return render(request, "bookings/calendar.html", context)
 
 
-@login_required
 def calendar_events(request):
     now = timezone.now()
     start = _parse_calendar_datetime(request.GET.get("start"), now - timedelta(days=30))
@@ -185,6 +202,8 @@ def calendar_events(request):
         start_at__lt=end,
         end_at__gt=start,
     )
+    if request.GET.get("category"):
+        bookings = bookings.filter(room__room_category=request.GET["category"])
     if request.GET.get("room"):
         bookings = bookings.filter(room__code=request.GET["room"])
     if request.GET.get("building"):
@@ -202,7 +221,7 @@ def calendar_events(request):
                 "title": calendar_label(request.user, booking),
                 "start": booking.start_at.isoformat(),
                 "end": booking.end_at.isoformat(),
-                "url": reverse("bookings:booking_detail", args=[booking.id]),
+                "url": reverse("bookings:booking_detail", args=[booking.id]) if can_open else "#",
                 "classNames": classes,
                 "extendedProps": {"status": booking.request_status, "room": booking.room.code},
             }

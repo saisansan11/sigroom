@@ -1,0 +1,162 @@
+{% extends "base.html" %}
+{% load static %}
+{% load thaidate %}
+
+{% block title %}เลือกห้องพัก · {{ cohort.title }} · SIGROOM{% endblock %}
+
+{% block content %}
+<div class="lodging-hero">
+  <span class="hud-tag">รร.ส.สส. · ระบบจองที่พักหลักสูตร</span>
+  <h1>{{ cohort.title }}</h1>
+  <p class="stat-detail">
+    ช่วงเวลาเข้าพัก: <strong>{{ cohort.check_in_date|thai_date }}</strong> ถึง <strong>{{ cohort.check_out_date|thai_date }}</strong>
+  </p>
+  {% if cohort.note %}
+    <div class="notice info" style="margin-top: var(--space-sm);">
+      <small><strong>คำชี้แจง/ข้อปฏิบัติ:</strong> {{ cohort.note }}</small>
+    </div>
+  {% endif %}
+
+  <div class="lodging-stats">
+    <div class="lodging-stat-item">
+      <span>ความจุทั้งหมด:</span> <strong>{{ total_slots }}</strong> ที่พัก
+    </div>
+    <div class="lodging-stat-item">
+      <span>จองแล้ว:</span> <strong>{{ occupied_slots }}</strong> คน
+    </div>
+    <div class="lodging-stat-item">
+      <span>ว่างคงเหลือ:</span> <strong style="color: var(--green);">{{ free_slots }}</strong> ที่พัก
+    </div>
+    <div class="lodging-stat-item">
+      <span>อัตราส่วน:</span> <strong>{{ cohort.beds_per_room }}</strong> คน/ห้อง
+    </div>
+  </div>
+</div>
+
+<div class="section-title">
+  <div>
+    <p class="eyebrow">ผังห้องพัก</p>
+    <h2>เลือกห้องและเตียงที่ต้องการเข้าพัก</h2>
+    <p>กดเลือกเตียงที่ยังว่างเพื่อลงทะเบียนเข้าพัก (สามารถดูเพื่อนร่วมห้องที่พักอยู่ก่อนได้)</p>
+  </div>
+</div>
+
+<div class="rooms-grid">
+  {% for rdata in rooms_data %}
+    <article class="room-lodging-card {% if rdata.is_full %}is-full{% endif %}">
+      <div class="room-card-head">
+        <div>
+          <h3>{{ rdata.room.code }}</h3>
+          <small>{{ rdata.room.building }} {% if rdata.room.floor %}ชั้น {{ rdata.room.floor }}{% endif %}</small>
+        </div>
+        <div>
+          {% if rdata.is_full %}
+            <span class="hud-tag" style="background: var(--surface-soft); color: var(--muted);">เต็ม ({{ rdata.occupied_count }}/{{ rdata.beds_count }})</span>
+          {% else %}
+            <span class="hud-tag" style="background: oklch(.76 .14 156 / .2); color: var(--green);">ว่าง {{ rdata.beds_count|add:"-"|add:rdata.occupied_count }}/{{ rdata.beds_count }}</span>
+          {% endif %}
+        </div>
+      </div>
+      <div class="room-card-body">
+        {% if rdata.room.fixed_equipment %}
+          <div class="room-equip-note">สิ่งอำนวยความสะดวก: {{ rdata.room.fixed_equipment|truncatewords:6 }}</div>
+        {% endif %}
+        <div class="beds-list">
+          {% for bed in rdata.beds %}
+            <div class="bed-row {% if bed.is_occupied %}occupied{% else %}free{% endif %}">
+              <div>
+                <strong>เตียง {{ bed.number }}:</strong>
+                {% if bed.is_occupied %}
+                  <span class="bed-occupant-name">{{ bed.student.rank }} {{ bed.student.full_name }}</span>
+                  <span class="bed-occupant-unit">({{ bed.student.origin_unit }})</span>
+                {% else %}
+                  <span style="color: var(--green);">ว่าง</span>
+                {% endif %}
+              </div>
+              <div>
+                {% if bed.is_occupied %}
+                  <small class="mono" style="color: var(--muted);">จองแล้ว</small>
+                {% else %}
+                  <button type="button" class="bed-select-btn" onclick="openBookingModal('{{ rdata.room.id }}', '{{ rdata.room.code }}', '{{ bed.number }}')">
+                    เลือกเตียงนี้
+                  </button>
+                {% endif %}
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+      </div>
+    </article>
+  {% empty %}
+    <div class="notice warning">ยังไม่มีห้องพักที่เปิดให้จองในรอบนี้</div>
+  {% endfor %}
+</div>
+
+<!-- Modal Dialog สำหรับกรอกข้อมูลจองเตียง -->
+<dialog id="bookingModal">
+  <article style="max-width: 28rem; width: 100%;">
+    <header>
+      <button aria-label="Close" rel="prev" onclick="closeBookingModal()"></button>
+      <h3>ลงทะเบียนเข้าพัก</h3>
+      <p id="modalRoomTitle" style="margin: 0; color: var(--cyan); font-weight: 700;">ห้อง DORM-101 (เตียง 1)</p>
+    </header>
+    <form method="post" action="{% url 'bookings:lodging_book_bed' cohort.slug %}">
+      {% csrf_token %}
+      <input type="hidden" name="room_id" id="modalRoomId" value="">
+      <input type="hidden" name="bed_number" id="modalBedNumber" value="">
+
+      <label for="id_rank">ยศ
+        <input type="text" id="id_rank" name="rank" list="rank_list" placeholder="เช่น ร.ต., ร.ท., ร.อ., ส.อ." required autocomplete="honorific-prefix">
+        <datalist id="rank_list">
+          <option value="ร.ต.">
+          <option value="ร.ท.">
+          <option value="ร.อ.">
+          <option value="พ.ต.">
+          <option value="พ.ท.">
+          <option value="ส.ต.">
+          <option value="ส.ท.">
+          <option value="ส.อ.">
+          <option value="จ.ส.ต.">
+          <option value="จ.ส.อ.">
+          <option value="นนส.">
+        </datalist>
+      </label>
+
+      <label for="id_full_name">ชื่อ - นามสกุล
+        <input type="text" id="id_full_name" name="full_name" placeholder="ชื่อ และนามสกุลจริง" required autocomplete="name">
+      </label>
+
+      <label for="id_origin_unit">หน่วยต้นสังกัด
+        <input type="text" id="id_origin_unit" name="origin_unit" placeholder="เช่น ส.พัน.1, ศสส., พล.ม.2 รอ." required>
+      </label>
+
+      <label for="id_phone">เบอร์โทรศัพท์ติดต่อ
+        <input type="tel" id="id_phone" name="phone" placeholder="เช่น 081-234-5678" required autocomplete="tel">
+      </label>
+
+      <label for="id_note">หมายเหตุเพิ่มเติม (ถ้ามี)
+        <input type="text" id="id_note" name="note" placeholder="เช่น ขอเตียงชั้นล่าง หรือข้อจำกัดด้านสุขภาพ">
+      </label>
+
+      <div style="margin-top: var(--space-md); display: flex; gap: var(--space-sm); justify-content: flex-end;">
+        <button type="button" class="secondary" onclick="closeBookingModal()">ยกเลิก</button>
+        <button type="submit" class="btn-primary" style="background: var(--green); border-color: var(--green); color: var(--canvas-deep);">ยืนยันการเข้าพัก</button>
+      </div>
+    </form>
+  </article>
+</dialog>
+
+<script>
+function openBookingModal(roomId, roomCode, bedNumber) {
+  document.getElementById('modalRoomId').value = roomId;
+  document.getElementById('modalBedNumber').value = bedNumber;
+  document.getElementById('modalRoomTitle').textContent = `ห้อง ${roomCode} (เตียง ${bedNumber})`;
+  const modal = document.getElementById('bookingModal');
+  modal.showModal();
+}
+
+function closeBookingModal() {
+  document.getElementById('bookingModal').close();
+}
+</script>
+{% endblock %}

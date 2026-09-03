@@ -1,6 +1,15 @@
 from django.contrib import admin
-
-from .models import Booking, BookingAmendment, BookingResource, BookingSeries, Preemption, ReferenceValue, SeriesSkip
+from .models import (
+    Booking,
+    BookingAmendment,
+    BookingResource,
+    BookingSeries,
+    CourseLodgingCohort,
+    CourseStudentLodging,
+    Preemption,
+    ReferenceValue,
+    SeriesSkip,
+)
 
 
 class BookingResourceInline(admin.TabularInline):
@@ -95,3 +104,27 @@ class ReferenceValueAdmin(admin.ModelAdmin):
     search_fields = ("value",)
     list_editable = ("order", "is_active")
     ordering = ("field", "order", "value")
+
+
+class CourseStudentLodgingInline(admin.TabularInline):
+    model = CourseStudentLodging
+    extra = 0
+    readonly_fields = ("booked_at",)
+
+
+@admin.register(CourseLodgingCohort)
+class CourseLodgingCohortAdmin(admin.ModelAdmin):
+    list_display = ("title", "slug", "supervisor", "unit", "check_in_date", "check_out_date", "beds_per_room", "is_active", "created_at")
+    list_filter = ("is_active", "unit", "check_in_date")
+    search_fields = ("title", "slug", "supervisor__username")
+    prepopulated_fields = {"slug": ("title",)}
+    filter_horizontal = ("rooms",)
+    inlines = [CourseStudentLodgingInline]
+
+
+@admin.register(CourseStudentLodging)
+class CourseStudentLodgingAdmin(admin.ModelAdmin):
+    list_display = ("rank", "full_name", "cohort", "room", "bed_number", "origin_unit", "phone", "booked_at")
+    list_filter = ("cohort", "room", "rank")
+    search_fields = ("full_name", "origin_unit", "phone", "room__code")
+    readonly_fields = ("booked_at",)

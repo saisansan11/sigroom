@@ -18,6 +18,7 @@ class Resource(models.Model):
         CLASSROOM = "classroom", "ห้องเรียน"
         LAB = "lab", "ห้องสอนปฏิบัติ"
         MEETING = "meeting", "ห้องประชุม"
+        LODGING = "lodging", "ห้องพัก"
         SPECIAL = "special", "ห้องพิเศษ"
         NONE = "none", "— (อุปกรณ์)"
 

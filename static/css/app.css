@@ -306,3 +306,203 @@ button[type="submit"]:not(.link-button):not(.outline):hover, [role="button"]:not
   .booking-form .form-grid { grid-template-columns: 1fr; }
   .booking-submit-bar { position: sticky; bottom: 0; margin-inline: calc(var(--space-sm) * -1); padding: var(--space-sm); border-top: 1px solid var(--line-strong); background: oklch(.145 .024 243 / .98); box-shadow: 0 -.6rem 1.4rem rgb(0 0 0 / .2); }
 }
+
+/* Category Filter Tabs & Guest Header */
+.login-btn-header {
+  display: inline-block;
+  padding: .35rem .9rem;
+  font-size: .85rem;
+  font-weight: 700;
+  color: var(--canvas-deep);
+  background: var(--cyan);
+  border: 1px solid var(--cyan-strong);
+  border-radius: var(--radius-sm);
+  text-decoration: none;
+}
+.login-btn-header:hover {
+  background: var(--ink);
+  color: var(--canvas-deep);
+}
+
+.category-tabs {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  margin-bottom: var(--space-md);
+  overflow-x: auto;
+  padding-bottom: var(--space-2xs);
+  -webkit-overflow-scrolling: touch;
+}
+.category-tabs-label {
+  font-size: .85rem;
+  font-weight: 700;
+  color: var(--muted);
+  white-space: nowrap;
+}
+.category-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: .35rem .85rem;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--ink);
+  font-size: .9rem;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: all .15s ease;
+}
+.category-pill:hover {
+  border-color: var(--line-strong);
+  background: var(--surface-raised);
+}
+.category-pill.active {
+  background: oklch(.78 .13 207 / .15);
+  border-color: var(--cyan);
+  color: var(--cyan);
+  font-weight: 700;
+  box-shadow: var(--glow-cyan);
+}
+
+.guest-action-banner {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-md);
+  padding: var(--space-md) var(--space-lg);
+  margin-bottom: var(--space-xl);
+  background: linear-gradient(135deg, var(--surface-raised), var(--surface));
+  border: 1px solid var(--line-strong);
+  border-left: .35rem solid var(--cyan);
+  border-radius: var(--radius-md);
+}
+.guest-action-banner h3 { margin: var(--space-2xs) 0; font-size: 1.15rem; }
+.guest-action-banner p { margin: 0; color: var(--muted); font-size: .9rem; }
+.guest-action-buttons { display: flex; gap: var(--space-sm); align-items: center; }
+
+/* Lodging Student Portal Styles */
+.lodging-hero {
+  padding: var(--space-lg);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  margin-bottom: var(--space-xl);
+}
+.lodging-hero h1 { margin-bottom: var(--space-xs); }
+.lodging-stats {
+  display: flex;
+  gap: var(--space-md);
+  margin-top: var(--space-md);
+  flex-wrap: wrap;
+}
+.lodging-stat-item {
+  padding: var(--space-xs) var(--space-md);
+  background: var(--surface-raised);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  font-size: .9rem;
+}
+.lodging-stat-item strong { color: var(--cyan); font-family: var(--font-mono); }
+
+.rooms-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(20rem, 1fr));
+  gap: var(--space-lg);
+  margin-bottom: var(--space-2xl);
+}
+.room-lodging-card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  transition: transform .15s ease, border-color .15s ease;
+}
+.room-lodging-card.is-full {
+  border-color: var(--line);
+  opacity: .85;
+}
+.room-lodging-card:not(.is-full):hover {
+  border-color: var(--line-strong);
+}
+.room-card-head {
+  padding: var(--space-sm) var(--space-md);
+  background: var(--surface-raised);
+  border-bottom: 1px solid var(--line);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.room-card-head h3 { margin: 0; font-size: 1.1rem; }
+.room-card-body { padding: var(--space-md); }
+.room-equip-note { font-size: .8rem; color: var(--muted); margin-bottom: var(--space-sm); }
+.beds-list { display: flex; flex-direction: column; gap: var(--space-xs); }
+.bed-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--space-xs) var(--space-sm);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--line);
+  background: var(--canvas-deep);
+  font-size: .85rem;
+}
+.bed-row.occupied {
+  border-color: var(--line);
+  background: oklch(.2 .02 240);
+}
+.bed-row.free {
+  border-color: oklch(.76 .14 156 / .35);
+  background: oklch(.76 .14 156 / .06);
+}
+.bed-occupant-name { font-weight: 700; color: var(--ink); }
+.bed-occupant-unit { font-size: .8rem; color: var(--muted); margin-left: .3rem; }
+.bed-select-btn {
+  padding: .25rem .75rem;
+  font-size: .8rem;
+  font-weight: 700;
+  border-radius: var(--radius-sm);
+  background: var(--green);
+  color: var(--canvas-deep);
+  border: none;
+  cursor: pointer;
+  text-decoration: none;
+}
+.bed-select-btn:hover {
+  background: var(--ink);
+  color: var(--canvas-deep);
+}
+
+/* Digital Pass */
+.digital-pass {
+  max-width: 32rem;
+  margin: var(--space-xl) auto;
+  padding: var(--space-xl);
+  background: var(--surface);
+  border: 2px solid var(--cyan);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--glow-cyan);
+  text-align: center;
+}
+.digital-pass-mark { font-size: 3rem; margin-bottom: var(--space-sm); }
+.pass-room-badge {
+  display: inline-block;
+  padding: var(--space-sm) var(--space-xl);
+  margin: var(--space-md) 0;
+  background: var(--surface-raised);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-md);
+  font-family: var(--font-mono);
+  font-size: 1.6rem;
+  color: var(--cyan);
+  letter-spacing: .05em;
+}
+.pass-table {
+  width: 100%;
+  margin: var(--space-lg) 0;
+  text-align: left;
+  font-size: .95rem;
+}
+.pass-table td { padding: var(--space-xs) 0; border-bottom: 1px solid var(--line); }
+.pass-table td:first-child { color: var(--muted); width: 35%; }
+

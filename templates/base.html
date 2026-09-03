@@ -12,18 +12,19 @@
 </head>
 <body>
   <a class="skip-link" href="#main-content">ข้ามไปเนื้อหาหลัก</a>
-  {% if user.is_authenticated %}
-    <header class="site-header">
-      <div class="header-shell">
-        <a class="brand" href="{% url 'bookings:calendar' %}"><svg class="brand-mark" viewBox="0 0 48 48" aria-hidden="true"><g fill="none" stroke="var(--cyan)" stroke-width="3"><rect x="2" y="2" width="44" height="44"/><path d="M8 30 L15 30 L19 18 L24 36 L29 24 L33 30 L40 30" stroke-linecap="round" stroke-linejoin="round"/></g></svg>SIG<span class="brand-accent">ROOM</span></a>
+  <header class="site-header">
+    <div class="header-shell">
+      <a class="brand" href="{% url 'bookings:calendar' %}"><svg class="brand-mark" viewBox="0 0 48 48" aria-hidden="true"><g fill="none" stroke="var(--cyan)" stroke-width="3"><rect x="2" y="2" width="44" height="44"/><path d="M8 30 L15 30 L19 18 L24 36 L29 24 L33 30 L40 30" stroke-linecap="round" stroke-linejoin="round"/></g></svg>SIG<span class="brand-accent">ROOM</span></a>
+      {% if user.is_authenticated %}
         <nav class="desktop-nav" aria-label="เมนูหลัก">
           <ul class="main-nav">
-            <li><a {% if request.resolver_match.url_name == 'calendar' %}aria-current="page"{% endif %} href="{% url 'bookings:calendar' %}">ปฏิทิน</a></li>
+            <li><a {% if request.resolver_match.url_name == 'calendar' %}aria-current="page"{% endif %} href="{% url 'bookings:calendar' %}">ปฏิทิน/สถานะห้อง</a></li>
             <li><a {% if request.resolver_match.url_name == 'book_search' or request.resolver_match.url_name == 'book_form' %}aria-current="page"{% endif %} href="{% url 'bookings:book_search' %}">จองห้อง</a></li>
             <li><a {% if request.resolver_match.url_name == 'my_bookings' %}aria-current="page"{% endif %} href="{% url 'bookings:my_bookings' %}">การจองของฉัน</a></li>
             {% if nav_can_access_approvals %}<li><a {% if request.resolver_match.namespace == 'approvals' %}aria-current="page"{% endif %} href="{% url 'approvals:queue' %}">รออนุมัติ <span class="count-badge">{{ nav_pending_approval_count }}</span></a></li>{% endif %}
             {% if nav_can_manage_usage %}<li><a {% if request.resolver_match.namespace == 'usage' %}aria-current="page"{% endif %} href="{% url 'usage:list' %}">การใช้งานห้อง</a></li>{% endif %}
             {% if nav_can_access_reports %}<li><a {% if request.resolver_match.namespace == 'reports' %}aria-current="page"{% endif %} href="{% url 'reports:dashboard' %}">รายงาน</a></li>{% endif %}
+            <li><a {% if 'lodging' in request.path %}aria-current="page"{% endif %} href="{% url 'bookings:lodging_manage' %}">ที่พักหลักสูตร</a></li>
           </ul>
         </nav>
         <div class="header-tools">
@@ -42,12 +43,13 @@
             <div class="mobile-menu-panel">
               <nav aria-label="เมนูหลักสำหรับมือถือ">
                 <ul class="main-nav">
-                  <li><a {% if request.resolver_match.url_name == 'calendar' %}aria-current="page"{% endif %} href="{% url 'bookings:calendar' %}">ปฏิทิน</a></li>
+                  <li><a {% if request.resolver_match.url_name == 'calendar' %}aria-current="page"{% endif %} href="{% url 'bookings:calendar' %}">ปฏิทิน/สถานะห้อง</a></li>
                   <li><a {% if request.resolver_match.url_name == 'book_search' or request.resolver_match.url_name == 'book_form' %}aria-current="page"{% endif %} href="{% url 'bookings:book_search' %}">จองห้อง</a></li>
                   <li><a {% if request.resolver_match.url_name == 'my_bookings' %}aria-current="page"{% endif %} href="{% url 'bookings:my_bookings' %}">การจองของฉัน</a></li>
                   {% if nav_can_access_approvals %}<li><a {% if request.resolver_match.namespace == 'approvals' %}aria-current="page"{% endif %} href="{% url 'approvals:queue' %}">รออนุมัติ ({{ nav_pending_approval_count }})</a></li>{% endif %}
                   {% if nav_can_manage_usage %}<li><a {% if request.resolver_match.namespace == 'usage' %}aria-current="page"{% endif %} href="{% url 'usage:list' %}">การใช้งานห้อง</a></li>{% endif %}
                   {% if nav_can_access_reports %}<li><a {% if request.resolver_match.namespace == 'reports' %}aria-current="page"{% endif %} href="{% url 'reports:dashboard' %}">รายงาน</a></li>{% endif %}
+                  <li><a href="{% url 'bookings:lodging_manage' %}">ที่พักหลักสูตร</a></li>
                 </ul>
               </nav>
               <div class="mobile-account">
@@ -59,9 +61,18 @@
             </div>
           </details>
         </div>
-      </div>
-    </header>
-  {% endif %}
+      {% else %}
+        <nav class="desktop-nav" aria-label="เมนูหลัก">
+          <ul class="main-nav">
+            <li><a aria-current="page" href="{% url 'bookings:calendar' %}">สถานะห้องวันนี้</a></li>
+          </ul>
+        </nav>
+        <div class="header-tools">
+          <a role="button" class="login-btn-header" href="{% url 'login' %}?next={{ request.path }}">เข้าสู่ระบบ</a>
+        </div>
+      {% endif %}
+    </div>
+  </header>
   <main id="main-content" class="container page-shell" tabindex="-1">
     {% if messages %}
       <div aria-live="polite">

@@ -1,0 +1,116 @@
+{% extends "base.html" %}
+{% load static %}
+{% load thaidate %}
+
+{% block title %}จัดการที่พักหลักสูตร · SIGROOM{% endblock %}
+
+{% block content %}
+<div class="page-heading">
+  <div>
+    <p class="eyebrow">งานกำกับหลักสูตร</p>
+    <h1>ระบบจัดสรรและเปิดจองที่พักหลักสูตร</h1>
+    <p>สร้างรอบการจองเพื่อออกลิงก์ส่งเข้ากลุ่ม LINE ให้นักเรียนเลือกห้องพักด้วยตนเอง</p>
+  </div>
+</div>
+
+<div class="grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-xl);">
+  <!-- รายการรอบจองที่เปิดอยู่ -->
+  <div>
+    <div class="section-title">
+      <div>
+        <p class="eyebrow">รอบการจอง</p>
+        <h2>หลักสูตรที่เปิดรับจอง</h2>
+      </div>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: var(--space-md);">
+      {% for c in cohorts %}
+        <article class="detail-card" style="margin: 0;">
+          <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+            <div>
+              <h3><a href="{% url 'bookings:lodging_cohort_detail' c.slug %}">{{ c.title }}</a></h3>
+              <small class="mono" style="color: var(--cyan);">/lodging/c/{{ c.slug }}/</small>
+            </div>
+            <div>
+              {% if c.is_active %}
+                <span class="hud-tag" style="background: oklch(.76 .14 156 / .2); color: var(--green);">เปิดรับจอง</span>
+              {% else %}
+                <span class="hud-tag" style="background: var(--surface-soft); color: var(--muted);">ปิดรับจอง</span>
+              {% endif %}
+            </div>
+          </div>
+          <p style="margin: var(--space-sm) 0; font-size: .9rem;">
+            เข้าพัก: <strong>{{ c.check_in_date|thai_date }}</strong> – <strong>{{ c.check_out_date|thai_date }}</strong><br>
+            ผู้เข้าพักแล้ว: <strong>{{ c.booked_count }}</strong> / {{ c.total_capacity }} คน (ห้องละ {{ c.beds_per_room }} คน)
+          </p>
+          <div style="display: flex; gap: var(--space-sm); align-items: center; flex-wrap: wrap;">
+            <a role="button" class="btn-primary" href="{% url 'bookings:lodging_cohort_detail' c.slug %}">ดูรายชื่อนักเรียน →</a>
+            <a role="button" class="secondary" href="{% url 'bookings:lodging_portal' c.slug %}" target="_blank">เปิดหน้านักเรียน ↗</a>
+          </div>
+        </article>
+      {% empty %}
+        <div class="notice info">ยังไม่มีรอบการจองที่สร้างไว้ สามารถสร้างใหม่ได้จากฟอร์มด้านขวา</div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- ฟอร์มสร้างรอบจองใหม่ -->
+  <div>
+    <article class="detail-card" style="margin: 0; background: var(--surface-raised);">
+      <div class="section-title" style="margin-bottom: var(--space-md);">
+        <div>
+          <p class="eyebrow">สร้างรอบใหม่</p>
+          <h2>เปิดรอบจองที่พักให้นักเรียน</h2>
+        </div>
+      </div>
+
+      <form method="post">
+        {% csrf_token %}
+        <label for="id_title">ชื่อหลักสูตร / รุ่น
+          <input type="text" id="id_title" name="title" placeholder="เช่น หลักสูตรชั้นนายร้อย เหล่า ส. รุ่นที่ 70" required>
+        </label>
+
+        <label for="id_slug">รหัสลิงก์ (ภาษาอังกฤษ/ตัวเลข ไม่มีเว้นวรรค)
+          <input type="text" id="id_slug" name="slug" placeholder="เช่น nr-70 หรือ comm-officer-69" pattern="[a-zA-Z0-9_-]+" required>
+          <small>นักเรียนจะเข้าผ่านลิงก์ <code>.../lodging/c/&lt;รหัส&gt;/</code></small>
+        </label>
+
+        <div class="grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-sm);">
+          <label for="id_check_in_date">วันที่เริ่มเข้าพัก
+            <input type="date" id="id_check_in_date" name="check_in_date" required>
+          </label>
+          <label for="id_check_out_date">วันที่สิ้นสุดการเข้าพัก
+            <input type="date" id="id_check_out_date" name="check_out_date" required>
+          </label>
+        </div>
+
+        <label for="id_beds_per_room">จำนวนคน/เตียงต่อห้อง
+          <input type="number" id="id_beds_per_room" name="beds_per_room" value="4" min="1" max="12" required>
+          <small>ค่ามาตรฐานคือ 4 คนต่อห้อง (เตียง 1 ถึง 4)</small>
+        </label>
+
+        <label>เลือกห้องพักที่เปิดให้จองในรอบนี้
+          <div style="max-height: 12rem; overflow-y: auto; padding: var(--space-sm); border: 1px solid var(--line); border-radius: var(--radius-sm); background: var(--canvas-deep);">
+            {% for rm in lodging_rooms %}
+              <label style="display: flex; align-items: center; gap: var(--space-xs); margin-bottom: var(--space-2xs); font-size: .9rem;">
+                <input type="checkbox" name="rooms" value="{{ rm.id }}" checked>
+                <strong>{{ rm.code }}</strong> {{ rm.name }} ({{ rm.building }})
+              </label>
+            {% empty %}
+              <small style="color: var(--amber);">ยังไม่มีห้องในหมวดห้องพัก กรุณาเพิ่มห้องในระบบ</small>
+            {% endfor %}
+          </div>
+        </label>
+
+        <label for="id_note">คำชี้แจง/ระเบียบการเข้าพัก (ถ้ามี)
+          <textarea id="id_note" name="note" rows="2" placeholder="เช่น รายงานตัวก่อน 18:00 น., เตรียมผ้าปูที่นอนมาเอง"></textarea>
+        </label>
+
+        <button type="submit" class="btn-primary" style="margin-top: var(--space-md); width: 100%;">
+          สร้างรอบจองและออกลิงก์ทันที
+        </button>
+      </form>
+    </article>
+  </div>
+</div>
+{% endblock %}

@@ -34,6 +34,10 @@ ROOMS = [
     ("LAB-EW", "ห้องปฏิบัติการ EW", R.Type.ROOM, R.Category.LAB, "อาคาร 2", "2", 20, "EW", P.AUTO, 0, 15, "ชุดฝึก ESM/ECM\nจอแสดงผล 4 จอ"),
     ("MTG-1", "ห้องประชุม 1", R.Type.ROOM, R.Category.MEETING, "อาคาร บก.", "2", 30, "HQ", P.REQUIRED, 15, 30, "ระบบประชุมออนไลน์\nเครื่องเสียง\nจอ 85 นิ้ว"),
     ("MTG-CO", "ห้องประชุมผู้บังคับบัญชา", R.Type.ROOM, R.Category.SPECIAL, "อาคาร บก.", "3", 16, "HQ", P.REQUIRED, 15, 30, "ระบบประชุมออนไลน์\nเครื่องเสียง"),
+    ("DORM-101", "ห้องพัก 101 (4 เตียง)", R.Type.ROOM, R.Category.LODGING, "อาคารพัก 1", "1", 4, "HQ", P.AUTO, 0, 0, "เตียง 4 ชุด\nตู้เสื้อผ้า 4 ช่อง\nเครื่องปรับอากาศ"),
+    ("DORM-102", "ห้องพัก 102 (4 เตียง)", R.Type.ROOM, R.Category.LODGING, "อาคารพัก 1", "1", 4, "HQ", P.AUTO, 0, 0, "เตียง 4 ชุด\nตู้เสื้อผ้า 4 ช่อง\nเครื่องปรับอากาศ"),
+    ("DORM-103", "ห้องพัก 103 (4 เตียง)", R.Type.ROOM, R.Category.LODGING, "อาคารพัก 1", "1", 4, "HQ", P.AUTO, 0, 0, "เตียง 4 ชุด\nตู้เสื้อผ้า 4 ช่อง\nเครื่องปรับอากาศ"),
+    ("DORM-104", "ห้องพัก 104 (4 เตียง)", R.Type.ROOM, R.Category.LODGING, "อาคารพัก 1", "1", 4, "HQ", P.AUTO, 0, 0, "เตียง 4 ชุด\nตู้เสื้อผ้า 4 ช่อง\nเครื่องปรับอากาศ"),
     ("PROJ-01", "โปรเจกเตอร์พกพา 1", R.Type.EQUIPMENT, R.Category.NONE, "คลังอุปกรณ์", "", 0, "ADMIN", P.AUTO, 0, 0, ""),
     ("VC-KIT-01", "ชุดประชุมออนไลน์เคลื่อนที่ 1", R.Type.EQUIPMENT, R.Category.NONE, "คลังอุปกรณ์", "", 0, "ADMIN", P.AUTO, 0, 0, ""),
 ]
@@ -133,5 +137,52 @@ class Command(BaseCommand):
             },
         )
         self.stdout.write("เพิ่มปฏิทินส่วนกลางตัวอย่าง: วันหยุดชดเชย (วันจันทร์หน้า)")
+
+        # เพิ่มรอบจองที่พักหลักสูตรตัวอย่าง
+        from bookings.models import CourseLodgingCohort, CourseStudentLodging
+        admin_user = User.objects.filter(is_superuser=True).first() or User.objects.first()
+        if admin_user:
+            cohort, created = CourseLodgingCohort.objects.update_or_create(
+                slug="nr-70",
+                defaults={
+                    "title": "หลักสูตรชั้นนายร้อย เหล่า ส. รุ่นที่ 70",
+                    "supervisor": admin_user,
+                    "unit": units.get("EDU"),
+                    "check_in_date": today + timedelta(days=7),
+                    "check_out_date": today + timedelta(days=67),
+                    "beds_per_room": 4,
+                    "is_active": True,
+                    "note": "ขอให้นักเรียนทุกคนรายงานตัวก่อนเวลา 18:00 น. ของวันเปิดหลักสูตร และเตรียมเครื่องนอนส่วนตัวมาด้วย",
+                },
+            )
+            dorm_rooms = Resource.objects.filter(code__in=["DORM-101", "DORM-102", "DORM-103", "DORM-104"])
+            cohort.rooms.set(dorm_rooms)
+
+            # ใส่ตัวอย่างนักเรียน 2 นายในห้อง DORM-101
+            d101 = dorm_rooms.filter(code="DORM-101").first()
+            if d101:
+                CourseStudentLodging.objects.get_or_create(
+                    cohort=cohort,
+                    room=d101,
+                    bed_number=1,
+                    defaults={
+                        "rank": "ร.ท.",
+                        "full_name": "ชัยยศ ยอดกล้า",
+                        "origin_unit": "ส.พัน.1 รอ.",
+                        "phone": "081-444-5555",
+                    },
+                )
+                CourseStudentLodging.objects.get_or_create(
+                    cohort=cohort,
+                    room=d101,
+                    bed_number=2,
+                    defaults={
+                        "rank": "ร.ท.",
+                        "full_name": "พงษ์ศักดิ์ ภักดี",
+                        "origin_unit": "ส.พัน.12 พล.ม.2 รอ.",
+                        "phone": "082-666-7777",
+                    },
+                )
+            self.stdout.write(f"{'สร้าง' if created else 'มีแล้ว'} รอบจองที่พักตัวอย่าง: หลักสูตรชั้นนายร้อย รุ่นที่ 70 (ลิงก์: /lodging/c/nr-70/)")
 
         self.stdout.write(self.style.SUCCESS("เสร็จ — เปิด http://127.0.0.1:8000/ เพื่อดู SIGROOM"))

@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% load static %}
+{% load thaidate %}
+
+{% block title %}บัตรรายงานตัวเข้าที่พัก · {{ student.room.code }} · SIGROOM{% endblock %}
+
+{% block content %}
+<div class="digital-pass">
+  <div class="digital-pass-mark">✓</div>
+  <span class="hud-tag" style="background: oklch(.76 .14 156 / .2); color: var(--green);">ลงทะเบียนที่พักสำเร็จ</span>
+  
+  <h1 style="font-size: 1.5rem; margin-top: var(--space-sm);">{{ cohort.title }}</h1>
+  
+  <div class="pass-room-badge">
+    ห้อง {{ student.room.code }} · เตียง {{ student.bed_number }}
+  </div>
+
+  <table class="pass-table">
+    <tr>
+      <td>ผู้เข้าพัก</td>
+      <td><strong>{{ student.rank }} {{ student.full_name }}</strong></td>
+    </tr>
+    <tr>
+      <td>สังกัดเดิม</td>
+      <td>{{ student.origin_unit }}</td>
+    </tr>
+    <tr>
+      <td>เบอร์ติดต่อ</td>
+      <td>{{ student.phone }}</td>
+    </tr>
+    <tr>
+      <td>อาคาร/ที่ตั้ง</td>
+      <td>{{ student.room.building }} {% if student.room.floor %}ชั้น {{ student.room.floor }}{% endif %}</td>
+    </tr>
+    <tr>
+      <td>ช่วงเวลาเข้าพัก</td>
+      <td>{{ cohort.check_in_date|thai_date }} – {{ cohort.check_out_date|thai_date }}</td>
+    </tr>
+    <tr>
+      <td>เวลาที่ลงทะเบียน</td>
+      <td>{{ student.booked_at|thai_datetime }}</td>
+    </tr>
+    {% if student.note %}
+    <tr>
+      <td>หมายเหตุ</td>
+      <td>{{ student.note }}</td>
+    </tr>
+    {% endif %}
+  </table>
+
+  {% if roommates %}
+    <div style="text-align: left; padding: var(--space-sm); background: var(--surface-raised); border-radius: var(--radius-sm); margin-bottom: var(--space-md);">
+      <small style="color: var(--muted); display: block; margin-bottom: var(--space-2xs);">เพื่อนร่วมห้องปัจจุบัน:</small>
+      <ul style="margin: 0; padding-left: 1.2rem; font-size: .85rem;">
+        {% for mate in roommates %}
+          <li>เตียง {{ mate.bed_number }}: {{ mate.rank }} {{ mate.full_name }} ({{ mate.origin_unit }})</li>
+        {% endfor %}
+      </ul>
+    </div>
+  {% endif %}
+
+  <div class="notice info" style="margin-bottom: var(--space-md);">
+    <small>💡 กรุณา<strong>จับภาพหน้าจอ (Screenshot)</strong> บัตรนี้ไว้เป็นหลักฐานเพื่อแสดงต่อนายสิบดูแลอาคาร หรือเจ้าหน้าที่รับรายงานตัว</small>
+  </div>
+
+  <div style="display: flex; gap: var(--space-sm); justify-content: center; flex-wrap: wrap;">
+    <button type="button" class="btn-primary" onclick="window.print()">พิมพ์ / บันทึก PDF</button>
+    <a role="button" class="secondary" href="{% url 'bookings:lodging_portal' cohort.slug %}">กลับไปหน้าผังห้องพัก</a>
+  </div>
+</div>
+{% endblock %}

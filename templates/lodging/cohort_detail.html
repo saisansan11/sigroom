@@ -1,0 +1,160 @@
+{% extends "base.html" %}
+{% load static %}
+{% load thaidate %}
+
+{% block title %}{{ cohort.title }} · จัดการที่พัก · SIGROOM{% endblock %}
+
+{% block content %}
+<div class="page-heading">
+  <div>
+    <p class="eyebrow"><a href="{% url 'bookings:lodging_manage' %}">← กลับหน้ารายการหลักสูตร</a></p>
+    <h1>{{ cohort.title }}</h1>
+    <p>เข้าพัก: <strong>{{ cohort.check_in_date|thai_date }}</strong> ถึง <strong>{{ cohort.check_out_date|thai_date }}</strong> · ห้องละ <strong>{{ cohort.beds_per_room }}</strong> คน</p>
+  </div>
+</div>
+
+<!-- กล่องคัดลอกลิงก์ส่ง LINE ให้นักเรียน -->
+<div class="guest-action-banner" style="border-left-color: var(--green);">
+  <div>
+    <span class="hud-tag" style="background: oklch(.76 .14 156 / .2); color: var(--green);">ลิงก์สำหรับส่งในกลุ่ม LINE นักเรียน</span>
+    <h3 style="font-family: var(--font-mono); font-size: 1.05rem; word-break: break-all;">{{ share_url }}</h3>
+    <p>นักเรียนสามารถกดลิงก์นี้จากมือถือ เพื่อเลือกห้องและเตียงพักด้วยตนเองได้ทันที ไม่ต้องมีบัญชีในระบบ</p>
+  </div>
+  <div class="guest-action-buttons">
+    <button type="button" class="btn-primary" id="copyLinkBtn" onclick="copyShareLink('{{ share_url }}')">
+      📋 คัดลอกลิงก์ส่ง LINE
+    </button>
+    <a role="button" class="secondary" href="{{ share_url }}" target="_blank">
+      ทดลองเปิดดูหน้านักเรียน ↗
+    </a>
+  </div>
+</div>
+
+<div class="statusband" style="margin-bottom: var(--space-xl);">
+  <article class="stat">
+    <span class="stat-label">ห้องพักทั้งหมด</span>
+    <div class="stat-value">{{ cohort.rooms.count }}<small> ห้อง</small></div>
+    <p class="stat-detail">ห้องละ {{ cohort.beds_per_room }} คน</p>
+  </article>
+  <article class="stat stat-cyan">
+    <span class="stat-label">ความจุรวม</span>
+    <div class="stat-value">{{ cohort.total_capacity }}<small> ที่พัก</small></div>
+    <p class="stat-detail">เตียงทั้งหมดในรอบนี้</p>
+  </article>
+  <article class="stat stat-amber">
+    <span class="stat-label">ลงทะเบียนแล้ว</span>
+    <div class="stat-value">{{ cohort.booked_count }}<small> คน</small></div>
+    <p class="stat-detail">คิดเป็น {{ cohort.booked_count|floatformat:0 }} คน</p>
+  </article>
+  <article class="stat stat-green">
+    <span class="stat-label">ว่างคงเหลือ</span>
+    <div class="stat-value">{{ cohort.remaining_slots }}<small> ที่พัก</small></div>
+    <p class="stat-detail">พร้อมรับนักเรียนเพิ่ม</p>
+  </article>
+</div>
+
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--space-md); flex-wrap: wrap; gap: var(--space-sm);">
+  <h2>ผังรายชื่อนักเรียนแยกตามห้องพัก</h2>
+  <a role="button" class="btn-primary" href="{% url 'bookings:lodging_cohort_export_csv' cohort.slug %}">
+    📥 ส่งออก Excel / CSV (สำหรับฝ่ายดูแลอาคาร)
+  </a>
+</div>
+
+<div class="rooms-grid">
+  {% for rsum in rooms_summary %}
+    <article class="room-lodging-card">
+      <div class="room-card-head">
+        <div>
+          <h3>{{ rsum.room.code }}</h3>
+          <small>{{ rsum.room.building }}</small>
+        </div>
+        <div>
+          {% if rsum.free == 0 %}
+            <span class="hud-tag" style="background: var(--surface-soft); color: var(--muted);">เต็ม ({{ rsum.count }}/{{ cohort.beds_per_room }})</span>
+          {% else %}
+            <span class="hud-tag" style="background: oklch(.76 .14 156 / .2); color: var(--green);">ว่าง {{ rsum.free }}/{{ cohort.beds_per_room }}</span>
+          {% endif %}
+        </div>
+      </div>
+      <div class="room-card-body">
+        {% if rsum.students %}
+          <div style="display: flex; flex-direction: column; gap: var(--space-xs);">
+            {% for s in rsum.students %}
+              <div class="bed-row occupied">
+                <div>
+                  <strong>เตียง {{ s.bed_number }}:</strong>
+                  <span class="bed-occupant-name">{{ s.rank }} {{ s.full_name }}</span>
+                  <span class="bed-occupant-unit">({{ s.origin_unit }})</span>
+                </div>
+                <div>
+                  <small class="mono">{{ s.phone }}</small>
+                </div>
+              </div>
+            {% endfor %}
+            {% if rsum.free > 0 %}
+              <div style="padding: var(--space-2xs) var(--space-sm); border: 1px dashed var(--line); border-radius: var(--radius-sm); color: var(--muted); font-size: .85rem; text-align: center;">
+                + เตียงว่างอีก {{ rsum.free }} ที่
+              </div>
+            {% endif %}
+          </div>
+        {% else %}
+          <div style="padding: var(--space-sm); text-align: center; color: var(--muted); font-size: .9rem;">
+            ยังไม่มีผู้เข้าพัก (ว่าง {{ cohort.beds_per_room }} ที่)
+          </div>
+        {% endif %}
+      </div>
+    </article>
+  {% endfor %}
+</div>
+
+{% if students %}
+  <div class="section-title" style="margin-top: var(--space-2xl);">
+    <div>
+      <p class="eyebrow">ทำเนียบรายชื่อ</p>
+      <h2>รายชื่อผู้เข้าพักทั้งหมด ({{ students.count }} นาย)</h2>
+    </div>
+  </div>
+
+  <table role="grid" style="font-size: .9rem;">
+    <thead>
+      <tr>
+        <th>ลำดับ</th>
+        <th>ห้อง / เตียง</th>
+        <th>ยศ - ชื่อ - สกุล</th>
+        <th>หน่วยต้นสังกัด</th>
+        <th>เบอร์โทร</th>
+        <th>เวลาที่ลงทะเบียน</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for s in students %}
+        <tr>
+          <td>{{ forloop.counter }}</td>
+          <td><strong style="color: var(--cyan);">{{ s.room.code }}</strong> (เตียง {{ s.bed_number }})</td>
+          <td><strong>{{ s.rank }} {{ s.full_name }}</strong></td>
+          <td>{{ s.origin_unit }}</td>
+          <td class="mono">{{ s.phone }}</td>
+          <td>{{ s.booked_at|thai_datetime }}</td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+{% endif %}
+
+<script>
+function copyShareLink(url) {
+  navigator.clipboard.writeText(url).then(() => {
+    const btn = document.getElementById('copyLinkBtn');
+    const originalText = btn.textContent;
+    btn.textContent = '✓ คัดลอกสำเร็จ!';
+    btn.style.background = 'var(--green)';
+    setTimeout(() => {
+      btn.textContent = originalText;
+      btn.style.background = '';
+    }, 2500);
+  }).catch(() => {
+    alert('ไม่สามารถคัดลอกอัตโนมัติได้ กรุณาคัดลอกข้อความในช่องเอง');
+  });
+}
+</script>
+{% endblock %}

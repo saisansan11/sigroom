@@ -368,3 +368,6 @@ class SeriesSkip(models.Model):
 
     def __str__(self):
         return f"{self.series_id} {self.occur_date}: {self.reason}"
+
+
+from .lodging_models import CourseLodgingCohort, CourseStudentLodging
