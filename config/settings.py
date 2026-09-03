@@ -79,14 +79,18 @@ TEMPLATES = [
 ]
 
 # --- ฐานข้อมูล: PostgreSQL เท่านั้น (ต้องมี extension btree_gist — SRS FR-09) ---
+db_host = os.environ.get("DB_HOST", "127.0.0.1")
+db_port = "" if db_host.startswith("/cloudsql/") else os.environ.get("DB_PORT", "5432")
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.postgresql",
         "NAME": os.environ.get("DB_NAME", "ogn_room"),
         "USER": os.environ.get("DB_USER", "postgres"),
         "PASSWORD": os.environ.get("DB_PASSWORD", ""),
-        "HOST": os.environ.get("DB_HOST", "127.0.0.1"),
-        "PORT": os.environ.get("DB_PORT", "5432"),
+        "HOST": db_host,
+        "PORT": db_port,
+        "CONN_MAX_AGE": int(os.environ.get("DB_CONN_MAX_AGE", "60")),
+        "CONN_HEALTH_CHECKS": True,
         "OPTIONS": {"connect_timeout": 3},  # ไม่ให้คำสั่งค้างนานเมื่อฐานข้อมูลยังไม่เปิด
     }
 }
@@ -123,13 +127,24 @@ STORAGES = {
     "staticfiles": {"BACKEND": "whitenoise.storage.CompressedStaticFilesStorage"},
 }
 
-# --- ความปลอดภัย session/cookie (SRS SR-11) ----------------------------------
+# --- ความปลอดภัย session/cookie (SRS SR-11 & Cloud Migration Gate) ------------
 SESSION_COOKIE_HTTPONLY = True
-SESSION_COOKIE_SAMESITE = "Strict"
-CSRF_COOKIE_SAMESITE = "Strict"
-SESSION_COOKIE_AGE = 12 * 60 * 60  # 12 ชั่วโมง (SR-05)
 DJANGO_SECURE_RAW = os.environ.get("DJANGO_SECURE")
 DJANGO_SECURE = (DJANGO_SECURE_RAW if DJANGO_SECURE_RAW is not None else ("0" if DEBUG else "1")) == "1"
+
+# Firebase Hosting CDN ส่งผ่านเฉพาะ cookie ที่ชื่อ __session
+SESSION_COOKIE_NAME = os.environ.get("SESSION_COOKIE_NAME", "__session" if DJANGO_SECURE else "sessionid")
+SESSION_COOKIE_SAMESITE = "Lax" if DJANGO_SECURE else "Strict"
+SESSION_COOKIE_AGE = 12 * 60 * 60  # 12 ชั่วโมง (SR-05)
+
+# จัดเก็บ CSRF Token ใน Session เมื่อเปิดโหมด Secure/Cloud
+CSRF_USE_SESSIONS = DJANGO_SECURE
+CSRF_COOKIE_SAMESITE = "Lax" if DJANGO_SECURE else "Strict"
+
+# Reverse Proxy & SSL Headers สำหรับ Cloud Run / Firebase Hosting
+SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+USE_X_FORWARDED_HOST = True
+
 security_warning = secure_configuration_warning(DEBUG, DJANGO_SECURE_RAW)
 if security_warning:
     warnings.warn(security_warning, RuntimeWarning, stacklevel=2)

@@ -9,3 +9,4 @@ __pycache__/
 /backups/
 /imported-users-*.csv
 docs/room-booking-srs.standalone.html
+.firebase/
