@@ -33,8 +33,13 @@ Cloud Build **build + deploy ขึ้นเว็บจริงอัตโน
    1. build + push image โดย tag ด้วย `$COMMIT_SHA` (คง tag `latest` ควบคู่ได้
       แต่ขั้นที่ 2–3 ต้องอ้าง `$COMMIT_SHA` **เท่านั้น** — ห้ามอ้าง `:latest` เพราะถ้ามี
       build สองอันซ้อนกัน tag จะชี้ image ผิดตัว)
-   2. `gcloud run jobs update sigroom-migrate` ด้วย image `$COMMIT_SHA` แล้ว
-      `gcloud run jobs execute sigroom-migrate --wait` — **ถ้า migrate ล้มเหลว
+   2. update + execute + รอผล ใน**คำสั่งเดียว**:
+      `gcloud run jobs update sigroom-migrate --image=...:$COMMIT_SHA --region=... --wait`
+      — flag `--wait` มีผลเป็น "สั่ง execute ทันทีหลัง update แล้วรอจนจบ" (ตาม
+      gcloud reference: `--wait` implies `--execute-now`) **ห้ามแยกเป็นคำสั่ง
+      update หนึ่งคำสั่งแล้วตามด้วย execute อีกคำสั่ง** เพราะ job เป็น resource
+      ที่ทุก build ใช้ร่วมกัน: ถ้า build อื่น update image คั่นกลางระหว่างสองคำสั่ง
+      execute ของ build นี้จะรัน image ผิดตัวทันที — **ถ้า migrate ล้มเหลว
       build ทั้งอันต้อง fail และต้องไม่ไปถึงขั้น deploy** (Cloud Build หยุดเอง
       เมื่อ step ล้มเหลว — revision เดิมยังให้บริการตามปกติ ไม่มีช่วงเว็บพัง)
    3. deploy Cloud Run service `sigroom` ด้วย image `$COMMIT_SHA` **ตัวเดียวกับขั้น 2**
@@ -43,6 +48,13 @@ Cloud Build **build + deploy ขึ้นเว็บจริงอัตโน
    - รัน migrate ทุก build ได้ปลอดภัย — `manage.py migrate` เป็น no-op เมื่อไม่มี
      migration ใหม่ และสอดคล้องกับกติกา expand/contract (schema ใหม่ต้องไม่ทำให้
      โค้ดเก่าที่ยังรันอยู่พัง)
+   - **กติกากันชนกันของ build:** Cloud Run job เดียวกันรัน execution **พร้อมกันได้
+     หลายชุด** — ห้ามคิดว่า job จะจัดคิว serialize ให้เอง ดังนั้น
+     **ห้าม merge PR เข้า production ชุดถัดไป (หรือ push ใด ๆ ที่ trigger build)
+     จนกว่า build ของ PR ก่อนหน้าจะขึ้น SUCCESS ครบทุกขั้น** — โปรเจกต์นี้เจ้าของ
+     เป็นคน merge ทีละ PR อยู่แล้ว (ข้อ 0.6) กติกานี้ทำให้ข้อห้ามชัดเจน ·
+     database advisory lock กันสอง migration รันพร้อมกันเป็นทางเลือกเสริมใน
+     อนาคตถ้ามีผู้ merge หลายคน — ยังไม่บังคับตอนนี้
    - **ก่อนเริ่ม B0** ยืนยันกับเจ้าของระบบว่า job ยังมีอยู่จริงและต่อฐานข้อมูล production ได้
      (`gcloud run jobs describe sigroom-migrate --region=asia-southeast3 --project=sixth-storm-439008-u2`)
      — job นี้**อยู่นอก repository** (สร้างไว้ใน GCP project `sixth-storm-439008-u2`,
@@ -56,15 +68,13 @@ Cloud Build **build + deploy ขึ้นเว็บจริงอัตโน
    PR description ให้ชัดว่า "มี migration" และหลัง merge ให้ตรวจใน Cloud Build → History
    ว่า build ของ commit นั้นผ่านครบทั้งขั้น migrate และขั้น deploy
 
-   **คำสั่งมือ (fallback — ใช้เฉพาะกู้สถานการณ์เมื่อ pipeline พัง):** บรรทัดเดียวต่อคำสั่ง
-   รันใน PowerShell ได้โดยตรง (ห้ามแตกหลายบรรทัดด้วย `\` — แบบนั้นใช้ได้เฉพาะ
-   Cloud Shell/bash) ใส่ `--project` กำกับทุกคำสั่ง และแทน `<COMMIT_SHA>` ด้วย SHA
-   ของ commit ที่ build+push สำเร็จแล้วเท่านั้น — **ห้ามใช้ `:latest`**:
+   **คำสั่งมือ (fallback — ใช้เฉพาะกู้สถานการณ์เมื่อ pipeline พัง):** คำสั่งเดียวจบ
+   (update + execute + รอผล — เหตุผลเดียวกับขั้นที่ 2 ของ B0: แยกสองคำสั่งจะเปิด
+   ช่อง race) เป็นบรรทัดเดียวรันใน PowerShell ได้โดยตรง (ห้ามแตกหลายบรรทัดด้วย `\`
+   — แบบนั้นใช้ได้เฉพาะ Cloud Shell/bash) และแทน `<COMMIT_SHA>` ด้วย SHA ของ
+   commit ที่ build+push สำเร็จแล้วเท่านั้น — **ห้ามใช้ `:latest`**:
    ```
-   gcloud run jobs update sigroom-migrate --region=asia-southeast3 --project=sixth-storm-439008-u2 --image=asia-southeast3-docker.pkg.dev/sixth-storm-439008-u2/sigroom-repo/sigroom:<COMMIT_SHA>
-   ```
-   ```
-   gcloud run jobs execute sigroom-migrate --region=asia-southeast3 --project=sixth-storm-439008-u2 --wait
+   gcloud run jobs update sigroom-migrate --region=asia-southeast3 --project=sixth-storm-439008-u2 --image=asia-southeast3-docker.pkg.dev/sixth-storm-439008-u2/sigroom-repo/sigroom:<COMMIT_SHA> --wait
    ```
 
 กติกาโค้ดเดิมใน `CLAUDE.md` มีผลทุกข้อ โดยเฉพาะ:
@@ -226,6 +236,11 @@ Cloud Build **build + deploy ขึ้นเว็บจริงอัตโน
   ผ่าน `transaction.on_commit(...)` หลังลบแถวสำเร็จเท่านั้น (กันกรณี transaction
   rollback แล้วไฟล์หายทั้งที่แถวยังอยู่) · กรณีแก้ไขแทนที่รูปเดิม ให้ลบไฟล์เก่าแบบเดียวกัน
   · การลบผ่าน admin (รวม inline) ต้องวิ่งผ่าน service นี้ด้วย
+- **ฝั่งอัปโหลดก็มีช่องไฟล์กำพร้า:** ตอน save ไฟล์ใหม่ถูกเขียนลง storage **ก่อน**
+  แถว DB จะบันทึกสำเร็จ — ถ้า `save()` ล้มเหลว (เช่นชน constraint) ไฟล์ใหม่จะค้าง
+  อยู่ใน storage → service create/update ต้องครอบด้วย try/except แล้ว**ลบไฟล์ใหม่
+  แบบ best-effort เมื่อ transaction ล้มเหลว** (ถ้าลบไม่สำเร็จไม่ต้อง raise ซ้ำ —
+  บันทึก log พอ แล้วปล่อย error เดิมของ transaction ขึ้นไปตามปกติ)
 - `clean()` ต้องตรวจด้วยว่า resource เป็นประเภทห้อง (ROOM) พร้อมข้อความไทย
 - **Validation ไฟล์รูป:** จำกัดชนิด (JPEG/PNG/WebP) และขนาด ≤ 5MB — ตรวจใน `clean()`/validator
   ของ field พร้อมข้อความไทย + test ไฟล์ผิดชนิดและไฟล์ใหญ่เกิน
@@ -250,7 +265,12 @@ Cloud Build **build + deploy ขึ้นเว็บจริงอัตโน
   — **test ข้อนี้สร้างตรงผ่าน ORM ข้าม service** ตามข้อยกเว้นใน C2),
   resource ต้องเป็นห้อง, validation ชนิด/ขนาดไฟล์,
   อัปโหลดสองไฟล์ที่ชื่อไฟล์ต้นทางเหมือนกันแล้วได้ path ต่างกัน (รูปแรกไม่ถูกทับ),
-  ลบรูปแล้วไฟล์ใน storage ถูกลบด้วย (ไม่มีไฟล์กำพร้า),
+  **ชุด test ไฟล์กำพร้า 3 กรณี:** (ก) ลบรูปแล้วไฟล์ใน storage ถูกลบด้วย,
+  (ข) create/update ที่ล้มเหลว (เช่นชน constraint) ต้องไม่ทิ้งไฟล์ใหม่ค้างใน storage,
+  (ค) แทนที่รูปสำเร็จแล้วไฟล์เก่าหายแต่ไฟล์ใหม่ยังอยู่
+  — test ที่ตรวจผลของ `transaction.on_commit` ต้องใช้
+  `captureOnCommitCallbacks(execute=True)` หรือ `TransactionTestCase`
+  เพราะ callback ทำงานหลัง commit จริงเท่านั้น (`TestCase` ปกติ rollback ไม่เคย commit),
   หน้า render ทั้งมีรูป/ไม่มีรูป,
   จำนวน query คงที่ (N+1), **flag ปิดอัปโหลด** (จำลอง `DEBUG=False` + ไม่มี
   `GS_BUCKET_NAME` แล้ว flag ต้องปิด / admin ไม่แสดงช่องอัปโหลด) — ทั้งหมดใช้ temp storage ใน test
