@@ -123,8 +123,9 @@ def lodging_book_bed(request, slug):
         if room_id:
             try:
                 room_obj = cohort.rooms.filter(pk=room_id).first()
-            except Exception:
+            except (TypeError, ValueError):
                 pass
+        # เก็บข้อมูลและ error ใน session เพื่อให้ lodging_portal เปิด modal เดิมอัตโนมัติพร้อมคงข้อมูลที่กรอก
         request.session["lodging_modal_error"] = err_msg
         request.session["lodging_modal_data"] = {
             "room_id": str(room_id or ""),
@@ -136,6 +137,7 @@ def lodging_book_bed(request, slug):
             "phone": request.POST.get("phone", "").strip(),
             "note": note,
         }
+        # คง messages.error ไว้เป็น fallback สำหรับเบราว์เซอร์หรือกรณีที่ dialog ไม่เปิด
         messages.error(request, err_msg)
         return redirect("bookings:lodging_portal", slug=slug)
 

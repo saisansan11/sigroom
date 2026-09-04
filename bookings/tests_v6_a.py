@@ -90,21 +90,48 @@ def test_authenticated_home_hides_role_router_and_orders_actions(client, v6_a_se
 
 
 def test_authenticated_role_actions_priority_ordering(client, v6_a_setup, monkeypatch):
-    """ทดสอบการจัดลำดับการ์ดใน role-actions:
-    - ถ้า usage_today_count > 0 แต่ nav_pending_approval_count == 0 -> งานดูแลห้องต้องมาก่อนงานผู้อนุมัติ
+    """ทดสอบการจัดลำดับการ์ดใน role-actions ตามเกณฑ์แผน A1:
+    - กรณีที่ 1: usage_today_count > 0 แต่ nav_pending_approval_count == 0
+      -> งานดูแลห้อง (มีรายการให้ตรวจ) ต้องขึ้นก่อนงานผู้อนุมัติ (คิวอนุมัติเรียบร้อย)
+    - กรณีที่ 2: nav_pending_approval_count > 0 และ usage_today_count > 0
+      -> งานผู้อนุมัติ (มีรายการรอตัดสิน) ต้องขึ้นก่อนงานดูแลห้อง
     """
     user, _, _, _, _ = v6_a_setup
     user.is_superuser = True
     user.save()
     client.force_login(user)
 
-    # จำลองให้ usage_today_count = 3 และ nav_pending_approval_count = 0
-    resp = client.get(reverse("bookings:calendar"))
-    assert resp.status_code == 200
+    class FakeBooking:
+        end_at = timezone.now()
 
-    # ตรวจสอบว่า template render role-actions ได้อย่างถูกต้อง
-    content = resp.content.decode()
-    assert "role-actions" in content
+    # กรณีที่ 1: usage_today_count = 2, pending = 0
+    monkeypatch.setattr("notifications.context_processors.pending_for", lambda u: [])
+    monkeypatch.setattr("bookings.views.recent_bookings_for", lambda u, now: [FakeBooking(), FakeBooking()])
+
+    resp1 = client.get(reverse("bookings:calendar"))
+    assert resp1.status_code == 200
+    content1 = resp1.content.decode()
+
+    # ยืนยันว่างานดูแลห้องมาก่อนงานผู้อนุมัติ
+    assert "วันนี้มี 2 รายการให้ตรวจ" in content1
+    assert "คิวอนุมัติเรียบร้อย" in content1
+    idx_usage_1 = content1.index("วันนี้มี 2 รายการให้ตรวจ")
+    idx_approvals_1 = content1.index("คิวอนุมัติเรียบร้อย")
+    assert idx_usage_1 < idx_approvals_1
+
+    # กรณีที่ 2: nav_pending_approval_count = 3, usage_today_count = 2
+    monkeypatch.setattr("notifications.context_processors.pending_for", lambda u: [1, 2, 3])
+
+    resp2 = client.get(reverse("bookings:calendar"))
+    assert resp2.status_code == 200
+    content2 = resp2.content.decode()
+
+    # ยืนยันว่างานผู้อนุมัติขึ้นก่อนงานดูแลห้อง
+    assert "มี 3 รายการรอตัดสิน" in content2
+    assert "วันนี้มี 2 รายการให้ตรวจ" in content2
+    idx_approvals_2 = content2.index("มี 3 รายการรอตัดสิน")
+    idx_usage_2 = content2.index("วันนี้มี 2 รายการให้ตรวจ")
+    assert idx_approvals_2 < idx_usage_2
 
 
 def test_lodging_portal_sorts_available_rooms_before_full_rooms(client, v6_a_setup):
@@ -196,7 +223,8 @@ def test_lodging_booking_error_reopens_modal_with_preserved_data(client, v6_a_se
     assert "ศสส." in content_conflict
     # สคริปต์เปิด modal อัตโนมัติเมื่อมี error
     assert "bookingModal" in content_conflict
-    assert "showModal" in content_conflict
+    assert "DOMContentLoaded" in content_conflict
+    assert "modal.showModal()" in content_conflict
 
     # กรณีที่ 2: พยายามใช้เบอร์โทรเดิมซ้ำ
     data_duplicate_phone = {
@@ -216,3 +244,5 @@ def test_lodging_booking_error_reopens_modal_with_preserved_data(client, v6_a_se
     assert "เบอร์โทรศัพท์นี้ลงทะเบียนในรอบนี้แล้ว" in content_dup
     assert "สมชาย รักชาติ (ซ้ำ)" in content_dup
     assert "0891234567" in content_dup
+    assert "DOMContentLoaded" in content_dup
+    assert "modal.showModal()" in content_dup
