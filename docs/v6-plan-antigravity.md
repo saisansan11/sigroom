@@ -24,15 +24,32 @@ Cloud Build **build + deploy ขึ้นเว็บจริงอัตโน
    Cloud Run Job ชื่อ `sigroom-migrate` — job นี้ **อยู่นอก repository** (สร้างไว้ใน
    GCP project `sixth-storm-439008-u2`, region `asia-southeast3` เมื่อ 4 ก.ย. 69)
    ระบุคำเตือนนี้ให้ชัดใน PR description ทุกครั้งที่มีไฟล์ migration ใหม่
-   ขั้นตอนรันหลัง merge (Cloud Run Job **ตรึง image digest ตอนสร้าง/อัปเดต** —
-   ต้อง update ให้ชี้ image ล่าสุดก่อน execute เสมอ):
+
+   ขั้นตอนรันหลัง merge — **ต้องทำตามลำดับนี้เท่านั้น:**
+
+   **ขั้น 1 — รอ Cloud Build เสร็จก่อน (ข้ามไม่ได้):** Cloud Run Job **ตรึง image digest
+   ตอนสั่ง update** ถ้าสั่ง update ทันทีหลัง merge ขณะ build ยังไม่เสร็จ tag `:latest`
+   จะยังชี้ image เก่าที่ **ไม่มี migration ใหม่** — job จะรันโค้ดเก่าโดยไม่มี error ให้เห็น
+   ให้รอจน build ของ commit ที่เพิ่ง merge ขึ้นสถานะ **SUCCESS** ก่อน ตรวจได้สองทาง:
+   เปิด Cloud Console → Cloud Build → History (ดูว่ารายการบนสุดเป็นสีเขียวและตรงกับ
+   commit ที่ merge) หรือใช้คำสั่ง:
    ```
-   gcloud run jobs update sigroom-migrate --region=asia-southeast3 \
-     --image=asia-southeast3-docker.pkg.dev/sixth-storm-439008-u2/sigroom-repo/sigroom:latest
-   gcloud run jobs execute sigroom-migrate --region=asia-southeast3 --wait
+   gcloud builds list --project=sixth-storm-439008-u2 --region=asia-southeast3 --limit=3
+   ```
+   (ถ้าคำสั่งคืนรายการว่าง ให้ลองตัด `--region` ออก หรือดูใน Cloud Console แทน)
+
+   **ขั้น 2 — update job ให้ชี้ image ใหม่ แล้วค่อย execute:** คำสั่งด้านล่างเป็น
+   **บรรทัดเดียวต่อคำสั่ง รันใน PowerShell ได้โดยตรง** — ห้ามแตกหลายบรรทัดด้วย `\`
+   (รูปแบบนั้นใช้ได้เฉพาะ Cloud Shell/bash) และใส่ `--project` กำกับ **ทุกคำสั่ง**
+   กันกรณี gcloud ในเครื่องตั้ง default project ไว้เป็นตัวอื่น:
+   ```
+   gcloud run jobs update sigroom-migrate --region=asia-southeast3 --project=sixth-storm-439008-u2 --image=asia-southeast3-docker.pkg.dev/sixth-storm-439008-u2/sigroom-repo/sigroom:latest
+   ```
+   ```
+   gcloud run jobs execute sigroom-migrate --region=asia-southeast3 --project=sixth-storm-439008-u2 --wait
    ```
    **ก่อนเริ่มงาน B** ให้ยืนยันกับเจ้าของระบบก่อนว่า job นี้ยังมีอยู่จริง
-   (`gcloud run jobs describe sigroom-migrate --region=asia-southeast3`)
+   (`gcloud run jobs describe sigroom-migrate --region=asia-southeast3 --project=sixth-storm-439008-u2`)
    และเชื่อมต่อฐานข้อมูล production ได้ ถ้าไม่มีให้แจ้งใน PR แทนการสร้างเอง
 
 กติกาโค้ดเดิมใน `CLAUDE.md` มีผลทุกข้อ โดยเฉพาะ:
@@ -124,8 +141,11 @@ Cloud Build **build + deploy ขึ้นเว็บจริงอัตโน
 - `check_in_student()` ต้องกันการยืนยันซ้ำแบบพร้อมกัน (concurrent) ด้วย
   `select_for_update()` ภายใน `transaction.atomic` — ไม่ใช่แค่เช็ค if ธรรมดา
 - test อย่างน้อย: (1) check_in_student สำเร็จ + บันทึกผู้ยืนยัน + audit,
-  (2) ยืนยันซ้ำถูกปฏิเสธ (รวมกรณีสองคำขอพร้อมกัน — จำลองด้วยการเรียก service ซ้ำหลัง
-  ยืนยันแล้วต้องได้ ValidationError), (3) **POST ยืนยันโดยผู้ไม่มีสิทธิ์ต้องถูกปฏิเสธ (403)**
+  (2) **duplicate submission**: เรียก service ซ้ำหลังยืนยันแล้วต้องได้ ValidationError —
+  test นี้ครอบเฉพาะการกดยืนยันซ้ำตามลำดับ **ไม่ใช่** การพิสูจน์การกันสองคำขอพร้อมกัน
+  (การกัน concurrent เป็นหน้าที่ของ `select_for_update()` ตามข้อบังคับด้านบน —
+  ไม่บังคับเขียน concurrent test ด้วย thread แต่ reviewer ต้องตรวจในโค้ดว่ามี
+  `select_for_update()` ใน `transaction.atomic` จริง), (3) **POST ยืนยันโดยผู้ไม่มีสิทธิ์ต้องถูกปฏิเสธ (403)**
   ไม่ใช่แค่ซ่อนปุ่มใน template, (4) ผู้ไม่ล็อกอินเห็นชื่อแบบ masked เท่านั้น,
   (5) QR URL ขึ้นต้นด้วยค่า PUBLIC_BASE_URL เมื่อกำหนดไว้
 - **PR นี้มี migration → ระบุใน PR ให้ update+execute job `sigroom-migrate` หลัง merge (ตามข้อ 0.7)**
@@ -142,8 +162,20 @@ Cloud Build **build + deploy ขึ้นเว็บจริงอัตโน
 ### C1. โครงสร้างเก็บรูป
 - Cloud Run เก็บไฟล์บนเครื่องไม่ได้ (ดิสก์หายเมื่อ restart) → ใช้ **Google Cloud Storage**
 - เพิ่ม dependency: `django-storages[google]`
-- ตั้งค่าใน `settings.py`: ถ้ามี env `GS_BUCKET_NAME` → ใช้ GCS เป็น default storage ของ media
-  (public-read สำหรับรูปห้อง — ไม่ใช่ข้อมูลลับ) · ไม่มี env → ใช้ FileSystemStorage เดิม (dev ในเครื่อง)
+- ตั้งค่าใน `settings.py` แยก **3 กรณี** ให้ชัด:
+  1. **มี env `GS_BUCKET_NAME`** → ใช้ GCS เป็น storage ของ media โดย**ต้องตั้ง**
+     `GS_DEFAULT_ACL = None` (bucket ใช้ uniform bucket-level access ตาม C5 —
+     ห้ามส่ง ACL รายไฟล์ มิฉะนั้นอัปโหลดจะ error) และ `GS_QUERYSTRING_AUTH = False`
+     (เสิร์ฟ URL สาธารณะตรง ๆ — ค่า default ที่สร้าง signed URL จะล้มเหลวบน Cloud Run
+     เพราะ service account ไม่มี private key ในเครื่อง) · การเปิดให้ browser ของ guest
+     อ่าน bucket ได้จริงเป็นงาน infra ตามเช็กลิสต์ C5
+  2. **ไม่มี env และ `DEBUG=True`** (dev ในเครื่อง) → FileSystemStorage เดิม ครบวงจร
+  3. **ไม่มี env และ `DEBUG=False`** (production ที่ infra ยังไม่พร้อม) → **ปิดการอัปโหลดรูป**:
+     กำหนด flag เดียวใน settings เช่น `ROOM_PHOTO_UPLOAD_ENABLED` แล้วให้ admin/service
+     อ่าน flag นี้ (ห้ามกระจายเงื่อนไข DEBUG/env ไปหลายที่) — admin ซ่อนช่องอัปโหลด
+     และแสดงข้อความไทยแทน เช่น "ยังไม่ได้ตั้งค่าที่เก็บรูป (GS_BUCKET_NAME) —
+     อัปโหลดได้เมื่อตั้งค่าตาม C5 แล้ว" **ห้ามปล่อยให้รูปตกลง FileSystemStorage
+     บน Cloud Run เด็ดขาด** เพราะไฟล์จะหายเมื่อ restart โดยผู้ใช้ไม่รู้ตัว
 - `.env.example` เพิ่ม `GS_BUCKET_NAME=` พร้อมคอมเมนต์อธิบาย
 
 ### C2. Model
@@ -157,8 +189,13 @@ Cloud Build **build + deploy ขึ้นเว็บจริงอัตโน
   partial unique constraint —
   `UniqueConstraint(fields=["resource"], condition=Q(is_cover=True), name="unique_cover_photo_per_resource")`
   — `clean()` ใช้แค่แปลง error เป็นข้อความไทยที่อ่านรู้เรื่อง ห้ามเป็นกลไกบังคับเพียงชั้นเดียว
-- `clean()` ต้องตรวจด้วยว่า resource เป็นประเภทห้อง (ROOM) — `limit_choices_to` คุมแค่ฟอร์ม admin
-  ไม่คุมการสร้างตรงจากโค้ด
+- **ทุกช่องทางสร้าง/แก้ไข/ลบ `ResourcePhoto` ต้องผ่าน service** ใน `resources/services.py`
+  (เช่น `save_room_photo(...)`) ซึ่งเรียก `full_clean()` เสมอก่อนบันทึก — เหตุผล:
+  `limit_choices_to` คุมแค่ฟอร์ม admin และ `clean()` **ไม่ถูกเรียกอัตโนมัติ** เมื่อโค้ด
+  สร้างตรงด้วย `.objects.create()` ดังนั้น service คือด่านบังคับกฎด่านเดียวที่ครอบ
+  ทุกช่องทาง (ตามกติกา CLAUDE.md ข้อ 3) · admin inline ต้อง save ผ่าน service นี้ด้วย
+  (override การ save ของ inline/formset) และ test ที่สร้างรูปทุกตัวต้องสร้างผ่าน service เช่นกัน
+- `clean()` ต้องตรวจด้วยว่า resource เป็นประเภทห้อง (ROOM) พร้อมข้อความไทย
 - **Validation ไฟล์รูป:** จำกัดชนิด (JPEG/PNG/WebP) และขนาด ≤ 5MB — ตรวจใน `clean()`/validator
   ของ field พร้อมข้อความไทย + test ไฟล์ผิดชนิดและไฟล์ใหญ่เกิน
 
@@ -180,17 +217,32 @@ Cloud Build **build + deploy ขึ้นเว็บจริงอัตโน
 - ห้องไม่มีรูปแสดง placeholder ไม่ layout พัง
 - test: constraint cover เดียว (ระดับ DB — ทดสอบว่าแถวที่สองที่ is_cover=True โดน IntegrityError),
   resource ต้องเป็นห้อง, validation ชนิด/ขนาดไฟล์, หน้า render ทั้งมีรูป/ไม่มีรูป,
-  จำนวน query คงที่ (N+1) — ทั้งหมดใช้ temp storage ใน test
-- PR ผ่านการตรวจได้ด้วยประตูที่ 1 เท่านั้น **การ merge ยังไม่ต้องรอ infra**
+  จำนวน query คงที่ (N+1), **flag ปิดอัปโหลด** (จำลอง `DEBUG=False` + ไม่มี
+  `GS_BUCKET_NAME` แล้ว flag ต้องปิด / admin ไม่แสดงช่องอัปโหลด) — ทั้งหมดใช้ temp storage ใน test
+- PR ผ่านการตรวจได้ด้วยประตูที่ 1 เท่านั้น **การ merge ยังไม่ต้องรอ infra** —
+  ปลอดภัยเพราะกรณีที่ 3 ของ C1 ปิดการอัปโหลดบน production ไว้จนกว่า infra จะพร้อม
+  (ไม่มีช่องให้รูปตกลงดิสก์ชั่วคราวของ Cloud Run)
 
 **ประตูที่ 2 — ยืนยันบน production (หลัง merge + infra พร้อม):**
-- ผู้ใช้ทำ C5 เสร็จ (bucket + IAM + env) → รัน migrate job → อัปโหลดรูปจริงผ่าน admin
+- ลำดับตายตัว (ลำดับเดียวกับ "ลำดับการทำและการส่งมอบ" ข้อ 3 — ห้ามสลับ):
+  เจ้าของสั่ง merge → รอ Cloud Build เสร็จ → update+execute job `sigroom-migrate`
+  (ตามข้อ 0.7) → ผู้ใช้ทำ C5 เสร็จ (bucket + IAM + env) → อัปโหลดรูปจริงผ่าน admin
   production → รูปขึ้น GCS → แสดงบนเว็บจริง — ขั้นนี้เป็นเงื่อนไข "ปิดงาน C"
   ไม่ใช่เงื่อนไข merge
 - **PR นี้มี migration → update+execute job `sigroom-migrate` หลัง merge (ตามข้อ 0.7)**
 
 ### C5. งานฝั่งผู้ใช้ (Claude จะพาไปทำตอนถึงประตูที่ 2)
-- สร้าง bucket + ให้สิทธิ์ `sigroom-run-sa` เขียน/อ่าน + ตั้ง env `GS_BUCKET_NAME` บน Cloud Run
+
+เช็กลิสต์ infra **ครบทุกข้อ** — ขาดข้อใดข้อหนึ่ง guest จะเปิดรูปไม่ได้ (403) หรืออัปโหลดพัง:
+1. สร้าง bucket ใน project `sixth-storm-439008-u2` แบบ **Uniform bucket-level access**
+   (ไม่ใช้ ACL รายไฟล์ — สอดคล้องกับ `GS_DEFAULT_ACL=None` ฝั่งโค้ดใน C1)
+2. **ปิด Public Access Prevention** ของ bucket นี้ — รูปห้องตั้งใจเปิดสาธารณะ
+   ดังนั้น **ห้ามเก็บไฟล์ประเภทอื่นใน bucket นี้เด็ดขาด** (รูปห้องเท่านั้น)
+3. ให้สิทธิ์ `allUsers` เป็น **Storage Object Viewer** บน bucket →
+   browser ของ guest อ่านรูปผ่าน URL สาธารณะได้ตรง ๆ (คู่กับ `GS_QUERYSTRING_AUTH=False`)
+4. ให้สิทธิ์ `sigroom-run-sa` เป็น **Storage Object Admin** บน bucket (อัปโหลด/ลบรูปจาก admin)
+5. ตั้ง env `GS_BUCKET_NAME=<ชื่อ bucket>` บน Cloud Run service `sigroom`
+   (การแก้ env จะสร้าง revision ใหม่อัตโนมัติ — flag อัปโหลดใน C1 จะเปิดเอง)
 
 ---
 
@@ -199,8 +251,8 @@ Cloud Build **build + deploy ขึ้นเว็บจริงอัตโน
 (ทุกขั้น "merge" หมายถึง: เจ้าของระบบสั่ง "merge PR #..." อย่างชัดเจนแล้วเท่านั้น — ตามข้อ 0.6)
 
 1. งาน A → PR → Claude ตรวจ → เจ้าของสั่ง merge → ตรวจผลบนเว็บจริง (ไม่มี migration)
-2. งาน B → ยืนยัน job `sigroom-migrate` ตามข้อ 0.7 ก่อนเริ่ม → PR → ตรวจ → เจ้าของสั่ง merge → update+execute `sigroom-migrate`
-3. งาน C → PR → ตรวจ (ประตูที่ 1) → เจ้าของสั่ง merge → update+execute `sigroom-migrate` → ผู้ใช้ทำ infra ตาม C5 → ยืนยันประตูที่ 2 จึงปิดงาน
+2. งาน B → ยืนยัน job `sigroom-migrate` ตามข้อ 0.7 ก่อนเริ่ม → PR → ตรวจ → เจ้าของสั่ง merge → รอ Cloud Build เสร็จ → update+execute `sigroom-migrate` (ตามข้อ 0.7)
+3. งาน C → PR → ตรวจ (ประตูที่ 1) → เจ้าของสั่ง merge → รอ Cloud Build เสร็จ → update+execute `sigroom-migrate` (ตามข้อ 0.7) → ผู้ใช้ทำ infra ตาม C5 → ยืนยันประตูที่ 2 จึงปิดงาน
 
 ห้ามเริ่มงานถัดไปก่อนงานปัจจุบันถูก merge ถ้าติดคำถามเชิงออกแบบ ให้ถามในตัว PR
 แทนการตัดสินใจเอง
