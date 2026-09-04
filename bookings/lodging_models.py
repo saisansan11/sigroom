@@ -147,8 +147,8 @@ class CourseStudentLodging(models.Model):
                 raise ValidationError(errors)
             if not cohort.rooms.filter(pk=self.room_id).exists():
                 errors["room"] = "ห้องนี้ไม่ได้อยู่ในรายการห้องของรอบหลักสูตร"
-            if self.bed_number is not None and self.bed_number > cohort.beds_per_room:
-                errors["bed_number"] = f"หมายเลขเตียงต้องไม่เกิน {cohort.beds_per_room}"
+            if self.bed_number is not None and not (1 <= self.bed_number <= cohort.beds_per_room):
+                errors["bed_number"] = f"หมายเลขเตียงต้องอยู่ระหว่าง 1 ถึง {cohort.beds_per_room}"
         if errors:
             raise ValidationError(errors)
 

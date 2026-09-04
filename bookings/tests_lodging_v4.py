@@ -195,8 +195,19 @@ def test_student_room_and_bed_invariants(lodging_data):
         origin_unit="ศสส.",
         phone="0800000002",
     )
-    with pytest.raises(ValidationError, match="ไม่เกิน"):
+    with pytest.raises(ValidationError, match="ระหว่าง"):
         too_high.save()
+    zero_bed = CourseStudentLodging(
+        cohort=cohort,
+        room=lodging_data["rooms"][0],
+        bed_number=0,
+        rank="ร.อ.",
+        full_name="เตียงศูนย์",
+        origin_unit="ศสส.",
+        phone="0800000003",
+    )
+    with pytest.raises(ValidationError, match="ระหว่าง"):
+        zero_bed.save()
 
 
 def test_cannot_remove_booked_room_or_reduce_beds(lodging_data):
