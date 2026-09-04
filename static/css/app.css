@@ -508,3 +508,119 @@ button[type="submit"]:not(.link-button):not(.outline):hover, [role="button"]:not
 .pass-table td { padding: var(--space-xs) 0; border-bottom: 1px solid var(--line); }
 .pass-table td:first-child { color: var(--muted); width: 35%; }
 
+/* Role Router สำหรับ Guest (งาน A1) */
+.guest-role-router {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-md);
+  margin-top: var(--space-xs);
+  margin-bottom: var(--space-lg);
+}
+.role-router-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: var(--space-md);
+  background: var(--surface);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-md);
+  text-decoration: none;
+  color: var(--ink);
+  transition: transform .15s ease, border-color .15s ease, box-shadow .15s ease;
+  overflow: hidden;
+}
+.role-router-card:hover, .role-router-card:focus-visible {
+  transform: translateY(-2px);
+  text-decoration: none;
+}
+.role-router-card.card-cyan { border-top: 3px solid var(--cyan); }
+.role-router-card.card-cyan:hover, .role-router-card.card-cyan:focus-visible {
+  border-color: var(--cyan);
+  box-shadow: var(--glow-cyan);
+}
+.role-router-card.card-amber { border-top: 3px solid var(--amber); }
+.role-router-card.card-amber:hover, .role-router-card.card-amber:focus-visible {
+  border-color: var(--amber);
+  box-shadow: var(--glow-amber);
+}
+.role-router-card.card-green { border-top: 3px solid var(--green); }
+.role-router-card.card-green:hover, .role-router-card.card-green:focus-visible {
+  border-color: var(--green);
+  box-shadow: 0 0 .9rem oklch(.76 .14 156 / .3);
+}
+
+.role-router-card .card-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--space-xs);
+}
+.role-router-card .card-head .hud-tag {
+  font-size: .65rem;
+  letter-spacing: .12em;
+}
+.role-router-card .card-arrow {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--dim);
+  transition: transform .15s ease, color .15s ease;
+}
+.role-router-card:hover .card-arrow, .role-router-card:focus-visible .card-arrow {
+  color: var(--ink);
+  transform: translateX(3px);
+}
+.role-router-card.card-cyan:hover .card-arrow {
+  transform: translateY(3px);
+}
+.role-router-card h3 {
+  margin: 0 0 var(--space-2xs);
+  font-size: 1.1rem;
+  color: var(--ink);
+}
+.role-router-card p {
+  margin: 0;
+  color: var(--muted);
+  font-size: .82rem;
+  line-height: 1.4;
+}
+
+@media (max-width: 50rem) {
+  .guest-role-router {
+    grid-template-columns: 1fr;
+    gap: var(--space-sm);
+  }
+}
+
+/* Sticky button ไปที่เตียงว่างถัดไป (งาน A2) */
+.sticky-jump-container {
+  display: none;
+}
+@media (max-width: 48rem) {
+  .sticky-jump-container {
+    display: block;
+    position: fixed;
+    bottom: var(--space-md);
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 99;
+  }
+  .btn-jump-next-bed {
+    background: oklch(.18 .03 243 / .95);
+    backdrop-filter: blur(6px);
+    color: var(--cyan);
+    border: 1px solid var(--cyan);
+    box-shadow: var(--glow-cyan), 0 .3rem 1.2rem rgb(0 0 0 / .4);
+    border-radius: 999px;
+    padding: .5rem 1.25rem;
+    font-size: .9rem;
+    font-weight: 700;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: transform .15s ease, box-shadow .15s ease;
+  }
+  .btn-jump-next-bed:hover, .btn-jump-next-bed:focus-visible {
+    transform: scale(1.03);
+    box-shadow: var(--glow-cyan), 0 .4rem 1.5rem rgb(0 0 0 / .6);
+  }
+}

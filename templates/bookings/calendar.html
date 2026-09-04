@@ -12,6 +12,35 @@
   {% endif %}
 </div>
 
+{% if not user.is_authenticated %}
+<section class="guest-role-router" aria-label="ทางเลือกตามบทบาท">
+  <a href="#today-board" class="role-router-card card-cyan">
+    <div class="card-head">
+      <span class="hud-tag">สถานะห้องว่าง</span>
+      <span class="card-arrow" aria-hidden="true">↓</span>
+    </div>
+    <h3>ดูห้องว่างตอนนี้</h3>
+    <p>เลื่อนดูกระดานสถานะห้องเรียน ที่พัก และห้องประชุมที่พร้อมใช้งานทันที</p>
+  </a>
+  <a href="{% url 'login' %}?next={% url 'bookings:book_search' %}" class="role-router-card card-amber">
+    <div class="card-head">
+      <span class="hud-tag">จองห้องหน่วย</span>
+      <span class="card-arrow" aria-hidden="true">→</span>
+    </div>
+    <h3>จองห้องเรียน/ห้องประชุม</h3>
+    <p>สำหรับ จนท. มีบัญชีหน่วย</p>
+  </a>
+  <a href="{% url 'bookings:lodging_index' %}" class="role-router-card card-green">
+    <div class="card-head">
+      <span class="hud-tag">ที่พักนักเรียน</span>
+      <span class="card-arrow" aria-hidden="true">→</span>
+    </div>
+    <h3>จองที่พักนักเรียนหลักสูตร</h3>
+    <p>นักเรียนใช้ลิงก์ที่ได้จากกลุ่ม LINE ของรุ่น</p>
+  </a>
+</section>
+{% endif %}
+
 <nav class="category-tabs" aria-label="เลือกหมวดห้อง">
   <span class="category-tabs-label">หมวดห้อง:</span>
   {% for cat_val, cat_name in category_choices %}
@@ -69,18 +98,37 @@
     <span class="quick-hint">เลือกวัน เวลา แล้วระบบแสดงเฉพาะห้องที่ว่างจริง</span>
   </div>
   <section class="role-actions" aria-label="งานของฉัน">
-    {% if nav_can_access_approvals %}
+    {# 1. การ์ดคิวอนุมัติ ถ้า nav_pending_approval_count > 0 #}
+    {% if nav_can_access_approvals and nav_pending_approval_count and nav_pending_approval_count > 0 %}
     <article class="role-action">
-      <div><p class="action-label">งานผู้อนุมัติ</p><h2>{% if nav_pending_approval_count %}มี {{ nav_pending_approval_count }} รายการรอตัดสิน{% else %}คิวอนุมัติเรียบร้อย{% endif %}</h2><p>{% if nav_pending_approval_count %}รายการใกล้วันใช้งานจะอยู่ก่อน{% else %}ขณะนี้ไม่มีคำขอที่ต้องดำเนินการ{% endif %}</p></div>
+      <div><p class="action-label">งานผู้อนุมัติ</p><h2>มี {{ nav_pending_approval_count }} รายการรอตัดสิน</h2><p>รายการใกล้วันใช้งานจะอยู่ก่อน</p></div>
       <a href="{% url 'approvals:queue' %}">เปิดคิวอนุมัติ →</a>
     </article>
     {% endif %}
-    {% if nav_can_manage_usage %}
+
+    {# 2. การ์ดการใช้งานห้อง ถ้า usage_today_count > 0 #}
+    {% if nav_can_manage_usage and usage_today_count and usage_today_count > 0 %}
     <article class="role-action">
-      <div><p class="action-label">งานเจ้าหน้าที่ดูแลห้อง</p><h2>{% if usage_today_count %}วันนี้มี {{ usage_today_count }} รายการให้ตรวจ{% else %}งานบันทึกวันนี้เรียบร้อย{% endif %}</h2><p>ตรวจสถานะใช้งานแล้วหรือไม่มาใช้ภายในกำหนด</p></div>
+      <div><p class="action-label">งานเจ้าหน้าที่ดูแลห้อง</p><h2>วันนี้มี {{ usage_today_count }} รายการให้ตรวจ</h2><p>ตรวจสถานะใช้งานแล้วหรือไม่มาใช้ภายในกำหนด</p></div>
       <a href="{% url 'usage:list' %}">เปิดการใช้งานห้อง →</a>
     </article>
     {% endif %}
+
+    {# 3. การ์ดที่เหลือตามลำดับเดิม (ที่ตัวเลขเป็น 0 หรือ None คงอยู่ในหน้าแต่ต่อท้ายเสมอ) #}
+    {% if nav_can_access_approvals and not nav_pending_approval_count %}
+    <article class="role-action">
+      <div><p class="action-label">งานผู้อนุมัติ</p><h2>คิวอนุมัติเรียบร้อย</h2><p>ขณะนี้ไม่มีคำขอที่ต้องดำเนินการ</p></div>
+      <a href="{% url 'approvals:queue' %}">เปิดคิวอนุมัติ →</a>
+    </article>
+    {% endif %}
+
+    {% if nav_can_manage_usage and not usage_today_count %}
+    <article class="role-action">
+      <div><p class="action-label">งานเจ้าหน้าที่ดูแลห้อง</p><h2>งานบันทึกวันนี้เรียบร้อย</h2><p>ตรวจสถานะใช้งานแล้วหรือไม่มาใช้ภายในกำหนด</p></div>
+      <a href="{% url 'usage:list' %}">เปิดการใช้งานห้อง →</a>
+    </article>
+    {% endif %}
+
     <article class="role-action">
       <div><p class="action-label">การจองของฉัน</p>{% if next_booking %}<h2>{{ next_booking.title }}</h2><p>{{ next_booking.room.code }} · {{ next_booking.start_at|thai_datetime }} · {{ next_booking.get_request_status_display }}</p>{% else %}<h2>ยังไม่มีการจองที่กำลังจะถึง</h2><p>ค้นหาห้องว่างจากวัน เวลา และจำนวนผู้เข้าร่วม</p>{% endif %}</div>
       {% if next_booking %}<a href="{% url 'bookings:booking_detail' next_booking.id %}">ดูรายละเอียด →</a>{% else %}<a href="{% url 'bookings:book_search' %}">เริ่มจองห้อง →</a>{% endif %}
@@ -98,7 +146,7 @@
     </div>
   </div>
 {% endif %}
-<section class="today-board" aria-label="สถานการณ์ห้องวันนี้">
+<section id="today-board" class="today-board" aria-label="สถานการณ์ห้องวันนี้">
   <div class="board-head">
     <span class="hud-tag mono">Today</span>
     <h2>สถานการณ์ห้องวันนี้</h2>
