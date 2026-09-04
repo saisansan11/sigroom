@@ -20,37 +20,52 @@ Cloud Build **build + deploy ขึ้นเว็บจริงอัตโน
 5. **Claude ตรวจ PR** — ถ้ามี finding ให้แก้ตามแล้ว push เพิ่มใน branch เดิมจนผ่าน
 6. **สิทธิ์ merge:** แม้ reviewer ผ่านแล้ว ต้องรอเจ้าของระบบสั่งชัดเจนว่า **"merge PR #..."**
    จึง merge ได้ — คำว่า "ตรวจรับ" หรือ "ผ่าน" เฉย ๆ **ไม่ใช่** คำอนุญาต merge
-7. **PR ที่มี migration**: หลัง merge ต้องรัน migrate บน production หนึ่งครั้งผ่าน
-   Cloud Run Job ชื่อ `sigroom-migrate` — job นี้ **อยู่นอก repository** (สร้างไว้ใน
-   GCP project `sixth-storm-439008-u2`, region `asia-southeast3` เมื่อ 4 ก.ย. 69)
-   ระบุคำเตือนนี้ให้ชัดใน PR description ทุกครั้งที่มีไฟล์ migration ใหม่
+7. **PR ที่มี migration — ลำดับที่ปลอดภัยมีทางเดียว: migrate ก่อน deploy**
 
-   ขั้นตอนรันหลัง merge — **ต้องทำตามลำดับนี้เท่านั้น:**
+   ปัจจุบัน `cloudbuild.yaml` ทำ build → push → **deploy ทันที** และอ้าง tag `:latest`
+   ทุกขั้น — ถ้าปล่อยไว้แล้ว merge PR ที่มี migration โค้ดใหม่จะขึ้นเว็บ**ก่อน** schema ใหม่
+   แล้ว query คอลัมน์/ตารางที่ยังไม่มี (เช่น `checked_in_at` ของงาน B, ตาราง
+   `ResourcePhoto` ของงาน C) → **เว็บพังชั่วคราวทุกครั้ง** จึงต้องแก้ pipeline ก่อน
+   เริ่มงานที่มี migration ใด ๆ:
 
-   **ขั้น 1 — รอ Cloud Build เสร็จก่อน (ข้ามไม่ได้):** Cloud Run Job **ตรึง image digest
-   ตอนสั่ง update** ถ้าสั่ง update ทันทีหลัง merge ขณะ build ยังไม่เสร็จ tag `:latest`
-   จะยังชี้ image เก่าที่ **ไม่มี migration ใหม่** — job จะรันโค้ดเก่าโดยไม่มี error ให้เห็น
-   ให้รอจน build ของ commit ที่เพิ่ง merge ขึ้นสถานะ **SUCCESS** ก่อน ตรวจได้สองทาง:
-   เปิด Cloud Console → Cloud Build → History (ดูว่ารายการบนสุดเป็นสีเขียวและตรงกับ
-   commit ที่ merge) หรือใช้คำสั่ง:
-   ```
-   gcloud builds list --project=sixth-storm-439008-u2 --region=asia-southeast3 --limit=3
-   ```
-   (ถ้าคำสั่งคืนรายการว่าง ให้ลองตัด `--region` ออก หรือดูใน Cloud Console แทน)
+   **งาน B0 (`feat/v6-b0-pipeline` — PR เล็กแยกต่างหาก ต้อง merge ก่อนงาน B):**
+   แก้ `cloudbuild.yaml` ให้เป็นลำดับนี้เท่านั้น
+   1. build + push image โดย tag ด้วย `$COMMIT_SHA` (คง tag `latest` ควบคู่ได้
+      แต่ขั้นที่ 2–3 ต้องอ้าง `$COMMIT_SHA` **เท่านั้น** — ห้ามอ้าง `:latest` เพราะถ้ามี
+      build สองอันซ้อนกัน tag จะชี้ image ผิดตัว)
+   2. `gcloud run jobs update sigroom-migrate` ด้วย image `$COMMIT_SHA` แล้ว
+      `gcloud run jobs execute sigroom-migrate --wait` — **ถ้า migrate ล้มเหลว
+      build ทั้งอันต้อง fail และต้องไม่ไปถึงขั้น deploy** (Cloud Build หยุดเอง
+      เมื่อ step ล้มเหลว — revision เดิมยังให้บริการตามปกติ ไม่มีช่วงเว็บพัง)
+   3. deploy Cloud Run service `sigroom` ด้วย image `$COMMIT_SHA` **ตัวเดียวกับขั้น 2**
 
-   **ขั้น 2 — update job ให้ชี้ image ใหม่ แล้วค่อย execute:** คำสั่งด้านล่างเป็น
-   **บรรทัดเดียวต่อคำสั่ง รันใน PowerShell ได้โดยตรง** — ห้ามแตกหลายบรรทัดด้วย `\`
-   (รูปแบบนั้นใช้ได้เฉพาะ Cloud Shell/bash) และใส่ `--project` กำกับ **ทุกคำสั่ง**
-   กันกรณี gcloud ในเครื่องตั้ง default project ไว้เป็นตัวอื่น:
+   หมายเหตุงาน B0:
+   - รัน migrate ทุก build ได้ปลอดภัย — `manage.py migrate` เป็น no-op เมื่อไม่มี
+     migration ใหม่ และสอดคล้องกับกติกา expand/contract (schema ใหม่ต้องไม่ทำให้
+     โค้ดเก่าที่ยังรันอยู่พัง)
+   - **ก่อนเริ่ม B0** ยืนยันกับเจ้าของระบบว่า job ยังมีอยู่จริงและต่อฐานข้อมูล production ได้
+     (`gcloud run jobs describe sigroom-migrate --region=asia-southeast3 --project=sixth-storm-439008-u2`)
+     — job นี้**อยู่นอก repository** (สร้างไว้ใน GCP project `sixth-storm-439008-u2`,
+     region `asia-southeast3` เมื่อ 4 ก.ย. 69) ถ้าไม่มีให้แจ้งใน PR แทนการสร้างเอง
+   - **ก่อน merge B0** ให้เจ้าของยืนยันว่า service account ของ Cloud Build มีสิทธิ์
+     update/execute Cloud Run Job (ถ้ายังไม่มี Claude จะพาเพิ่ม role ตอนนั้น)
+     และ**หลัง merge B0** ให้ดู Cloud Build → History ว่า build แรกผ่านครบทั้ง 3 ขั้น
+     จึงถือว่า B0 เสร็จ
+
+   **หลัง B0 merge แล้ว:** PR ที่มี migration ไม่ต้องรันคำสั่งมือใด ๆ — แค่ระบุใน
+   PR description ให้ชัดว่า "มี migration" และหลัง merge ให้ตรวจใน Cloud Build → History
+   ว่า build ของ commit นั้นผ่านครบทั้งขั้น migrate และขั้น deploy
+
+   **คำสั่งมือ (fallback — ใช้เฉพาะกู้สถานการณ์เมื่อ pipeline พัง):** บรรทัดเดียวต่อคำสั่ง
+   รันใน PowerShell ได้โดยตรง (ห้ามแตกหลายบรรทัดด้วย `\` — แบบนั้นใช้ได้เฉพาะ
+   Cloud Shell/bash) ใส่ `--project` กำกับทุกคำสั่ง และแทน `<COMMIT_SHA>` ด้วย SHA
+   ของ commit ที่ build+push สำเร็จแล้วเท่านั้น — **ห้ามใช้ `:latest`**:
    ```
-   gcloud run jobs update sigroom-migrate --region=asia-southeast3 --project=sixth-storm-439008-u2 --image=asia-southeast3-docker.pkg.dev/sixth-storm-439008-u2/sigroom-repo/sigroom:latest
+   gcloud run jobs update sigroom-migrate --region=asia-southeast3 --project=sixth-storm-439008-u2 --image=asia-southeast3-docker.pkg.dev/sixth-storm-439008-u2/sigroom-repo/sigroom:<COMMIT_SHA>
    ```
    ```
    gcloud run jobs execute sigroom-migrate --region=asia-southeast3 --project=sixth-storm-439008-u2 --wait
    ```
-   **ก่อนเริ่มงาน B** ให้ยืนยันกับเจ้าของระบบก่อนว่า job นี้ยังมีอยู่จริง
-   (`gcloud run jobs describe sigroom-migrate --region=asia-southeast3 --project=sixth-storm-439008-u2`)
-   และเชื่อมต่อฐานข้อมูล production ได้ ถ้าไม่มีให้แจ้งใน PR แทนการสร้างเอง
 
 กติกาโค้ดเดิมใน `CLAUDE.md` มีผลทุกข้อ โดยเฉพาะ:
 - กฎธุรกิจอยู่ใน `services.py` เท่านั้น ไม่อยู่ใน view/template/admin form
@@ -148,7 +163,9 @@ Cloud Build **build + deploy ขึ้นเว็บจริงอัตโน
   `select_for_update()` ใน `transaction.atomic` จริง), (3) **POST ยืนยันโดยผู้ไม่มีสิทธิ์ต้องถูกปฏิเสธ (403)**
   ไม่ใช่แค่ซ่อนปุ่มใน template, (4) ผู้ไม่ล็อกอินเห็นชื่อแบบ masked เท่านั้น,
   (5) QR URL ขึ้นต้นด้วยค่า PUBLIC_BASE_URL เมื่อกำหนดไว้
-- **PR นี้มี migration → ระบุใน PR ให้ update+execute job `sigroom-migrate` หลัง merge (ตามข้อ 0.7)**
+- **PR นี้มี migration → ต้องรอให้งาน B0 (ข้อ 0.7) merge และผ่านการทดสอบก่อน** —
+  ระบุใน PR ว่ามี migration และหลัง merge ตรวจ Cloud Build → History ว่า build
+  ผ่านครบขั้น migrate และ deploy (pipeline จัดลำดับ migrate ก่อน deploy ให้เอง)
 
 ---
 
@@ -165,10 +182,12 @@ Cloud Build **build + deploy ขึ้นเว็บจริงอัตโน
 - ตั้งค่าใน `settings.py` แยก **3 กรณี** ให้ชัด:
   1. **มี env `GS_BUCKET_NAME`** → ใช้ GCS เป็น storage ของ media โดย**ต้องตั้ง**
      `GS_DEFAULT_ACL = None` (bucket ใช้ uniform bucket-level access ตาม C5 —
-     ห้ามส่ง ACL รายไฟล์ มิฉะนั้นอัปโหลดจะ error) และ `GS_QUERYSTRING_AUTH = False`
+     ห้ามส่ง ACL รายไฟล์ มิฉะนั้นอัปโหลดจะ error), `GS_QUERYSTRING_AUTH = False`
      (เสิร์ฟ URL สาธารณะตรง ๆ — ค่า default ที่สร้าง signed URL จะล้มเหลวบน Cloud Run
-     เพราะ service account ไม่มี private key ในเครื่อง) · การเปิดให้ browser ของ guest
-     อ่าน bucket ได้จริงเป็นงาน infra ตามเช็กลิสต์ C5
+     เพราะ service account ไม่มี private key ในเครื่อง) และ `GS_FILE_OVERWRITE = False`
+     (ค่า default ของ django-storages คือ**เขียนทับไฟล์ชื่อซ้ำทันทีโดยไม่เตือน** —
+     ต่างจาก FileSystemStorage ของ Django ที่ตั้งชื่อใหม่ให้เอง) · การเปิดให้ browser
+     ของ guest อ่าน bucket ได้จริงเป็นงาน infra ตามเช็กลิสต์ C5
   2. **ไม่มี env และ `DEBUG=True`** (dev ในเครื่อง) → FileSystemStorage เดิม ครบวงจร
   3. **ไม่มี env และ `DEBUG=False`** (production ที่ infra ยังไม่พร้อม) → **ปิดการอัปโหลดรูป**:
      กำหนด flag เดียวใน settings เช่น `ROOM_PHOTO_UPLOAD_ENABLED` แล้วให้ admin/service
@@ -181,7 +200,10 @@ Cloud Build **build + deploy ขึ้นเว็บจริงอัตโน
 ### C2. Model
 - Model ใหม่ `ResourcePhoto` ใน `resources/models.py`:
   `resource` (FK Resource, related_name="photos", `limit_choices_to={"resource_type": Resource.Type.ROOM}`),
-  `image` (ImageField upload_to="rooms/"), `caption` (CharField blank),
+  `image` (ImageField — `upload_to` ต้องเป็น **function ที่ตั้งชื่อไฟล์ใหม่เป็น UUID**
+  เช่น `rooms/<uuid4>.<นามสกุลเดิม>` ห้ามใช้ชื่อไฟล์เดิมจากผู้ใช้ — กันชื่อซ้ำเขียนทับ
+  (คู่กับ `GS_FILE_OVERWRITE=False` ใน C1) และเลี่ยงปัญหาชื่อไฟล์ภาษาไทย/อักขระพิเศษ),
+  `caption` (CharField blank),
   `order` (PositiveSmallIntegerField default 0), `is_cover` (Boolean default False)
 - เพิ่ม dependency `Pillow`
 - Admin: inline ใน ResourceAdmin อัปโหลดได้หลายรูป จัด order ได้
@@ -195,6 +217,15 @@ Cloud Build **build + deploy ขึ้นเว็บจริงอัตโน
   สร้างตรงด้วย `.objects.create()` ดังนั้น service คือด่านบังคับกฎด่านเดียวที่ครอบ
   ทุกช่องทาง (ตามกติกา CLAUDE.md ข้อ 3) · admin inline ต้อง save ผ่าน service นี้ด้วย
   (override การ save ของ inline/formset) และ test ที่สร้างรูปทุกตัวต้องสร้างผ่าน service เช่นกัน
+  — **ยกเว้นข้อเดียว:** test ที่พิสูจน์ constraint ระดับฐานข้อมูลโดยเฉพาะ (เช่น cover
+  ตัวที่สองต้องโดน `IntegrityError`) ให้สร้างตรงผ่าน ORM (`.objects.create()`) ได้
+  เพราะ service เรียก `full_clean()` ซึ่งจะหยุดด้วย `ValidationError` ก่อนถึงฐานข้อมูล
+  — ด่าน DB ต้องพิสูจน์แบบข้าม service เท่านั้นจึงจะรู้ว่าทำงานจริง
+- **การลบรูปต้องลบไฟล์จริงใน storage ด้วย:** Django ลบแถวใน DB แล้ว**ไม่ลบไฟล์
+  อัตโนมัติ** → service ลบ (เช่น `delete_room_photo(...)`) ต้องลบไฟล์ออกจาก storage
+  ผ่าน `transaction.on_commit(...)` หลังลบแถวสำเร็จเท่านั้น (กันกรณี transaction
+  rollback แล้วไฟล์หายทั้งที่แถวยังอยู่) · กรณีแก้ไขแทนที่รูปเดิม ให้ลบไฟล์เก่าแบบเดียวกัน
+  · การลบผ่าน admin (รวม inline) ต้องวิ่งผ่าน service นี้ด้วย
 - `clean()` ต้องตรวจด้วยว่า resource เป็นประเภทห้อง (ROOM) พร้อมข้อความไทย
 - **Validation ไฟล์รูป:** จำกัดชนิด (JPEG/PNG/WebP) และขนาด ≤ 5MB — ตรวจใน `clean()`/validator
   ของ field พร้อมข้อความไทย + test ไฟล์ผิดชนิดและไฟล์ใหญ่เกิน
@@ -215,8 +246,12 @@ Cloud Build **build + deploy ขึ้นเว็บจริงอัตโน
 - dev ในเครื่อง (ไม่มี `GS_BUCKET_NAME`) ทำงานครบวงจรด้วย FileSystemStorage:
   อัปโหลดผ่าน admin → แสดงบนหน้าเว็บ
 - ห้องไม่มีรูปแสดง placeholder ไม่ layout พัง
-- test: constraint cover เดียว (ระดับ DB — ทดสอบว่าแถวที่สองที่ is_cover=True โดน IntegrityError),
-  resource ต้องเป็นห้อง, validation ชนิด/ขนาดไฟล์, หน้า render ทั้งมีรูป/ไม่มีรูป,
+- test: constraint cover เดียว (ระดับ DB — ทดสอบว่าแถวที่สองที่ is_cover=True โดน IntegrityError
+  — **test ข้อนี้สร้างตรงผ่าน ORM ข้าม service** ตามข้อยกเว้นใน C2),
+  resource ต้องเป็นห้อง, validation ชนิด/ขนาดไฟล์,
+  อัปโหลดสองไฟล์ที่ชื่อไฟล์ต้นทางเหมือนกันแล้วได้ path ต่างกัน (รูปแรกไม่ถูกทับ),
+  ลบรูปแล้วไฟล์ใน storage ถูกลบด้วย (ไม่มีไฟล์กำพร้า),
+  หน้า render ทั้งมีรูป/ไม่มีรูป,
   จำนวน query คงที่ (N+1), **flag ปิดอัปโหลด** (จำลอง `DEBUG=False` + ไม่มี
   `GS_BUCKET_NAME` แล้ว flag ต้องปิด / admin ไม่แสดงช่องอัปโหลด) — ทั้งหมดใช้ temp storage ใน test
 - PR ผ่านการตรวจได้ด้วยประตูที่ 1 เท่านั้น **การ merge ยังไม่ต้องรอ infra** —
@@ -224,12 +259,13 @@ Cloud Build **build + deploy ขึ้นเว็บจริงอัตโน
   (ไม่มีช่องให้รูปตกลงดิสก์ชั่วคราวของ Cloud Run)
 
 **ประตูที่ 2 — ยืนยันบน production (หลัง merge + infra พร้อม):**
-- ลำดับตายตัว (ลำดับเดียวกับ "ลำดับการทำและการส่งมอบ" ข้อ 3 — ห้ามสลับ):
-  เจ้าของสั่ง merge → รอ Cloud Build เสร็จ → update+execute job `sigroom-migrate`
-  (ตามข้อ 0.7) → ผู้ใช้ทำ C5 เสร็จ (bucket + IAM + env) → อัปโหลดรูปจริงผ่าน admin
-  production → รูปขึ้น GCS → แสดงบนเว็บจริง — ขั้นนี้เป็นเงื่อนไข "ปิดงาน C"
-  ไม่ใช่เงื่อนไข merge
-- **PR นี้มี migration → update+execute job `sigroom-migrate` หลัง merge (ตามข้อ 0.7)**
+- ลำดับตายตัว (ลำดับเดียวกับ "ลำดับการทำและการส่งมอบ" ข้อ 4 — ห้ามสลับ):
+  เจ้าของสั่ง merge → pipeline รันเองครบสามขั้น (build → migrate → deploy —
+  ตรวจ Cloud Build → History ว่าผ่านครบ ตามข้อ 0.7) → ผู้ใช้ทำ C5 เสร็จ
+  (bucket + IAM + env) → อัปโหลดรูปจริงผ่าน admin production → รูปขึ้น GCS →
+  แสดงบนเว็บจริง — ขั้นนี้เป็นเงื่อนไข "ปิดงาน C" ไม่ใช่เงื่อนไข merge
+- **PR นี้มี migration → ต้องรอให้งาน B0 (ข้อ 0.7) merge และผ่านการทดสอบก่อน** —
+  ระบุใน PR ว่ามี migration และหลัง merge ตรวจ Cloud Build → History ว่าผ่านครบ
 
 ### C5. งานฝั่งผู้ใช้ (Claude จะพาไปทำตอนถึงประตูที่ 2)
 
@@ -251,8 +287,9 @@ Cloud Build **build + deploy ขึ้นเว็บจริงอัตโน
 (ทุกขั้น "merge" หมายถึง: เจ้าของระบบสั่ง "merge PR #..." อย่างชัดเจนแล้วเท่านั้น — ตามข้อ 0.6)
 
 1. งาน A → PR → Claude ตรวจ → เจ้าของสั่ง merge → ตรวจผลบนเว็บจริง (ไม่มี migration)
-2. งาน B → ยืนยัน job `sigroom-migrate` ตามข้อ 0.7 ก่อนเริ่ม → PR → ตรวจ → เจ้าของสั่ง merge → รอ Cloud Build เสร็จ → update+execute `sigroom-migrate` (ตามข้อ 0.7)
-3. งาน C → PR → ตรวจ (ประตูที่ 1) → เจ้าของสั่ง merge → รอ Cloud Build เสร็จ → update+execute `sigroom-migrate` (ตามข้อ 0.7) → ผู้ใช้ทำ infra ตาม C5 → ยืนยันประตูที่ 2 จึงปิดงาน
+2. งาน B0 (แก้ `cloudbuild.yaml` ให้ migrate ก่อน deploy — ข้อ 0.7) → ยืนยัน job `sigroom-migrate` ยังอยู่จริง + Cloud Build SA มีสิทธิ์จัดการ job ก่อนเริ่ม → PR → ตรวจ → เจ้าของสั่ง merge → ดู Cloud Build history ว่า build แรกผ่านครบ 3 ขั้นจึงถือว่าเสร็จ
+3. งาน B → PR → ตรวจ → เจ้าของสั่ง merge → ตรวจ Cloud Build history ว่าขั้น migrate + deploy ผ่าน (pipeline รันให้เอง)
+4. งาน C → PR → ตรวจ (ประตูที่ 1) → เจ้าของสั่ง merge → ตรวจ Cloud Build history ว่าขั้น migrate + deploy ผ่าน → ผู้ใช้ทำ infra ตาม C5 → ยืนยันประตูที่ 2 จึงปิดงาน
 
 ห้ามเริ่มงานถัดไปก่อนงานปัจจุบันถูก merge ถ้าติดคำถามเชิงออกแบบ ให้ถามในตัว PR
 แทนการตัดสินใจเอง
