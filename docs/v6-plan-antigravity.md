@@ -48,11 +48,21 @@ Cloud Build **build + deploy ขึ้นเว็บจริงอัตโน
    - รัน migrate ทุก build ได้ปลอดภัย — `manage.py migrate` เป็น no-op เมื่อไม่มี
      migration ใหม่ และสอดคล้องกับกติกา expand/contract (schema ใหม่ต้องไม่ทำให้
      โค้ดเก่าที่ยังรันอยู่พัง)
-   - **กติกากันชนกันของ build:** Cloud Run job เดียวกันรัน execution **พร้อมกันได้
-     หลายชุด** — ห้ามคิดว่า job จะจัดคิว serialize ให้เอง ดังนั้น
-     **ห้าม merge PR เข้า production ชุดถัดไป (หรือ push ใด ๆ ที่ trigger build)
-     จนกว่า build ของ PR ก่อนหน้าจะขึ้น SUCCESS ครบทุกขั้น** — โปรเจกต์นี้เจ้าของ
-     เป็นคน merge ทีละ PR อยู่แล้ว (ข้อ 0.6) กติกานี้ทำให้ข้อห้ามชัดเจน ·
+   - **กติกากันชนกันของ build (ตัดสินตามสถานะ build ล่าสุดของ production):**
+     Cloud Run job เดียวกันรัน execution **พร้อมกันได้หลายชุด** — ห้ามคิดว่า job
+     จะจัดคิว serialize ให้เอง ให้ดูสถานะ build ล่าสุดใน Cloud Build → History
+     แล้วทำตามนี้:
+     - build ยัง **RUNNING** → ห้าม merge/push ใด ๆ ที่ trigger build เพิ่ม รอให้จบก่อน
+     - **SUCCESS** ครบทุกขั้น → ทำงานปกติ merge ชุดถัดไปได้
+     - **FAILURE/CANCELLED** → บล็อกเฉพาะ **feature PR** แต่**อนุญาต recovery PR**
+       (PR ที่แก้ pipeline/migration ให้ build กลับมาผ่าน) หรือการ rerun build
+       ที่เจ้าของสั่งชัดเจน — ต้องมีข้อยกเว้นนี้ มิฉะนั้นกฎจะล็อกตัวเอง:
+       ถ้า B0 ล้มเหลวเพราะ `cloudbuild.yaml` ผิด จะไม่มีทาง push ตัวแก้ได้เลย
+     - กรณี **migrate สำเร็จแต่ขั้น deploy ล้มเหลว** → สั่ง deploy image SHA เดิมซ้ำ
+       (หรือ rerun build เดิม) ได้อย่างปลอดภัย เพราะ schema แบบ expand ต้อง
+       เข้ากันได้กับ revision เดิมที่ยังรันอยู่ (กติกา CLAUDE.md/NF-17) —
+       migrate รอบ rerun เป็น no-op
+     โปรเจกต์นี้เจ้าของเป็นคน merge ทีละ PR อยู่แล้ว (ข้อ 0.6) ·
      database advisory lock กันสอง migration รันพร้อมกันเป็นทางเลือกเสริมใน
      อนาคตถ้ามีผู้ merge หลายคน — ยังไม่บังคับตอนนี้
    - **ก่อนเริ่ม B0** ยืนยันกับเจ้าของระบบว่า job ยังมีอยู่จริงและต่อฐานข้อมูล production ได้
@@ -236,11 +246,18 @@ Cloud Build **build + deploy ขึ้นเว็บจริงอัตโน
   ผ่าน `transaction.on_commit(...)` หลังลบแถวสำเร็จเท่านั้น (กันกรณี transaction
   rollback แล้วไฟล์หายทั้งที่แถวยังอยู่) · กรณีแก้ไขแทนที่รูปเดิม ให้ลบไฟล์เก่าแบบเดียวกัน
   · การลบผ่าน admin (รวม inline) ต้องวิ่งผ่าน service นี้ด้วย
+  · **ตัว callback ใน `on_commit` ต้อง best-effort เสมอ:** ครอบการลบไฟล์ด้วย
+  try/except แล้ว log — เพราะ callback ทำงาน**หลัง** transaction commit สำเร็จแล้ว
+  (นอก transaction) ถ้า storage มีปัญหาตอนนั้น ห้ามให้ error โผล่ถึงผู้ใช้
+  ทั้งที่ข้อมูลบันทึก/ลบสำเร็จไปแล้ว
 - **ฝั่งอัปโหลดก็มีช่องไฟล์กำพร้า:** ตอน save ไฟล์ใหม่ถูกเขียนลง storage **ก่อน**
-  แถว DB จะบันทึกสำเร็จ — ถ้า `save()` ล้มเหลว (เช่นชน constraint) ไฟล์ใหม่จะค้าง
-  อยู่ใน storage → service create/update ต้องครอบด้วย try/except แล้ว**ลบไฟล์ใหม่
+  แถว DB จะบันทึกสำเร็จ — ถ้าขั้นบันทึกแถว DB ล้มเหลว**หลังไฟล์ถูกเขียนแล้ว**
+  (เช่น DB ล่ม, IntegrityError จากช่องทางที่หลุด full_clean) ไฟล์ใหม่จะค้างอยู่ใน
+  storage → service create/update ต้องครอบด้วย try/except แล้ว**ลบไฟล์ใหม่
   แบบ best-effort เมื่อ transaction ล้มเหลว** (ถ้าลบไม่สำเร็จไม่ต้อง raise ซ้ำ —
   บันทึก log พอ แล้วปล่อย error เดิมของ transaction ขึ้นไปตามปกติ)
+  หมายเหตุ: กรณีชน validation ผ่าน service ปกติ `full_clean()` จะดักก่อนไฟล์ถูกเขียน
+  — ช่องนี้จึงเป็นเรื่องของความล้มเหลว**หลัง**จุดเขียนไฟล์เท่านั้น (ดูวิธี test ใน C4)
 - `clean()` ต้องตรวจด้วยว่า resource เป็นประเภทห้อง (ROOM) พร้อมข้อความไทย
 - **Validation ไฟล์รูป:** จำกัดชนิด (JPEG/PNG/WebP) และขนาด ≤ 5MB — ตรวจใน `clean()`/validator
   ของ field พร้อมข้อความไทย + test ไฟล์ผิดชนิดและไฟล์ใหญ่เกิน
@@ -265,9 +282,16 @@ Cloud Build **build + deploy ขึ้นเว็บจริงอัตโน
   — **test ข้อนี้สร้างตรงผ่าน ORM ข้าม service** ตามข้อยกเว้นใน C2),
   resource ต้องเป็นห้อง, validation ชนิด/ขนาดไฟล์,
   อัปโหลดสองไฟล์ที่ชื่อไฟล์ต้นทางเหมือนกันแล้วได้ path ต่างกัน (รูปแรกไม่ถูกทับ),
-  **ชุด test ไฟล์กำพร้า 3 กรณี:** (ก) ลบรูปแล้วไฟล์ใน storage ถูกลบด้วย,
-  (ข) create/update ที่ล้มเหลว (เช่นชน constraint) ต้องไม่ทิ้งไฟล์ใหม่ค้างใน storage,
-  (ค) แทนที่รูปสำเร็จแล้วไฟล์เก่าหายแต่ไฟล์ใหม่ยังอยู่
+  **ชุด test ไฟล์กำพร้า 4 กรณี:** (ก) ลบรูปแล้วไฟล์ใน storage ถูกลบด้วย,
+  (ข) create/update ล้มเหลวต้องไม่ทิ้งไฟล์ใหม่ค้าง — **ต้องจำลอง exception
+  หลังไฟล์ถูกเขียนลง storage แล้วแต่ก่อน DB commit** (เช่น mock ให้ขั้นบันทึก
+  แถว DB ล้มเหลว) **ห้ามใช้แค่กรณีชน validation/constraint ผ่าน service**
+  เพราะ `full_clean()` จะดักก่อนไฟล์ถูกเขียน — test จะผ่านโดยไม่เคยทดสอบ
+  cleanup จริง · ยืนยันทั้งสองอย่าง: ไฟล์ใหม่ถูกลบ **และ** exception ต้นฉบับ
+  ยังถูกส่งกลับ (cleanup ห้ามกลืน error),
+  (ค) แทนที่รูปสำเร็จแล้วไฟล์เก่าหายแต่ไฟล์ใหม่ยังอยู่,
+  (ง) callback ลบไฟล์เจอ storage error (จำลอง `storage.delete` พัง) →
+  แค่ log, flow หลักที่ commit สำเร็จแล้วต้องไม่ล้มเหลวให้ผู้ใช้เห็น
   — test ที่ตรวจผลของ `transaction.on_commit` ต้องใช้
   `captureOnCommitCallbacks(execute=True)` หรือ `TransactionTestCase`
   เพราะ callback ทำงานหลัง commit จริงเท่านั้น (`TestCase` ปกติ rollback ไม่เคย commit),
