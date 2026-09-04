@@ -154,5 +154,30 @@ CSRF_COOKIE_SECURE = DJANGO_SECURE
 SECURE_SSL_REDIRECT = DJANGO_SECURE
 SECURE_HSTS_SECONDS = 31536000 if DJANGO_SECURE else 0
 
+# --- Log ---------------------------------------------------------------
+# ค่าเริ่มต้นของ Django จะไม่ส่ง error ไปที่ไหนเลยเมื่อ DEBUG=0 (ส่งแค่อีเมลซึ่งไม่ได้ตั้งไว้)
+# ต้องส่งเข้า console (stdout/stderr) เสมอ เพราะ Cloud Run เก็บ log จาก stdout/stderr
+# ให้อัตโนมัติ — ไม่มีข้อมูลลับหลุดไปให้ผู้ใช้เห็น (แค่บันทึกไว้ดูฝั่งแอดมิน)
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "handlers": {
+        "console": {
+            "class": "logging.StreamHandler",
+        },
+    },
+    "root": {
+        "handlers": ["console"],
+        "level": "INFO",
+    },
+    "loggers": {
+        "django.request": {
+            "handlers": ["console"],
+            "level": "ERROR",
+            "propagate": False,
+        },
+    },
+}
+
 # --- กฎการจองค่าเริ่มต้น (SRS ข้อ 5; ค่ารายห้องอยู่ใน ResourceRule) ------------
 BOOKING_SLOT_MINUTES = 15  # ช่วงเวลาขั้นต่ำของการเลือกเวลา (SRS 12.2)
