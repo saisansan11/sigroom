@@ -210,6 +210,36 @@ def test_student_room_and_bed_invariants(lodging_data):
         zero_bed.save()
 
 
+def test_unit_update_rolls_back_with_failed_allocation_in_same_atomic_block(lodging_data):
+    # จำลองรูปแบบเดียวกับ seed_pilot: อัปเดต unit แล้วเรียก update_cohort_allocation
+    # ในบล็อก transaction.atomic() เดียวกัน — ถ้า allocation ล้มเหลว unit ต้องย้อนกลับด้วย
+    from django.db import transaction
+
+    other_unit = Unit.objects.create(code="OTHER-UNIT", name="หน่วยอื่นสำหรับทดสอบ")
+    start, end = _dates()
+    cohort = make_cohort(lodging_data, "rollback-target", rooms=[lodging_data["rooms"][0]], start=start, end=end)
+    original_unit_id = cohort.unit_id
+    make_cohort(lodging_data, "rollback-blocker", rooms=[lodging_data["rooms"][1]], start=start, end=end)
+
+    with pytest.raises(ValidationError, match="ชนกับรอบหลักสูตร"):
+        with transaction.atomic():
+            cohort.unit = other_unit
+            cohort.save(update_fields=["unit"])
+            update_cohort_allocation(
+                cohort=cohort,
+                rooms=[lodging_data["rooms"][1]],
+                check_in_date=start,
+                check_out_date=end,
+                allocation_status=CourseLodgingCohort.AllocationStatus.ALLOCATED,
+                is_active=True,
+                beds_per_room=4,
+                actor=lodging_data["user"],
+            )
+
+    cohort.refresh_from_db()
+    assert cohort.unit_id == original_unit_id
+
+
 def test_cannot_remove_booked_room_or_reduce_beds(lodging_data):
     start, end = _dates()
     cohort = make_cohort(lodging_data, rooms=lodging_data["rooms"][:2], start=start, end=end)
