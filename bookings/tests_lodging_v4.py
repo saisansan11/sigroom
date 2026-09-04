@@ -385,6 +385,60 @@ def test_calendar_and_today_board_show_lodging_reservation(client, lodging_data)
     assert reservation_events[0]["url"] == reverse("bookings:lodging_portal", args=[cohort.slug])
 
 
+def test_calendar_events_room_filter_excludes_other_rooms_in_cohort(client, lodging_data):
+    today = timezone.localdate()
+    make_cohort(
+        lodging_data,
+        "multi-room-cohort",
+        rooms=lodging_data["rooms"][:2],
+        start=today,
+        end=today + timedelta(days=2),
+    )
+    events = client.get(
+        reverse("bookings:calendar_events"),
+        {"start": today.isoformat(), "end": (today + timedelta(days=3)).isoformat(), "room": lodging_data["rooms"][0].code},
+    ).json()
+    reservation_events = [item for item in events if item.get("extendedProps", {}).get("status") == "lodging_reserved"]
+    assert reservation_events
+    assert {item["extendedProps"]["room"] for item in reservation_events} == {lodging_data["rooms"][0].code}
+
+
+def test_admin_save_failure_does_not_crash_or_persist(admin_client, lodging_data):
+    start, end = _dates()
+    make_cohort(lodging_data, "already-allocated", rooms=[lodging_data["rooms"][0]], start=start, end=end)
+    other = make_cohort(lodging_data, "editable-cohort", rooms=[lodging_data["rooms"][1]], start=start, end=end)
+
+    url = reverse("admin:bookings_courselodgingcohort_change", args=[other.pk])
+    response = admin_client.post(
+        url,
+        {
+            "title": other.title,
+            "slug": other.slug,
+            "supervisor": other.supervisor_id,
+            "check_in_date": start.isoformat(),
+            "check_out_date": end.isoformat(),
+            "beds_per_room": 4,
+            "allocation_status": CourseLodgingCohort.AllocationStatus.ALLOCATED,
+            "is_active": "on",
+            # ห้องชนกับ "already-allocated" — กติกานี้ตรวจใน update_cohort_allocation
+            # เท่านั้น ไม่มีการตรวจซ้ำระดับฟอร์ม admin จึงต้องพังที่ service เสมอ
+            "rooms": [str(lodging_data["rooms"][0].pk)],
+            "students-TOTAL_FORMS": "0",
+            "students-INITIAL_FORMS": "0",
+            "students-MIN_NUM_FORMS": "0",
+            "students-MAX_NUM_FORMS": "1000",
+        },
+    )
+    assert response.status_code == 302
+    assert response.url == url
+
+    redirected = admin_client.get(url)
+    assert "ไม่สามารถบันทึกรอบที่พักได้" in redirected.content.decode()
+
+    other.refresh_from_db()
+    assert list(other.rooms.values_list("pk", flat=True)) == [lodging_data["rooms"][1].pk]
+
+
 def test_manage_and_edit_routes_use_permissions_and_service(client, lodging_data):
     client.force_login(lodging_data["user"])
     manage = client.get(reverse("bookings:lodging_manage"))

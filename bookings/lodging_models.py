@@ -5,10 +5,7 @@ from django.db import models
 from django.urls import reverse
 from resources.models import Resource
 
-
-def _normalize_phone(raw_phone: str) -> str:
-    """เก็บเบอร์โทรเป็นตัวเลขล้วน เพื่อให้การตรวจซ้ำมีความหมายเดียวกันทุกช่องทาง"""
-    return "".join(character for character in (raw_phone or "") if character.isdigit())
+from .phone_utils import normalize_phone
 
 
 class CourseLodgingCohort(models.Model):
@@ -150,13 +147,13 @@ class CourseStudentLodging(models.Model):
                 raise ValidationError(errors)
             if not cohort.rooms.filter(pk=self.room_id).exists():
                 errors["room"] = "ห้องนี้ไม่ได้อยู่ในรายการห้องของรอบหลักสูตร"
-            if self.bed_number and self.bed_number > cohort.beds_per_room:
+            if self.bed_number is not None and self.bed_number > cohort.beds_per_room:
                 errors["bed_number"] = f"หมายเลขเตียงต้องไม่เกิน {cohort.beds_per_room}"
         if errors:
             raise ValidationError(errors)
 
     def save(self, *args, **kwargs):
-        self.phone = _normalize_phone(self.phone)
+        self.phone = normalize_phone(self.phone)
         if not self.phone:
             raise ValidationError("กรุณาระบุเบอร์โทรศัพท์ที่ถูกต้อง")
         self.full_clean()

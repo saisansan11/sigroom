@@ -157,6 +157,13 @@ class Command(BaseCommand):
                     "note": "ขอให้นักเรียนทุกคนรายงานตัวก่อนเวลา 18:00 น. ของวันเปิดหลักสูตร และเตรียมเครื่องนอนส่วนตัวมาด้วย",
                 },
             )
+            # get_or_create ใช้ defaults เฉพาะตอนสร้างแถวใหม่ ส่วน supervisor จะถูก
+            # เซ็ตซ้ำทุกครั้งผ่าน update_cohort_allocation ด้านล่าง จึงต้องอัปเดต unit
+            # ซ้ำที่นี่ด้วยเหมือนกัน ไม่เช่นนั้น unit จะค้างค่าเดิมขณะ supervisor เปลี่ยนไป
+            # ตาม admin_user ที่ resolve ใหม่ในแต่ละรอบ seed
+            if not created:
+                cohort.unit = units.get("EDU")
+                cohort.save(update_fields=["unit"])
             dorm_rooms = Resource.objects.filter(code__in=["DORM-101", "DORM-102", "DORM-103", "DORM-104"])
             cohort = update_cohort_allocation(
                 cohort=cohort,
