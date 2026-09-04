@@ -1,5 +1,6 @@
 {
   "hosting": {
+    "site": "sigroom",
     "public": "staticfiles",
     "ignore": [
       "firebase.json",
