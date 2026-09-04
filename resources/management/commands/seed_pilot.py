@@ -8,6 +8,7 @@
 from datetime import datetime, time, timedelta
 
 from django.core.management.base import BaseCommand
+from django.db import transaction
 from django.utils import timezone
 
 from accounts.models import Unit, User
@@ -157,19 +158,29 @@ class Command(BaseCommand):
                     "note": "ขอให้นักเรียนทุกคนรายงานตัวก่อนเวลา 18:00 น. ของวันเปิดหลักสูตร และเตรียมเครื่องนอนส่วนตัวมาด้วย",
                 },
             )
+            # get_or_create ใช้ defaults เฉพาะตอนสร้างแถวใหม่ ส่วน supervisor จะถูก
+            # เซ็ตซ้ำทุกครั้งผ่าน update_cohort_allocation ด้านล่าง จึงต้องอัปเดต unit
+            # ซ้ำที่นี่ด้วยเหมือนกัน ไม่เช่นนั้น unit จะค้างค่าเดิมขณะ supervisor เปลี่ยนไป
+            # ตาม admin_user ที่ resolve ใหม่ในแต่ละรอบ seed — ห่อด้วย atomic เดียวกับ
+            # update_cohort_allocation เพื่อไม่ให้ unit ถูกบันทึกค้างไว้เฉย ๆ หาก
+            # ขั้นตอนจัดสรรห้องด้านล่างล้มเหลวและ rollback
             dorm_rooms = Resource.objects.filter(code__in=["DORM-101", "DORM-102", "DORM-103", "DORM-104"])
-            cohort = update_cohort_allocation(
-                cohort=cohort,
-                rooms=dorm_rooms,
-                check_in_date=today + timedelta(days=7),
-                check_out_date=today + timedelta(days=67),
-                allocation_status=CourseLodgingCohort.AllocationStatus.ALLOCATED,
-                is_active=True,
-                beds_per_room=4,
-                supervisor=admin_user,
-                title="หลักสูตรชั้นนายร้อย เหล่า ส. รุ่นที่ 70",
-                note="ขอให้นักเรียนทุกคนรายงานตัวก่อนเวลา 18:00 น. ของวันเปิดหลักสูตร และเตรียมเครื่องนอนส่วนตัวมาด้วย",
-            )
+            with transaction.atomic():
+                if not created:
+                    cohort.unit = units.get("EDU")
+                    cohort.save(update_fields=["unit"])
+                cohort = update_cohort_allocation(
+                    cohort=cohort,
+                    rooms=dorm_rooms,
+                    check_in_date=today + timedelta(days=7),
+                    check_out_date=today + timedelta(days=67),
+                    allocation_status=CourseLodgingCohort.AllocationStatus.ALLOCATED,
+                    is_active=True,
+                    beds_per_room=4,
+                    supervisor=admin_user,
+                    title="หลักสูตรชั้นนายร้อย เหล่า ส. รุ่นที่ 70",
+                    note="ขอให้นักเรียนทุกคนรายงานตัวก่อนเวลา 18:00 น. ของวันเปิดหลักสูตร และเตรียมเครื่องนอนส่วนตัวมาด้วย",
+                )
 
             # ใส่ตัวอย่างนักเรียน 2 นายในห้อง DORM-101
             d101 = dorm_rooms.filter(code="DORM-101").first()

@@ -195,8 +195,49 @@ def test_student_room_and_bed_invariants(lodging_data):
         origin_unit="ศสส.",
         phone="0800000002",
     )
-    with pytest.raises(ValidationError, match="ไม่เกิน"):
+    with pytest.raises(ValidationError, match="ระหว่าง"):
         too_high.save()
+    zero_bed = CourseStudentLodging(
+        cohort=cohort,
+        room=lodging_data["rooms"][0],
+        bed_number=0,
+        rank="ร.อ.",
+        full_name="เตียงศูนย์",
+        origin_unit="ศสส.",
+        phone="0800000003",
+    )
+    with pytest.raises(ValidationError, match="ระหว่าง"):
+        zero_bed.save()
+
+
+def test_unit_update_rolls_back_with_failed_allocation_in_same_atomic_block(lodging_data):
+    # จำลองรูปแบบเดียวกับ seed_pilot: อัปเดต unit แล้วเรียก update_cohort_allocation
+    # ในบล็อก transaction.atomic() เดียวกัน — ถ้า allocation ล้มเหลว unit ต้องย้อนกลับด้วย
+    from django.db import transaction
+
+    other_unit = Unit.objects.create(code="OTHER-UNIT", name="หน่วยอื่นสำหรับทดสอบ")
+    start, end = _dates()
+    cohort = make_cohort(lodging_data, "rollback-target", rooms=[lodging_data["rooms"][0]], start=start, end=end)
+    original_unit_id = cohort.unit_id
+    make_cohort(lodging_data, "rollback-blocker", rooms=[lodging_data["rooms"][1]], start=start, end=end)
+
+    with pytest.raises(ValidationError, match="ชนกับรอบหลักสูตร"):
+        with transaction.atomic():
+            cohort.unit = other_unit
+            cohort.save(update_fields=["unit"])
+            update_cohort_allocation(
+                cohort=cohort,
+                rooms=[lodging_data["rooms"][1]],
+                check_in_date=start,
+                check_out_date=end,
+                allocation_status=CourseLodgingCohort.AllocationStatus.ALLOCATED,
+                is_active=True,
+                beds_per_room=4,
+                actor=lodging_data["user"],
+            )
+
+    cohort.refresh_from_db()
+    assert cohort.unit_id == original_unit_id
 
 
 def test_cannot_remove_booked_room_or_reduce_beds(lodging_data):
@@ -383,6 +424,60 @@ def test_calendar_and_today_board_show_lodging_reservation(client, lodging_data)
     assert reservation_events
     assert reservation_events[0]["extendedProps"]["room"] == lodging_data["rooms"][0].code
     assert reservation_events[0]["url"] == reverse("bookings:lodging_portal", args=[cohort.slug])
+
+
+def test_calendar_events_room_filter_excludes_other_rooms_in_cohort(client, lodging_data):
+    today = timezone.localdate()
+    make_cohort(
+        lodging_data,
+        "multi-room-cohort",
+        rooms=lodging_data["rooms"][:2],
+        start=today,
+        end=today + timedelta(days=2),
+    )
+    events = client.get(
+        reverse("bookings:calendar_events"),
+        {"start": today.isoformat(), "end": (today + timedelta(days=3)).isoformat(), "room": lodging_data["rooms"][0].code},
+    ).json()
+    reservation_events = [item for item in events if item.get("extendedProps", {}).get("status") == "lodging_reserved"]
+    assert reservation_events
+    assert {item["extendedProps"]["room"] for item in reservation_events} == {lodging_data["rooms"][0].code}
+
+
+def test_admin_save_failure_does_not_crash_or_persist(admin_client, lodging_data):
+    start, end = _dates()
+    make_cohort(lodging_data, "already-allocated", rooms=[lodging_data["rooms"][0]], start=start, end=end)
+    other = make_cohort(lodging_data, "editable-cohort", rooms=[lodging_data["rooms"][1]], start=start, end=end)
+
+    url = reverse("admin:bookings_courselodgingcohort_change", args=[other.pk])
+    response = admin_client.post(
+        url,
+        {
+            "title": other.title,
+            "slug": other.slug,
+            "supervisor": other.supervisor_id,
+            "check_in_date": start.isoformat(),
+            "check_out_date": end.isoformat(),
+            "beds_per_room": 4,
+            "allocation_status": CourseLodgingCohort.AllocationStatus.ALLOCATED,
+            "is_active": "on",
+            # ห้องชนกับ "already-allocated" — กติกานี้ตรวจใน update_cohort_allocation
+            # เท่านั้น ไม่มีการตรวจซ้ำระดับฟอร์ม admin จึงต้องพังที่ service เสมอ
+            "rooms": [str(lodging_data["rooms"][0].pk)],
+            "students-TOTAL_FORMS": "0",
+            "students-INITIAL_FORMS": "0",
+            "students-MIN_NUM_FORMS": "0",
+            "students-MAX_NUM_FORMS": "1000",
+        },
+    )
+    assert response.status_code == 302
+    assert response.url == url
+
+    redirected = admin_client.get(url)
+    assert "ไม่สามารถบันทึกรอบที่พักได้" in redirected.content.decode()
+
+    other.refresh_from_db()
+    assert list(other.rooms.values_list("pk", flat=True)) == [lodging_data["rooms"][1].pk]
 
 
 def test_manage_and_edit_routes_use_permissions_and_service(client, lodging_data):

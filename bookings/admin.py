@@ -1,7 +1,8 @@
 from django.contrib import admin
-from django import forms
 from django.contrib import messages
 from django.core.exceptions import PermissionDenied, ValidationError
+from django.http import HttpResponseRedirect
+from django.urls import reverse
 from .models import (
     Booking,
     BookingAmendment,
@@ -14,27 +15,6 @@ from .models import (
     SeriesSkip,
 )
 from .lodging_services import update_cohort_allocation
-
-
-class CourseLodgingCohortAdminForm(forms.ModelForm):
-    class Meta:
-        model = CourseLodgingCohort
-        fields = "__all__"
-
-    def clean(self):
-        cleaned = super().clean()
-        rooms = list(cleaned.get("rooms") or [])
-        status = cleaned.get("allocation_status")
-        is_active = cleaned.get("is_active")
-        check_in = cleaned.get("check_in_date")
-        check_out = cleaned.get("check_out_date")
-        if check_in and check_out and check_out < check_in:
-            self.add_error("check_out_date", "วันที่สิ้นสุดการเข้าพักต้องไม่ก่อนวันที่เริ่มเข้าพัก")
-        if status == CourseLodgingCohort.AllocationStatus.ALLOCATED and not rooms:
-            self.add_error("rooms", "สถานะจัดสรรห้องพักต้องมีห้องอย่างน้อย 1 ห้อง")
-        if status == CourseLodgingCohort.AllocationStatus.RELEASED and is_active:
-            self.add_error("is_active", "รอบที่ปลดการสงวนห้องแล้วต้องไม่เปิดรับจอง")
-        return cleaned
 
 
 class BookingResourceInline(admin.TabularInline):
@@ -139,7 +119,6 @@ class CourseStudentLodgingInline(admin.TabularInline):
 
 @admin.register(CourseLodgingCohort)
 class CourseLodgingCohortAdmin(admin.ModelAdmin):
-    form = CourseLodgingCohortAdminForm
     list_display = ("title", "slug", "supervisor", "unit", "check_in_date", "check_out_date", "beds_per_room", "allocation_status", "is_active", "created_at")
     list_filter = ("allocation_status", "is_active", "unit", "check_in_date")
     search_fields = ("title", "slug", "supervisor__username")
@@ -163,14 +142,49 @@ class CourseLodgingCohortAdmin(admin.ModelAdmin):
                 actor=request.user,
             )
         except (ValidationError, PermissionDenied) as exc:
-            obj._lodging_save_failed = True
-            messages.error(request, f"ไม่สามารถบันทึกรอบที่พักได้: {exc}")
+            obj._lodging_error = str(exc)
 
     def save_related(self, request, form, formsets, change):
-        if getattr(form.instance, "_lodging_save_failed", False):
+        # เมื่อ update_cohort_allocation ล้มเหลว obj ยังไม่ถูกบันทึกจริง จึงข้าม
+        # การบันทึก inline formset แต่ยังต้องตั้งค่า new_objects/changed_objects/
+        # deleted_objects ให้ formset เพราะ construct_change_message() (เรียกโดย
+        # Django เสมอ ไม่ว่า save จะสำเร็จหรือไม่) อ่านแอตทริบิวต์เหล่านี้โดยตรง
+        if getattr(form.instance, "_lodging_error", None):
+            for formset in formsets:
+                formset.new_objects = []
+                formset.changed_objects = []
+                formset.deleted_objects = []
             return
         for formset in formsets:
             self.save_formset(request, form, formset, change=change)
+
+    def _lodging_error_redirect(self, request, obj):
+        messages.error(request, f"ไม่สามารถบันทึกรอบที่พักได้: {obj._lodging_error}")
+        if obj._state.adding:
+            url_name = f"admin:{obj._meta.app_label}_{obj._meta.model_name}_add"
+            return HttpResponseRedirect(reverse(url_name))
+        url_name = f"admin:{obj._meta.app_label}_{obj._meta.model_name}_change"
+        return HttpResponseRedirect(reverse(url_name, args=[obj.pk]))
+
+    def response_add(self, request, obj, post_url_continue=None):
+        if getattr(obj, "_lodging_error", None):
+            return self._lodging_error_redirect(request, obj)
+        return super().response_add(request, obj, post_url_continue)
+
+    def response_change(self, request, obj):
+        if getattr(obj, "_lodging_error", None):
+            return self._lodging_error_redirect(request, obj)
+        return super().response_change(request, obj)
+
+    def log_addition(self, request, obj, message):
+        if getattr(obj, "_lodging_error", None):
+            return None
+        return super().log_addition(request, obj, message)
+
+    def log_change(self, request, obj, message):
+        if getattr(obj, "_lodging_error", None):
+            return None
+        return super().log_change(request, obj, message)
 
 
 @admin.register(CourseStudentLodging)

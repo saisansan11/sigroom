@@ -19,11 +19,7 @@ from resources.models import Resource
 
 from .lodging_models import CourseLodgingCohort
 from .models import BookingResource
-
-
-def normalize_phone(raw_phone: str) -> str:
-    """คืนเบอร์โทรเป็นตัวเลขล้วน เพื่อให้รูปแบบต่างกันถือเป็นคนเดียวกัน"""
-    return "".join(character for character in (raw_phone or "") if character.isdigit())
+from .phone_utils import normalize_phone  # noqa: F401 (re-exported for bookings.lodging_views)
 
 
 def cohort_hold_range(check_in_date: date, check_out_date: date) -> DateTimeTZRange:

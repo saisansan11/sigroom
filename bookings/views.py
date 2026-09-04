@@ -280,12 +280,15 @@ def calendar_events(request):
         check_in_date__lt=timezone.localtime(end).date(),
         check_out_date__gte=timezone.localtime(start).date(),
     ).prefetch_related("rooms")
-    if request.GET.get("category"):
-        cohort_query = cohort_query.filter(rooms__room_category=request.GET["category"])
-    if request.GET.get("room"):
-        cohort_query = cohort_query.filter(rooms__code=request.GET["room"])
-    if request.GET.get("building"):
-        cohort_query = cohort_query.filter(rooms__building=request.GET["building"])
+    cohort_category = request.GET.get("category")
+    cohort_room_code = request.GET.get("room")
+    cohort_building = request.GET.get("building")
+    if cohort_category:
+        cohort_query = cohort_query.filter(rooms__room_category=cohort_category)
+    if cohort_room_code:
+        cohort_query = cohort_query.filter(rooms__code=cohort_room_code)
+    if cohort_building:
+        cohort_query = cohort_query.filter(rooms__building=cohort_building)
     for cohort in cohort_query.distinct():
         event_start = timezone.make_aware(
             datetime.combine(cohort.check_in_date, time.min),
@@ -296,6 +299,15 @@ def calendar_events(request):
             timezone.get_current_timezone(),
         )
         for room in cohort.rooms.all():
+            # cohort_query กรองที่ระดับ "รุ่นที่มีห้องตรงเงื่อนไข" (M2M) เท่านั้น
+            # จึงต้องกรองห้องแต่ละห้องซ้ำอีกชั้น ไม่เช่นนั้นรุ่นที่มีหลายห้อง
+            # จะโผล่ event ของห้อง/อาคารอื่นที่ไม่ตรงตัวกรองไปด้วย
+            if cohort_category and room.room_category != cohort_category:
+                continue
+            if cohort_room_code and room.code != cohort_room_code:
+                continue
+            if cohort_building and room.building != cohort_building:
+                continue
             events.append(
                 {
                     "id": f"cohort-{cohort.pk}-{room.pk}",
