@@ -178,6 +178,8 @@ def test_cancel_one_occurrence_and_then_remaining(m4_setup):
 def test_series_preview_create_and_detail_pages_render(client, m4_setup):
     requester, _, room, _ = m4_setup
     start = timezone.localdate() + timedelta(days=7)
+    if start.weekday() >= 5:
+        start += timedelta(days=7 - start.weekday())
     data = {
         "date": start.isoformat(),
         "start_time": "09:00",

@@ -43,7 +43,7 @@
 
 <div class="rooms-grid">
   {% for rdata in rooms_data %}
-    <article class="room-lodging-card {% if rdata.is_full %}is-full{% endif %}">
+    <article class="room-lodging-card {% if rdata.is_full %}is-full{% else %}has-free-bed{% endif %}" id="room-{{ rdata.room.id }}">
       <div class="room-card-head">
         <div>
           <h3>{{ rdata.room.code }}</h3>
@@ -91,21 +91,42 @@
   {% endfor %}
 </div>
 
+{% if free_slots > 0 %}
+<div class="sticky-jump-container">
+  <button type="button" class="btn-jump-next-bed" onclick="scrollToNextFreeBed()">
+    ไปที่เตียงว่างถัดไป ▾
+  </button>
+</div>
+{% endif %}
+
 <!-- Modal Dialog สำหรับกรอกข้อมูลจองเตียง -->
 <dialog id="bookingModal">
   <article style="max-width: 28rem; width: 100%;">
     <header>
       <button aria-label="Close" rel="prev" onclick="closeBookingModal()"></button>
       <h3>ลงทะเบียนเข้าพัก</h3>
-      <p id="modalRoomTitle" style="margin: 0; color: var(--cyan); font-weight: 700;">ห้อง DORM-101 (เตียง 1)</p>
+      <p id="modalRoomTitle" style="margin: 0; color: var(--cyan); font-weight: 700;">
+        {% if modal_data.room_code %}
+          ห้อง {{ modal_data.room_code }} (เตียง {{ modal_data.bed_number }})
+        {% else %}
+          เลือกเตียงในห้องพัก
+        {% endif %}
+      </p>
     </header>
+
+    {% if modal_error %}
+      <div class="notice danger" style="margin: var(--space-xs) 0 var(--space-sm) 0; font-size: .88rem;">
+        <strong>ข้อผิดพลาด:</strong> {{ modal_error }}
+      </div>
+    {% endif %}
+
     <form method="post" action="{% url 'bookings:lodging_book_bed' cohort.slug %}">
       {% csrf_token %}
-      <input type="hidden" name="room_id" id="modalRoomId" value="">
-      <input type="hidden" name="bed_number" id="modalBedNumber" value="">
+      <input type="hidden" name="room_id" id="modalRoomId" value="{{ modal_data.room_id|default:'' }}">
+      <input type="hidden" name="bed_number" id="modalBedNumber" value="{{ modal_data.bed_number|default:'' }}">
 
       <label for="id_rank">ยศ
-        <input type="text" id="id_rank" name="rank" list="rank_list" placeholder="เช่น ร.ต., ร.ท., ร.อ., ส.อ." required autocomplete="honorific-prefix">
+        <input type="text" id="id_rank" name="rank" list="rank_list" value="{{ modal_data.rank|default:'' }}" placeholder="เช่น ร.ต., ร.ท., ร.อ., ส.อ." required autocomplete="honorific-prefix">
         <datalist id="rank_list">
           <option value="ร.ต.">
           <option value="ร.ท.">
@@ -122,19 +143,19 @@
       </label>
 
       <label for="id_full_name">ชื่อ - นามสกุล
-        <input type="text" id="id_full_name" name="full_name" placeholder="ชื่อ และนามสกุลจริง" required autocomplete="name">
+        <input type="text" id="id_full_name" name="full_name" value="{{ modal_data.full_name|default:'' }}" placeholder="ชื่อ และนามสกุลจริง" required autocomplete="name" autofocus>
       </label>
 
       <label for="id_origin_unit">หน่วยต้นสังกัด
-        <input type="text" id="id_origin_unit" name="origin_unit" placeholder="เช่น ส.พัน.1, ศสส., พล.ม.2 รอ." required>
+        <input type="text" id="id_origin_unit" name="origin_unit" value="{{ modal_data.origin_unit|default:'' }}" placeholder="เช่น ส.พัน.1, ศสส., พล.ม.2 รอ." required>
       </label>
 
       <label for="id_phone">เบอร์โทรศัพท์ติดต่อ
-        <input type="tel" id="id_phone" name="phone" placeholder="เช่น 081-234-5678" required autocomplete="tel">
+        <input type="tel" id="id_phone" name="phone" inputmode="tel" value="{{ modal_data.phone|default:'' }}" placeholder="เช่น 081-234-5678" required autocomplete="tel">
       </label>
 
       <label for="id_note">หมายเหตุเพิ่มเติม (ถ้ามี)
-        <input type="text" id="id_note" name="note" placeholder="เช่น ขอเตียงชั้นล่าง หรือข้อจำกัดด้านสุขภาพ">
+        <input type="text" id="id_note" name="note" value="{{ modal_data.note|default:'' }}" placeholder="เช่น ขอเตียงชั้นล่าง หรือข้อจำกัดด้านสุขภาพ">
       </label>
 
       <div style="margin-top: var(--space-md); display: flex; gap: var(--space-sm); justify-content: flex-end;">
@@ -157,5 +178,22 @@ function openBookingModal(roomId, roomCode, bedNumber) {
 function closeBookingModal() {
   document.getElementById('bookingModal').close();
 }
+
+let lastJumpIndex = -1;
+function scrollToNextFreeBed() {
+  const freeRooms = document.querySelectorAll('.room-lodging-card.has-free-bed');
+  if (!freeRooms || freeRooms.length === 0) return;
+  lastJumpIndex = (lastJumpIndex + 1) % freeRooms.length;
+  freeRooms[lastJumpIndex].scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
+{% if modal_error %}
+document.addEventListener('DOMContentLoaded', function() {
+  const modal = document.getElementById('bookingModal');
+  if (modal && !modal.open) {
+    modal.showModal();
+  }
+});
+{% endif %}
 </script>
 {% endblock %}

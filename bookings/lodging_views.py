@@ -34,14 +34,7 @@ def _masked_student_label(student: CourseStudentLodging) -> str:
     return f"{student.rank} {_masked_name(student.full_name)}".strip()
 
 
-def lodging_portal(request, slug):
-    """หน้าจอเลือกห้องพักสำหรับนักเรียนหลักสูตร (ไม่ต้องเข้าสู่ระบบ สะดวกบนมือถือ)"""
-    cohort = get_object_or_404(
-        CourseLodgingCohort.objects.prefetch_related("rooms"),
-        slug=slug,
-        allocation_status=CourseLodgingCohort.AllocationStatus.ALLOCATED,
-        is_active=True,
-    )
+def _build_portal_context(cohort):
     students = CourseStudentLodging.objects.filter(cohort=cohort).select_related("room")
     students_by_room_bed = {
         (s.room_id, s.bed_number): s for s in students
@@ -81,13 +74,30 @@ def lodging_portal(request, slug):
             "is_full": room_occupied >= beds_count,
         })
 
-    context = {
+    # ห้องว่างมาก่อน ห้องเต็มทีหลัง (คงลำดับ building, floor, code ภายในแต่ละกลุ่ม)
+    rooms_data.sort(key=lambda r: 1 if r["is_full"] else 0)
+
+    return {
         "cohort": cohort,
         "rooms_data": rooms_data,
         "total_slots": total_slots,
         "occupied_slots": occupied_slots,
         "free_slots": max(0, total_slots - occupied_slots),
     }
+
+
+def lodging_portal(request, slug):
+    """หน้าจอเลือกห้องพักสำหรับนักเรียนหลักสูตร (ไม่ต้องเข้าสู่ระบบ สะดวกบนมือถือ)"""
+    cohort = get_object_or_404(
+        CourseLodgingCohort.objects.prefetch_related("rooms"),
+        slug=slug,
+        allocation_status=CourseLodgingCohort.AllocationStatus.ALLOCATED,
+        is_active=True,
+    )
+    context = _build_portal_context(cohort)
+    if "lodging_modal_error" in request.session:
+        context["modal_error"] = request.session.pop("lodging_modal_error")
+        context["modal_data"] = request.session.pop("lodging_modal_data", {})
     return render(request, "lodging/student_portal.html", context)
 
 
@@ -108,17 +118,38 @@ def lodging_book_bed(request, slug):
     phone = normalize_phone(request.POST.get("phone", ""))
     note = request.POST.get("note", "").strip()
 
-    if not all([room_id, bed_number_raw, rank, full_name, origin_unit, phone]):
-        messages.error(request, "กรุณากรอกข้อมูลให้ครบทุกช่อง (ยศ, ชื่อ-สกุล, สังกัด, เบอร์โทร)")
+    def _respond_modal_error(err_msg):
+        room_obj = None
+        if room_id:
+            try:
+                room_obj = cohort.rooms.filter(pk=room_id).first()
+            except (TypeError, ValueError):
+                pass
+        # เก็บข้อมูลและ error ใน session เพื่อให้ lodging_portal เปิด modal เดิมอัตโนมัติพร้อมคงข้อมูลที่กรอก
+        request.session["lodging_modal_error"] = err_msg
+        request.session["lodging_modal_data"] = {
+            "room_id": str(room_id or ""),
+            "room_code": room_obj.code if room_obj else "",
+            "bed_number": str(bed_number_raw or ""),
+            "rank": rank,
+            "full_name": full_name,
+            "origin_unit": origin_unit,
+            "phone": request.POST.get("phone", "").strip(),
+            "note": note,
+        }
+        # คง messages.error ไว้เป็น fallback สำหรับเบราว์เซอร์หรือกรณีที่ dialog ไม่เปิด
+        messages.error(request, err_msg)
         return redirect("bookings:lodging_portal", slug=slug)
+
+    if not all([room_id, bed_number_raw, rank, full_name, origin_unit, phone]):
+        return _respond_modal_error("กรุณากรอกข้อมูลให้ครบทุกช่อง (ยศ, ชื่อ-สกุล, สังกัด, เบอร์โทร)")
 
     try:
         bed_number = int(bed_number_raw)
         if not (1 <= bed_number <= cohort.beds_per_room):
             raise ValueError
     except (TypeError, ValueError):
-        messages.error(request, "หมายเลขเตียงไม่ถูกต้อง")
-        return redirect("bookings:lodging_portal", slug=slug)
+        return _respond_modal_error("หมายเลขเตียงไม่ถูกต้อง")
 
     try:
         with transaction.atomic():
@@ -130,13 +161,11 @@ def lodging_book_bed(request, slug):
                 cohort=cohort, room=room, bed_number=bed_number
             ).exists()
             if existing_bed:
-                messages.error(request, f"ขออภัย ห้อง {room.code} เตียง {bed_number} มีเพื่อนร่วมรุ่นเพิ่งจองไปแล้ว กรุณาเลือกเตียงอื่น")
-                return redirect("bookings:lodging_portal", slug=slug)
+                return _respond_modal_error(f"ขออภัย ห้อง {room.code} เตียง {bed_number} มีเพื่อนร่วมรุ่นเพิ่งจองไปแล้ว กรุณาเลือกเตียงอื่น")
 
             # ตรวจสอบซ้ำโดยไม่เปิดเผยห้อง/เตียงเดิมต่อผู้ส่งคำขอ
             if CourseStudentLodging.objects.filter(cohort=cohort, phone=phone).exists():
-                messages.warning(request, "เบอร์โทรศัพท์นี้ลงทะเบียนในรอบนี้แล้ว กรุณาตรวจสอบข้อมูลเดิมหรือติดต่อผู้กำกับหลักสูตร")
-                return redirect("bookings:lodging_portal", slug=slug)
+                return _respond_modal_error("เบอร์โทรศัพท์นี้ลงทะเบียนในรอบนี้แล้ว กรุณาตรวจสอบข้อมูลเดิมหรือติดต่อผู้กำกับหลักสูตร")
 
             student = CourseStudentLodging.objects.create(
                 cohort=cohort,
@@ -149,8 +178,7 @@ def lodging_book_bed(request, slug):
                 note=note,
             )
     except (IntegrityError, ValidationError):
-        messages.error(request, "เกิดข้อผิดพลาดในการบันทึก หรือเตียงนี้มีผู้จองแล้ว กรุณาลองใหม่อีกครั้ง")
-        return redirect("bookings:lodging_portal", slug=slug)
+        return _respond_modal_error("เกิดข้อผิดพลาดในการบันทึก หรือเตียงนี้มีผู้จองแล้ว กรุณาลองใหม่อีกครั้ง")
 
     messages.success(request, f"ลงทะเบียนจองห้อง {room.code} เตียง {bed_number} สำเร็จ!")
     return redirect("bookings:lodging_pass", slug=slug, student_id=student.id)
