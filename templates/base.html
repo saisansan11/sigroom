@@ -24,7 +24,8 @@
             {% if nav_can_access_approvals %}<li><a {% if request.resolver_match.namespace == 'approvals' %}aria-current="page"{% endif %} href="{% url 'approvals:queue' %}">รออนุมัติ <span class="count-badge">{{ nav_pending_approval_count }}</span></a></li>{% endif %}
             {% if nav_can_manage_usage %}<li><a {% if request.resolver_match.namespace == 'usage' %}aria-current="page"{% endif %} href="{% url 'usage:list' %}">การใช้งานห้อง</a></li>{% endif %}
             {% if nav_can_access_reports %}<li><a {% if request.resolver_match.namespace == 'reports' %}aria-current="page"{% endif %} href="{% url 'reports:dashboard' %}">รายงาน</a></li>{% endif %}
-            <li><a {% if 'lodging' in request.path %}aria-current="page"{% endif %} href="{% url 'bookings:lodging_manage' %}">ที่พักหลักสูตร</a></li>
+            <li><a {% if request.resolver_match.url_name == 'lodging_index' %}aria-current="page"{% endif %} href="{% url 'bookings:lodging_index' %}">จองห้องพัก</a></li>
+            {% if nav_can_manage_lodging %}<li><a {% if 'lodging' in request.path and request.resolver_match.url_name != 'lodging_index' %}aria-current="page"{% endif %} href="{% url 'bookings:lodging_manage' %}">จัดการที่พักหลักสูตร</a></li>{% endif %}
           </ul>
         </nav>
         <div class="header-tools">
@@ -49,7 +50,8 @@
                   {% if nav_can_access_approvals %}<li><a {% if request.resolver_match.namespace == 'approvals' %}aria-current="page"{% endif %} href="{% url 'approvals:queue' %}">รออนุมัติ ({{ nav_pending_approval_count }})</a></li>{% endif %}
                   {% if nav_can_manage_usage %}<li><a {% if request.resolver_match.namespace == 'usage' %}aria-current="page"{% endif %} href="{% url 'usage:list' %}">การใช้งานห้อง</a></li>{% endif %}
                   {% if nav_can_access_reports %}<li><a {% if request.resolver_match.namespace == 'reports' %}aria-current="page"{% endif %} href="{% url 'reports:dashboard' %}">รายงาน</a></li>{% endif %}
-                  <li><a href="{% url 'bookings:lodging_manage' %}">ที่พักหลักสูตร</a></li>
+                  <li><a href="{% url 'bookings:lodging_index' %}">จองห้องพัก</a></li>
+                  {% if nav_can_manage_lodging %}<li><a href="{% url 'bookings:lodging_manage' %}">จัดการที่พักหลักสูตร</a></li>{% endif %}
                 </ul>
               </nav>
               <div class="mobile-account">
@@ -65,6 +67,7 @@
         <nav class="desktop-nav" aria-label="เมนูหลัก">
           <ul class="main-nav">
             <li><a aria-current="page" href="{% url 'bookings:calendar' %}">สถานะห้องวันนี้</a></li>
+            <li><a href="{% url 'bookings:lodging_index' %}">จองห้องพัก</a></li>
           </ul>
         </nav>
         <div class="header-tools">

@@ -87,6 +87,23 @@ def _today_board(request, rooms, now):
     for booking in todays:
         bookings_by_room.setdefault(booking.room_id, []).append(booking)
 
+    from .lodging_models import CourseLodgingCohort
+
+    lodging_cohorts = (
+        CourseLodgingCohort.objects.filter(
+            allocation_status=CourseLodgingCohort.AllocationStatus.ALLOCATED,
+            rooms__in=rooms,
+            check_in_date__lte=day,
+            check_out_date__gte=day,
+        )
+        .prefetch_related("rooms")
+        .distinct()
+    )
+    lodging_by_room = {}
+    for cohort in lodging_cohorts:
+        for room in cohort.rooms.all():
+            lodging_by_room.setdefault(room.pk, []).append(cohort)
+
     rows, in_use, busy_now = [], set(), set()
     for room in rooms:
         blocks = []
@@ -124,6 +141,14 @@ def _today_board(request, rooms, now):
                 "width": max(1.5, pct(booking.end_at) - pct(booking.start_at)),
                 "label": label,
             })
+        for cohort in lodging_by_room.get(room.id, []):
+            blocks.append({
+                "cls": "lodging-reserved",
+                "left": 0,
+                "width": 100,
+                "label": f"สงวนที่พักหลักสูตร — {cohort.title}",
+            })
+            busy_now.add(room.id)
         rows.append({"room": room, "blocks": blocks})
 
     now_pct = pct(now) if board_start <= now <= board_end else None
@@ -245,6 +270,45 @@ def calendar_events(request):
                     "display": "background",
                     "classNames": ["buffer"],
                     "title": "",
+                }
+            )
+
+    from .lodging_models import CourseLodgingCohort
+
+    cohort_query = CourseLodgingCohort.objects.filter(
+        allocation_status=CourseLodgingCohort.AllocationStatus.ALLOCATED,
+        check_in_date__lt=timezone.localtime(end).date(),
+        check_out_date__gte=timezone.localtime(start).date(),
+    ).prefetch_related("rooms")
+    if request.GET.get("category"):
+        cohort_query = cohort_query.filter(rooms__room_category=request.GET["category"])
+    if request.GET.get("room"):
+        cohort_query = cohort_query.filter(rooms__code=request.GET["room"])
+    if request.GET.get("building"):
+        cohort_query = cohort_query.filter(rooms__building=request.GET["building"])
+    for cohort in cohort_query.distinct():
+        event_start = timezone.make_aware(
+            datetime.combine(cohort.check_in_date, time.min),
+            timezone.get_current_timezone(),
+        )
+        event_end = timezone.make_aware(
+            datetime.combine(cohort.check_out_date + timedelta(days=1), time.min),
+            timezone.get_current_timezone(),
+        )
+        for room in cohort.rooms.all():
+            events.append(
+                {
+                    "id": f"cohort-{cohort.pk}-{room.pk}",
+                    "title": f"สงวนที่พักหลักสูตร — {room.code}",
+                    "start": event_start.isoformat(),
+                    "end": event_end.isoformat(),
+                    "url": reverse("bookings:lodging_portal", args=[cohort.slug]),
+                    "classNames": ["lodging-reserved"],
+                    "extendedProps": {
+                        "status": "lodging_reserved",
+                        "room": room.code,
+                        "cohort": str(cohort.pk),
+                    },
                 }
             )
 

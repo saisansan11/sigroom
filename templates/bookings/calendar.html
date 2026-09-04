@@ -21,6 +21,13 @@
   {% endfor %}
 </nav>
 
+{% if selected_category == 'lodging' %}
+  <div class="notice info" style="margin-top: var(--space-md);">
+    <strong>กำลังดูห้องพัก</strong> — นักเรียนที่มีลิงก์หลักสูตรสามารถเลือกเตียงได้จากหน้า
+    <a href="{% url 'bookings:lodging_index' %}">จองห้องพักหลักสูตร →</a>
+  </div>
+{% endif %}
+
 <section class="statusband" aria-label="สถานการณ์ขณะนี้">
   <article class="stat">
     <span class="stat-label">Mission Clock</span>
@@ -95,7 +102,7 @@
   <div class="board-head">
     <span class="hud-tag mono">Today</span>
     <h2>สถานการณ์ห้องวันนี้</h2>
-    <a href="{% url 'bookings:book_search' %}">จองช่วงที่ว่าง →</a>
+    {% if selected_category == 'lodging' %}<a href="{% url 'bookings:lodging_index' %}">เปิดรอบที่พัก →</a>{% else %}<a href="{% url 'bookings:book_search' %}">จองช่วงที่ว่าง →</a>{% endif %}
   </div>
   <div class="tl-scroll">
     <div class="tl-grid">

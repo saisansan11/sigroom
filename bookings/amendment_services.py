@@ -115,8 +115,22 @@ def _amendment_approver_users(room: Resource, now: datetime, *, include_backup=F
 
 
 def _create_amendment_holds(amendment: BookingAmendment, values: dict) -> list[BookingResource]:
+    resources = [values["room"], *values["equipment"]]
+    resource_ids = {resource.pk for resource in resources}
+    locked_resources = list(
+        Resource.objects.select_for_update().filter(pk__in=resource_ids).order_by("pk")
+    )
+    locked_by_id = {resource.pk: resource for resource in locked_resources}
+    if len(locked_by_id) != len(resource_ids):
+        raise ValidationError("ทรัพยากรที่เลือกไม่พบในระบบ")
+
+    from .lodging_services import cohort_conflict_for_resource
+
     holds = []
-    for resource in [values["room"], *values["equipment"]]:
+    for resource in resources:
+        resource = locked_by_id[resource.pk]
+        if cohort_conflict_for_resource(resource, values["start_at"], values["end_at"]):
+            raise BookingConflict(resource)
         try:
             with transaction.atomic():
                 holds.append(

@@ -108,6 +108,8 @@ def test_course_lodging_student_booking_flow(client, sample_data):
         check_in_date=date.today(),
         check_out_date=date.today() + timedelta(days=30),
         beds_per_room=4,
+        allocation_status=CourseLodgingCohort.AllocationStatus.ALLOCATED,
+        is_active=True,
     )
     cohort.rooms.add(sample_data["lodging1"], sample_data["lodging2"])
 
@@ -148,8 +150,9 @@ def test_course_lodging_student_booking_flow(client, sample_data):
         follow=True,
     )
     assert book2_resp.status_code == 200
-    # ต้องเห็นเพื่อนร่วมห้อง
-    assert "สมชาย ใจมั่น" in book2_resp.content.decode("utf-8")
+    # ต้องเห็นเพื่อนร่วมห้องแบบปกปิดข้อมูลส่วนบุคคล
+    assert "ส*** ใ***" in book2_resp.content.decode("utf-8")
+    assert "สมชาย ใจมั่น" not in book2_resp.content.decode("utf-8")
 
     # 4. หากมีคนพยายามจองเตียง 1 ซ้ำ ต้องถูกปฏิเสธ
     book_dup_resp = client.post(

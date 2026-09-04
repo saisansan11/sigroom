@@ -24,9 +24,12 @@ urlpatterns = [
     path("amendments/<uuid:id>/withdraw/", views.amendment_withdraw, name="amendment_withdraw"),
     path("preemptions/<uuid:id>/acknowledge/", views.preemption_acknowledge, name="preemption_acknowledge"),
     # ที่พักหลักสูตร
+    path("lodging/", lodging_views.lodging_index, name="lodging_index"),
     path("lodging/manage/", lodging_views.lodging_manage, name="lodging_manage"),
     path("lodging/cohorts/<slug:slug>/", lodging_views.lodging_cohort_detail, name="lodging_cohort_detail"),
+    path("lodging/cohorts/<slug:slug>/edit/", lodging_views.lodging_cohort_edit, name="lodging_cohort_edit"),
     path("lodging/cohorts/<slug:slug>/export/", lodging_views.lodging_cohort_export_csv, name="lodging_cohort_export_csv"),
+    path("lodging/cohorts/<slug:slug>/qr.svg", lodging_views.lodging_cohort_qr_svg, name="lodging_cohort_qr_svg"),
     path("lodging/c/<slug:slug>/", lodging_views.lodging_portal, name="lodging_portal"),
     path("lodging/c/<slug:slug>/book/", lodging_views.lodging_book_bed, name="lodging_book_bed"),
     path("lodging/c/<slug:slug>/pass/<uuid:student_id>/", lodging_views.lodging_pass, name="lodging_pass"),

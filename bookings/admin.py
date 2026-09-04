@@ -1,4 +1,7 @@
 from django.contrib import admin
+from django import forms
+from django.contrib import messages
+from django.core.exceptions import PermissionDenied, ValidationError
 from .models import (
     Booking,
     BookingAmendment,
@@ -10,6 +13,28 @@ from .models import (
     ReferenceValue,
     SeriesSkip,
 )
+from .lodging_services import update_cohort_allocation
+
+
+class CourseLodgingCohortAdminForm(forms.ModelForm):
+    class Meta:
+        model = CourseLodgingCohort
+        fields = "__all__"
+
+    def clean(self):
+        cleaned = super().clean()
+        rooms = list(cleaned.get("rooms") or [])
+        status = cleaned.get("allocation_status")
+        is_active = cleaned.get("is_active")
+        check_in = cleaned.get("check_in_date")
+        check_out = cleaned.get("check_out_date")
+        if check_in and check_out and check_out < check_in:
+            self.add_error("check_out_date", "วันที่สิ้นสุดการเข้าพักต้องไม่ก่อนวันที่เริ่มเข้าพัก")
+        if status == CourseLodgingCohort.AllocationStatus.ALLOCATED and not rooms:
+            self.add_error("rooms", "สถานะจัดสรรห้องพักต้องมีห้องอย่างน้อย 1 ห้อง")
+        if status == CourseLodgingCohort.AllocationStatus.RELEASED and is_active:
+            self.add_error("is_active", "รอบที่ปลดการสงวนห้องแล้วต้องไม่เปิดรับจอง")
+        return cleaned
 
 
 class BookingResourceInline(admin.TabularInline):
@@ -114,12 +139,38 @@ class CourseStudentLodgingInline(admin.TabularInline):
 
 @admin.register(CourseLodgingCohort)
 class CourseLodgingCohortAdmin(admin.ModelAdmin):
-    list_display = ("title", "slug", "supervisor", "unit", "check_in_date", "check_out_date", "beds_per_room", "is_active", "created_at")
-    list_filter = ("is_active", "unit", "check_in_date")
+    form = CourseLodgingCohortAdminForm
+    list_display = ("title", "slug", "supervisor", "unit", "check_in_date", "check_out_date", "beds_per_room", "allocation_status", "is_active", "created_at")
+    list_filter = ("allocation_status", "is_active", "unit", "check_in_date")
     search_fields = ("title", "slug", "supervisor__username")
     prepopulated_fields = {"slug": ("title",)}
     filter_horizontal = ("rooms",)
     inlines = [CourseStudentLodgingInline]
+
+    def save_model(self, request, obj, form, change):
+        try:
+            update_cohort_allocation(
+                cohort=obj,
+                rooms=form.cleaned_data.get("rooms", []),
+                check_in_date=form.cleaned_data["check_in_date"],
+                check_out_date=form.cleaned_data["check_out_date"],
+                allocation_status=form.cleaned_data["allocation_status"],
+                is_active=form.cleaned_data["is_active"],
+                beds_per_room=form.cleaned_data["beds_per_room"],
+                supervisor=form.cleaned_data.get("supervisor"),
+                title=form.cleaned_data.get("title"),
+                note=form.cleaned_data.get("note"),
+                actor=request.user,
+            )
+        except (ValidationError, PermissionDenied) as exc:
+            obj._lodging_save_failed = True
+            messages.error(request, f"ไม่สามารถบันทึกรอบที่พักได้: {exc}")
+
+    def save_related(self, request, form, formsets, change):
+        if getattr(form.instance, "_lodging_save_failed", False):
+            return
+        for formset in formsets:
+            self.save_formset(request, form, formset, change=change)
 
 
 @admin.register(CourseStudentLodging)

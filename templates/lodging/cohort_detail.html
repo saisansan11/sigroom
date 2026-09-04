@@ -27,8 +27,13 @@
     <a role="button" class="secondary" href="{{ share_url }}" target="_blank">
       ทดลองเปิดดูหน้านักเรียน ↗
     </a>
+    <a role="button" class="secondary" href="{{ line_share_url }}" target="_blank">แชร์ผ่าน LINE ↗</a>
+    <a role="button" class="secondary" href="{{ qr_url }}" target="_blank">เปิด QR Code</a>
+    <a role="button" class="secondary" href="{% url 'bookings:lodging_cohort_edit' cohort.slug %}">แก้ไขรอบ</a>
   </div>
 </div>
+
+<p class="stat-detail">สถานะการจัดสรร: <strong>{{ cohort.get_allocation_status_display }}</strong> · รับจองผ่านเว็บ: <strong>{% if cohort.is_active %}เปิด{% else %}ปิด{% endif %}</strong></p>
 
 <div class="statusband" style="margin-bottom: var(--space-xl);">
   <article class="stat">

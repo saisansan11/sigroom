@@ -1,12 +1,22 @@
 import uuid
 from django.conf import settings
+from django.core.exceptions import ValidationError
 from django.db import models
 from django.urls import reverse
 from resources.models import Resource
 
 
+def _normalize_phone(raw_phone: str) -> str:
+    """เก็บเบอร์โทรเป็นตัวเลขล้วน เพื่อให้การตรวจซ้ำมีความหมายเดียวกันทุกช่องทาง"""
+    return "".join(character for character in (raw_phone or "") if character.isdigit())
+
+
 class CourseLodgingCohort(models.Model):
     """รอบการเปิดให้นักเรียนหลักสูตรจองห้องพักด้วยตนเองผ่านลิงก์"""
+
+    class AllocationStatus(models.TextChoices):
+        ALLOCATED = "allocated", "จัดสรรห้องพัก (สงวนห้อง)"
+        RELEASED = "released", "ปลดการสงวนห้อง (ยังไม่จัดสรร/เสร็จสิ้น)"
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     title = models.CharField("ชื่อหลักสูตร/รุ่น", max_length=200, help_text="เช่น หลักสูตรชั้นนายร้อย เหล่า ส. รุ่นที่ 70")
@@ -33,7 +43,13 @@ class CourseLodgingCohort(models.Model):
         limit_choices_to={"resource_type": Resource.Type.ROOM, "room_category": Resource.Category.LODGING},
     )
     beds_per_room = models.PositiveIntegerField("จำนวนคน/เตียงต่อห้อง", default=4)
-    is_active = models.BooleanField("เปิดรับการจอง", default=True)
+    allocation_status = models.CharField(
+        "สถานะการจัดสรรห้องพัก",
+        max_length=20,
+        choices=AllocationStatus.choices,
+        default=AllocationStatus.RELEASED,
+    )
+    is_active = models.BooleanField("เปิดรับการจอง", default=False)
     note = models.TextField("คำชี้แจง/ข้อปฏิบัติในการเข้าพัก", blank=True)
     created_at = models.DateTimeField("สร้างเมื่อ", auto_now_add=True)
 
@@ -41,6 +57,16 @@ class CourseLodgingCohort(models.Model):
         verbose_name = "รอบจองที่พักหลักสูตร"
         verbose_name_plural = "รอบจองที่พักหลักสูตร"
         ordering = ["-created_at"]
+        constraints = [
+            models.CheckConstraint(
+                condition=~models.Q(allocation_status="released", is_active=True),
+                name="check_released_cohort_cannot_be_active",
+            ),
+            models.CheckConstraint(
+                condition=models.Q(check_out_date__gte=models.F("check_in_date")),
+                name="check_cohort_checkout_after_checkin",
+            ),
+        ]
 
     def __str__(self):
         return f"{self.title} ({self.slug})"
@@ -56,6 +82,18 @@ class CourseLodgingCohort(models.Model):
 
     def remaining_slots(self):
         return max(0, self.total_capacity() - self.booked_count())
+
+    def clean(self):
+        super().clean()
+        errors = {}
+        if self.check_in_date and self.check_out_date and self.check_out_date < self.check_in_date:
+            errors["check_out_date"] = "วันที่สิ้นสุดการเข้าพักต้องไม่ก่อนวันที่เริ่มเข้าพัก"
+        if self.beds_per_room is not None and self.beds_per_room < 1:
+            errors["beds_per_room"] = "จำนวนเตียงต่อห้องต้องอย่างน้อย 1"
+        if self.allocation_status == self.AllocationStatus.RELEASED and self.is_active:
+            errors["is_active"] = "รอบที่ปลดการสงวนห้องแล้วต้องไม่เปิดรับจอง"
+        if errors:
+            raise ValidationError(errors)
 
 
 class CourseStudentLodging(models.Model):
@@ -98,6 +136,31 @@ class CourseStudentLodging(models.Model):
                 name="unique_cohort_student_phone",
             ),
         ]
+
+    def clean(self):
+        super().clean()
+        errors = {}
+        if self.cohort_id and self.room_id:
+            try:
+                cohort = CourseLodgingCohort.objects.get(pk=self.cohort_id)
+            except CourseLodgingCohort.DoesNotExist:
+                errors["cohort"] = "ไม่พบรอบหลักสูตรที่เลือก"
+                cohort = None
+            if cohort is None:
+                raise ValidationError(errors)
+            if not cohort.rooms.filter(pk=self.room_id).exists():
+                errors["room"] = "ห้องนี้ไม่ได้อยู่ในรายการห้องของรอบหลักสูตร"
+            if self.bed_number and self.bed_number > cohort.beds_per_room:
+                errors["bed_number"] = f"หมายเลขเตียงต้องไม่เกิน {cohort.beds_per_room}"
+        if errors:
+            raise ValidationError(errors)
+
+    def save(self, *args, **kwargs):
+        self.phone = _normalize_phone(self.phone)
+        if not self.phone:
+            raise ValidationError("กรุณาระบุเบอร์โทรศัพท์ที่ถูกต้อง")
+        self.full_clean()
+        return super().save(*args, **kwargs)
 
     def __str__(self):
         return f"{self.rank} {self.full_name} ({self.room.code} เตียง {self.bed_number})"

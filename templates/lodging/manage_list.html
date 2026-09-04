@@ -32,11 +32,12 @@
               <small class="mono" style="color: var(--cyan);">/lodging/c/{{ c.slug }}/</small>
             </div>
             <div>
-              {% if c.is_active %}
-                <span class="hud-tag" style="background: oklch(.76 .14 156 / .2); color: var(--green);">เปิดรับจอง</span>
+              {% if c.allocation_status == 'allocated' %}
+                <span class="hud-tag" style="background: oklch(.76 .14 156 / .2); color: var(--green);">จัดสรรแล้ว</span>
               {% else %}
-                <span class="hud-tag" style="background: var(--surface-soft); color: var(--muted);">ปิดรับจอง</span>
+                <span class="hud-tag" style="background: var(--surface-soft); color: var(--muted);">ปลดการสงวน</span>
               {% endif %}
+              {% if c.is_active %}<span class="hud-tag" style="background: oklch(.76 .14 156 / .2); color: var(--green);">เปิดรับจอง</span>{% else %}<span class="hud-tag" style="background: var(--surface-soft); color: var(--muted);">ปิดรับจอง</span>{% endif %}
             </div>
           </div>
           <p style="margin: var(--space-sm) 0; font-size: .9rem;">
@@ -45,6 +46,7 @@
           </p>
           <div style="display: flex; gap: var(--space-sm); align-items: center; flex-wrap: wrap;">
             <a role="button" class="btn-primary" href="{% url 'bookings:lodging_cohort_detail' c.slug %}">ดูรายชื่อนักเรียน →</a>
+            <a role="button" class="secondary" href="{% url 'bookings:lodging_cohort_edit' c.slug %}">แก้ไข</a>
             <a role="button" class="secondary" href="{% url 'bookings:lodging_portal' c.slug %}" target="_blank">เปิดหน้านักเรียน ↗</a>
           </div>
         </article>

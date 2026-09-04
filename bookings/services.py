@@ -62,8 +62,22 @@ def place_holds(booking: Booking, equipment: list[Resource] | None = None) -> li
     ถ้าชน ฐานข้อมูลจะโยน IntegrityError จาก excl_overlapping_holds → แปลงเป็น BookingConflict
     ใช้ savepoint ต่อทรัพยากร เพื่อบอกได้ว่าชนที่ไหน (FR-06)
     """
+    resources = _resources_for(booking, equipment or [])
+    resource_ids = {resource.pk for resource in resources}
+    locked_resources = list(
+        Resource.objects.select_for_update().filter(pk__in=resource_ids).order_by("pk")
+    )
+    locked_by_id = {resource.pk: resource for resource in locked_resources}
+    if len(locked_by_id) != len(resource_ids):
+        raise ValidationError("ทรัพยากรที่เลือกไม่พบในระบบ")
+
     holds: list[BookingResource] = []
-    for resource in _resources_for(booking, equipment or []):
+    for resource in resources:
+        resource = locked_by_id[resource.pk]
+        from .lodging_services import cohort_conflict_for_resource
+
+        if cohort_conflict_for_resource(resource, booking.start_at, booking.end_at):
+            raise BookingConflict(resource)
         hold = compute_hold(resource, booking.start_at, booking.end_at)
         try:
             with transaction.atomic():
@@ -122,6 +136,11 @@ def validate_booking_window(
         errors.append("เวลาเริ่มต้องไม่อยู่ในอดีต")
     if any(value.second or value.microsecond or value.minute % 15 for value in (start, end)):
         errors.append("เวลาเริ่มและสิ้นสุดต้องตรงช่วงละ 15 นาที")
+
+    from .lodging_services import cohort_conflict_for_resource
+
+    if cohort_conflict_for_resource(resource, start, end):
+        errors.append("ห้องพักถูกสงวนไว้สำหรับรอบหลักสูตรในช่วงวันที่เลือก")
 
     if not rule:
         return errors

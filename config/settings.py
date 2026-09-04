@@ -16,6 +16,7 @@ load_dotenv(BASE_DIR / ".env")
 # --- พื้นฐาน ---------------------------------------------------------------
 SITE_NAME = "SIGROOM"
 SITE_NAME_TH = "ระบบจองห้อง รร.ส.สส."
+PUBLIC_BASE_URL = os.environ.get("PUBLIC_BASE_URL", "").strip().rstrip("/")
 SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY", "dev-only-change-me")
 DEBUG = os.environ.get("DJANGO_DEBUG", "0") == "1"
 ALLOWED_HOSTS = [h for h in os.environ.get("DJANGO_ALLOWED_HOSTS", "127.0.0.1,localhost").split(",") if h]

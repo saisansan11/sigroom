@@ -2,6 +2,7 @@ import csv
 from datetime import datetime
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from django.core.exceptions import PermissionDenied, ValidationError
 from django.db import IntegrityError, transaction
 from django.http import Http404, HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
@@ -11,6 +12,26 @@ from django.views.decorators.http import require_POST
 
 from resources.models import Resource
 from .lodging_models import CourseLodgingCohort, CourseStudentLodging
+from .lodging_services import (
+    can_create_cohort,
+    can_manage_cohort,
+    generate_cohort_qr_svg,
+    generate_line_share_url,
+    get_canonical_public_url,
+    normalize_phone,
+    update_cohort_allocation,
+)
+
+
+def _masked_name(full_name: str) -> str:
+    return " ".join(
+        f"{part[:1]}***" if part else part
+        for part in (full_name or "").split()
+    )
+
+
+def _masked_student_label(student: CourseStudentLodging) -> str:
+    return f"{student.rank} {_masked_name(student.full_name)}".strip()
 
 
 def lodging_portal(request, slug):
@@ -18,6 +39,7 @@ def lodging_portal(request, slug):
     cohort = get_object_or_404(
         CourseLodgingCohort.objects.prefetch_related("rooms"),
         slug=slug,
+        allocation_status=CourseLodgingCohort.AllocationStatus.ALLOCATED,
         is_active=True,
     )
     students = CourseStudentLodging.objects.filter(cohort=cohort).select_related("room")
@@ -42,7 +64,8 @@ def lodging_portal(request, slug):
                 beds.append({
                     "number": b_num,
                     "is_occupied": True,
-                    "student": student,
+                    "student": None,
+                    "occupant_label": "มีผู้จองแล้ว",
                 })
             else:
                 beds.append({
@@ -71,13 +94,18 @@ def lodging_portal(request, slug):
 @require_POST
 def lodging_book_bed(request, slug):
     """ส่งข้อมูลจองเตียงในห้องพัก (atomic transaction กันชนเตียงเดียวกัน)"""
-    cohort = get_object_or_404(CourseLodgingCohort, slug=slug, is_active=True)
+    cohort = get_object_or_404(
+        CourseLodgingCohort,
+        slug=slug,
+        allocation_status=CourseLodgingCohort.AllocationStatus.ALLOCATED,
+        is_active=True,
+    )
     room_id = request.POST.get("room_id")
     bed_number_raw = request.POST.get("bed_number")
     rank = request.POST.get("rank", "").strip()
     full_name = request.POST.get("full_name", "").strip()
     origin_unit = request.POST.get("origin_unit", "").strip()
-    phone = request.POST.get("phone", "").strip()
+    phone = normalize_phone(request.POST.get("phone", ""))
     note = request.POST.get("note", "").strip()
 
     if not all([room_id, bed_number_raw, rank, full_name, origin_unit, phone]):
@@ -92,10 +120,11 @@ def lodging_book_bed(request, slug):
         messages.error(request, "หมายเลขเตียงไม่ถูกต้อง")
         return redirect("bookings:lodging_portal", slug=slug)
 
-    room = get_object_or_404(cohort.rooms, pk=room_id)
-
     try:
         with transaction.atomic():
+            cohort = CourseLodgingCohort.objects.select_for_update().get(pk=cohort.pk)
+            room = get_object_or_404(cohort.rooms.all(), pk=room_id)
+            Resource.objects.select_for_update().get(pk=room.pk)
             # ตรวจสอบว่าเตียงนี้ในห้องนี้มีผู้จองแล้วหรือไม่
             existing_bed = CourseStudentLodging.objects.filter(
                 cohort=cohort, room=room, bed_number=bed_number
@@ -104,13 +133,10 @@ def lodging_book_bed(request, slug):
                 messages.error(request, f"ขออภัย ห้อง {room.code} เตียง {bed_number} มีเพื่อนร่วมรุ่นเพิ่งจองไปแล้ว กรุณาเลือกเตียงอื่น")
                 return redirect("bookings:lodging_portal", slug=slug)
 
-            # ตรวจสอบว่าเบอร์โทรนี้เคยจองไปแล้วหรือไม่
-            existing_student = CourseStudentLodging.objects.filter(
-                cohort=cohort, phone=phone
-            ).first()
-            if existing_student:
-                messages.warning(request, f"หมายเลขโทรศัพท์ {phone} ได้ลงทะเบียนไว้แล้วที่ห้อง {existing_student.room.code} เตียง {existing_student.bed_number}")
-                return redirect("bookings:lodging_pass", slug=slug, student_id=existing_student.id)
+            # ตรวจสอบซ้ำโดยไม่เปิดเผยห้อง/เตียงเดิมต่อผู้ส่งคำขอ
+            if CourseStudentLodging.objects.filter(cohort=cohort, phone=phone).exists():
+                messages.warning(request, "เบอร์โทรศัพท์นี้ลงทะเบียนในรอบนี้แล้ว กรุณาตรวจสอบข้อมูลเดิมหรือติดต่อผู้กำกับหลักสูตร")
+                return redirect("bookings:lodging_portal", slug=slug)
 
             student = CourseStudentLodging.objects.create(
                 cohort=cohort,
@@ -122,7 +148,7 @@ def lodging_book_bed(request, slug):
                 phone=phone,
                 note=note,
             )
-    except IntegrityError:
+    except (IntegrityError, ValidationError):
         messages.error(request, "เกิดข้อผิดพลาดในการบันทึก หรือเตียงนี้มีผู้จองแล้ว กรุณาลองใหม่อีกครั้ง")
         return redirect("bookings:lodging_portal", slug=slug)
 
@@ -137,8 +163,10 @@ def lodging_pass(request, slug, student_id):
     roommates = CourseStudentLodging.objects.filter(
         cohort=cohort, room=student.room
     ).exclude(pk=student.pk).order_by("bed_number")
+    for roommate in roommates:
+        roommate.masked_label = _masked_student_label(roommate)
 
-    return render(
+    response = render(
         request,
         "lodging/student_pass.html",
         {
@@ -147,12 +175,29 @@ def lodging_pass(request, slug, student_id):
             "roommates": roommates,
         },
     )
+    response["Cache-Control"] = "no-store"
+    response["X-Content-Type-Options"] = "nosniff"
+    response["X-Robots-Tag"] = "noindex, nofollow"
+    return response
+
+
+def lodging_index(request):
+    """หน้ารวมลิงก์รอบที่พักที่กำลังเปิดรับจองสำหรับนักเรียน"""
+    cohorts = CourseLodgingCohort.objects.filter(
+        allocation_status=CourseLodgingCohort.AllocationStatus.ALLOCATED,
+        is_active=True,
+    ).prefetch_related("rooms").order_by("check_in_date", "title")
+    return render(request, "lodging/lodging_index.html", {"cohorts": cohorts})
 
 
 @login_required
 def lodging_manage(request):
     """หน้าสำหรับผู้กำกับหลักสูตร: ดูและสร้างรอบการจองที่พัก"""
+    if not can_create_cohort(request.user):
+        raise PermissionDenied("คุณไม่มีสิทธิ์จัดการรอบที่พัก")
     cohorts = CourseLodgingCohort.objects.all().prefetch_related("rooms", "students")
+    if not (request.user.is_superuser or request.user.is_staff):
+        cohorts = cohorts.filter(supervisor=request.user)
     lodging_rooms = Resource.objects.filter(
         resource_type=Resource.Type.ROOM,
         room_category=Resource.Category.LODGING,
@@ -178,7 +223,7 @@ def lodging_manage(request):
                 if CourseLodgingCohort.objects.filter(slug=slug).exists():
                     messages.error(request, f"รหัสลิงก์ '{slug}' มีอยู่ในระบบแล้ว กรุณาตั้งรหัสอื่น")
                 else:
-                    cohort = CourseLodgingCohort.objects.create(
+                    cohort = CourseLodgingCohort(
                         title=title,
                         slug=slug,
                         supervisor=request.user,
@@ -188,10 +233,27 @@ def lodging_manage(request):
                         beds_per_room=beds_per_room,
                         note=note,
                     )
-                    cohort.rooms.set(Resource.objects.filter(id__in=room_ids))
+                    update_cohort_allocation(
+                        cohort=cohort,
+                        rooms=Resource.objects.filter(
+                            id__in=room_ids,
+                            resource_type=Resource.Type.ROOM,
+                            room_category=Resource.Category.LODGING,
+                            status=Resource.Status.ACTIVE,
+                        ),
+                        check_in_date=check_in_date,
+                        check_out_date=check_out_date,
+                        allocation_status=CourseLodgingCohort.AllocationStatus.ALLOCATED,
+                        is_active=True,
+                        beds_per_room=beds_per_room,
+                        supervisor=request.user,
+                        title=title,
+                        note=note,
+                        actor=request.user,
+                    )
                     messages.success(request, f"สร้างรอบจอง '{title}' เรียบร้อยแล้ว สามารถคัดลอกลิงก์ส่งให้นักเรียนได้ทันที")
                     return redirect("bookings:lodging_cohort_detail", slug=cohort.slug)
-            except Exception as e:
+            except (ValueError, ValidationError, IntegrityError, PermissionDenied) as e:
                 messages.error(request, f"เกิดข้อผิดพลาด: {e}")
 
     return render(
@@ -208,6 +270,8 @@ def lodging_manage(request):
 def lodging_cohort_detail(request, slug):
     """ดูรายละเอียดและรายชื่อนักเรียนในรอบหลักสูตร"""
     cohort = get_object_or_404(CourseLodgingCohort.objects.prefetch_related("rooms"), slug=slug)
+    if not can_manage_cohort(request.user, cohort):
+        raise PermissionDenied("คุณไม่มีสิทธิ์ดูข้อมูลผู้เข้าพักของรุ่นนี้")
     students = CourseStudentLodging.objects.filter(cohort=cohort).select_related("room").order_by("room__code", "bed_number")
 
     students_by_room = {}
@@ -224,7 +288,8 @@ def lodging_cohort_detail(request, slug):
             "free": cohort.beds_per_room - len(room_students),
         })
 
-    share_url = request.build_absolute_uri(reverse("bookings:lodging_portal", args=[cohort.slug]))
+    share_path = reverse("bookings:lodging_portal", args=[cohort.slug])
+    share_url = get_canonical_public_url(request, share_path)
 
     return render(
         request,
@@ -234,14 +299,90 @@ def lodging_cohort_detail(request, slug):
             "students": students,
             "rooms_summary": rooms_summary,
             "share_url": share_url,
+            "line_share_url": generate_line_share_url(cohort.title, share_url),
+            "qr_url": reverse("bookings:lodging_cohort_qr_svg", args=[cohort.slug]),
         },
     )
+
+
+@login_required
+def lodging_cohort_edit(request, slug):
+    cohort = get_object_or_404(CourseLodgingCohort, slug=slug)
+    if not can_manage_cohort(request.user, cohort):
+        raise PermissionDenied("คุณไม่มีสิทธิ์แก้ไขรอบที่พักนี้")
+    lodging_rooms = Resource.objects.filter(
+        resource_type=Resource.Type.ROOM,
+        room_category=Resource.Category.LODGING,
+        status=Resource.Status.ACTIVE,
+    ).order_by("building", "code")
+
+    if request.method == "POST":
+        title = request.POST.get("title", "").strip()
+        check_in_raw = request.POST.get("check_in_date", "")
+        check_out_raw = request.POST.get("check_out_date", "")
+        beds_per_room_raw = request.POST.get("beds_per_room", "")
+        room_ids = request.POST.getlist("rooms")
+        allocation_status = request.POST.get(
+            "allocation_status", CourseLodgingCohort.AllocationStatus.RELEASED
+        )
+        is_active = bool(request.POST.get("is_active"))
+        note = request.POST.get("note", "").strip()
+        force_release = bool(request.POST.get("force_release"))
+        release_reason = request.POST.get("release_reason", "").strip()
+        try:
+            check_in_date = datetime.strptime(check_in_raw, "%Y-%m-%d").date()
+            check_out_date = datetime.strptime(check_out_raw, "%Y-%m-%d").date()
+            beds_per_room = int(beds_per_room_raw)
+            updated = update_cohort_allocation(
+                cohort=cohort,
+                rooms=lodging_rooms.filter(pk__in=room_ids),
+                check_in_date=check_in_date,
+                check_out_date=check_out_date,
+                allocation_status=allocation_status,
+                is_active=is_active,
+                beds_per_room=beds_per_room,
+                supervisor=cohort.supervisor,
+                title=title,
+                note=note,
+                actor=request.user,
+                force_release=force_release,
+                release_reason=release_reason,
+            )
+            messages.success(request, f"บันทึกการเปลี่ยนแปลงรอบ '{updated.title}' แล้ว")
+            return redirect("bookings:lodging_cohort_detail", slug=updated.slug)
+        except (ValueError, ValidationError, IntegrityError, PermissionDenied) as exc:
+            messages.error(request, f"ไม่สามารถบันทึกการเปลี่ยนแปลงได้: {exc}")
+
+    return render(
+        request,
+        "lodging/cohort_edit.html",
+        {
+            "cohort": cohort,
+            "lodging_rooms": lodging_rooms,
+            "status_choices": CourseLodgingCohort.AllocationStatus.choices,
+        },
+    )
+
+
+@login_required
+def lodging_cohort_qr_svg(request, slug):
+    cohort = get_object_or_404(CourseLodgingCohort, slug=slug)
+    if not can_manage_cohort(request.user, cohort):
+        raise PermissionDenied("คุณไม่มีสิทธิ์สร้าง QR ของรุ่นนี้")
+    path = reverse("bookings:lodging_portal", args=[cohort.slug])
+    url = get_canonical_public_url(request, path)
+    response = HttpResponse(generate_cohort_qr_svg(url), content_type="image/svg+xml")
+    response["Content-Disposition"] = f'inline; filename="lodging_{cohort.slug}.svg"'
+    response["X-Content-Type-Options"] = "nosniff"
+    return response
 
 
 @login_required
 def lodging_cohort_export_csv(request, slug):
     """ส่งออกรายชื่อผู้พักในหลักสูตรเป็นไฟล์ CSV (UTF-8 BOM สำหรับ Excel)"""
     cohort = get_object_or_404(CourseLodgingCohort, slug=slug)
+    if not can_manage_cohort(request.user, cohort):
+        raise PermissionDenied("คุณไม่มีสิทธิ์ส่งออกข้อมูลผู้เข้าพักของรุ่นนี้")
     students = CourseStudentLodging.objects.filter(cohort=cohort).select_related("room").order_by("room__code", "bed_number")
 
     response = HttpResponse(content_type="text/csv; charset=utf-8-sig")

@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% load thaidate %}
+
+{% block title %}จองห้องพักหลักสูตร · SIGROOM{% endblock %}
+
+{% block content %}
+<div class="page-heading">
+  <div>
+    <p class="eyebrow">ที่พักหลักสูตร</p>
+    <h1>เลือกรอบหลักสูตรเพื่อจองห้องพัก</h1>
+    <p>เปิดลิงก์ของรุ่นที่ได้รับจากผู้กำกับหลักสูตร แล้วเลือกห้องและเตียงที่ว่าง</p>
+  </div>
+  {% if nav_can_manage_lodging %}<a role="button" class="secondary" href="{% url 'bookings:lodging_manage' %}">จัดการรอบหลักสูตร →</a>{% endif %}
+</div>
+
+<div class="rooms-grid">
+  {% for cohort in cohorts %}
+    <article class="detail-card" style="margin: 0;">
+      <span class="hud-tag" style="background: oklch(.76 .14 156 / .2); color: var(--green);">เปิดรับจอง</span>
+      <h2 style="margin-top: var(--space-sm);"><a href="{% url 'bookings:lodging_portal' cohort.slug %}">{{ cohort.title }}</a></h2>
+      <p>เข้าพัก {{ cohort.check_in_date|thai_date }} – {{ cohort.check_out_date|thai_date }}</p>
+      <p class="stat-detail">ว่าง {{ cohort.remaining_slots }} จาก {{ cohort.total_capacity }} ที่พัก</p>
+      <a role="button" class="btn-primary" href="{% url 'bookings:lodging_portal' cohort.slug %}">เลือกห้องพัก →</a>
+    </article>
+  {% empty %}
+    <div class="notice info">ขณะนี้ยังไม่มีรอบหลักสูตรที่เปิดรับจอง กรุณาขอลิงก์จากผู้กำกับหลักสูตร</div>
+  {% endfor %}
+</div>
+{% endblock %}

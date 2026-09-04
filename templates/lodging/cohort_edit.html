@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% load thaidate %}
+
+{% block title %}แก้ไข {{ cohort.title }} · SIGROOM{% endblock %}
+
+{% block content %}
+<div class="page-heading">
+  <div>
+    <p class="eyebrow"><a href="{% url 'bookings:lodging_cohort_detail' cohort.slug %}">← กลับรายละเอียด</a></p>
+    <h1>แก้ไขรอบที่พัก</h1>
+    <p>{{ cohort.title }}</p>
+  </div>
+</div>
+
+<article class="detail-card" style="max-width: 52rem;">
+  <form method="post">
+    {% csrf_token %}
+    <label>ชื่อหลักสูตร / รุ่น
+      <input name="title" value="{{ cohort.title }}" required maxlength="200">
+    </label>
+    <div class="grid" style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-sm);">
+      <label>วันที่เริ่มเข้าพัก<input type="date" name="check_in_date" value="{{ cohort.check_in_date|date:'Y-m-d' }}" required></label>
+      <label>วันที่สิ้นสุดการเข้าพัก<input type="date" name="check_out_date" value="{{ cohort.check_out_date|date:'Y-m-d' }}" required></label>
+    </div>
+    <label>สถานะการจัดสรรห้องพัก
+      <select name="allocation_status">
+        {% for value, label in status_choices %}<option value="{{ value }}" {% if cohort.allocation_status == value %}selected{% endif %}>{{ label }}</option>{% endfor %}
+      </select>
+    </label>
+    <label>จำนวนคน/เตียงต่อห้อง
+      <input type="number" name="beds_per_room" min="1" max="12" value="{{ cohort.beds_per_room }}" required>
+    </label>
+    <label style="display:flex;align-items:center;gap:var(--space-xs);">
+      <input type="checkbox" name="is_active" value="1" {% if cohort.is_active %}checked{% endif %}>
+      เปิดให้นักเรียนจองผ่านลิงก์
+    </label>
+    <label>ห้องพักที่จัดสรรในรอบนี้
+      <div style="max-height:16rem;overflow-y:auto;padding:var(--space-sm);border:1px solid var(--line);border-radius:var(--radius-sm);">
+        {% for room in lodging_rooms %}
+          <label style="display:flex;align-items:center;gap:var(--space-xs);margin-bottom:var(--space-2xs);">
+            <input type="checkbox" name="rooms" value="{{ room.pk }}" {% if room in cohort.rooms.all %}checked{% endif %}>
+            <strong>{{ room.code }}</strong> {{ room.name }}
+          </label>
+        {% empty %}<small style="color:var(--amber);">ยังไม่มีห้องพักที่เปิดใช้งาน</small>{% endfor %}
+      </div>
+    </label>
+    <label>คำชี้แจง / ระเบียบการเข้าพัก<textarea name="note" rows="3">{{ cohort.note }}</textarea></label>
+    {% if user.is_superuser %}
+      <fieldset style="margin-top:var(--space-md);">
+        <legend>การดำเนินการพิเศษ</legend>
+        <label style="display:flex;align-items:center;gap:var(--space-xs);"><input type="checkbox" name="force_release" value="1"> บังคับปลดการสงวนหรือร่นวันสิ้นสุด</label>
+        <label>เหตุผล (จำเป็นเมื่อใช้การดำเนินการพิเศษ)<input name="release_reason" maxlength="500"></label>
+      </fieldset>
+    {% endif %}
+    <div style="display:flex;gap:var(--space-sm);justify-content:flex-end;margin-top:var(--space-md);">
+      <a role="button" class="secondary" href="{% url 'bookings:lodging_cohort_detail' cohort.slug %}">ยกเลิก</a>
+      <button type="submit" class="btn-primary">บันทึกการเปลี่ยนแปลง</button>
+    </div>
+  </form>
+</article>
+{% endblock %}

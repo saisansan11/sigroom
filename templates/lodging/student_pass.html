@@ -25,10 +25,6 @@
       <td>{{ student.origin_unit }}</td>
     </tr>
     <tr>
-      <td>เบอร์ติดต่อ</td>
-      <td>{{ student.phone }}</td>
-    </tr>
-    <tr>
       <td>อาคาร/ที่ตั้ง</td>
       <td>{{ student.room.building }} {% if student.room.floor %}ชั้น {{ student.room.floor }}{% endif %}</td>
     </tr>
@@ -40,12 +36,6 @@
       <td>เวลาที่ลงทะเบียน</td>
       <td>{{ student.booked_at|thai_datetime }}</td>
     </tr>
-    {% if student.note %}
-    <tr>
-      <td>หมายเหตุ</td>
-      <td>{{ student.note }}</td>
-    </tr>
-    {% endif %}
   </table>
 
   {% if roommates %}
@@ -53,7 +43,7 @@
       <small style="color: var(--muted); display: block; margin-bottom: var(--space-2xs);">เพื่อนร่วมห้องปัจจุบัน:</small>
       <ul style="margin: 0; padding-left: 1.2rem; font-size: .85rem;">
         {% for mate in roommates %}
-          <li>เตียง {{ mate.bed_number }}: {{ mate.rank }} {{ mate.full_name }} ({{ mate.origin_unit }})</li>
+          <li>เตียง {{ mate.bed_number }}: {{ mate.masked_label }}</li>
         {% endfor %}
       </ul>
     </div>

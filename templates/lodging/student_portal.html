@@ -67,8 +67,7 @@
               <div>
                 <strong>เตียง {{ bed.number }}:</strong>
                 {% if bed.is_occupied %}
-                  <span class="bed-occupant-name">{{ bed.student.rank }} {{ bed.student.full_name }}</span>
-                  <span class="bed-occupant-unit">({{ bed.student.origin_unit }})</span>
+                  <span class="bed-occupant-name">มีผู้จองแล้ว</span>
                 {% else %}
                   <span style="color: var(--green);">ว่าง</span>
                 {% endif %}
