@@ -1,4 +1,5 @@
 from datetime import datetime, time, timedelta
+from urllib.parse import urlencode
 
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
@@ -20,6 +21,7 @@ from usage.services import can_manage_usage, recent_bookings_for
 
 from .amendment_services import amendment_ref, evaluate_amendment_policy, submit_amendment, withdraw_amendment
 from .forms import AmendmentForm, BookingForm, BuddhistDateField, PreemptionForm, time_choices
+from .lodging_models import CourseLodgingCohort
 from .models import Booking, BookingAmendment, BookingSeries, Preemption
 from .preemption_services import acknowledge, can_preempt, execute_preemption, replacement_options
 from .series_services import cancel_remaining, create_series, preview_series, series_ref
@@ -29,6 +31,7 @@ from .services import (
     can_view_details,
     cancel_booking,
     editable_fields,
+    find_available_now,
     find_available_rooms,
     self_service_message,
     submit_booking,
@@ -86,8 +89,6 @@ def _today_board(request, rooms, now):
     )
     for booking in todays:
         bookings_by_room.setdefault(booking.room_id, []).append(booking)
-
-    from .lodging_models import CourseLodgingCohort
 
     lodging_cohorts = (
         CourseLodgingCohort.objects.filter(
@@ -165,6 +166,48 @@ def _today_board(request, rooms, now):
     }
 
 
+def _homepage_availability_context(request, selected_category=""):
+    """แปลงผล service ของงาน A เป็นข้อมูลแสดงผลและลิงก์จองที่ปลอดภัย"""
+    now_result = find_available_now(request.user)
+    local_start = timezone.localtime(now_result.start_at)
+    local_end = timezone.localtime(now_result.end_at)
+    query_string = urlencode(
+        {
+            "search": "1",
+            "date": local_start.date().isoformat(),
+            "start": local_start.strftime("%H:%M"),
+            "end": local_end.strftime("%H:%M"),
+        }
+    )
+    groups = []
+    group_categories = {
+        "teaching": {Resource.Category.CLASSROOM, Resource.Category.LAB},
+        "meeting": {Resource.Category.MEETING, Resource.Category.SPECIAL},
+    }
+    for group in now_result.groups:
+        cards = []
+        if selected_category and selected_category not in group_categories[group["key"]]:
+            room_results = ()
+        else:
+            room_results = tuple(
+                result for result in group["rooms"]
+                if not selected_category or result.room.room_category == selected_category
+            )
+        for result in room_results:
+            booking_path = f"{reverse('bookings:book_form', args=[result.room.code])}?{query_string}"
+            book_url = booking_path if request.user.is_authenticated else (
+                f"{reverse('login')}?{urlencode({'next': booking_path})}"
+            )
+            cards.append({"result": result, "book_url": book_url})
+        groups.append({**group, "cards": cards})
+    return {
+        "start_label": local_start.strftime("%H:%M"),
+        "end_label": local_end.strftime("%H:%M"),
+        "query_string": query_string,
+        "groups": groups,
+    }
+
+
 def calendar_view(request):
     rooms = Resource.objects.filter(
         resource_type=Resource.Type.ROOM, status=Resource.Status.ACTIVE
@@ -207,6 +250,11 @@ def calendar_view(request):
         (Resource.Category.LAB, "ห้องสอนปฏิบัติ"),
     ]
 
+    active_lodging_cohorts = CourseLodgingCohort.objects.filter(
+        allocation_status=CourseLodgingCohort.AllocationStatus.ALLOCATED,
+        is_active=True,
+    ).order_by("check_in_date", "title")
+
     context = {
         "rooms": rooms,
         "buildings": buildings,
@@ -215,6 +263,8 @@ def calendar_view(request):
         "next_booking": next_booking,
         "usage_today_count": usage_today_count,
         "my_pending_count": my_pending_count,
+        "active_lodging_cohorts": active_lodging_cohorts,
+        "homepage_availability": _homepage_availability_context(request, selected_category),
     }
     context.update(_today_board(request, rooms, now))
     return render(request, "bookings/calendar.html", context)

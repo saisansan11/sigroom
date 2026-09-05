@@ -43,6 +43,37 @@ class RoomSearchResult:
         return "อนุมัติอัตโนมัติ"
 
 
+@dataclass(frozen=True)
+class NowAvailability:
+    """ผลค้นหาห้องว่างช่วงถัดไปจากหน้าแรก (งาน A)."""
+
+    start_at: datetime
+    end_at: datetime
+    groups: tuple[dict, ...]
+
+
+NOW_ROOM_GROUPS = (
+    {
+        "key": "teaching",
+        "label": "ห้องเรียน / ห้องปฏิบัติ",
+        "categories": (Resource.Category.CLASSROOM, Resource.Category.LAB),
+    },
+    {
+        "key": "meeting",
+        "label": "ห้องประชุม",
+        "categories": (Resource.Category.MEETING, Resource.Category.SPECIAL),
+    },
+)
+
+
+def next_quarter_start(now: datetime | None = None) -> datetime:
+    """คืนเวลาเริ่มที่เป็นช่วง 15 นาทีถัดไปแบบเวลาท้องถิ่น (งาน A)."""
+    local_now = timezone.localtime(now or timezone.now())
+    base = local_now.replace(second=0, microsecond=0)
+    minutes = 15 - (base.minute % 15)
+    return base + timedelta(minutes=minutes)
+
+
 def compute_hold(resource: Resource, start_at: datetime, end_at: datetime) -> DateTimeTZRange:
     """ช่วงถือครอง = [start - buffer_before, end + buffer_after) ตาม FR-07"""
     rule = getattr(resource, "rule", None)
@@ -188,6 +219,7 @@ def find_available_rooms(
     user,
     attendees: int | None = None,
     equipment_codes=(),
+    room_categories=None,
 ) -> tuple[list[RoomSearchResult], list[RoomSearchResult]]:
     """ค้นหาห้องพร้อมใช้และรายการที่ใช้ไม่ได้ โดยคำนวณ buffer และอุปกรณ์ร่วมด้วย"""
     available: list[RoomSearchResult] = []
@@ -204,6 +236,8 @@ def find_available_rooms(
     ]
 
     rooms = Resource.objects.filter(resource_type=Resource.Type.ROOM).select_related("rule", "owner_unit").prefetch_related("photos")
+    if room_categories:
+        rooms = rooms.filter(room_category__in=tuple(room_categories))
     for room in rooms:
         errors = validate_booking_window(room, start, end, user)
         if not errors and _active_holds_overlapping(room, compute_hold(room, start, end)).exists():
@@ -218,6 +252,42 @@ def find_available_rooms(
         )
         (unavailable if errors else available).append(result)
     return available, unavailable
+
+
+def find_available_now(
+    user,
+    now: datetime | None = None,
+    duration_minutes: int = 60,
+    limit_per_group: int = 4,
+) -> NowAvailability:
+    """ค้นหาห้องว่างช่วง 60 นาทีถัดไปสำหรับการ์ดหน้าแรก.
+
+    ใช้ validate_booking_window()/find_available_rooms() ชุดเดียวกับหน้าค้นหา
+    จึงครอบคลุมชน, blackout, outage, เวลาเปิดบริการ, buffer และ allowed_units.
+    """
+    if duration_minutes <= 0:
+        raise ValueError("duration_minutes ต้องมากกว่า 0")
+    if limit_per_group <= 0:
+        raise ValueError("limit_per_group ต้องมากกว่า 0")
+
+    start = next_quarter_start(now)
+    end = start + timedelta(minutes=duration_minutes)
+    groups = []
+    for group in NOW_ROOM_GROUPS:
+        available, _ = find_available_rooms(
+            start,
+            end,
+            user,
+            room_categories=group["categories"],
+        )
+        groups.append(
+            {
+                "key": group["key"],
+                "label": group["label"],
+                "rooms": tuple(available[:limit_per_group]),
+            }
+        )
+    return NowAvailability(start_at=start, end_at=end, groups=tuple(groups))
 
 
 def _contact_for_room(room: Resource) -> str:
@@ -380,6 +450,16 @@ def _urgent_deadline(now: datetime) -> datetime:
     return cursor + timedelta(hours=24)
 
 
+def remember_requester_phone(booking: Booking) -> None:
+    """จำเบอร์จากฟอร์มกลับเข้าโปรไฟล์ เฉพาะกรณีโปรไฟล์เดิมยังว่าง."""
+    requester = booking.requester
+    phone = (booking.responsible_phone or "").strip()
+    if not phone or getattr(requester, "phone", ""):
+        return
+    requester.phone = phone
+    requester.save(update_fields=["phone"])
+
+
 @transaction.atomic
 def submit_booking(booking: Booking, equipment: list[Resource] | None = None) -> Booking:
     """
@@ -401,5 +481,6 @@ def submit_booking(booking: Booking, equipment: list[Resource] | None = None) ->
     booking.save()
     selected_equipment = list(equipment) if equipment is not None else list(booking.equipment.all())
     place_holds(booking, selected_equipment)
+    remember_requester_phone(booking)
     audit(booking.requester, "bookings.booking", booking.pk, "booking_submitted", before={"request_status": Booking.RequestStatus.DRAFT}, after={"request_status": booking.request_status})
     return booking

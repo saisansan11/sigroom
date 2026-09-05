@@ -12,34 +12,60 @@
   {% endif %}
 </div>
 
-{% if not user.is_authenticated %}
-<section class="guest-role-router" aria-label="ทางเลือกตามบทบาท">
-  <a href="#today-board" class="role-router-card card-cyan">
-    <div class="card-head">
-      <span class="hud-tag">สถานะห้องว่าง</span>
-      <span class="card-arrow" aria-hidden="true">↓</span>
-    </div>
-    <h3>ดูห้องว่างตอนนี้</h3>
-    <p>เลื่อนดูกระดานสถานะห้องเรียน ที่พัก และห้องประชุมที่พร้อมใช้งานทันที</p>
-  </a>
-  <a href="{% url 'login' %}?next={% url 'bookings:book_search' %}" class="role-router-card card-amber">
-    <div class="card-head">
-      <span class="hud-tag">จองห้องหน่วย</span>
-      <span class="card-arrow" aria-hidden="true">→</span>
-    </div>
-    <h3>จองห้องเรียน/ห้องประชุม</h3>
-    <p>สำหรับ จนท. มีบัญชีหน่วย</p>
-  </a>
-  <a href="{% url 'bookings:lodging_index' %}" class="role-router-card card-green">
-    <div class="card-head">
-      <span class="hud-tag">ที่พักนักเรียน</span>
-      <span class="card-arrow" aria-hidden="true">→</span>
-    </div>
-    <h3>จองที่พักนักเรียนหลักสูตร</h3>
-    <p>นักเรียนใช้ลิงก์ที่ได้จากกลุ่ม LINE ของรุ่น</p>
-  </a>
+<section class="home-entry-grid" aria-label="เลือกประเภทห้องที่ต้องการใช้">
+  <article class="home-entry-card card-cyan">
+    <div class="home-entry-head"><span class="hud-tag">รายชั่วโมง</span><span aria-hidden="true">01</span></div>
+    <h2>ห้องเรียน / ห้องปฏิบัติ</h2>
+    <p>ดูห้องที่ว่างในช่วงถัดไป แล้วกดจองเลย</p>
+    <a class="home-entry-link" href="#now-teaching">ดูห้องว่างตอนนี้ <span aria-hidden="true">↓</span></a>
+  </article>
+  <article class="home-entry-card card-amber">
+    <div class="home-entry-head"><span class="hud-tag">รายชั่วโมง</span><span aria-hidden="true">02</span></div>
+    <h2>ห้องประชุม</h2>
+    <p>ตรวจห้องประชุมและห้องพิเศษที่จองได้</p>
+    <a class="home-entry-link" href="#now-meeting">ดูห้องว่างตอนนี้ <span aria-hidden="true">↓</span></a>
+  </article>
+  <article class="home-entry-card card-green" id="lodging-courses">
+    <div class="home-entry-head"><span class="hud-tag">ตามรอบหลักสูตร</span><span aria-hidden="true">03</span></div>
+    <h2>ห้องพักหลักสูตร</h2>
+    <p>เลือกหลักสูตรแล้วเข้า portal เลือกเตียงโดยตรง</p>
+    {% if active_lodging_cohorts %}
+      <div class="home-course-list">
+        {% for cohort in active_lodging_cohorts %}
+          <a href="{% url 'bookings:lodging_portal' cohort.slug %}">{{ cohort.title }} <span aria-hidden="true">→</span></a>
+        {% endfor %}
+      </div>
+    {% else %}
+      <p class="home-empty-note">ยังไม่มีหลักสูตรเปิดรับเข้าพัก</p>
+    {% endif %}
+  </article>
 </section>
-{% endif %}
+
+<section class="homepage-availability" aria-label="ห้องว่างช่วงถัดไป">
+  <div class="section-title homepage-availability-heading">
+    <div><p class="eyebrow">ช่วงถัดไป {{ homepage_availability.start_label }}–{{ homepage_availability.end_label }}</p><h2>ว่างตอนนี้ · จองเลย</h2></div>
+    <small>เริ่มในช่วง 15 นาทีถัดไป · ระยะเวลา 60 นาที</small>
+  </div>
+  <div class="homepage-availability-grid">
+    {% for group in homepage_availability.groups %}
+      <section id="now-{{ group.key }}" class="homepage-availability-group" aria-labelledby="now-{{ group.key }}-title">
+        <div class="homepage-group-title"><h3 id="now-{{ group.key }}-title">{{ group.label }}</h3><span class="count-badge">{{ group.cards|length }} ห้อง</span></div>
+        {% for card in group.cards %}
+          <article class="homepage-room-card">
+            {% with cover=card.result.room.cover_photo %}
+              {% if cover %}<img src="{{ cover.image.url }}" alt="รูปห้อง {{ card.result.room.code }}" loading="lazy" class="room-card-thumb">
+              {% else %}<img src="{% static 'img/room-placeholder.svg' %}" alt="ยังไม่มีรูปห้อง {{ card.result.room.code }}" loading="lazy" class="room-card-thumb is-placeholder">{% endif %}
+            {% endwith %}
+            <div class="homepage-room-info"><h4>{{ card.result.room.code }} · {{ card.result.room.name }}</h4><p>{{ card.result.room.building }}{% if card.result.room.floor %} ชั้น {{ card.result.room.floor }}{% endif %} · จุ {{ card.result.room.capacity }} คน</p></div>
+            <a role="button" class="homepage-book-button" href="{{ card.book_url }}">จองเลย</a>
+          </article>
+        {% empty %}
+          <div class="empty-state homepage-empty"><strong>ยังไม่มีห้องว่างในช่วงนี้</strong><span>ลองดูช่วงเวลาอื่นจากหน้าค้นหาห้อง</span></div>
+        {% endfor %}
+      </section>
+    {% endfor %}
+  </div>
+</section>
 
 <nav class="category-tabs" aria-label="เลือกหมวดห้อง">
   <span class="category-tabs-label">หมวดห้อง:</span>
