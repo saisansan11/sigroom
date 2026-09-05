@@ -116,9 +116,9 @@ class BookingForm(forms.ModelForm):
     class Meta:
         model = Booking
         fields = [
-            "title", "purpose", "unit", "responsible_name", "responsible_phone", "attendees",
-            "attendee_level", "layout", "equipment", "has_external_attendees", "external_attendees_note",
-            "visibility", "note",
+            "title", "purpose", "online_meeting_url", "unit", "responsible_name", "responsible_phone",
+            "attendees", "attendee_level", "layout", "equipment", "has_external_attendees",
+            "external_attendees_note", "visibility", "note",
         ]
         widgets = {
             "equipment": forms.CheckboxSelectMultiple,
@@ -140,6 +140,12 @@ class BookingForm(forms.ModelForm):
                 self.initial["responsible_phone"] = user.phone
             if getattr(user, "unit_id", None) and not self.initial.get("unit"):
                 self.initial["unit"] = user.unit_id
+        # ช่องลิงก์ออนไลน์แสดงเฉพาะห้องหมวด online (งาน B) — ห้องอื่นตัดออกทั้งช่อง
+        if room.room_category != Resource.Category.ONLINE:
+            self.fields.pop("online_meeting_url", None)
+        elif "online_meeting_url" in self.fields:
+            self.fields["online_meeting_url"].widget.attrs.setdefault("placeholder", "https://meet.google.com/...")
+            self.fields["online_meeting_url"].help_text = "เว้นว่างได้ เติมทีหลังได้จากหน้าแก้ไข · แสดงเฉพาะผู้จอง เจ้าหน้าที่ห้อง และผู้อนุมัติ"
         self.series_enabled = bool(getattr(room, "rule", None) and room.rule.allow_series)
         self.fields["series_count"].help_text = f"สูงสุด {room.rule.max_series_occurrences} ครั้ง" if self.series_enabled else ""
         self.fields["equipment"].queryset = Resource.objects.filter(
@@ -192,7 +198,7 @@ class BookingForm(forms.ModelForm):
                     self.fields.pop(name)
         self.order_fields(
             [
-                "date", "start_time", "end_time", "title", "purpose", "unit", "responsible_name",
+                "date", "start_time", "end_time", "title", "purpose", "online_meeting_url", "unit", "responsible_name",
                 "responsible_phone", "attendees", "attendee_level", "layout", "fixed_equipment_choices",
                 "fixed_equipment_extra", "equipment", "has_external_attendees", "external_attendees_note",
                 "visibility", "note",

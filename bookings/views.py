@@ -29,6 +29,7 @@ from .services import (
     BookingConflict,
     calendar_label,
     can_view_details,
+    can_view_online_link,
     cancel_booking,
     editable_fields,
     find_available_now,
@@ -189,8 +190,17 @@ def _homepage_availability_context(request, selected_category=""):
     group_categories = {
         "teaching": {Resource.Category.CLASSROOM, Resource.Category.LAB},
         "meeting": {Resource.Category.MEETING, Resource.Category.SPECIAL},
+        "online": {Resource.Category.ONLINE},
     }
+    # การ์ด/กลุ่มออนไลน์แสดงเมื่อมีห้องหมวดนี้อย่างน้อย 1 ห้อง (งาน B) — ไม่มีก็ซ่อนทั้งกลุ่ม
+    has_online = Resource.objects.filter(
+        resource_type=Resource.Type.ROOM,
+        room_category=Resource.Category.ONLINE,
+        status=Resource.Status.ACTIVE,
+    ).exists()
     for group in now_result.groups:
+        if group["key"] == "online" and not has_online:
+            continue
         cards = []
         if selected_category and selected_category not in group_categories[group["key"]]:
             room_results = ()
@@ -211,6 +221,7 @@ def _homepage_availability_context(request, selected_category=""):
         "end_label": local_end.strftime("%H:%M"),
         "query_string": query_string,
         "groups": groups,
+        "has_online": has_online,
     }
 
 
@@ -253,6 +264,7 @@ def calendar_view(request):
         (Resource.Category.CLASSROOM, "ห้องเรียน"),
         (Resource.Category.LODGING, "ห้องพัก"),
         (Resource.Category.MEETING, "ห้องประชุม"),
+        (Resource.Category.ONLINE, "ห้องสอนออนไลน์"),
         (Resource.Category.LAB, "ห้องสอนปฏิบัติ"),
     ]
 
@@ -720,6 +732,8 @@ def booking_detail(request, id):
         "bookings/booking_detail.html",
         {
             "booking": booking,
+            # ลิงก์ออนไลน์ใช้สิทธิ์เข้มกว่า can_view_details — คนหน่วยเดียวกันเห็นหน้านี้ได้แต่ต้องไม่เห็นลิงก์
+            "show_online_link": bool(booking.online_meeting_url) and can_view_online_link(request.user, booking),
             "can_edit": bool(fields),
             "can_amend": (
                 owner

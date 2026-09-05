@@ -7,7 +7,7 @@
   --line: oklch(.36 .028 235); --line-strong: oklch(.46 .038 226);
   --ink: oklch(.93 .012 211); --muted: oklch(.72 .025 224); --dim: oklch(.58 .024 229);
   --cyan: oklch(.78 .13 207); --cyan-strong: oklch(.7 .15 204); --green: oklch(.76 .14 156);
-  --amber: oklch(.79 .15 83); --red: oklch(.7 .17 25);
+  --amber: oklch(.79 .15 83); --red: oklch(.7 .17 25); --violet: oklch(.74 .13 300);
   --success-bg: oklch(.26 .055 158); --warning-bg: oklch(.265 .055 80);
   --danger-bg: oklch(.255 .06 25); --info-bg: oklch(.25 .05 224);
   --radius-sm: .25rem; --radius-md: .4rem; --radius-lg: .6rem;
@@ -616,7 +616,8 @@ button[type="submit"]:not(.link-button):not(.outline):hover, [role="button"]:not
 /* One-stop cards และแถบห้องว่างหน้าแรก (งาน A) */
 .home-entry-grid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  /* auto-fit รองรับทั้ง 3 ใบ (ก่อนงาน B) และ 4 ใบ (มีห้องออนไลน์) โดยไม่ต้องแก้โครง */
+  grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
   gap: var(--space-md);
   margin-bottom: var(--space-lg);
 }
@@ -636,6 +637,7 @@ button[type="submit"]:not(.link-button):not(.outline):hover, [role="button"]:not
 .home-entry-card:hover { transform: translateY(-2px); border-color: var(--line-strong); background: var(--surface-raised); }
 .home-entry-card.card-amber { border-top-color: var(--amber); }
 .home-entry-card.card-green { border-top-color: var(--green); }
+.home-entry-card.card-violet { border-top-color: var(--violet); }
 .home-entry-head { display: flex; align-items: center; justify-content: space-between; color: var(--dim); font-family: var(--font-mono); font-size: .76rem; }
 .home-entry-card h2 { margin: 0; font-size: 1.12rem; }
 .home-entry-card > p { min-height: 2.5rem; margin: 0; color: var(--muted); font-size: .86rem; }
@@ -648,7 +650,7 @@ button[type="submit"]:not(.link-button):not(.outline):hover, [role="button"]:not
 .homepage-availability { margin-bottom: var(--space-xl); }
 .homepage-availability-heading { align-items: flex-end; margin-bottom: var(--space-sm); }
 .homepage-availability-heading small { color: var(--muted); }
-.homepage-availability-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-md); }
+.homepage-availability-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(18rem, 1fr)); gap: var(--space-md); }
 .homepage-availability-group { min-width: 0; padding: var(--space-sm); border: 1px solid var(--line); border-radius: var(--radius-md); background: var(--surface); }
 .homepage-group-title { display: flex; align-items: center; justify-content: space-between; gap: var(--space-sm); margin-bottom: var(--space-sm); }
 .homepage-group-title h3 { margin: 0; font-size: 1rem; }

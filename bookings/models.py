@@ -111,6 +111,9 @@ class Booking(models.Model):
     has_external_attendees = models.BooleanField("มีผู้เข้าร่วมจากภายนอก", default=False)
     external_attendees_note = models.CharField("จำนวน/หน่วยของผู้เข้าร่วมภายนอก", max_length=200, blank=True)
     visibility = models.CharField("ระดับการมองเห็น", max_length=20, choices=Visibility.choices, default=Visibility.NORMAL)
+    # ลิงก์ห้องเรียนออนไลน์ของครั้งนั้น (งาน B) — ใช้กับห้องหมวด online เท่านั้น
+    # และทุกจุดที่แสดงต้องผ่าน services.can_view_online_link() ห้ามแสดงตาม can_view_details() เฉย ๆ
+    online_meeting_url = models.URLField("ลิงก์ห้องเรียนออนไลน์", max_length=500, blank=True)
     note = models.TextField("หมายเหตุ", blank=True)
 
     request_status = models.CharField("สถานะคำขอ", max_length=20, choices=RequestStatus.choices, default=RequestStatus.DRAFT)

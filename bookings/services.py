@@ -63,6 +63,11 @@ NOW_ROOM_GROUPS = (
         "label": "ห้องประชุม",
         "categories": (Resource.Category.MEETING, Resource.Category.SPECIAL),
     },
+    {
+        "key": "online",
+        "label": "ห้องสอนออนไลน์",
+        "categories": (Resource.Category.ONLINE,),
+    },
 )
 
 
@@ -357,6 +362,21 @@ def can_view_details(user, booking: Booking) -> bool:
     return _is_room_staff(user, booking.room)
 
 
+def can_view_online_link(user, booking: Booking) -> bool:
+    """สิทธิ์เห็นลิงก์ห้องเรียนออนไลน์ — เข้มกว่า can_view_details() (งาน B)
+
+    อนุญาตเฉพาะ ผู้จอง / superuser / จนท.ความมั่นคงสารสนเทศ / เจ้าหน้าที่ดูแลห้องและผู้อนุมัติของห้องนั้น
+    คนหน่วยเดียวกันดูรายละเอียดอื่นได้ตาม can_view_details() แต่ต้องไม่เห็นลิงก์
+    """
+    if not getattr(user, "is_authenticated", False):
+        return False
+    if booking.requester_id == user.pk:
+        return True
+    if user.is_superuser or user.is_infosec_officer:
+        return True
+    return _is_room_staff(user, booking.room)
+
+
 def calendar_label(user, booking: Booking) -> str:
     if can_view_details(user, booking):
         return f"{booking.title} — {booking.room.code}"
@@ -404,6 +424,7 @@ POST_SUBMIT_EDITABLE_FIELDS = {
     "attendee_level",
     "layout",
     "fixed_equipment_needed",
+    "online_meeting_url",  # ครูมักได้ลิงก์ประชุมทีหลัง จึงต้องเติม/แก้ได้หลังส่งคำขอ (งาน B)
     "note",
 }
 
