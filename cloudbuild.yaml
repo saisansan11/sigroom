@@ -1,28 +1,58 @@
 steps:
+  # ขั้น 1: build image เดียว แต่ tag สอง tag พร้อมกัน ($COMMIT_SHA และ latest)
+  # เพื่อให้ทั้งสอง tag ชี้ไปที่ image เดียวกันเสมอ
   - name: 'gcr.io/cloud-builders/docker'
     args:
       - 'build'
       - '-t'
+      - 'asia-southeast3-docker.pkg.dev/sixth-storm-439008-u2/sigroom-repo/sigroom:$COMMIT_SHA'
+      - '-t'
       - 'asia-southeast3-docker.pkg.dev/sixth-storm-439008-u2/sigroom-repo/sigroom:latest'
       - '.'
+
+  # ขั้น 2: push ทั้งสอง tag ขึ้น registry (แยกคนละ step เพราะ docker push
+  # push ได้ครั้งละ tag เดียว)
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'push'
+      - 'asia-southeast3-docker.pkg.dev/sixth-storm-439008-u2/sigroom-repo/sigroom:$COMMIT_SHA'
 
   - name: 'gcr.io/cloud-builders/docker'
     args:
       - 'push'
       - 'asia-southeast3-docker.pkg.dev/sixth-storm-439008-u2/sigroom-repo/sigroom:latest'
 
-  # deploy อัตโนมัติหลัง build+push สำเร็จ — ไม่ตั้ง --set-env-vars เพื่อให้ env vars
+  # ขั้น 3: migrate ฐานข้อมูลก่อน deploy เสมอ — ต้องมาก่อนขั้น deploy เพราะถ้า
+  # โค้ดใหม่ขึ้นเว็บก่อน schema ใหม่ จะ query คอลัมน์/ตารางที่ยังไม่มีแล้วเว็บพัง
+  # ใช้คำสั่งเดียว update+execute+รอผล (--wait มีผลเป็น implies --execute-now)
+  # ห้ามแยกเป็น update แล้วตามด้วย execute เพราะ job นี้ใช้ร่วมกันทุก build —
+  # ถ้ามี build อื่นมา update image คั่นกลาง execute จะรัน image ผิดตัวทันที
+  # ต้องอ้าง $COMMIT_SHA เท่านั้น (ห้าม :latest) กัน race ระหว่าง build ที่ทับกัน
+  # ถ้า migrate ล้มเหลว step นี้ fail ทั้ง build ทันที ไม่ไปถึงขั้น deploy
+  - name: 'gcr.io/cloud-builders/gcloud'
+    args:
+      - 'run'
+      - 'jobs'
+      - 'update'
+      - 'sigroom-migrate'
+      - '--image=asia-southeast3-docker.pkg.dev/sixth-storm-439008-u2/sigroom-repo/sigroom:$COMMIT_SHA'
+      - '--region=asia-southeast3'
+      - '--wait'
+
+  # ขั้น 4: deploy Cloud Run service ด้วย image $COMMIT_SHA ตัวเดียวกับขั้น migrate
+  # (ห้าม :latest ด้วยเหตุผลเดียวกัน) — ไม่ตั้ง --set-env-vars เพื่อให้ env vars
   # เดิมที่ตั้งไว้บน Cloud Run service อยู่แล้วไม่ถูกล้าง
   - name: 'gcr.io/cloud-builders/gcloud'
     args:
       - 'run'
       - 'deploy'
       - 'sigroom'
-      - '--image=asia-southeast3-docker.pkg.dev/sixth-storm-439008-u2/sigroom-repo/sigroom:latest'
+      - '--image=asia-southeast3-docker.pkg.dev/sixth-storm-439008-u2/sigroom-repo/sigroom:$COMMIT_SHA'
       - '--region=asia-southeast3'
       - '--quiet'
 
 images:
+  - 'asia-southeast3-docker.pkg.dev/sixth-storm-439008-u2/sigroom-repo/sigroom:$COMMIT_SHA'
   - 'asia-southeast3-docker.pkg.dev/sixth-storm-439008-u2/sigroom-repo/sigroom:latest'
 
 options:
