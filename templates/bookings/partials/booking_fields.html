@@ -20,6 +20,8 @@
   {% elif 'date' in form.fields or 'start_time' in form.fields or 'end_time' in form.fields %}
     <section class="booking-form-section">
       <div class="section-title"><div><h2>วันและเวลา</h2></div></div>
+      {# ปุ่มคาบวางเฉพาะโหมดที่ช่องเวลาแสดงจริง — ห้ามวางในโหมดสรุปด้านบน (งาน C) #}
+      {% include "bookings/partials/time_presets.html" %}
       <div class="form-grid two">
         {% for field in form %}{% if field.name == 'date' or field.name == 'start_time' or field.name == 'end_time' %}
           <div class="field">

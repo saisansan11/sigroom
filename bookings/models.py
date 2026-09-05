@@ -166,6 +166,7 @@ class ReferenceValue(models.Model):
         ("responsible_phone", "โทรศัพท์ผู้รับผิดชอบ"),
         ("attendee_level", "ระดับ/ชั้นผู้เข้าร่วม"),
         ("layout", "รูปแบบจัดโต๊ะ"),
+        ("time_preset", "ช่วงเวลาสำเร็จรูป (รูปแบบ HHMM-HHMM|ป้ายชื่อ)"),
     )
 
     field = models.CharField("ฟิลด์", max_length=50, choices=FIELD_CHOICES)
@@ -179,8 +180,37 @@ class ReferenceValue(models.Model):
         ordering = ["field", "order", "value"]
         constraints = [models.UniqueConstraint(fields=["field", "value"], name="uniq_reference_field_value")]
 
+    def clean(self):
+        # ช่วงเวลาสำเร็จรูป (งาน C) ต้อง parse ได้เสมอ — validate ตั้งแต่ตอนบันทึกใน Admin
+        # ไม่ปล่อยให้สตริงผิดรูปแบบไปพังตอนแสดงปุ่มบนฟอร์มจอง
+        if self.field == "time_preset" and parse_time_preset(self.value) is None:
+            from django.core.exceptions import ValidationError
+
+            raise ValidationError(
+                {
+                    "value": "รูปแบบต้องเป็น HHMM-HHMM|ป้ายชื่อ เช่น 0800-1200|คาบเช้า "
+                    "(เวลาตรงช่วง 15 นาที และเวลาเริ่มต้องน้อยกว่าเวลาสิ้นสุด)"
+                }
+            )
+
     def __str__(self):
         return f"{self.get_field_display()}: {self.value}"
+
+
+def parse_time_preset(value: str) -> tuple[str, str, str] | None:
+    """แปลงค่า time_preset "HHMM-HHMM|ป้ายชื่อ" → ("HH:MM", "HH:MM", ป้ายชื่อ) หรือ None เมื่อผิดรูปแบบ"""
+    import re
+
+    match = re.fullmatch(r"(\d{2})(\d{2})-(\d{2})(\d{2})\|(.+)", (value or "").strip())
+    if not match:
+        return None
+    h1, m1, h2, m2 = (int(part) for part in match.groups()[:4])
+    label = match.group(5).strip()
+    if not label or h1 > 23 or h2 > 23 or m1 % 15 or m2 % 15 or m1 > 45 or m2 > 45:
+        return None
+    if (h1, m1) >= (h2, m2):
+        return None
+    return f"{h1:02d}:{m1:02d}", f"{h2:02d}:{m2:02d}", label
 
 
 class BookingAmendment(models.Model):

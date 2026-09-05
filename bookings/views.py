@@ -35,8 +35,10 @@ from .services import (
     find_available_now,
     find_available_rooms,
     next_quarter_start,
+    rebook_default_date,
     self_service_message,
     submit_booking,
+    time_presets,
 )
 
 
@@ -470,6 +472,26 @@ def calendar_events(request):
 
 
 @login_required
+@require_POST
+def room_favorite_toggle(request, code):
+    """ติด/ถอนดาวห้องโปรด (งาน C) — กระทบเฉพาะรายการของผู้ใช้เอง"""
+    from django.utils.http import url_has_allowed_host_and_scheme
+
+    room = get_object_or_404(Resource, code=code, resource_type=Resource.Type.ROOM)
+    favorites = request.user.favorite_resources
+    if favorites.filter(pk=room.pk).exists():
+        favorites.remove(room)
+        messages.info(request, f"นำ {room.code} ออกจากห้องโปรดแล้ว")
+    else:
+        favorites.add(room)
+        messages.success(request, f"เพิ่ม {room.code} เป็นห้องโปรดแล้ว — จะขึ้นก่อนในผลค้นหา")
+    next_url = request.POST.get("next", "")
+    if not url_has_allowed_host_and_scheme(next_url, allowed_hosts={request.get_host()}):
+        next_url = reverse("bookings:book_search")
+    return redirect(next_url)
+
+
+@login_required
 def book_search(request):
     equipment = Resource.objects.filter(resource_type=Resource.Type.EQUIPMENT, status=Resource.Status.ACTIVE)
     start, end, date_text = _search_values(request)
@@ -509,9 +531,53 @@ def book_search(request):
         "searched": searched,
         "error": error,
         "query_string": request.GET.urlencode(),
+        "time_presets": time_presets(),
+        "favorite_ids": set(request.user.favorite_resources.values_list("pk", flat=True)),
     }
     template = "bookings/partials/room_list.html" if getattr(request, "htmx", False) else "bookings/book_search.html"
     return render(request, template, context)
+
+
+def _rebook_initial(request, room):
+    """prefill จากการจองเดิมของผู้ใช้เอง (ปุ่ม "จองแบบเดิมอีกครั้ง" — งาน C) คืน None เมื่อใช้ไม่ได้"""
+    rebook_id = request.GET.get("rebook")
+    if not rebook_id:
+        return None
+    try:
+        source = (
+            Booking.objects.filter(pk=rebook_id, requester=request.user, room=room)
+            .prefetch_related("equipment")
+            .first()
+        )
+    except (ValueError, ValidationError):
+        return None
+    if source is None:
+        return None
+    local_start = timezone.localtime(source.start_at)
+    local_end = timezone.localtime(source.end_at)
+    fixed_items = [line.strip() for line in room.fixed_equipment.splitlines() if line.strip()]
+    fixed_selected = [line.strip() for line in source.fixed_equipment_needed.splitlines() if line.strip()]
+    return {
+        "date": rebook_default_date(local_start.date()),
+        "start_time": local_start.strftime("%H:%M"),
+        "end_time": local_end.strftime("%H:%M"),
+        "title": source.title,
+        "purpose": source.purpose,
+        "unit": source.unit_id,
+        "responsible_name": source.responsible_name,
+        "responsible_phone": source.responsible_phone,
+        "attendees": source.attendees,
+        "attendee_level": source.attendee_level,
+        "layout": source.layout,
+        "equipment": list(source.equipment.values_list("pk", flat=True)),
+        "has_external_attendees": source.has_external_attendees,
+        "external_attendees_note": source.external_attendees_note,
+        "visibility": source.visibility,
+        "note": source.note,
+        # ไม่คัดลอก online_meeting_url — ลิงก์ประชุมมักเป็นของครั้งนั้น ให้ผู้ใช้ใส่ใหม่/เติมทีหลัง
+        "fixed_equipment_choices": [item for item in fixed_selected if item in fixed_items],
+        "fixed_equipment_extra": "\n".join(item for item in fixed_selected if item not in fixed_items),
+    }
 
 
 def _initial_from_query(request):
@@ -589,8 +655,13 @@ def book_form(request, code):
                 messages.success(request, "ส่งคำขอจองห้องแล้ว")
                 return redirect("bookings:booking_detail", id=booking.id)
     else:
-        form = BookingForm(user=request.user, room=room, instance=booking, initial=_initial_from_query(request))
-    return render(request, "bookings/book_form.html", {"form": form, "room": room})
+        initial = _rebook_initial(request, room) or _initial_from_query(request)
+        form = BookingForm(user=request.user, room=room, instance=booking, initial=initial)
+    return render(
+        request,
+        "bookings/book_form.html",
+        {"form": form, "room": room, "time_presets": time_presets()},
+    )
 
 
 def _series_form_booking(form, room, user):

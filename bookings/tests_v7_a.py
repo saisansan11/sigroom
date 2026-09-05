@@ -136,8 +136,9 @@ def test_find_available_now_reuses_conflict_blackout_and_outage_checks(availabil
     assert teaching_rooms[4].code in visible_codes
 
 
-def test_homepage_book_now_link_prefills_next_slot(client, availability_setup):
+def test_homepage_book_now_link_prefills_next_slot(client, availability_setup, monkeypatch):
     user, teaching_rooms, _, _, _ = availability_setup
+    monkeypatch.setattr("django.utils.timezone.now", lambda: _aware())
     client.force_login(user)
 
     response = client.get(reverse("bookings:calendar"))
@@ -171,8 +172,9 @@ def _booking_post_data(user, start, **overrides):
     return data
 
 
-def test_homepage_book_now_submit_conflict_shows_retry_message(client, availability_setup):
+def test_homepage_book_now_submit_conflict_shows_retry_message(client, availability_setup, monkeypatch):
     user, teaching_rooms, _, _, _ = availability_setup
+    monkeypatch.setattr("django.utils.timezone.now", lambda: _aware())
     room = teaching_rooms[0]
     start = _aware(day=6, hour=10, minute=15, second=0)
     held = Booking.objects.create(
