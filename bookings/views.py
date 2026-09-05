@@ -166,7 +166,9 @@ def _today_board(request, rooms, now):
 
 
 def calendar_view(request):
-    rooms = Resource.objects.filter(resource_type=Resource.Type.ROOM, status=Resource.Status.ACTIVE).order_by("code")
+    rooms = Resource.objects.filter(
+        resource_type=Resource.Type.ROOM, status=Resource.Status.ACTIVE
+    ).order_by("code").prefetch_related("photos")
     selected_category = request.GET.get("category", "").strip()
     if selected_category:
         rooms = rooms.filter(room_category=selected_category)

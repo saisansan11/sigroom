@@ -1,9 +1,14 @@
+{% load static %}
 {% if error %}<div class="notice error">{{ error }}</div>{% endif %}
 {% if searched and not error %}
 <section class="results-section">
   <div class="section-title"><div><p class="eyebrow">ขั้นที่ 2</p><h2 tabindex="-1">{% if available %}พบ {{ available|length }} ห้องว่าง{% else %}ไม่พบห้องว่างในช่วงที่เลือก{% endif %}</h2></div><span class="count-badge">{{ available|length }} ห้อง</span></div>
   {% for result in available %}
     <article class="room-card">
+      {% with cover=result.room.cover_photo %}
+        {% if cover %}<img src="{{ cover.image.url }}" alt="รูปห้อง {{ result.room.code }}" loading="lazy" class="room-card-thumb">
+        {% else %}<img src="{% static 'img/room-placeholder.svg' %}" alt="ยังไม่มีรูปห้อง {{ result.room.code }}" loading="lazy" class="room-card-thumb is-placeholder">{% endif %}
+      {% endwith %}
       <div><h3>{{ result.room.code }} · {{ result.room.name }}</h3><p>{{ result.room.building }}{% if result.room.floor %} ชั้น {{ result.room.floor }}{% endif %} · จุ {{ result.room.capacity }} คน</p><p>{{ result.room.fixed_equipment|linebreaksbr }}</p><span class="policy">{{ result.approval_label }}</span>{% if result.capacity_warning %}<span class="warning-text">⚠ ความจุน้อยกว่าจำนวนที่ระบุ</span>{% endif %}</div>
       <a role="button" href="{% url 'bookings:book_form' result.room.code %}?{{ query_string }}">จองห้องนี้</a>
     </article>

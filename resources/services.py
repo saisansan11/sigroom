@@ -1,11 +1,15 @@
+import logging
 from datetime import datetime
 
+from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.db import transaction
 from django.utils import timezone
 from audit.services import audit
 
-from .models import Blackout, Resource, ResourceOutage
+from .models import Blackout, Resource, ResourceOutage, ResourcePhoto
+
+logger = logging.getLogger(__name__)
 
 
 def active_blackouts(resource: Resource, start: datetime, end: datetime) -> list[Blackout]:
@@ -146,3 +150,94 @@ def recent_outage_reasons(user, limit: int = 10) -> list[str]:
         if len(result) == limit:
             break
     return result
+
+
+def _delete_file_best_effort(storage, name: str) -> None:
+    """ลบไฟล์ออกจาก storage แบบ best-effort เสมอ — ห้ามให้ error หลุดออกไป (ดู C2)
+    เรียกใช้ทั้งจาก transaction.on_commit (นอก transaction แล้ว) และตอนกันไฟล์ค้างในเส้นทางล้มเหลว
+    """
+    if not name:
+        return
+    try:
+        if storage.exists(name):
+            storage.delete(name)
+    except Exception:
+        logger.exception("ลบไฟล์รูปห้อง %s ออกจาก storage ไม่สำเร็จ (ดำเนินการต่อโดยไม่แจ้ง error ให้ผู้ใช้)", name)
+
+
+def save_room_photo(
+    *,
+    resource: Resource,
+    image=None,
+    caption: str = "",
+    order: int = 0,
+    is_cover: bool = False,
+    photo: ResourcePhoto | None = None,
+) -> ResourcePhoto:
+    """สร้างหรือแก้ไข ResourcePhoto — จุดเดียวที่ทุกช่องทาง (admin/อื่น ๆ ในอนาคต) ต้องเรียกผ่าน (C2)
+
+    ลำดับสำคัญกับการกันไฟล์กำพร้า (จงใจแยกขั้นเขียนไฟล์ออกจากขั้นบันทึกแถว DB อย่างชัดเจน
+    เป็นสองขั้นตอน แทนที่จะปล่อยให้ ImageField.pre_save() ทำให้โดยปริยายตอน instance.save()
+    — เพื่อให้เห็นขอบเขตชัดว่าไฟล์ถูกเขียนสำเร็จ ณ จุดไหน และทดสอบ/mock ได้ตรงจุด):
+      1. เรียก full_clean() เสมอ ก่อนแตะ storage — ดักข้อผิดพลาดส่วนใหญ่ (ชนิด/ขนาดไฟล์, resource
+         ไม่ใช่ห้อง, cover ซ้ำ) ได้ก่อนที่ไฟล์จะถูกเขียนจริง
+      2. ถ้ามีไฟล์ใหม่ เขียนลง storage ทันที (ชื่อ UUID จาก upload_to) — ยังไม่ commit DB
+      3. บันทึกแถว DB — ถ้าล้มเหลวหลังจากไฟล์ถูกเขียนแล้ว (ข้อ 2) เช่น DB ล่มกลางคัน ให้ลบไฟล์ใหม่
+         ที่เพิ่งเขียนแบบ best-effort แล้ว re-raise exception เดิมกลับไปเสมอ (ห้ามกลืน error)
+      4. กรณีแทนที่รูปเดิม (อัปโหลดไฟล์ใหม่ทับรูปที่มีอยู่แล้ว) ต้องอ่านชื่อไฟล์เดิมจากฐานข้อมูล
+         ตรง ๆ (ไม่ใช่จาก instance ในหน่วยความจำ เพราะฟอร์ม/formset ของ admin อาจตั้งค่าฟิลด์ image
+         ของ instance เป็นไฟล์ใหม่ไปแล้วก่อนเรียกฟังก์ชันนี้) แล้วลบไฟล์เก่าผ่าน transaction.on_commit
+         เท่านั้น (กันไฟล์หายทั้งที่ transaction อาจ rollback)
+    """
+    if not settings.ROOM_PHOTO_UPLOAD_ENABLED:
+        raise ValidationError(
+            "ยังไม่ได้ตั้งค่าที่เก็บรูป (GS_BUCKET_NAME) — อัปโหลดได้เมื่อตั้งค่าตาม C5 แล้ว"
+        )
+
+    is_new = photo is None
+    instance = photo if photo is not None else ResourcePhoto(resource=resource)
+    if not is_new:
+        instance.resource = resource
+
+    old_image_name = None
+    if not is_new and image is not None and instance.pk:
+        old_image_name = ResourcePhoto.objects.filter(pk=instance.pk).values_list("image", flat=True).first()
+
+    instance.caption = caption
+    instance.order = order
+    instance.is_cover = is_cover
+    if image is not None:
+        instance.image = image
+
+    instance.full_clean()
+
+    new_file_written = False
+    try:
+        if image is not None:
+            # เขียนไฟล์ใหม่ลง storage ตอนนี้เลย (ยังไม่แตะ DB) — upload_to (room_photo_upload_to)
+            # จะตั้งชื่อใหม่เป็น UUID ให้เองผ่าน generate_filename()
+            instance.image.save(instance.image.name, instance.image.file, save=False)
+            new_file_written = True
+        with transaction.atomic():
+            instance.save()
+            if old_image_name and old_image_name != instance.image.name:
+                storage = instance.image.storage
+                transaction.on_commit(lambda: _delete_file_best_effort(storage, old_image_name))
+    except Exception:
+        # ไฟล์ใหม่ถูกเขียนลง storage สำเร็จแล้ว (ข้อ 2) ก่อนขั้นบันทึกแถว DB จะล้มเหลว — ลบทิ้งแบบ best-effort
+        if new_file_written and instance.image and instance.image.name:
+            _delete_file_best_effort(instance.image.storage, instance.image.name)
+        raise
+    return instance
+
+
+def delete_room_photo(photo: ResourcePhoto) -> None:
+    """ลบรูปห้อง — ลบแถว DB ก่อน แล้วลบไฟล์จริงใน storage ผ่าน transaction.on_commit เท่านั้น
+    (กันกรณี transaction rollback แล้วไฟล์หายทั้งที่แถวยังอยู่จริง) callback ครอบ try/except + log เสมอ
+    """
+    storage = photo.image.storage
+    name = photo.image.name
+    with transaction.atomic():
+        photo.delete()
+        if name:
+            transaction.on_commit(lambda: _delete_file_best_effort(storage, name))

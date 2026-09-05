@@ -44,6 +44,18 @@
 <div class="rooms-grid">
   {% for rdata in rooms_data %}
     <article class="room-lodging-card {% if rdata.is_full %}is-full{% else %}has-free-bed{% endif %}" id="room-{{ rdata.room.id }}">
+      <div class="room-photo-wrap">
+        {% with photo_urls=rdata.room.photo_url_list %}
+          {% if photo_urls %}
+            <button type="button" class="room-photo-trigger" aria-label="ดูรูปห้อง {{ rdata.room.code }} ทั้งหมด ({{ photo_urls|length }} รูป)" data-photos="{{ photo_urls|join:'|' }}" data-room-label="{{ rdata.room.code }}">
+              <img src="{{ photo_urls.0 }}" alt="รูปห้อง {{ rdata.room.code }}" loading="lazy" class="room-photo-cover">
+              {% if photo_urls|length > 1 %}<span class="room-photo-count">🖼 {{ photo_urls|length }}</span>{% endif %}
+            </button>
+          {% else %}
+            <img src="{% static 'img/room-placeholder.svg' %}" alt="ยังไม่มีรูปห้อง {{ rdata.room.code }}" loading="lazy" class="room-photo-cover is-placeholder">
+          {% endif %}
+        {% endwith %}
+      </div>
       <div class="room-card-head">
         <div>
           <h3>{{ rdata.room.code }}</h3>
@@ -166,7 +178,66 @@
   </article>
 </dialog>
 
+<!-- แกลเลอรีรูปห้อง (งาน v6-c) — dialog เดียวใช้ร่วมกันทุกห้อง เติมรูปด้วย JS ตอนกดรูป cover -->
+<dialog id="roomGalleryDialog" aria-label="แกลเลอรีรูปห้อง">
+  <article style="max-width: 34rem; width: 100%;">
+    <header>
+      <button aria-label="ปิดแกลเลอรี" rel="prev" onclick="closeRoomGallery()"></button>
+      <h3 id="roomGalleryTitle" style="margin: 0;">รูปห้อง</h3>
+    </header>
+    <div class="room-gallery-viewport">
+      <img id="roomGalleryImage" src="" alt="" loading="lazy">
+      <button type="button" class="room-gallery-nav room-gallery-prev" aria-label="รูปก่อนหน้า" onclick="roomGalleryStep(-1)">‹</button>
+      <button type="button" class="room-gallery-nav room-gallery-next" aria-label="รูปถัดไป" onclick="roomGalleryStep(1)">›</button>
+    </div>
+    <p class="room-gallery-counter"><span id="roomGalleryIndex">1</span> / <span id="roomGalleryTotal">1</span></p>
+  </article>
+</dialog>
+
 <script>
+let roomGalleryPhotos = [];
+let roomGalleryPos = 0;
+
+function updateRoomGalleryImage() {
+  document.getElementById('roomGalleryImage').src = roomGalleryPhotos[roomGalleryPos] || '';
+  document.getElementById('roomGalleryIndex').textContent = roomGalleryPos + 1;
+  document.getElementById('roomGalleryTotal').textContent = roomGalleryPhotos.length;
+}
+
+function roomGalleryStep(delta) {
+  if (!roomGalleryPhotos.length) return;
+  roomGalleryPos = (roomGalleryPos + delta + roomGalleryPhotos.length) % roomGalleryPhotos.length;
+  updateRoomGalleryImage();
+}
+
+function openRoomGallery(photos, roomLabel) {
+  roomGalleryPhotos = photos;
+  roomGalleryPos = 0;
+  document.getElementById('roomGalleryTitle').textContent = 'รูปห้อง ' + roomLabel;
+  updateRoomGalleryImage();
+  document.getElementById('roomGalleryDialog').showModal();
+}
+
+function closeRoomGallery() {
+  document.getElementById('roomGalleryDialog').close();
+}
+
+document.querySelectorAll('.room-photo-trigger').forEach(function (btn) {
+  btn.addEventListener('click', function () {
+    const photos = (btn.dataset.photos || '').split('|').filter(Boolean);
+    if (!photos.length) return;
+    openRoomGallery(photos, btn.dataset.roomLabel || '');
+  });
+});
+
+document.addEventListener('keydown', function (e) {
+  const dialog = document.getElementById('roomGalleryDialog');
+  if (dialog && dialog.open) {
+    if (e.key === 'ArrowLeft') roomGalleryStep(-1);
+    if (e.key === 'ArrowRight') roomGalleryStep(1);
+  }
+});
+
 function openBookingModal(roomId, roomCode, bedNumber) {
   document.getElementById('modalRoomId').value = roomId;
   document.getElementById('modalBedNumber').value = bedNumber;

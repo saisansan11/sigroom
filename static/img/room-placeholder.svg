@@ -1,0 +1,16 @@
+<svg viewBox="0 0 400 225" xmlns="http://www.w3.org/2000/svg" role="img" aria-hidden="true">
+  <defs>
+    <linearGradient id="roomPhBg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#212b37"/>
+      <stop offset="100%" stop-color="#161d26"/>
+    </linearGradient>
+  </defs>
+  <rect width="400" height="225" fill="url(#roomPhBg)"/>
+  <rect x="1" y="1" width="398" height="223" fill="none" stroke="#333f4c" stroke-width="1.5"/>
+  <g transform="translate(200,104)" fill="none" stroke="#546272" stroke-width="4" stroke-linejoin="round" stroke-linecap="round">
+    <rect x="-58" y="-40" width="116" height="80" rx="8"/>
+    <circle cx="-27" cy="-14" r="10"/>
+    <path d="M-58 24 L-14 -8 L18 16 L36 0 L58 22" />
+  </g>
+  <text x="200" y="178" text-anchor="middle" font-family="Tahoma, sans-serif" font-size="14" fill="#7a8794">ยังไม่มีรูปห้องนี้</text>
+</svg>
