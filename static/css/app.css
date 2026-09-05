@@ -663,6 +663,17 @@ button[type="submit"]:not(.link-button):not(.outline):hover, [role="button"]:not
 .homepage-book-button { padding: .48rem .7rem; font-size: .78rem; white-space: nowrap; }
 .homepage-empty { margin: 0; padding: var(--space-md); font-size: .82rem; }
 .homepage-empty strong { font-size: .86rem; }
+/* ปุ่มช่วงเวลาสำเร็จรูป + ห้องโปรด + จองซ้ำ (งาน C) */
+.time-preset-row { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2xs); margin-bottom: var(--space-sm); }
+.time-preset-label { color: var(--muted); font-size: .8rem; }
+.time-preset-button { padding: .35rem .65rem; border: 1px solid var(--line); border-radius: var(--radius-sm); background: var(--surface-raised); color: var(--cyan); font-family: var(--font-mono); font-size: .78rem; cursor: pointer; }
+.time-preset-button:hover { border-color: var(--cyan); color: var(--ink); }
+.room-card-actions { display: flex; align-items: center; gap: var(--space-xs); }
+.fav-form { margin: 0; }
+.fav-button { padding: .3rem .55rem; border: 1px solid var(--line); border-radius: var(--radius-sm); background: transparent; color: var(--muted); font-size: 1rem; line-height: 1; cursor: pointer; }
+.fav-button:hover { border-color: var(--amber); color: var(--amber); }
+.fav-button.is-fav { border-color: var(--amber); color: var(--amber); }
+.rebook-link { font-size: .82rem; white-space: nowrap; }
 .booking-retry-action { display: flex; align-items: center; justify-content: space-between; gap: var(--space-sm); margin-top: var(--space-sm); padding-top: var(--space-sm); border-top: 1px solid color-mix(in oklab, var(--red) 40%, transparent); }
 .booking-retry-action span { color: var(--muted); font-size: .82rem; }
 @media (max-width: 50rem) {
