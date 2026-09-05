@@ -148,6 +148,92 @@ def test_homepage_book_now_link_prefills_next_slot(client, availability_setup):
     assert "start=09%3A00" not in content
 
 
+def _booking_post_data(user, start, **overrides):
+    data = {
+        "date": start.date().isoformat(),
+        "start_time": start.strftime("%H:%M"),
+        "end_time": (start + timedelta(hours=1)).strftime("%H:%M"),
+        "title": "กิจกรรมจากปุ่มจองเลย",
+        "purpose": Booking.Purpose.TEACHING,
+        "unit": str(user.unit_id),
+        "responsible_name": user.display_name,
+        "responsible_phone": "0812345678",
+        "attendees": "5",
+        "attendee_level": "ทดสอบ",
+        "layout": "แถวหน้ากระดาน",
+        "has_external_attendees": "False",
+        "external_attendees_note": "",
+        "visibility": Booking.Visibility.NORMAL,
+        "note": "",
+        "action": "submit",
+    }
+    data.update(overrides)
+    return data
+
+
+def test_homepage_book_now_submit_conflict_shows_retry_message(client, availability_setup):
+    user, teaching_rooms, _, _, _ = availability_setup
+    room = teaching_rooms[0]
+    start = _aware(day=6, hour=10, minute=15, second=0)
+    held = Booking.objects.create(
+        room=room,
+        requester=user,
+        unit=user.unit,
+        responsible_name=user.display_name,
+        responsible_phone="0812345678",
+        title="มีคนจองแทรก",
+        start_at=start,
+        end_at=start + timedelta(hours=1),
+    )
+    submit_booking(held)
+    client.force_login(user)
+
+    homepage = client.get(reverse("bookings:calendar"))
+    assert f"/book/{room.code}/?search=1" in homepage.content.decode()
+
+    response = client.post(
+        reverse("bookings:book_form", args=[room.code]),
+        _booking_post_data(user, start),
+    )
+
+    assert response.status_code == 200
+    content = response.content.decode()
+    assert "กรุณาเลือกเวลาหรือห้องอื่น" in content
+    assert "ข้อมูลที่กรอกยังอยู่ครบ" in content
+    assert Booking.objects.filter(request_status__in=Booking.HOLDING_STATUSES).count() == 1
+
+
+def test_past_start_shows_shift_button_and_resubmits_next_quarter(client, availability_setup, monkeypatch):
+    user, teaching_rooms, _, _, _ = availability_setup
+    room = teaching_rooms[0]
+    now = _aware(day=5, hour=14, minute=37, second=0)
+    monkeypatch.setattr("bookings.services.timezone.now", lambda: now)
+    client.force_login(user)
+
+    response = client.post(
+        reverse("bookings:book_form", args=[room.code]),
+        _booking_post_data(user, _aware(day=5, hour=14, minute=15, second=0)),
+    )
+    assert response.status_code == 200
+    content = response.content.decode()
+    assert "เวลาเริ่มต้องไม่อยู่ในอดีต" in content
+    assert "เลื่อนเป็นช่วงถัดไปและส่งซ้ำ" in content
+
+    retry = client.post(
+        reverse("bookings:book_form", args=[room.code]),
+        _booking_post_data(
+            user,
+            _aware(day=5, hour=14, minute=15, second=0),
+            action="shift_next_slot",
+        ),
+    )
+
+    assert retry.status_code == 302
+    booking = Booking.objects.get()
+    assert timezone.localtime(booking.start_at).strftime("%H:%M") == "14:45"
+    assert timezone.localtime(booking.end_at).strftime("%H:%M") == "15:45"
+
+
 def test_submit_booking_remembers_phone_only_when_profile_is_blank(availability_setup):
     user, teaching_rooms, _, _, _ = availability_setup
     room = teaching_rooms[0]

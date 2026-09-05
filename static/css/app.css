@@ -661,9 +661,12 @@ button[type="submit"]:not(.link-button):not(.outline):hover, [role="button"]:not
 .homepage-book-button { padding: .48rem .7rem; font-size: .78rem; white-space: nowrap; }
 .homepage-empty { margin: 0; padding: var(--space-md); font-size: .82rem; }
 .homepage-empty strong { font-size: .86rem; }
+.booking-retry-action { display: flex; align-items: center; justify-content: space-between; gap: var(--space-sm); margin-top: var(--space-sm); padding-top: var(--space-sm); border-top: 1px solid color-mix(in oklab, var(--red) 40%, transparent); }
+.booking-retry-action span { color: var(--muted); font-size: .82rem; }
 @media (max-width: 50rem) {
   .home-entry-grid, .homepage-availability-grid { grid-template-columns: 1fr; gap: var(--space-sm); }
   .homepage-availability-heading { align-items: flex-start; flex-direction: column; gap: var(--space-2xs); }
+  .booking-retry-action { align-items: stretch; flex-direction: column; }
 }
 @media (max-width: 30rem) {
   .homepage-room-card { grid-template-columns: 3rem minmax(0, 1fr); }

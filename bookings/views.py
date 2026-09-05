@@ -33,6 +33,7 @@ from .services import (
     editable_fields,
     find_available_now,
     find_available_rooms,
+    next_quarter_start,
     self_service_message,
     submit_booking,
 )
@@ -167,7 +168,12 @@ def _today_board(request, rooms, now):
 
 
 def _homepage_availability_context(request, selected_category=""):
-    """แปลงผล service ของงาน A เป็นข้อมูลแสดงผลและลิงก์จองที่ปลอดภัย"""
+    """แปลงผล service ของงาน A เป็นข้อมูลแสดงผลและลิงก์จองที่ปลอดภัย.
+
+    ตอนนี้คำนวณตรวจว่างรายห้องทุกครั้งที่เปิดหน้าแรก ซึ่งเหมาะกับ pilot ที่มี
+    ประมาณ 8–30 ห้อง; หากจำนวนห้องเกินราว 50 ห้อง ควรเพิ่ม short-lived cache
+    ให้ผลลัพธ์ช่วงถัดไปก่อนขยายการใช้งานจริง.
+    """
     now_result = find_available_now(request.user)
     local_start = timezone.localtime(now_result.start_at)
     local_end = timezone.localtime(now_result.end_at)
@@ -527,7 +533,24 @@ def book_form(request, code):
     )
     booking = Booking(room=room, requester=request.user, unit=request.user.unit)
     if request.method == "POST":
-        form = BookingForm(request.POST, user=request.user, room=room, instance=booking)
+        post_data = request.POST
+        form = BookingForm(post_data, user=request.user, room=room, instance=booking)
+        if request.POST.get("action") == "shift_next_slot" and form.is_valid():
+            duration = form.cleaned_data["end_at"] - form.cleaned_data["start_at"]
+            shifted_start = next_quarter_start()
+            shifted_end = shifted_start + duration
+            local_start = timezone.localtime(shifted_start)
+            local_end = timezone.localtime(shifted_end)
+            post_data = request.POST.copy()
+            post_data.update(
+                {
+                    "date": local_start.date().isoformat(),
+                    "start_time": local_start.strftime("%H:%M"),
+                    "end_time": local_end.strftime("%H:%M"),
+                    "action": "submit",
+                }
+            )
+            form = BookingForm(post_data, user=request.user, room=room, instance=booking)
         if form.is_valid():
             booking = form.save()
             booking.requester = request.user
@@ -545,6 +568,9 @@ def book_form(request, code):
                 booking.delete()
                 for message in exc.messages:
                     form.add_error(None, message)
+                form.show_shift_next_slot = any(
+                    "เวลาเริ่มต้องไม่อยู่ในอดีต" in message for message in exc.messages
+                )
             else:
                 audit(request.user, "bookings.booking", booking.pk, "booking_created", after=model_snapshot(booking))
                 notify_submitted(booking)

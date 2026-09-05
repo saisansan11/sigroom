@@ -1,7 +1,7 @@
 {% load thaidate %}
 <form method="post" novalidate class="booking-form">
   {% csrf_token %}
-  {% if form.non_field_errors %}<div class="notice error">{% for error in form.non_field_errors %}<div>{{ error }}</div>{% endfor %}</div>{% endif %}
+  {% if form.non_field_errors %}<div class="notice error">{% for error in form.non_field_errors %}<div>{{ error }}</div>{% endfor %}{% if form.show_shift_next_slot %}<div class="booking-retry-action"><span>เลื่อนเวลาเริ่มเป็นช่วง 15 นาทีถัดไป แล้วส่งคำขอซ้ำได้ทันที</span><button class="compact-button" type="submit" name="action" value="shift_next_slot">เลื่อนเป็นช่วงถัดไปและส่งซ้ำ</button></div>{% endif %}</div>{% endif %}
 
   {% if form.show_booking_summary and 'date' in form.fields and 'start_time' in form.fields and 'end_time' in form.fields %}
     <section class="booking-form-section booking-summary" aria-labelledby="booking-summary-title">
