@@ -1,3 +1,5 @@
+from django.conf import settings
+from django.conf.urls.static import static
 from django.contrib import admin
 from django.urls import include, path
 
@@ -16,3 +18,7 @@ urlpatterns = [
     path("reports/", include("reports.urls")),
     path("", include("bookings.urls")),
 ]
+
+# เสิร์ฟไฟล์ media (รูปห้อง) เฉพาะ dev ในเครื่อง (FileSystemStorage) — production ใช้ GCS โดยตรง ไม่ผ่าน Django
+if settings.DEBUG:
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

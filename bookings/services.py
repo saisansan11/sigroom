@@ -203,7 +203,7 @@ def find_available_rooms(
         item for item in equipment if _active_holds_overlapping(item, compute_hold(item, start, end)).exists()
     ]
 
-    rooms = Resource.objects.filter(resource_type=Resource.Type.ROOM).select_related("rule", "owner_unit")
+    rooms = Resource.objects.filter(resource_type=Resource.Type.ROOM).select_related("rule", "owner_unit").prefetch_related("photos")
     for room in rooms:
         errors = validate_booking_window(room, start, end, user)
         if not errors and _active_holds_overlapping(room, compute_hold(room, start, end)).exists():

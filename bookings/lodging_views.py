@@ -45,7 +45,7 @@ def _build_portal_context(cohort):
     total_slots = 0
     occupied_slots = 0
 
-    for room in cohort.rooms.all().order_by("building", "floor", "code"):
+    for room in cohort.rooms.all().order_by("building", "floor", "code").prefetch_related("photos"):
         beds = []
         beds_count = cohort.beds_per_room
         room_occupied = 0

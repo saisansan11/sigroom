@@ -4,6 +4,9 @@
 "ห้อง" และ "อุปกรณ์ส่วนกลาง" เป็นทรัพยากรชนิดเดียวกัน ใช้กลไกตรวจเวลาชนร่วมกัน
 อุปกรณ์ส่วนกลางไม่มีผู้อนุมัติ (ระยะที่ 1)
 """
+import uuid
+from pathlib import PurePosixPath
+
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.db import models
@@ -56,6 +59,20 @@ class Resource(models.Model):
     @property
     def is_room(self) -> bool:
         return self.resource_type == self.Type.ROOM
+
+    @property
+    def cover_photo(self) -> "ResourcePhoto | None":
+        """รูปหน้าปกของห้อง (งาน v6-c) — ResourcePhoto.Meta.ordering เรียง is_cover มาก่อนเสมอ
+        ถ้าไม่มีรูปที่ตั้ง is_cover ไว้ จะได้รูปแรกตามลำดับแทนเพื่อไม่ให้การ์ดว่างเปล่าโดยไม่จำเป็น
+        ใช้ .all() (ไม่ใช่ .first()) เพื่ออ่านจาก prefetch_related("photos") ถ้ามี ไม่ยิง query ซ้ำ (กัน N+1)
+        """
+        photos = list(self.photos.all())
+        return photos[0] if photos else None
+
+    @property
+    def photo_url_list(self) -> list[str]:
+        """URL รูปทั้งหมดของห้องตามลำดับ ใช้ป้อนแกลเลอรีในหน้าเว็บ — อ่านจาก prefetch cache เช่นกัน"""
+        return [photo.image.url for photo in self.photos.all()]
 
 
 class ResourceRule(models.Model):
@@ -196,3 +213,97 @@ class ResourceOutage(models.Model):
 
     def __str__(self):
         return f"{self.resource.code} {self.start_at}–{self.end_at}: {self.reason}"
+
+
+def room_photo_upload_to(instance: "ResourcePhoto", filename: str) -> str:
+    """ตั้งชื่อไฟล์ใหม่เป็น UUID เสมอ (งาน v6-c C2) — กันชื่อไฟล์ซ้ำเขียนทับ (คู่กับ GS_FILE_OVERWRITE=False)
+    และเลี่ยงปัญหาชื่อไฟล์ภาษาไทย/อักขระพิเศษที่ผู้ใช้ตั้งเอง ห้ามใช้ชื่อไฟล์เดิมจากผู้ใช้เด็ดขาด
+    """
+    ext = PurePosixPath(filename).suffix.lower()
+    return f"rooms/{uuid.uuid4()}{ext}"
+
+
+ROOM_PHOTO_MAX_SIZE_BYTES = 5 * 1024 * 1024  # 5MB
+ROOM_PHOTO_ALLOWED_FORMATS = {"JPEG": "JPEG", "PNG": "PNG", "WEBP": "WebP"}
+
+
+def validate_room_photo_file(file) -> None:
+    """จำกัดชนิดไฟล์ (JPEG/PNG/WebP) และขนาด (≤5MB) — ใช้ Pillow ตรวจชนิดไฟล์จริง
+    (ไม่เชื่อแค่นามสกุลไฟล์หรือ content_type ที่ผู้ใช้ส่งมา) ข้อความ error เป็นภาษาไทยเสมอ
+    """
+    size = getattr(file, "size", None)
+    if size is not None and size > ROOM_PHOTO_MAX_SIZE_BYTES:
+        raise ValidationError("ขนาดไฟล์รูปต้องไม่เกิน 5MB")
+
+    from PIL import Image, UnidentifiedImageError
+
+    try:
+        file.seek(0)
+        with Image.open(file) as img:
+            img.verify()
+            image_format = img.format
+    except (UnidentifiedImageError, OSError, ValueError):
+        raise ValidationError("ไฟล์นี้ไม่ใช่ไฟล์รูปภาพที่รองรับ กรุณาใช้ไฟล์ชนิด JPEG, PNG หรือ WebP เท่านั้น")
+    finally:
+        try:
+            file.seek(0)
+        except Exception:
+            pass
+
+    if image_format not in ROOM_PHOTO_ALLOWED_FORMATS:
+        raise ValidationError("รองรับเฉพาะไฟล์รูปชนิด JPEG, PNG หรือ WebP เท่านั้น")
+
+
+class ResourcePhoto(models.Model):
+    """รูปประกอบห้อง (งาน v6-c) — เฉพาะห้องเท่านั้น (ไม่ใช่อุปกรณ์ส่วนกลาง)
+    ทุกช่องทางสร้าง/แก้ไข/ลบต้องผ่าน resources.services.save_room_photo()/delete_room_photo()
+    เท่านั้น (ดูเหตุผลใน docs/v6-plan-antigravity.md งาน C2) — ยกเว้น test ที่พิสูจน์
+    constraint ระดับฐานข้อมูลโดยเฉพาะ ซึ่งต้องสร้างตรงผ่าน ORM เพื่อข้าม full_clean()
+    """
+
+    resource = models.ForeignKey(
+        Resource,
+        verbose_name="ห้อง",
+        on_delete=models.CASCADE,
+        related_name="photos",
+        limit_choices_to={"resource_type": Resource.Type.ROOM},
+    )
+    image = models.ImageField("รูปภาพ", upload_to=room_photo_upload_to, validators=[validate_room_photo_file])
+    caption = models.CharField("คำอธิบายภาพ", max_length=200, blank=True)
+    order = models.PositiveSmallIntegerField("ลำดับ", default=0)
+    is_cover = models.BooleanField("ใช้เป็นรูปหน้าปก", default=False)
+
+    class Meta:
+        verbose_name = "รูปห้อง"
+        verbose_name_plural = "รูปห้อง"
+        ordering = ["-is_cover", "order", "id"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["resource"],
+                condition=models.Q(is_cover=True),
+                name="unique_cover_photo_per_resource",
+                # ข้อความสำรองภาษาไทย เผื่อ validate_constraints() หลุดมาทำงานจริง (ปกติ clean()
+                # ด้านล่างจะดักและแปลข้อความไว้ก่อนแล้วเสมอเมื่อสร้าง/แก้ไขผ่าน full_clean())
+                violation_error_message="ห้องนี้มีรูปหน้าปกอยู่แล้ว กรุณายกเลิกรูปหน้าปกเดิมก่อน หรือเลือกรูปนี้เป็นปกภายหลัง",
+            ),
+        ]
+
+    def __str__(self) -> str:
+        label = "ปก" if self.is_cover else f"ลำดับ {self.order}"
+        code = self.resource.code if self.resource_id else "?"
+        return f"รูป{label} — {code}"
+
+    def clean(self):
+        super().clean()
+        if self.resource_id and self.resource.resource_type != Resource.Type.ROOM:
+            raise ValidationError({"resource": "เลือกรูปภาพประกอบได้เฉพาะห้องเท่านั้น ไม่ใช่อุปกรณ์ส่วนกลาง"})
+        # แปล error ของ partial unique constraint (unique_cover_photo_per_resource) เป็นข้อความไทยที่อ่านรู้เรื่อง
+        # ก่อนถึงชั้นฐานข้อมูล — ตัวบังคับกฎจริงยังอยู่ที่ constraint ด้านบนเสมอ (ดู C2) คีย์ error ไว้ที่ฟิลด์
+        # "resource" (ตรงกับ fields=["resource"] ของ constraint) โดยตั้งใจ เพื่อให้ full_clean() เพิ่มชื่อฟิลด์
+        # นี้เข้า exclude ก่อนเรียก validate_constraints() ต่อ — กันไม่ให้ Django แปะข้อความ default ซ้ำอีกชั้น
+        if self.is_cover and self.resource_id:
+            conflict = ResourcePhoto.objects.filter(resource_id=self.resource_id, is_cover=True).exclude(pk=self.pk)
+            if conflict.exists():
+                raise ValidationError(
+                    {"resource": "ห้องนี้มีรูปหน้าปกอยู่แล้ว กรุณายกเลิกรูปหน้าปกเดิมก่อน หรือเลือกรูปนี้เป็นปกภายหลัง"}
+                )

@@ -35,6 +35,7 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "django.contrib.postgres",
     "django_htmx",
+    "storages",
     # แอปของระบบ (modular monolith — SRS NF-15)
     "accounts",
     "resources",
@@ -127,6 +128,30 @@ STORAGES = {
     "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},
     "staticfiles": {"BACKEND": "whitenoise.storage.CompressedStaticFilesStorage"},
 }
+
+# --- ไฟล์ media (รูปห้อง — งาน v6-c) ----------------------------------------
+# Cloud Run เก็บไฟล์บนดิสก์ไม่ได้ถาวร (หายเมื่อ restart) จึงต้องแยก 3 กรณีตามแผน v6-plan-antigravity.md งาน C1:
+#   1) มี env GS_BUCKET_NAME            → ใช้ Google Cloud Storage เป็น storage ของ media ทั้งหมด
+#   2) ไม่มี env และ DEBUG=True (dev)   → ใช้ FileSystemStorage เดิม (ค่า default ด้านบน) ครบวงจร
+#   3) ไม่มี env และ DEBUG=False (prod ที่ infra ยังไม่พร้อม) → ปิดการอัปโหลดรูปด้วย flag เดียว
+# ห้ามกระจายเงื่อนไข DEBUG/env นี้ไปที่อื่น — ทุกจุด (admin/service) อ่านค่า ROOM_PHOTO_UPLOAD_ENABLED นี้เท่านั้น
+MEDIA_URL = "media/"
+MEDIA_ROOT = BASE_DIR / "media"
+GS_BUCKET_NAME = os.environ.get("GS_BUCKET_NAME", "").strip()
+
+if GS_BUCKET_NAME:
+    # กรณี 1: production ที่ทำ C5 (infra) เสร็จแล้ว — เสิร์ฟรูปจาก GCS โดยตรง
+    STORAGES["default"] = {"BACKEND": "storages.backends.gcloud.GoogleCloudStorage"}
+    GS_DEFAULT_ACL = None  # bucket ใช้ uniform bucket-level access (C5) ห้ามส่ง ACL รายไฟล์ มิฉะนั้นอัปโหลด error
+    GS_QUERYSTRING_AUTH = False  # เสิร์ฟ URL สาธารณะตรง ๆ — ค่า default (signed URL) ใช้ไม่ได้เพราะไม่มี private key บน Cloud Run
+    GS_FILE_OVERWRITE = False  # ค่า default ของ django-storages เขียนทับไฟล์ชื่อซ้ำทันที ต่างจาก FileSystemStorage ของ Django
+    ROOM_PHOTO_UPLOAD_ENABLED = True
+elif DEBUG:
+    # กรณี 2: dev ในเครื่อง — ใช้ FileSystemStorage เดิมที่ตั้งไว้ใน STORAGES ด้านบน
+    ROOM_PHOTO_UPLOAD_ENABLED = True
+else:
+    # กรณี 3: production ที่ยังไม่ได้ตั้งค่า C5 — ปิดอัปโหลดเด็ดขาด ห้ามปล่อยให้รูปตกลง FileSystemStorage บน Cloud Run
+    ROOM_PHOTO_UPLOAD_ENABLED = False
 
 # --- ความปลอดภัย session/cookie (SRS SR-11 & Cloud Migration Gate) ------------
 SESSION_COOKIE_HTTPONLY = True

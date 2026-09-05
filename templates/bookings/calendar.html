@@ -159,7 +159,13 @@
         {% for h in board_hours %}<span>{{ h|stringformat:"02d" }}</span>{% endfor %}
       </div>
       {% for row in board_rows %}
-      <div class="tl-room"><b>{{ row.room.code }}</b>{{ row.room.name }}</div>
+      <div class="tl-room">
+        {% with cover=row.room.cover_photo %}
+          {% if cover %}<img src="{{ cover.image.url }}" alt="" loading="lazy" class="tl-room-thumb">
+          {% else %}<img src="{% static 'img/room-placeholder.svg' %}" alt="" loading="lazy" class="tl-room-thumb is-placeholder">{% endif %}
+        {% endwith %}
+        <span><b>{{ row.room.code }}</b>{{ row.room.name }}</span>
+      </div>
       <div class="tl-track">
         {% for block in row.blocks %}
         <span class="tl-block {{ block.cls }}" style="left:{{ block.left|floatformat:2 }}%;width:{{ block.width|floatformat:2 }}%" title="{{ block.label }}">{{ block.label }}</span>
