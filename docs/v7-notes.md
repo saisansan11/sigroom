@@ -41,8 +41,7 @@
 ## สรุปบันทึกการทำงาน (Cloud Run Log Summary)
 
 - **Application Errors / 5xx:** 0 รายการ (ไม่มี 5xx, schema error หรือ migration error บน revision `sigroom-00013-z2q`)
-- **Warnings:** พบ `GET /favicon.ico 404 WARNING` จำนวน 1 ครั้ง (ไม่มีผลกระทบต่อการให้บริการของระบบ)
-- **สถานะคำขอ:** คำขอหน้าเว็บและ static assets ทั้งหมดบันทึกสถานะ 200 OK หรือ 302 Redirect พร้อม severity INFO
+- **สถานะคำขอและข้อความแจ้งเตือน:** คำขอใน Production Smoke Test ที่ระบุไว้ทั้งหมดผ่านด้วย 200 OK หรือ 302 Redirect; นอกเหนือจากนั้นพบ `GET /favicon.ico` ตอบ 404 จำนวน 1 ครั้ง (WARNING) ซึ่งไม่กระทบการทำงานของระบบ
 
 ---
 
