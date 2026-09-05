@@ -2,6 +2,67 @@
 
 อัปเดตล่าสุด: 6 กันยายน 2569
 
+## สรุปการ Deploy ขึ้น Production (V7 งาน B–D)
+
+- **Integration Pull Request:** [#12](https://github.com/saisansan11/sigroom/pull/12) (Merged)
+- **Production Target Branch:** `feat/lodging-v5-2`
+- **Merge Commit SHA:** `aee9d1e23bdd298b9d6feb4d8871abdcc1a4eb8d`
+- **Cloud SQL Pre-deploy Backup ID:** `1788648442850` (Status: SUCCESSFUL, เวลา `2026-09-05T22:47:22.850Z`)
+- **Cloud Build ID:** `a5f3fa71-bb81-4055-b509-2b6bb8c41168` (Trigger: `auto-deploy-sigroom`, Status: SUCCESS)
+- **Cloud Run Migration Job:** `sigroom-migrate` (Execution: `sigroom-migrate-pg5p2`, Status: EXECUTION_SUCCEEDED)
+- **Applied Migrations (4 รายการ):**
+  1. `resources.0005_alter_blackout_room_category_and_more`
+  2. `accounts.0003_user_favorite_resources`
+  3. `bookings.0010_booking_online_meeting_url`
+  4. `bookings.0011_alter_referencevalue_field`
+- **Cloud Run Active Revision:** `sigroom-00013-z2q` (Traffic: 100%)
+- **Previous Revision (Rollback target):** `sigroom-00012-hpq`
+- **Image Artifact:** `asia-southeast3-docker.pkg.dev/sixth-storm-439008-u2/sigroom-repo/sigroom:aee9d1e23bdd298b9d6feb4d8871abdcc1a4eb8d`
+- **Visual Evidence Prerelease:** [v7-bcd-prod-qa](https://github.com/saisansan11/sigroom/releases/tag/v7-bcd-prod-qa)
+
+---
+
+## ผลการทดสอบ Production Smoke Test
+
+| Endpoint / เส้นทาง | วิธีตรวจสอบ | ผลลัพธ์ที่คาดหวัง | ผลการตรวจจริง | สถานะ |
+|---|---|---|---|---|
+| `https://sixth-storm-439008-u2.web.app/` | HTTP GET | 200 OK, Guest Home | 200 OK, หน้าแรกโหลดสมบูรณ์ | ผ่าน |
+| `https://sigroom.web.app/` | HTTP GET | 200 OK, Canonical Site | 200 OK, Firebase Rewrite สมบูรณ์ | ผ่าน |
+| `/accounts/login/` | HTTP GET | 200 OK, ฟอร์มล็อกอิน | 200 OK | ผ่าน |
+| `/admin/` | HTTP GET | 302 Redirect ไป `/admin/login/` | 302 Redirect | ผ่าน |
+| `/manifest.webmanifest` | HTTP GET | 200 OK, `application/manifest+json` | 200 OK, `application/manifest+json` | ผ่าน |
+| `/static/img/pwa-icon-192.png` | HTTP GET | 200 OK, `image/png` | 200 OK (PNG 192x192) | ผ่าน |
+| `/static/img/pwa-icon-512.png` | HTTP GET | 200 OK, `image/png` | 200 OK (PNG 512x512) | ผ่าน |
+| `/lodging/` | HTTP GET | 200 OK, Cohort Portal | 200 OK | ผ่าน |
+| Authenticated Flows (จอง/ห้องโปรด/อนุมัติ) | Web Browser | ฟังก์ชันสำหรับผู้ใช้ล็อกอิน | pending owner authenticated smoke (ไม่ bypass/reset รหัสผ่านตาม Hard Stop Rules) | รอตรวจรับ |
+
+---
+
+## ตรวจสอบ Web App Manifest บน Production
+
+- **URL:** `https://sixth-storm-439008-u2.web.app/manifest.webmanifest`
+- **Content-Type:** `application/manifest+json`
+- **JSON Metadata:**
+  - `name`: "SIGROOM — ระบบจองห้อง รร.ส.สส."
+  - `short_name`: "SIGROOM"
+  - `start_url`: "/"
+  - `scope`: "/"
+  - `display`: "standalone"
+  - `background_color`: "#0b1721"
+  - `theme_color`: "#102433"
+  - `icons`: 192x192 และ 512x512 (image/png, any maskable)
+
+---
+
+## บัญชีข้อมูลห้องหมวดออนไลน์ (Master Data Inventory)
+
+- **จำนวนห้องหมวด `online` ปัจจุบันบน Production:** 0 ห้อง
+- **การแสดงผลหน้าแรก:** การ์ด "ห้องสอนออนไลน์" (`#now-online`) ถูกซ่อนอัตโนมัติตามเงื่อนไข `Resource.objects.filter(room_category='online').exists()`
+- **การคงสภาพ Master Data:** ไม่มีการรัน `seed_pilot` และไม่มีการสร้างห้องทดสอบบน Production
+- **สถานะ:** `pending owner confirmation` รอเจ้าของระบบยืนยันจำนวนและรหัสห้องจริง (2 ห้องตาม rev.4 หรือ 3 ห้องตาม seed)
+
+---
+
 ## งาน D — PWA และหน้าจอมือถือ 360px
 
 สภาพแวดล้อมตรวจ: Django development server ในเครื่อง, Chrome DevTools Protocol (CDP) mobile viewport 360×800 px
@@ -29,21 +90,31 @@
 
 หมายเหตุ: ตรวจสอบด้วย headless browser / CDP viewport 360×800 px โดยจำลอง session ผู้ใช้ทดสอบและล้าง session ชั่วคราวออกทั้งหมดหลังทดสอบเสร็จสิ้น ไม่มีการสร้างข้อมูลจองหรือเช็คอินค้างไว้ในระบบ
 
-## ตรวจติดตั้งด้วยเครื่องจริง
+---
 
-ขั้นนี้ต้องทำบนเว็บไซต์ HTTPS หลัง deploy งาน D แล้ว (สถานะปัจจุบัน: Pending Owner Test)
+## ตรวจติดตั้งด้วยเครื่องจริง (Device Acceptance)
+
+ขั้นนี้ต้องทำบนเว็บไซต์ HTTPS หลัง deploy งาน B–D แล้ว
 
 | อุปกรณ์ | รุ่น / OS | ติดตั้งจากหน้าจอโฮม | เปิดแบบไม่มีแถบ URL | ผู้ตรวจ / วันที่ | ผล |
 |---|---|---|---|---|---|
 | Android | รอระบุหลัง deploy | รอทดสอบบน HTTPS | รอทดสอบบน HTTPS | เจ้าของระบบ | pending owner test |
 | iPhone | รอระบุหลัง deploy | รอทดสอบบน HTTPS | รอทดสอบบน HTTPS | เจ้าของระบบ | pending owner test |
 
-## ตัวชี้วัดผู้ใช้ใหม่
+---
+
+## ตัวชี้วัดผู้ใช้ใหม่ (3-User Acceptance Metrics)
 
 เริ่มจับเวลาหลัง login สำเร็จและบัญชีมีข้อมูลครบ การกรอกข้อความนับรวมในเวลา แต่ไม่นับเป็นคลิก
 
 | ผู้ทดลอง | ประเภทห้อง | จำนวนคลิก | เวลา | ผล |
 |---|---|---:|---:|---|
-| คนที่ 1 | รอกรอก | — | — | รอทดสอบ |
-| คนที่ 2 | รอกรอก | — | — | รอทดสอบ |
-| คนที่ 3 | รอกรอก | — | — | รอทดสอบ |
+| คนที่ 1 | รอกรอก | — | — | pending owner test |
+| คนที่ 2 | รอกรอก | — | — | pending owner test |
+| คนที่ 3 | รอกรอก | — | — | pending owner test |
+
+---
+
+## ประเด็นที่รับทราบ (Known Issues)
+
+- **Time Presets ในหน้าแก้ไขการจอง:** ปุ่มช่วงเวลาสำเร็จรูป (คาบเช้า/บ่าย/ทั้งวัน) จะไม่แสดงในหน้าแก้ไขการจอง (booking edit) เนื่องจากแบบฟอร์มแก้ไขอนุญาตให้แก้ไขเฉพาะฟิลด์กิจกรรมและรายละเอียด (post-submit editable fields) โดยไม่อนุญาตให้เปลี่ยนวัน/เวลาเพื่อป้องกันการจองทับซ้อน หากต้องการเปลี่ยนวัน/เวลาให้ทำการยกเลิกแล้วใช้ปุ่ม "จองแบบเดิมอีกครั้ง" (Rebook)
