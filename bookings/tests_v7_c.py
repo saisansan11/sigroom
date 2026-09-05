@@ -170,7 +170,7 @@ def test_search_page_renders_presets_but_summary_mode_does_not(client, rebook_se
 def test_favorites_sort_first_in_available_rooms(rebook_setup):
     user, _, rooms = rebook_setup
     start = timezone.now() + timedelta(days=1)
-    start = start.replace(minute=0, second=0, microsecond=0)
+    start = start.replace(hour=10, minute=0, second=0, microsecond=0)
     end = start + timedelta(hours=1)
 
     available, _ = find_available_rooms(start, end, user)
