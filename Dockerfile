@@ -18,15 +18,10 @@ RUN pip install --no-cache-dir uv
 
 COPY pyproject.toml .
 
-# Install dependencies including gunicorn
-RUN uv pip install --system --no-cache \
-    "django>=5.2,<5.3" \
-    "psycopg[binary]>=3.2" \
-    "python-dotenv>=1.0" \
-    "django-htmx>=1.19" \
-    "argon2-cffi>=23" \
-    "whitenoise>=6.8" \
-    "gunicorn>=22.0"
+# ติดตั้ง dependencies ทั้งหมดจาก pyproject.toml เป็นแหล่งความจริงเดียว — ห้าม hardcode
+# รายชื่อแพ็กเกจซ้ำในไฟล์นี้ (เคยทำให้ image ขาด qrcode/django-storages/pillow ทั้งที่
+# โค้ดใช้งานจริง เพราะสองรายการคลาดกัน) · gunicorn ระบุแยกเพราะใช้เฉพาะใน container
+RUN uv pip install --system --no-cache -r pyproject.toml "gunicorn>=22.0"
 
 COPY . .
 
