@@ -116,6 +116,15 @@ class CourseStudentLodging(models.Model):
     phone = models.CharField("เบอร์โทรศัพท์", max_length=30)
     note = models.CharField("หมายเหตุเพิ่มเติม", max_length=200, blank=True)
     booked_at = models.DateTimeField("เวลาที่จอง", auto_now_add=True)
+    checked_in_at = models.DateTimeField("เวลารายงานตัว", null=True, blank=True)
+    checked_in_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        verbose_name="ผู้ยืนยันรายงานตัว",
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="checked_in_lodging_students",
+    )
 
     class Meta:
         verbose_name = "การจองห้องพักนักเรียน"

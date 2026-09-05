@@ -17,7 +17,7 @@ from django.utils import timezone
 from audit.services import audit
 from resources.models import Resource
 
-from .lodging_models import CourseLodgingCohort
+from .lodging_models import CourseLodgingCohort, CourseStudentLodging
 from .models import BookingResource
 from .phone_utils import normalize_phone  # noqa: F401 (re-exported for bookings.lodging_views)
 
@@ -256,3 +256,40 @@ def update_cohort_allocation(
         after["release_reason"] = release_reason.strip()
     audit(actor, "bookings.courselodgingcohort", locked_cohort.pk, action, before=before, after=after)
     return locked_cohort
+
+
+@transaction.atomic
+def check_in_student(student: CourseStudentLodging, actor) -> CourseStudentLodging:
+    """ยืนยันรายงานตัวนักเรียนที่หน้าที่พัก (สแกน QR บนบัตร).
+
+    ล็อกแถวด้วย select_for_update() ภายใน transaction.atomic() เพื่อกันการยืนยันซ้ำ
+    แบบพร้อมกัน (concurrent) — ตรวจสิทธิ์ผู้ยืนยันซ้ำในนี้ด้วย (แม้ view จะกรองสิทธิ์
+    ก่อนแล้วก็ตาม) ตามกติกา CLAUDE.md ข้อ 3 ที่กฎธุรกิจต้องอยู่ใน services.py เท่านั้น
+    """
+    locked_student = (
+        CourseStudentLodging.objects.select_related("cohort", "room")
+        .select_for_update()
+        .get(pk=student.pk)
+    )
+    if not can_manage_cohort(actor, locked_student.cohort):
+        raise PermissionDenied("คุณไม่มีสิทธิ์ยืนยันรายงานตัวของรุ่นนี้")
+    if locked_student.checked_in_at is not None:
+        raise ValidationError("นักเรียนคนนี้รายงานตัวไปแล้ว ไม่สามารถยืนยันซ้ำได้")
+
+    before = {"checked_in_at": None, "checked_in_by": None}
+    locked_student.checked_in_at = timezone.now()
+    locked_student.checked_in_by = actor
+    locked_student.save(update_fields=["checked_in_at", "checked_in_by"])
+    after = {
+        "checked_in_at": locked_student.checked_in_at,
+        "checked_in_by": locked_student.checked_in_by_id,
+    }
+    audit(
+        actor,
+        "bookings.coursestudentlodging",
+        locked_student.pk,
+        "student_checked_in",
+        before=before,
+        after=after,
+    )
+    return locked_student

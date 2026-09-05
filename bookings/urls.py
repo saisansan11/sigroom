@@ -33,4 +33,6 @@ urlpatterns = [
     path("lodging/c/<slug:slug>/", lodging_views.lodging_portal, name="lodging_portal"),
     path("lodging/c/<slug:slug>/book/", lodging_views.lodging_book_bed, name="lodging_book_bed"),
     path("lodging/c/<slug:slug>/pass/<uuid:student_id>/", lodging_views.lodging_pass, name="lodging_pass"),
+    path("lodging/checkin/<uuid:student_id>/", lodging_views.lodging_checkin, name="lodging_checkin"),
+    path("lodging/checkin/<uuid:student_id>/qr.svg", lodging_views.lodging_checkin_qr_svg, name="lodging_checkin_qr_svg"),
 ]
