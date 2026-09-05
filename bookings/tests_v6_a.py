@@ -51,22 +51,20 @@ def v6_a_setup():
     return user, unit, cohort, room1, room2
 
 
-def test_guest_home_renders_role_router_with_three_cards_and_anchor(client):
-    """Guest เปิดหน้าแรกต้องเห็น role router 3 ใบ, ลิงก์ #today-board, และ element id="today-board" """
+def test_guest_home_renders_three_one_stop_cards_and_anchor(client):
+    """Guest เห็นการ์ดทางเข้า 3 ใบของงาน A และแถบห้องว่างรายกลุ่ม"""
     resp = client.get(reverse("bookings:calendar"))
     assert resp.status_code == 200
     content = resp.content.decode()
 
-    # ต้องมี role router และการ์ด 3 ใบ
-    assert "guest-role-router" in content
-    assert "ดูห้องว่างตอนนี้" in content
-    assert 'href="#today-board"' in content
-    assert "จองห้องเรียน/ห้องประชุม" in content
-    assert "/accounts/login/?next=/book/" in content or reverse("login") in content
-    assert "สำหรับ จนท. มีบัญชีหน่วย" in content
-    assert "จองที่พักนักเรียนหลักสูตร" in content
-    assert reverse("bookings:lodging_index") in content
-    assert "นักเรียนใช้ลิงก์ที่ได้จากกลุ่ม LINE ของรุ่น" in content
+    assert "home-entry-grid" in content
+    assert "ห้องเรียน / ห้องปฏิบัติ" in content
+    assert "ห้องประชุม" in content
+    assert "ห้องพักหลักสูตร" in content
+    assert 'href="#now-teaching"' in content
+    assert 'href="#now-meeting"' in content
+    assert 'id="now-teaching"' in content
+    assert 'id="now-meeting"' in content
 
     # ต้องมี id="today-board" บน section
     assert 'id="today-board"' in content
@@ -74,16 +72,19 @@ def test_guest_home_renders_role_router_with_three_cards_and_anchor(client):
 
 def test_authenticated_home_hides_role_router_and_orders_actions(client, v6_a_setup):
     """ผู้ล็อกอินแล้วไม่เห็น role router และการ์ด action เรียงตามลำดับ"""
-    user, _, _, _, _ = v6_a_setup
+    user, _, cohort, _, _ = v6_a_setup
     client.force_login(user)
 
     resp = client.get(reverse("bookings:calendar"))
     assert resp.status_code == 200
     content = resp.content.decode()
 
-    # ต้องไม่เห็น role router ของ guest
+    # การ์ดทางเข้าใหม่ต้องแสดงทั้ง guest และผู้ล็อกอิน
     assert "guest-role-router" not in content
-    assert "ดูห้องว่างตอนนี้" not in content
+    assert "home-entry-grid" in content
+    assert "ดูห้องว่างตอนนี้" in content
+    assert cohort.title in content
+    assert reverse("bookings:lodging_portal", args=[cohort.slug]) in content
 
     # ตรวจสอบการแสดงผล role-actions
     assert "role-actions" in content

@@ -613,6 +613,67 @@ button[type="submit"]:not(.link-button):not(.outline):hover, [role="button"]:not
   }
 }
 
+/* One-stop cards และแถบห้องว่างหน้าแรก (งาน A) */
+.home-entry-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-md);
+  margin-bottom: var(--space-lg);
+}
+.home-entry-card {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+  margin: 0;
+  padding: var(--space-md);
+  border: 1px solid var(--line);
+  border-top: 3px solid var(--cyan);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  transition: transform .15s ease, border-color .15s ease, box-shadow .15s ease;
+}
+.home-entry-card:hover { transform: translateY(-2px); border-color: var(--line-strong); background: var(--surface-raised); }
+.home-entry-card.card-amber { border-top-color: var(--amber); }
+.home-entry-card.card-green { border-top-color: var(--green); }
+.home-entry-head { display: flex; align-items: center; justify-content: space-between; color: var(--dim); font-family: var(--font-mono); font-size: .76rem; }
+.home-entry-card h2 { margin: 0; font-size: 1.12rem; }
+.home-entry-card > p { min-height: 2.5rem; margin: 0; color: var(--muted); font-size: .86rem; }
+.home-entry-link { display: flex; align-items: center; justify-content: space-between; margin-top: auto; padding-top: var(--space-sm); color: var(--cyan); font-weight: 800; text-decoration: none; }
+.home-entry-link:hover { color: var(--ink); }
+.home-course-list { display: flex; flex-direction: column; gap: var(--space-2xs); margin-top: auto; padding-top: var(--space-xs); }
+.home-course-list a { display: flex; justify-content: space-between; gap: var(--space-sm); padding: .45rem .6rem; border: 1px solid var(--line); border-radius: var(--radius-sm); color: var(--ink); font-size: .84rem; text-decoration: none; }
+.home-course-list a:hover { border-color: var(--green); color: var(--green); }
+.home-empty-note { margin-top: auto !important; padding-top: var(--space-sm); color: var(--muted); font-size: .82rem !important; }
+.homepage-availability { margin-bottom: var(--space-xl); }
+.homepage-availability-heading { align-items: flex-end; margin-bottom: var(--space-sm); }
+.homepage-availability-heading small { color: var(--muted); }
+.homepage-availability-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-md); }
+.homepage-availability-group { min-width: 0; padding: var(--space-sm); border: 1px solid var(--line); border-radius: var(--radius-md); background: var(--surface); }
+.homepage-group-title { display: flex; align-items: center; justify-content: space-between; gap: var(--space-sm); margin-bottom: var(--space-sm); }
+.homepage-group-title h3 { margin: 0; font-size: 1rem; }
+.homepage-room-card { display: grid; grid-template-columns: 3.5rem minmax(0, 1fr) auto; align-items: center; gap: var(--space-sm); margin-bottom: var(--space-xs); padding: .55rem; border: 1px solid var(--line); border-radius: var(--radius-sm); background: var(--surface-raised); }
+.homepage-room-card:last-child { margin-bottom: 0; }
+.homepage-room-card .room-card-thumb { width: 3.5rem; height: 3.5rem; }
+.homepage-room-info { min-width: 0; }
+.homepage-room-info h4 { overflow: hidden; margin: 0 0 .15rem; font-size: .88rem; text-overflow: ellipsis; white-space: nowrap; }
+.homepage-room-info p { margin: 0; color: var(--muted); font-size: .75rem; }
+.homepage-book-button { padding: .48rem .7rem; font-size: .78rem; white-space: nowrap; }
+.homepage-empty { margin: 0; padding: var(--space-md); font-size: .82rem; }
+.homepage-empty strong { font-size: .86rem; }
+.booking-retry-action { display: flex; align-items: center; justify-content: space-between; gap: var(--space-sm); margin-top: var(--space-sm); padding-top: var(--space-sm); border-top: 1px solid color-mix(in oklab, var(--red) 40%, transparent); }
+.booking-retry-action span { color: var(--muted); font-size: .82rem; }
+@media (max-width: 50rem) {
+  .home-entry-grid, .homepage-availability-grid { grid-template-columns: 1fr; gap: var(--space-sm); }
+  .homepage-availability-heading { align-items: flex-start; flex-direction: column; gap: var(--space-2xs); }
+  .booking-retry-action { align-items: stretch; flex-direction: column; }
+}
+@media (max-width: 30rem) {
+  .homepage-room-card { grid-template-columns: 3rem minmax(0, 1fr); }
+  .homepage-room-card .room-card-thumb { width: 3rem; height: 3rem; }
+  .homepage-book-button { grid-column: 1 / -1; width: 100%; }
+}
+
 /* Sticky button ไปที่เตียงว่างถัดไป (งาน A2) */
 .sticky-jump-container {
   display: none;
