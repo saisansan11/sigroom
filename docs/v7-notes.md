@@ -34,7 +34,15 @@
 | `/static/img/pwa-icon-192.png` | HTTP GET | 200 OK, `image/png` | 200 OK (PNG 192x192) | ผ่าน |
 | `/static/img/pwa-icon-512.png` | HTTP GET | 200 OK, `image/png` | 200 OK (PNG 512x512) | ผ่าน |
 | `/lodging/` | HTTP GET | 200 OK, Cohort Portal | 200 OK | ผ่าน |
-| Authenticated Flows (จอง/ห้องโปรด/อนุมัติ) | Web Browser | ฟังก์ชันสำหรับผู้ใช้ล็อกอิน | pending owner authenticated smoke (ไม่ bypass/reset รหัสผ่านตาม Hard Stop Rules) | รอตรวจรับ |
+| Authenticated Flows (จอง/ห้องโปรด/อนุมัติ) | Web Browser | ฟังก์ชันสำหรับผู้ใช้ล็อกอิน | pending owner authenticated smoke (ไม่ bypass/reset รหัสผ่านตาม Hard Stop Rules) | Pending |
+
+---
+
+## สรุปบันทึกการทำงาน (Cloud Run Log Summary)
+
+- **Application Errors / 5xx:** 0 รายการ (ไม่มี 5xx, schema error หรือ migration error บน revision `sigroom-00013-z2q`)
+- **Warnings:** พบ `GET /favicon.ico 404 WARNING` จำนวน 1 ครั้ง (ไม่มีผลกระทบต่อการให้บริการของระบบ)
+- **สถานะคำขอ:** คำขอหน้าเว็บและ static assets ทั้งหมดบันทึกสถานะ 200 OK หรือ 302 Redirect พร้อม severity INFO
 
 ---
 
@@ -117,4 +125,7 @@
 
 ## ประเด็นที่รับทราบ (Known Issues)
 
-- **Time Presets ในหน้าแก้ไขการจอง:** ปุ่มช่วงเวลาสำเร็จรูป (คาบเช้า/บ่าย/ทั้งวัน) จะไม่แสดงในหน้าแก้ไขการจอง (booking edit) เนื่องจากแบบฟอร์มแก้ไขอนุญาตให้แก้ไขเฉพาะฟิลด์กิจกรรมและรายละเอียด (post-submit editable fields) โดยไม่อนุญาตให้เปลี่ยนวัน/เวลาเพื่อป้องกันการจองทับซ้อน หากต้องการเปลี่ยนวัน/เวลาให้ทำการยกเลิกแล้วใช้ปุ่ม "จองแบบเดิมอีกครั้ง" (Rebook)
+- **Time Presets ในหน้าแก้ไขการจอง (Booking Edit):**
+  - ในโหมดร่าง (Draft edit) ฟอร์มยังคงมีช่องวันและเวลาให้แก้ไข แต่ปุ่มช่วงเวลาสำเร็จรูป (presets) จะไม่แสดงเนื่องจากวิว `booking_edit` ไม่ได้ส่ง `time_presets` เข้าไปใน template context
+  - หลังส่งคำขอ (Post-submit) ฟิลด์วันและเวลาจะถูกล็อกตามนโยบาย `POST_SUBMIT_EDITABLE_FIELDS` เพื่อป้องกันการจองทับซ้อน
+  - สำหรับการจองที่ได้รับอนุมัติแล้วและต้องการปรับเปลี่ยนเวลา ให้ใช้กระบวนการยื่นคำขอแก้ไข (Amendment) ตามขั้นตอน ไม่ใช่การยกเลิกแล้วจองใหม่ (Rebook)
