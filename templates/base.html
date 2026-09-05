@@ -4,7 +4,13 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#102433">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="SIGROOM">
   <title>{% block title %}SIGROOM{% endblock %}</title>
+  <link rel="manifest" href="{% url 'webmanifest' %}">
+  <link rel="apple-touch-icon" sizes="192x192" href="{% static 'img/pwa-icon-192.png' %}">
   <link rel="stylesheet" href="{% static 'vendor/pico/pico.min.css' %}">
   <link rel="stylesheet" href="{% static 'css/fonts.css' %}">
   <link rel="stylesheet" href="{% static 'css/app.css' %}">
@@ -34,6 +40,7 @@
             <summary>{{ user.display_name }}</summary>
             <div class="account-popover">
               <p><strong>{{ user.display_name }}</strong>{% if user.unit %}<br><small>{{ user.unit.code }} · {{ user.unit.name }}</small>{% endif %}</p>
+              {% include "includes/pwa_install_guide.html" %}
               <form class="logout-form" action="{% url 'logout' %}" method="post">
                 {% csrf_token %}<button class="link-button" type="submit">ออกจากระบบ</button>
               </form>
@@ -56,6 +63,7 @@
               </nav>
               <div class="mobile-account">
                 <span>{{ user.display_name }}{% if user.unit %}<br><small>{{ user.unit.code }}</small>{% endif %}</span>
+                {% include "includes/pwa_install_guide.html" %}
                 <form class="logout-form" action="{% url 'logout' %}" method="post">
                   {% csrf_token %}<button class="link-button" type="submit">ออกจากระบบ</button>
                 </form>

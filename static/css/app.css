@@ -77,8 +77,15 @@ legend, label { font-weight: 700; } label small, .field small { display: block; 
 .account-menu, .mobile-menu { margin: 0; }
 .account-menu > summary, .mobile-menu > summary { min-height: 2.75rem; display: inline-flex; align-items: center; margin: 0; padding: var(--space-xs) var(--space-sm); border: 1px solid var(--line); border-radius: var(--radius-sm); color: var(--ink); font-weight: 700; cursor: pointer; }
 .account-menu[open] > summary, .mobile-menu[open] > summary { border-color: var(--cyan-strong); }
-.account-popover { position: absolute; top: calc(100% + var(--space-xs)); right: max(1rem, calc((100vw - 92rem) / 2)); width: min(22rem, calc(100vw - 2rem)); padding: var(--space-md); border: 1px solid var(--line-strong); border-radius: var(--radius-md); background: var(--surface-raised); box-shadow: var(--shadow-panel); }
+.account-popover { position: absolute; top: calc(100% + var(--space-xs)); right: max(1rem, calc((100vw - 92rem) / 2)); width: min(24rem, calc(100vw - 2rem)); max-height: calc(100dvh - 5rem); overflow-y: auto; padding: var(--space-md); border: 1px solid var(--line-strong); border-radius: var(--radius-md); background: var(--surface-raised); box-shadow: var(--shadow-panel); }
 .account-popover p { margin-bottom: var(--space-sm); } .account-popover small { color: var(--muted); }
+.install-guide { margin-bottom: var(--space-md); padding: var(--space-sm); border: 1px solid var(--line); border-radius: var(--radius-sm); background: var(--surface); }
+.install-guide > summary { color: var(--cyan); font-weight: 700; cursor: pointer; }
+.install-guide-grid { display: grid; gap: var(--space-sm); margin-top: var(--space-sm); }
+.install-guide h3 { margin: 0 0 var(--space-2xs); font-size: .9rem; }
+.install-guide ol { margin: 0; padding-left: 1.35rem; color: var(--muted); font-size: .82rem; }
+.install-guide li + li { margin-top: var(--space-2xs); }
+.install-guide-note { margin: var(--space-sm) 0 0; color: var(--amber); font-size: .78rem; }
 .logout-form { margin: 0; } .link-button { width: 100%; margin: 0; border-color: var(--line-strong); background: transparent; color: var(--muted); }
 .mobile-menu { display: none; }
 .mobile-menu-panel { position: absolute; top: 100%; right: 0; left: 0; padding: var(--space-md); border-bottom: 1px solid var(--line-strong); background: var(--canvas-deep); box-shadow: var(--shadow-panel); }
@@ -285,6 +292,7 @@ button[type="submit"]:not(.link-button):not(.outline):hover, [role="button"]:not
   h1 { font-size: 1.65rem; } h2 { font-size: 1.2rem; }
   .brand { font-size: .95rem; letter-spacing: .11em; } .mobile-menu > summary { padding-inline: var(--space-xs); }
   .mobile-menu .main-nav { grid-template-columns: 1fr; } .mobile-account { align-items: stretch; flex-direction: column; }
+  .mobile-account .install-guide { width: 100%; }
   .mobile-account .logout-form, .mobile-account button { width: 100%; } .page-shell { padding-top: var(--space-lg); } .page-heading { margin-bottom: var(--space-lg); }
   .form-actions > *, .form-actions > form, .form-actions > form button, .inline-actions > button { width: 100%; }
   #calendar, .filter-bar, .filter-grid, .search-panel, .detail-card, .policy-banner, .auth-card { padding: var(--space-sm); }
