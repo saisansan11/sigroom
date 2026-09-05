@@ -624,3 +624,118 @@ button[type="submit"]:not(.link-button):not(.outline):hover, [role="button"]:not
     box-shadow: var(--glow-cyan), 0 .4rem 1.5rem rgb(0 0 0 / .6);
   }
 }
+
+/* Key Card 3D (งาน B1) */
+.keycard-stage {
+  display: flex;
+  justify-content: center;
+  margin: var(--space-xl) auto var(--space-lg);
+  padding-inline: var(--space-md);
+}
+.keycard {
+  position: relative;
+  width: min(92vw, 26rem);
+  aspect-ratio: 1.586 / 1;
+  perspective: 1400px;
+  cursor: pointer;
+  animation: keycard-float 6s ease-in-out infinite;
+  -webkit-tap-highlight-color: transparent;
+}
+.keycard:focus-visible {
+  outline: .18rem solid var(--cyan);
+  outline-offset: .3rem;
+  border-radius: var(--radius-lg);
+}
+.keycard-flip {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  transform-style: preserve-3d;
+  transition: transform .7s cubic-bezier(.34, 1.1, .64, 1);
+}
+.keycard.is-flipped .keycard-flip { transform: rotateY(180deg); }
+.keycard-face {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  backface-visibility: hidden;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-panel);
+  overflow: hidden;
+  text-align: left;
+}
+.keycard-front {
+  padding: clamp(1rem, 4vw, 1.5rem);
+  background: linear-gradient(135deg, var(--surface-raised) 0%, var(--surface) 55%, var(--canvas-deep) 100%);
+  color: var(--ink);
+}
+.keycard-back {
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-sm);
+  padding: var(--space-lg);
+  background: var(--surface);
+  color: var(--ink);
+  text-align: center;
+  transform: rotateY(180deg);
+}
+.keycard-brand {
+  font-family: var(--font-mono);
+  font-size: 1.1rem;
+  font-weight: 800;
+  letter-spacing: .1em;
+}
+.keycard-brand strong { color: var(--cyan); }
+.keycard-org { margin: var(--space-2xs) 0 0; font-size: .68rem; color: var(--muted); }
+.keycard-room { display: flex; align-items: baseline; gap: var(--space-sm); font-family: var(--font-mono); }
+.keycard-room-code { font-size: clamp(1.6rem, 8vw, 2.4rem); font-weight: 800; color: var(--cyan); letter-spacing: .04em; }
+.keycard-bed { font-size: 1rem; font-weight: 700; }
+.keycard-name { margin: var(--space-xs) 0 0; font-size: 1rem; font-weight: 700; }
+.keycard-cohort { margin: var(--space-2xs) 0 0; font-size: .82rem; color: var(--muted); }
+.keycard-dates { margin: var(--space-2xs) 0 0; font-size: .78rem; color: var(--muted); font-family: var(--font-mono); }
+.keycard-qr { width: min(60%, 9.5rem); height: auto; padding: var(--space-xs); background: #fff; border-radius: var(--radius-sm); }
+.keycard-qr-caption { margin: 0; font-size: .85rem; font-weight: 700; }
+
+@keyframes keycard-float {
+  0%, 100% { transform: rotateZ(-6deg); }
+  50% { transform: rotateZ(6deg); }
+}
+
+.keycard-actions {
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  gap: var(--space-sm);
+  flex-wrap: wrap;
+  margin-bottom: var(--space-lg);
+}
+.keycard-save-tip { max-width: 20rem; }
+.keycard-save-tip > summary {
+  min-height: 2.75rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-xs) var(--space-md);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-sm);
+  background: var(--surface-soft);
+  color: var(--ink);
+  font-weight: 700;
+  cursor: pointer;
+  list-style: none;
+}
+.keycard-save-tip > summary::-webkit-details-marker { display: none; }
+.keycard-save-tip[open] > summary { border-color: var(--cyan-strong); color: var(--cyan); }
+.keycard-save-tip p {
+  margin: var(--space-sm) 0 0;
+  padding: var(--space-sm) var(--space-md);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--muted);
+  font-size: .85rem;
+  text-align: center;
+}

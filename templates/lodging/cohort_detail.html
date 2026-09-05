@@ -129,6 +129,7 @@
         <th>หน่วยต้นสังกัด</th>
         <th>เบอร์โทร</th>
         <th>เวลาที่ลงทะเบียน</th>
+        <th>สถานะรายงานตัว</th>
       </tr>
     </thead>
     <tbody>
@@ -140,6 +141,14 @@
           <td>{{ s.origin_unit }}</td>
           <td class="mono">{{ s.phone }}</td>
           <td>{{ s.booked_at|thai_datetime }}</td>
+          <td>
+            {% if s.checked_in_at %}
+              <span class="success-text">✓ {{ s.checked_in_at|thai_datetime }}</span>
+              {% if s.checked_in_by %}<br><small style="color: var(--muted);">โดย {{ s.checked_in_by.display_name }}</small>{% endif %}
+            {% else %}
+              <span class="muted-text">-</span>
+            {% endif %}
+          </td>
         </tr>
       {% endfor %}
     </tbody>

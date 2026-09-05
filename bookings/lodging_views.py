@@ -15,6 +15,7 @@ from .lodging_models import CourseLodgingCohort, CourseStudentLodging
 from .lodging_services import (
     can_create_cohort,
     can_manage_cohort,
+    check_in_student,
     generate_cohort_qr_svg,
     generate_line_share_url,
     get_canonical_public_url,
@@ -300,7 +301,11 @@ def lodging_cohort_detail(request, slug):
     cohort = get_object_or_404(CourseLodgingCohort.objects.prefetch_related("rooms"), slug=slug)
     if not can_manage_cohort(request.user, cohort):
         raise PermissionDenied("คุณไม่มีสิทธิ์ดูข้อมูลผู้เข้าพักของรุ่นนี้")
-    students = CourseStudentLodging.objects.filter(cohort=cohort).select_related("room").order_by("room__code", "bed_number")
+    students = (
+        CourseStudentLodging.objects.filter(cohort=cohort)
+        .select_related("room", "checked_in_by")
+        .order_by("room__code", "bed_number")
+    )
 
     students_by_room = {}
     for s in students:
@@ -433,4 +438,44 @@ def lodging_cohort_export_csv(request, slug):
             s.note,
         ])
 
+    return response
+
+
+def lodging_checkin(request, student_id):
+    """หน้า check-in ด้วย QR บนบัตร — ผู้ไม่มีสิทธิ์เห็นเฉพาะสถานะบัตร (masked),
+    ผู้มีสิทธิ์ (superuser/staff/ผู้กำกับหลักสูตรของรุ่นนี้) เห็นข้อมูลเต็มและยืนยันรายงานตัวได้
+    """
+    student = get_object_or_404(
+        CourseStudentLodging.objects.select_related("room", "cohort"), pk=student_id
+    )
+    cohort = student.cohort
+    has_permission = can_manage_cohort(request.user, cohort)
+
+    if request.method == "POST":
+        # ตรวจสิทธิ์อยู่ใน check_in_student() เอง (services.py) — ถ้าไม่มีสิทธิ์จะ raise
+        # PermissionDenied ซึ่ง Django แปลงเป็น HTTP 403 จริงให้อัตโนมัติ ไม่ใช่แค่ซ่อนปุ่ม
+        try:
+            check_in_student(student, actor=request.user)
+            messages.success(request, f"ยืนยันรายงานตัว {student.rank} {student.full_name} เรียบร้อยแล้ว")
+        except ValidationError as exc:
+            messages.error(request, "; ".join(exc.messages) if hasattr(exc, "messages") else str(exc))
+        return redirect("bookings:lodging_checkin", student_id=student.id)
+
+    context = {
+        "student": student,
+        "cohort": cohort,
+        "has_permission": has_permission,
+        "masked_label": _masked_student_label(student),
+    }
+    return render(request, "lodging/checkin.html", context)
+
+
+def lodging_checkin_qr_svg(request, student_id):
+    """QR SVG ชี้ไปหน้า check-in ของนักเรียนคนนี้ (ไม่ต้องล็อกอิน — ฝังในบัตร digital pass สาธารณะ)"""
+    student = get_object_or_404(CourseStudentLodging, pk=student_id)
+    path = reverse("bookings:lodging_checkin", args=[student.id])
+    url = get_canonical_public_url(request, path)
+    response = HttpResponse(generate_cohort_qr_svg(url), content_type="image/svg+xml")
+    response["Content-Disposition"] = f'inline; filename="checkin_{student.id}.svg"'
+    response["X-Content-Type-Options"] = "nosniff"
     return response

@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% load thaidate %}
+
+{% block title %}Check-in ห้อง {{ student.room.code }} · SIGROOM{% endblock %}
+
+{% block content %}
+<div class="digital-pass">
+  <div class="digital-pass-mark">✓</div>
+  <span class="hud-tag" style="background: oklch(.76 .14 156 / .2); color: var(--green);">บัตรถูกต้อง</span>
+
+  {% if has_permission %}
+    <h1 style="font-size: 1.4rem; margin-top: var(--space-sm);">{{ student.rank }} {{ student.full_name }}</h1>
+    <p class="muted-text">{{ student.origin_unit }} · {{ cohort.title }}</p>
+  {% else %}
+    <h1 style="font-size: 1.4rem; margin-top: var(--space-sm);">{{ masked_label }}</h1>
+    <p class="muted-text">{{ cohort.title }}</p>
+  {% endif %}
+
+  <div class="pass-room-badge">ห้อง {{ student.room.code }} · เตียง {{ student.bed_number }}</div>
+
+  {% if has_permission %}
+    {% if student.checked_in_at %}
+      <div class="notice success" style="text-align: left;">
+        <p style="margin: 0;">
+          รายงานตัวแล้วเมื่อ <strong>{{ student.checked_in_at|thai_datetime }}</strong><br>
+          ผู้ยืนยัน: {{ student.checked_in_by.display_name|default:"ไม่ทราบผู้ยืนยัน" }}
+        </p>
+      </div>
+    {% else %}
+      <form method="post" style="margin-top: var(--space-lg);">
+        {% csrf_token %}
+        <button type="submit" class="btn-primary">ยืนยันรายงานตัว</button>
+      </form>
+    {% endif %}
+  {% else %}
+    <p class="muted-text" style="margin-top: var(--space-md);">
+      กรุณาแสดงบัตรนี้ต่อเวรรับรายงานตัว เพื่อยืนยันตัวตนแบบเต็มและบันทึกเวลารายงานตัว
+    </p>
+  {% endif %}
+</div>
+{% endblock %}
