@@ -25,8 +25,16 @@
     <p>ตรวจห้องประชุมและห้องพิเศษที่จองได้</p>
     <a class="home-entry-link" href="#now-meeting">ดูห้องว่างตอนนี้ <span aria-hidden="true">↓</span></a>
   </article>
+  {% if homepage_availability.has_online %}
+  <article class="home-entry-card card-violet">
+    <div class="home-entry-head"><span class="hud-tag">รายชั่วโมง</span><span aria-hidden="true">03</span></div>
+    <h2>ห้องสอนออนไลน์</h2>
+    <p>ห้องพร้อมกล้อง ไมค์ และไฟสตูดิโอ ที่ บก.กศ.</p>
+    <a class="home-entry-link" href="#now-online">ดูห้องว่างตอนนี้ <span aria-hidden="true">↓</span></a>
+  </article>
+  {% endif %}
   <article class="home-entry-card card-green" id="lodging-courses">
-    <div class="home-entry-head"><span class="hud-tag">ตามรอบหลักสูตร</span><span aria-hidden="true">03</span></div>
+    <div class="home-entry-head"><span class="hud-tag">ตามรอบหลักสูตร</span><span aria-hidden="true">{% if homepage_availability.has_online %}04{% else %}03{% endif %}</span></div>
     <h2>ห้องพักหลักสูตร</h2>
     <p>เลือกหลักสูตรแล้วเข้า portal เลือกเตียงโดยตรง</p>
     {% if active_lodging_cohorts %}

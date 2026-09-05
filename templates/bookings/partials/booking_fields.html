@@ -20,6 +20,8 @@
   {% elif 'date' in form.fields or 'start_time' in form.fields or 'end_time' in form.fields %}
     <section class="booking-form-section">
       <div class="section-title"><div><h2>วันและเวลา</h2></div></div>
+      {# ปุ่มคาบวางเฉพาะโหมดที่ช่องเวลาแสดงจริง — ห้ามวางในโหมดสรุปด้านบน (งาน C) #}
+      {% include "bookings/partials/time_presets.html" %}
       <div class="form-grid two">
         {% for field in form %}{% if field.name == 'date' or field.name == 'start_time' or field.name == 'end_time' %}
           <div class="field">
@@ -36,8 +38,8 @@
     <section class="booking-form-section" aria-labelledby="booking-activity-title">
       <div class="section-title"><div><p class="eyebrow">ส่วน ๒</p><h2 id="booking-activity-title">กิจกรรม</h2></div></div>
       <div class="form-grid two">
-        {% for field in form %}{% if field.name == 'title' or field.name == 'purpose' or field.name == 'attendees' %}
-          <div class="field {% if field.name == 'title' %}wide{% endif %}">
+        {% for field in form %}{% if field.name == 'title' or field.name == 'purpose' or field.name == 'attendees' or field.name == 'online_meeting_url' %}
+          <div class="field {% if field.name == 'title' or field.name == 'online_meeting_url' %}wide{% endif %}">
             <label for="{{ field.id_for_label }}">{{ field.label }}{% if field.field.required %}<span class="required-mark" aria-label="จำเป็น"> *</span>{% endif %}</label>
             {{ field }}{% if field.help_text %}<small>{{ field.help_text }}</small>{% endif %}
             {% for error in field.errors %}<small class="field-error" data-field-id="{{ field.id_for_label }}">{{ error }}</small>{% endfor %}

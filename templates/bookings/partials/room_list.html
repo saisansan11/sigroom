@@ -10,7 +10,17 @@
         {% else %}<img src="{% static 'img/room-placeholder.svg' %}" alt="ยังไม่มีรูปห้อง {{ result.room.code }}" loading="lazy" class="room-card-thumb is-placeholder">{% endif %}
       {% endwith %}
       <div><h3>{{ result.room.code }} · {{ result.room.name }}</h3><p>{{ result.room.building }}{% if result.room.floor %} ชั้น {{ result.room.floor }}{% endif %} · จุ {{ result.room.capacity }} คน</p><p>{{ result.room.fixed_equipment|linebreaksbr }}</p><span class="policy">{{ result.approval_label }}</span>{% if result.capacity_warning %}<span class="warning-text">⚠ ความจุน้อยกว่าจำนวนที่ระบุ</span>{% endif %}</div>
-      <a role="button" href="{% url 'bookings:book_form' result.room.code %}?{{ query_string }}">จองห้องนี้</a>
+      <div class="room-card-actions">
+        <form class="fav-form" method="post" action="{% url 'bookings:room_favorite_toggle' result.room.code %}">
+          {% csrf_token %}<input type="hidden" name="next" value="{{ request.get_full_path }}">
+          {% if result.room.pk in favorite_ids %}
+            <button class="fav-button is-fav" type="submit" aria-label="นำ {{ result.room.code }} ออกจากห้องโปรด" title="นำออกจากห้องโปรด">★</button>
+          {% else %}
+            <button class="fav-button" type="submit" aria-label="เพิ่ม {{ result.room.code }} เป็นห้องโปรด" title="เพิ่มเป็นห้องโปรด">☆</button>
+          {% endif %}
+        </form>
+        <a role="button" href="{% url 'bookings:book_form' result.room.code %}?{{ query_string }}">จองห้องนี้</a>
+      </div>
     </article>
   {% empty %}<div class="empty-state detail-card"><strong>ไม่พบห้องที่พร้อมใช้</strong>ลองเปลี่ยนเวลา ลดจำนวนผู้เข้าร่วม หรือเลือกอุปกรณ์ส่วนกลางให้น้อยลง</div>{% endfor %}
 </section>

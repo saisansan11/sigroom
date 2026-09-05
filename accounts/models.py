@@ -45,6 +45,10 @@ class User(AbstractUser):
     position = models.CharField("ตำแหน่ง", max_length=200, blank=True)
     phone = models.CharField("โทรศัพท์", max_length=30, blank=True)
     unit = models.ForeignKey(Unit, verbose_name="สังกัด", null=True, blank=True, on_delete=models.PROTECT, related_name="members")
+    # ห้องโปรด (แผน V7 งาน C) — ห้องที่ติดดาวขึ้นก่อนในผลค้นหาและแถบว่างตอนนี้
+    favorite_resources = models.ManyToManyField(
+        "resources.Resource", verbose_name="ห้องโปรด", blank=True, related_name="favorited_by"
+    )
     is_infosec_officer = models.BooleanField(
         "เจ้าหน้าที่ความมั่นคงสารสนเทศ", default=False, help_text="จัดกิจกรรมเป็นข้อมูลอ่อนไหวได้ (SRS SR-07)"
     )

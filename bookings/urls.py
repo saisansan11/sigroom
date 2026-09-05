@@ -9,6 +9,7 @@ urlpatterns = [
     path("api/calendar/events/", views.calendar_events, name="calendar_events"),
     path("book/", views.book_search, name="book_search"),
     path("book/<str:code>/", views.book_form, name="book_form"),
+    path("rooms/<str:code>/favorite/", views.room_favorite_toggle, name="room_favorite_toggle"),
     path("book/<str:code>/series/preview/", views.series_preview, name="series_preview"),
     path("book/<str:code>/series/create/", views.series_create, name="series_create"),
     path("series/<uuid:id>/", views.series_detail, name="series_detail"),

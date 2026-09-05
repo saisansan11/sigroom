@@ -1,0 +1,25 @@
+{% load static %}{
+  "name": "SIGROOM — ระบบจองห้อง รร.ส.สส.",
+  "short_name": "SIGROOM",
+  "description": "ระบบจองและบริหารการใช้ห้อง โรงเรียนทหารสื่อสาร",
+  "lang": "th",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#0b1721",
+  "theme_color": "#102433",
+  "icons": [
+    {
+      "src": "{% static 'img/pwa-icon-192.png' %}",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "{% static 'img/pwa-icon-512.png' %}",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

@@ -7,7 +7,7 @@
   --line: oklch(.36 .028 235); --line-strong: oklch(.46 .038 226);
   --ink: oklch(.93 .012 211); --muted: oklch(.72 .025 224); --dim: oklch(.58 .024 229);
   --cyan: oklch(.78 .13 207); --cyan-strong: oklch(.7 .15 204); --green: oklch(.76 .14 156);
-  --amber: oklch(.79 .15 83); --red: oklch(.7 .17 25);
+  --amber: oklch(.79 .15 83); --red: oklch(.7 .17 25); --violet: oklch(.74 .13 300);
   --success-bg: oklch(.26 .055 158); --warning-bg: oklch(.265 .055 80);
   --danger-bg: oklch(.255 .06 25); --info-bg: oklch(.25 .05 224);
   --radius-sm: .25rem; --radius-md: .4rem; --radius-lg: .6rem;
@@ -77,8 +77,15 @@ legend, label { font-weight: 700; } label small, .field small { display: block; 
 .account-menu, .mobile-menu { margin: 0; }
 .account-menu > summary, .mobile-menu > summary { min-height: 2.75rem; display: inline-flex; align-items: center; margin: 0; padding: var(--space-xs) var(--space-sm); border: 1px solid var(--line); border-radius: var(--radius-sm); color: var(--ink); font-weight: 700; cursor: pointer; }
 .account-menu[open] > summary, .mobile-menu[open] > summary { border-color: var(--cyan-strong); }
-.account-popover { position: absolute; top: calc(100% + var(--space-xs)); right: max(1rem, calc((100vw - 92rem) / 2)); width: min(22rem, calc(100vw - 2rem)); padding: var(--space-md); border: 1px solid var(--line-strong); border-radius: var(--radius-md); background: var(--surface-raised); box-shadow: var(--shadow-panel); }
+.account-popover { position: absolute; top: calc(100% + var(--space-xs)); right: max(1rem, calc((100vw - 92rem) / 2)); width: min(24rem, calc(100vw - 2rem)); max-height: calc(100dvh - 5rem); overflow-y: auto; padding: var(--space-md); border: 1px solid var(--line-strong); border-radius: var(--radius-md); background: var(--surface-raised); box-shadow: var(--shadow-panel); }
 .account-popover p { margin-bottom: var(--space-sm); } .account-popover small { color: var(--muted); }
+.install-guide { margin-bottom: var(--space-md); padding: var(--space-sm); border: 1px solid var(--line); border-radius: var(--radius-sm); background: var(--surface); }
+.install-guide > summary { color: var(--cyan); font-weight: 700; cursor: pointer; }
+.install-guide-grid { display: grid; gap: var(--space-sm); margin-top: var(--space-sm); }
+.install-guide h3 { margin: 0 0 var(--space-2xs); font-size: .9rem; }
+.install-guide ol { margin: 0; padding-left: 1.35rem; color: var(--muted); font-size: .82rem; }
+.install-guide li + li { margin-top: var(--space-2xs); }
+.install-guide-note { margin: var(--space-sm) 0 0; color: var(--amber); font-size: .78rem; }
 .logout-form { margin: 0; } .link-button { width: 100%; margin: 0; border-color: var(--line-strong); background: transparent; color: var(--muted); }
 .mobile-menu { display: none; }
 .mobile-menu-panel { position: absolute; top: 100%; right: 0; left: 0; padding: var(--space-md); border-bottom: 1px solid var(--line-strong); background: var(--canvas-deep); box-shadow: var(--shadow-panel); }
@@ -285,6 +292,7 @@ button[type="submit"]:not(.link-button):not(.outline):hover, [role="button"]:not
   h1 { font-size: 1.65rem; } h2 { font-size: 1.2rem; }
   .brand { font-size: .95rem; letter-spacing: .11em; } .mobile-menu > summary { padding-inline: var(--space-xs); }
   .mobile-menu .main-nav { grid-template-columns: 1fr; } .mobile-account { align-items: stretch; flex-direction: column; }
+  .mobile-account .install-guide { width: 100%; }
   .mobile-account .logout-form, .mobile-account button { width: 100%; } .page-shell { padding-top: var(--space-lg); } .page-heading { margin-bottom: var(--space-lg); }
   .form-actions > *, .form-actions > form, .form-actions > form button, .inline-actions > button { width: 100%; }
   #calendar, .filter-bar, .filter-grid, .search-panel, .detail-card, .policy-banner, .auth-card { padding: var(--space-sm); }
@@ -616,7 +624,8 @@ button[type="submit"]:not(.link-button):not(.outline):hover, [role="button"]:not
 /* One-stop cards และแถบห้องว่างหน้าแรก (งาน A) */
 .home-entry-grid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  /* auto-fit รองรับทั้ง 3 ใบ (ก่อนงาน B) และ 4 ใบ (มีห้องออนไลน์) โดยไม่ต้องแก้โครง */
+  grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
   gap: var(--space-md);
   margin-bottom: var(--space-lg);
 }
@@ -636,6 +645,7 @@ button[type="submit"]:not(.link-button):not(.outline):hover, [role="button"]:not
 .home-entry-card:hover { transform: translateY(-2px); border-color: var(--line-strong); background: var(--surface-raised); }
 .home-entry-card.card-amber { border-top-color: var(--amber); }
 .home-entry-card.card-green { border-top-color: var(--green); }
+.home-entry-card.card-violet { border-top-color: var(--violet); }
 .home-entry-head { display: flex; align-items: center; justify-content: space-between; color: var(--dim); font-family: var(--font-mono); font-size: .76rem; }
 .home-entry-card h2 { margin: 0; font-size: 1.12rem; }
 .home-entry-card > p { min-height: 2.5rem; margin: 0; color: var(--muted); font-size: .86rem; }
@@ -648,7 +658,7 @@ button[type="submit"]:not(.link-button):not(.outline):hover, [role="button"]:not
 .homepage-availability { margin-bottom: var(--space-xl); }
 .homepage-availability-heading { align-items: flex-end; margin-bottom: var(--space-sm); }
 .homepage-availability-heading small { color: var(--muted); }
-.homepage-availability-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-md); }
+.homepage-availability-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(18rem, 1fr)); gap: var(--space-md); }
 .homepage-availability-group { min-width: 0; padding: var(--space-sm); border: 1px solid var(--line); border-radius: var(--radius-md); background: var(--surface); }
 .homepage-group-title { display: flex; align-items: center; justify-content: space-between; gap: var(--space-sm); margin-bottom: var(--space-sm); }
 .homepage-group-title h3 { margin: 0; font-size: 1rem; }
@@ -661,6 +671,17 @@ button[type="submit"]:not(.link-button):not(.outline):hover, [role="button"]:not
 .homepage-book-button { padding: .48rem .7rem; font-size: .78rem; white-space: nowrap; }
 .homepage-empty { margin: 0; padding: var(--space-md); font-size: .82rem; }
 .homepage-empty strong { font-size: .86rem; }
+/* ปุ่มช่วงเวลาสำเร็จรูป + ห้องโปรด + จองซ้ำ (งาน C) */
+.time-preset-row { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2xs); margin-bottom: var(--space-sm); }
+.time-preset-label { color: var(--muted); font-size: .8rem; }
+.time-preset-button { padding: .35rem .65rem; border: 1px solid var(--line); border-radius: var(--radius-sm); background: var(--surface-raised); color: var(--cyan); font-family: var(--font-mono); font-size: .78rem; cursor: pointer; }
+.time-preset-button:hover { border-color: var(--cyan); color: var(--ink); }
+.room-card-actions { display: flex; align-items: center; gap: var(--space-xs); }
+.fav-form { margin: 0; }
+.fav-button { padding: .3rem .55rem; border: 1px solid var(--line); border-radius: var(--radius-sm); background: transparent; color: var(--muted); font-size: 1rem; line-height: 1; cursor: pointer; }
+.fav-button:hover { border-color: var(--amber); color: var(--amber); }
+.fav-button.is-fav { border-color: var(--amber); color: var(--amber); }
+.rebook-link { font-size: .82rem; white-space: nowrap; }
 .booking-retry-action { display: flex; align-items: center; justify-content: space-between; gap: var(--space-sm); margin-top: var(--space-sm); padding-top: var(--space-sm); border-top: 1px solid color-mix(in oklab, var(--red) 40%, transparent); }
 .booking-retry-action span { color: var(--muted); font-size: .82rem; }
 @media (max-width: 50rem) {

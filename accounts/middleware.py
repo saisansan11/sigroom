@@ -18,6 +18,7 @@ class MustChangePasswordMiddleware:
                 reverse("password_reset"),
                 reverse("password_reset_done"),
                 reverse("password_reset_complete"),
+                reverse("webmanifest"),
             }
             allowed_prefixes = ("/static/", "/accounts/reset/")
             if request.path not in allowed and not request.path.startswith(allowed_prefixes):

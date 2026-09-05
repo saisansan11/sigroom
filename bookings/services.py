@@ -63,7 +63,48 @@ NOW_ROOM_GROUPS = (
         "label": "ห้องประชุม",
         "categories": (Resource.Category.MEETING, Resource.Category.SPECIAL),
     },
+    {
+        "key": "online",
+        "label": "ห้องสอนออนไลน์",
+        "categories": (Resource.Category.ONLINE,),
+    },
 )
+
+
+DEFAULT_TIME_PRESETS = (
+    ("08:00", "12:00", "คาบเช้า"),
+    ("13:00", "16:00", "คาบบ่าย"),
+    ("08:00", "16:00", "ทั้งวัน"),
+)
+
+
+def time_presets() -> list[dict]:
+    """ปุ่มช่วงเวลาสำเร็จรูป (งาน C) — อ่านจาก ReferenceValue field=time_preset, ว่างเมื่อไม่มีใช้ค่า default"""
+    from .models import ReferenceValue, parse_time_preset
+
+    presets = []
+    rows = ReferenceValue.objects.filter(field="time_preset", is_active=True)
+    for row in rows:
+        parsed = parse_time_preset(row.value)
+        if parsed:  # แถวผิดรูปแบบ (ข้อมูลเก่าก่อนมี clean) ข้ามไป ไม่ให้ฟอร์มพัง
+            presets.append({"start": parsed[0], "end": parsed[1], "label": parsed[2]})
+    if not presets:
+        presets = [{"start": s, "end": e, "label": lb} for s, e, lb in DEFAULT_TIME_PRESETS]
+    return presets
+
+
+def rebook_default_date(original_date, today=None):
+    """วันที่ default ของปุ่ม "จองแบบเดิมอีกครั้ง" (งาน C)
+
+    ต้องห่างจากวันเดิมอย่างน้อย 7 วันเสมอ: candidate = วันเดิม + 7 แล้ววน +7 ขณะ candidate <= วันนี้
+    (จองสัปดาห์ล่าสุด → +7 พอดี · จองเก่าเดือนก่อน → วันเดียวกันของสัปดาห์หน้า ·
+    จองต้นฉบับวันพรุ่งนี้ → พรุ่งนี้ของสัปดาห์ถัดไป ไม่ใช่วันพรุ่งนี้ซ้ำ)
+    """
+    today = today or timezone.localdate()
+    candidate = original_date + timedelta(days=7)
+    while candidate <= today:
+        candidate += timedelta(days=7)
+    return candidate
 
 
 def next_quarter_start(now: datetime | None = None) -> datetime:
@@ -251,6 +292,14 @@ def find_available_rooms(
             capacity_warning=bool(attendees and room.capacity and attendees > room.capacity),
         )
         (unavailable if errors else available).append(result)
+    # ห้องโปรดขึ้นก่อนเสมอ (งาน C) — stable sort คงลำดับเดิมภายในแต่ละกลุ่ม
+    favorite_ids = (
+        set(user.favorite_resources.values_list("pk", flat=True))
+        if getattr(user, "is_authenticated", False)
+        else set()
+    )
+    if favorite_ids:
+        available.sort(key=lambda item: item.room.pk not in favorite_ids)
     return available, unavailable
 
 
@@ -357,6 +406,21 @@ def can_view_details(user, booking: Booking) -> bool:
     return _is_room_staff(user, booking.room)
 
 
+def can_view_online_link(user, booking: Booking) -> bool:
+    """สิทธิ์เห็นลิงก์ห้องเรียนออนไลน์ — เข้มกว่า can_view_details() (งาน B)
+
+    อนุญาตเฉพาะ ผู้จอง / superuser / จนท.ความมั่นคงสารสนเทศ / เจ้าหน้าที่ดูแลห้องและผู้อนุมัติของห้องนั้น
+    คนหน่วยเดียวกันดูรายละเอียดอื่นได้ตาม can_view_details() แต่ต้องไม่เห็นลิงก์
+    """
+    if not getattr(user, "is_authenticated", False):
+        return False
+    if booking.requester_id == user.pk:
+        return True
+    if user.is_superuser or user.is_infosec_officer:
+        return True
+    return _is_room_staff(user, booking.room)
+
+
 def calendar_label(user, booking: Booking) -> str:
     if can_view_details(user, booking):
         return f"{booking.title} — {booking.room.code}"
@@ -404,6 +468,7 @@ POST_SUBMIT_EDITABLE_FIELDS = {
     "attendee_level",
     "layout",
     "fixed_equipment_needed",
+    "online_meeting_url",  # ครูมักได้ลิงก์ประชุมทีหลัง จึงต้องเติม/แก้ได้หลังส่งคำขอ (งาน B)
     "note",
 }
 
