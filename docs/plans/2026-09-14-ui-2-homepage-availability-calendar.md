@@ -3,7 +3,7 @@
 **Phase:** UI-2
 **Branch:** `feat/ui-2-homepage-availability` (จาก `feat/ui-1-design-foundation`)
 **Date:** 2026-09-14
-**Status:** FINAL APPROVED
+**Status:** READY FOR FINAL REVIEW
 
 ---
 
