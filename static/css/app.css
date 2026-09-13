@@ -388,7 +388,7 @@ legend, label { font-weight: 700; } label small, .field small { display: block; 
   border: 1px solid var(--line-strong);
   border-radius: var(--radius-md);
 }
-.guest-action-banner h3 { margin: var(--space-2xs) 0; font-size: 1.15rem; }
+.guest-action-banner h2, .guest-action-banner h3 { margin: var(--space-2xs) 0; font-size: 1.15rem; }
 .guest-action-banner p { margin: 0; color: var(--muted); font-size: .9rem; }
 .guest-action-buttons { display: flex; gap: var(--space-sm); align-items: center; }
 
@@ -839,4 +839,154 @@ legend, label { font-weight: 700; } label small, .field small { display: block; 
   color: var(--muted);
   font-size: .85rem;
   text-align: center;
+}
+
+/* ===== UI-2 Homepage / Availability / Calendar ===== */
+.hero-section {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  margin-bottom: var(--space-lg);
+  padding: var(--space-lg) var(--space-xl);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+}
+.hero-section .eyebrow {
+  margin-bottom: var(--space-2xs);
+}
+.hero-headline {
+  margin: 0 0 var(--space-2xs);
+  font-size: clamp(1.4rem, 3.2vw, 2.25rem);
+  font-weight: 800;
+  line-height: 1.28;
+  color: var(--ink);
+  letter-spacing: -.02em;
+}
+.hero-sub {
+  max-width: 65ch;
+  margin: 0 0 var(--space-md);
+  color: var(--muted);
+  font-size: clamp(.88rem, 1.6vw, 1.02rem);
+  line-height: 1.55;
+}
+.hero-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-sm);
+}
+.hero-actions .btn-primary,
+.hero-actions .btn-secondary {
+  min-height: 44px;
+  min-height: 2.75rem;
+  padding: .5rem 1.25rem;
+  border-radius: var(--radius-sm);
+  font-size: .92rem;
+  font-weight: 700;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-xs);
+  cursor: pointer;
+}
+.hero-actions .btn-primary {
+  border: 1px solid var(--pico-primary-border);
+  background: var(--pico-primary-background);
+  color: var(--pico-primary-inverse);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.12);
+}
+.hero-actions .btn-primary:hover {
+  background: var(--pico-primary-hover-background);
+  border-color: var(--pico-primary-hover-border);
+  color: var(--pico-primary-hover);
+}
+.hero-actions .btn-secondary {
+  border: 1px solid var(--pico-secondary-border);
+  background: var(--pico-secondary-background);
+  color: var(--ink);
+}
+.hero-actions .btn-secondary:hover {
+  background: var(--pico-secondary-hover-background);
+  border-color: var(--pico-secondary-hover-border);
+  color: var(--ink);
+}
+
+.avail-status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: .3rem;
+  padding: .15rem .5rem;
+  border: 1px solid oklch(.68 .14 156 / .5);
+  border-radius: 999px;
+  background: var(--success-bg);
+  color: var(--green);
+  font-family: var(--font-mono);
+  font-size: .7rem;
+  font-weight: 700;
+  line-height: 1.3;
+  letter-spacing: .02em;
+  white-space: nowrap;
+}
+.avail-status-badge::before {
+  content: "";
+  display: inline-block;
+  width: .42rem;
+  height: .42rem;
+  border-radius: 50%;
+  background: var(--green);
+  box-shadow: 0 0 .35rem var(--green);
+}
+
+.homepage-room-title-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  flex-wrap: wrap;
+  margin-bottom: .15rem;
+}
+.homepage-room-title-row h4 {
+  margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.homepage-room-card {
+  grid-template-columns: 5rem minmax(0, 1fr) auto;
+}
+.homepage-room-card .room-card-thumb {
+  width: 5rem;
+  height: 3.75rem;
+}
+.homepage-book-button {
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: .5rem .85rem;
+}
+
+@media (max-width: 30rem) {
+  .hero-section {
+    padding: var(--space-md);
+    margin-bottom: var(--space-md);
+  }
+  .hero-actions {
+    width: 100%;
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .hero-actions .btn-primary,
+  .hero-actions .btn-secondary {
+    width: 100%;
+  }
+  .homepage-room-card {
+    grid-template-columns: 3.5rem minmax(0, 1fr);
+  }
+  .homepage-room-card .room-card-thumb {
+    width: 3.5rem;
+    height: 3.5rem;
+  }
 }
