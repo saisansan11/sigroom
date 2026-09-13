@@ -850,7 +850,7 @@ legend, label { font-weight: 700; } label small, .field small { display: block; 
   padding: var(--space-lg) var(--space-xl);
   border: 1px solid var(--line);
   border-radius: var(--radius-lg);
-  background: linear-gradient(180deg, var(--surface-raised) 0%, var(--surface) 100%);
+  background: var(--surface);
 }
 .hero-section .eyebrow {
   margin-bottom: var(--space-2xs);
@@ -891,23 +891,23 @@ legend, label { font-weight: 700; } label small, .field small { display: block; 
   gap: var(--space-xs);
   cursor: pointer;
 }
-.btn-primary {
+.hero-actions .btn-primary {
   border: 1px solid var(--pico-primary-border);
   background: var(--pico-primary-background);
   color: var(--pico-primary-inverse);
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.12);
 }
-.btn-primary:hover {
+.hero-actions .btn-primary:hover {
   background: var(--pico-primary-hover-background);
   border-color: var(--pico-primary-hover-border);
   color: var(--pico-primary-hover);
 }
-.btn-secondary {
+.hero-actions .btn-secondary {
   border: 1px solid var(--pico-secondary-border);
   background: var(--pico-secondary-background);
   color: var(--ink);
 }
-.btn-secondary:hover {
+.hero-actions .btn-secondary:hover {
   background: var(--pico-secondary-hover-background);
   border-color: var(--pico-secondary-hover-border);
   color: var(--ink);

@@ -1,8 +1,8 @@
 # UI-2 — Homepage / Availability / Calendar
 
-**Phase:** UI-2  
-**Branch:** `feat/ui-2-homepage-availability` (จาก `feat/ui-1-design-foundation`)  
-**Date:** 2026-09-14  
+**Phase:** UI-2
+**Branch:** `feat/ui-2-homepage-availability` (จาก `feat/ui-1-design-foundation`)
+**Date:** 2026-09-14
 **Status:** FINAL APPROVED
 
 ---
@@ -22,7 +22,7 @@ feat/lodging-v5-2
 
 ## 1. Branch Strategy และความเสี่ยง Stack ชั้น 3
 
-Branch `feat/ui-2-homepage-availability` cut จาก `feat/ui-1-design-foundation`  
+Branch `feat/ui-2-homepage-availability` cut จาก `feat/ui-1-design-foundation`
 PR #18 target base = `feat/ui-1-design-foundation` (ชั่วคราว)
 
 | เหตุการณ์ | สิ่งที่ต้องทำ |
@@ -31,8 +31,8 @@ PR #18 target base = `feat/ui-1-design-foundation` (ชั่วคราว)
 | หลัง retarget ทุกครั้ง | **rerun full regression + Browser QA ทั้งหมด ก่อน claim DONE** |
 
 > [!WARNING]
-> retarget PR base เพียงอย่างเดียว **ไม่เพียงพอ**  
-> ต้อง rerun full regression + Browser QA ทุกครั้งก่อน report PASS  
+> retarget PR base เพียงอย่างเดียว **ไม่เพียงพอ**
+> ต้อง rerun full regression + Browser QA ทุกครั้งก่อน report PASS
 > ห้าม merge PR ใด ๆ โดยไม่รับคำสั่งจากผู้ใช้
 
 ---
@@ -100,7 +100,7 @@ PR #18 target base = `feat/ui-1-design-foundation` (ชั่วคราว)
 - QA ต้องยืนยันว่า click lodging-reserved event ยัง non-navigable ทุก viewport
 
 > [!NOTE]
-> JS changes ใน scope มีเพียง: ปรับ `headerToolbar` mobile ให้ toggle `timeGridWeek` ได้  
+> JS changes ใน scope มีเพียง: ปรับ `headerToolbar` mobile ให้ toggle `timeGridWeek` ได้
 > `events` endpoint, `extraParams`, `select` callback, `selectable` — ไม่เปลี่ยน
 
 ---
@@ -188,8 +188,8 @@ uv run pytest --tb=short -q                  # full regression
 git diff --check
 ```
 
-**Browser QA:** Guest / Requester / Approver / Custodian  
-**Viewports:** 360 / 390 / 430 / 768 / 1280 / 1440  
+**Browser QA:** Guest / Requester / Approver / Custodian
+**Viewports:** 360 / 390 / 430 / 768 / 1280 / 1440
 **Pages:** `/` / `/book/` / `/approvals/` / `/usage/`
 
 ---
