@@ -4,6 +4,7 @@ from django.urls import reverse
 from django.utils import timezone
 
 from accounts.models import Unit, User
+from audit.models import AuditLog
 from bookings.models import Booking, CourseLodgingCohort, CourseStudentLodging
 from resources.models import Resource, ResourceRule
 
@@ -150,9 +151,11 @@ def test_course_lodging_student_booking_flow(client, sample_data):
         follow=True,
     )
     assert book2_resp.status_code == 200
-    # ต้องเห็นเพื่อนร่วมห้องแบบปกปิดข้อมูลส่วนบุคคล
-    assert "ส*** ใ***" in book2_resp.content.decode("utf-8")
-    assert "สมชาย ใจมั่น" not in book2_resp.content.decode("utf-8")
+    # บัตรแสดงเพียงสถานะเตียงของเพื่อนร่วมห้อง ห้ามเปิดเผยชื่อแม้แบบ mask
+    pass_html = book2_resp.content.decode("utf-8")
+    assert "เตียง 1: มีผู้เข้าพักแล้ว" in pass_html
+    assert "ส*** ใ***" not in pass_html
+    assert "สมชาย ใจมั่น" not in pass_html
 
     # 4. หากมีคนพยายามจองเตียง 1 ซ้ำ ต้องถูกปฏิเสธ
     book_dup_resp = client.post(
@@ -211,3 +214,9 @@ def test_supervisor_dashboard_and_export(client, sample_data):
     csv_text = csv_resp.content.decode("utf-8-sig")
     assert "เกรียงไกร ชาญวิทย์" in csv_text
     assert "เตียง 1" in csv_text
+    assert AuditLog.objects.filter(
+        actor=sample_data["user"],
+        entity="bookings.courselodgingcohort",
+        entity_id=str(cohort.pk),
+        action="lodging_csv_exported",
+    ).exists()

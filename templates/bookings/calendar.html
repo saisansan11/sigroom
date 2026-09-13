@@ -232,7 +232,7 @@ document.addEventListener('DOMContentLoaded', function () {
   const building = document.getElementById('building-filter');
   const compact = window.matchMedia('(max-width: 640px)').matches;
   const calendar = new FullCalendar.Calendar(document.getElementById('calendar'), {
-    locale: 'th', initialView: compact ? 'timeGridDay' : 'timeGridWeek', firstDay: 1, selectable: true,
+    locale: 'th', initialView: compact ? 'timeGridDay' : 'timeGridWeek', firstDay: 1, selectable: '{{ selected_category }}' !== 'lodging',
     slotMinTime: '07:00:00', slotMaxTime: '21:00:00', nowIndicator: true,
     height: 'auto',
     headerToolbar: compact
@@ -241,6 +241,7 @@ document.addEventListener('DOMContentLoaded', function () {
     buttonText: {today: 'วันนี้', month: 'เดือน', week: 'สัปดาห์', day: 'วัน'},
     events: {url: '{% url "bookings:calendar_events" %}', extraParams: () => ({room: room.value, building: building.value, category: '{{ selected_category }}'})},
     select: function (info) {
+      if ('{{ selected_category }}' === 'lodging') return;
       const local = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
       const clock = d => `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
       window.location = `{% url "bookings:book_search" %}?date=${local(info.start)}&start=${clock(info.start)}&end=${clock(info.end)}`;

@@ -154,7 +154,12 @@ class CourseStudentLodging(models.Model):
                 cohort = None
             if cohort is None:
                 raise ValidationError(errors)
-            if not cohort.rooms.filter(pk=self.room_id).exists():
+            room = Resource.objects.filter(pk=self.room_id).only("resource_type", "room_category").first()
+            if room is None:
+                errors["room"] = "ไม่พบห้องพักที่เลือก"
+            elif room.resource_type != Resource.Type.ROOM or room.room_category != Resource.Category.LODGING:
+                errors["room"] = "เลือกได้เฉพาะทรัพยากรประเภทห้องในหมวดห้องพัก"
+            elif not cohort.rooms.filter(pk=self.room_id).exists():
                 errors["room"] = "ห้องนี้ไม่ได้อยู่ในรายการห้องของรอบหลักสูตร"
             if self.bed_number is not None and not (1 <= self.bed_number <= cohort.beds_per_room):
                 errors["bed_number"] = f"หมายเลขเตียงต้องอยู่ระหว่าง 1 ถึง {cohort.beds_per_room}"

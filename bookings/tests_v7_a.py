@@ -239,7 +239,10 @@ def test_past_start_shows_shift_button_and_resubmits_next_quarter(client, availa
 def test_submit_booking_remembers_phone_only_when_profile_is_blank(availability_setup):
     user, teaching_rooms, _, _, _ = availability_setup
     room = teaching_rooms[0]
-    start = _aware(day=6, hour=10, minute=0, second=0)
+    start = timezone.make_aware(
+        datetime.combine(timezone.localdate() + timedelta(days=1), time(10)),
+        timezone.get_current_timezone(),
+    )
     booking = Booking.objects.create(
         room=room,
         requester=user,

@@ -146,7 +146,7 @@ class Command(BaseCommand):
         self.stdout.write("เพิ่มปฏิทินส่วนกลางตัวอย่าง: วันหยุดชดเชย (วันจันทร์หน้า)")
 
         # เพิ่มรอบจองที่พักหลักสูตรตัวอย่างผ่าน service กลาง ไม่ bypass allocation guard
-        admin_user = User.objects.filter(is_superuser=True).first() or User.objects.first()
+        admin_user = User.objects.filter(is_superuser=True).order_by("pk").first()
         if admin_user:
             cohort, created = CourseLodgingCohort.objects.get_or_create(
                 slug="nr-70",
@@ -184,6 +184,7 @@ class Command(BaseCommand):
                     supervisor=admin_user,
                     title="หลักสูตรชั้นนายร้อย เหล่า ส. รุ่นที่ 70",
                     note="ขอให้นักเรียนทุกคนรายงานตัวก่อนเวลา 18:00 น. ของวันเปิดหลักสูตร และเตรียมเครื่องนอนส่วนตัวมาด้วย",
+                    actor=admin_user,
                 )
 
             # ใส่ตัวอย่างนักเรียน 2 นายในห้อง DORM-101
@@ -212,5 +213,7 @@ class Command(BaseCommand):
                     },
                 )
             self.stdout.write(f"{'สร้าง' if created else 'มีแล้ว'} รอบจองที่พักตัวอย่าง: หลักสูตรชั้นนายร้อย รุ่นที่ 70 (ลิงก์: /lodging/c/nr-70/)")
+        else:
+            self.stdout.write(self.style.WARNING("ข้ามข้อมูลที่พักตัวอย่าง nr-70: ต้องมี superuser ที่ระบุชัดเจนในระบบ"))
 
         self.stdout.write(self.style.SUCCESS("เสร็จ — เปิด http://127.0.0.1:8000/ เพื่อดู SIGROOM"))

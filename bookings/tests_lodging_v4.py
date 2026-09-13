@@ -2,6 +2,7 @@ from datetime import date, datetime, time, timedelta
 from io import StringIO
 
 import pytest
+from django.contrib.auth.models import Permission
 from django.core import management
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.db import IntegrityError
@@ -35,6 +36,10 @@ def lodging_data():
         password="Password-2569",
         unit=unit,
     )
+    add_permission = Permission.objects.get(
+        codename="add_courselodgingcohort", content_type__app_label="bookings"
+    )
+    user.user_permissions.add(add_permission)
     other = User.objects.create_user(
         username="other-supervisor",
         email="other-supervisor@signalschool.ac.th",
@@ -366,7 +371,7 @@ def test_public_privacy_duplicate_phone_and_pass_headers(client, lodging_data):
     pass_content = pass_response.content.decode()
     assert "ข้อมูลสุขภาพส่วนตัว" not in pass_content
     assert "0811112222" not in pass_content
-    assert pass_response["Cache-Control"] == "no-store"
+    assert pass_response["Cache-Control"] == "private, no-store, must-revalidate"
     assert pass_response["X-Content-Type-Options"] == "nosniff"
 
 
@@ -415,6 +420,7 @@ def test_calendar_and_today_board_show_lodging_reservation(client, lodging_data)
     calendar = client.get(reverse("bookings:calendar"))
     assert calendar.status_code == 200
     assert calendar.context["stat_free_now"] == 2
+    assert calendar.context["stat_in_use"] == 1
     assert "สงวนที่พักหลักสูตร" in calendar.content.decode()
     events = client.get(
         reverse("bookings:calendar_events"),
@@ -423,7 +429,9 @@ def test_calendar_and_today_board_show_lodging_reservation(client, lodging_data)
     reservation_events = [item for item in events if item.get("extendedProps", {}).get("status") == "lodging_reserved"]
     assert reservation_events
     assert reservation_events[0]["extendedProps"]["room"] == lodging_data["rooms"][0].code
-    assert reservation_events[0]["url"] == reverse("bookings:lodging_portal", args=[cohort.slug])
+    assert reservation_events[0]["allDay"] is True
+    assert "url" not in reservation_events[0]
+    assert reservation_events[0]["classNames"] == ["lodging-reserved-event"]
 
 
 def test_calendar_events_room_filter_excludes_other_rooms_in_cohort(client, lodging_data):
@@ -515,3 +523,75 @@ def test_seed_courses_is_idempotent_and_safe(lodging_data):
         is_active=False,
     ).count() == 14
     assert "นำเข้า/ตรวจสอบหลักสูตรครบ 14" in output.getvalue()
+    assert CourseLodgingCohort.objects.get(slug="nns-29-68").title == "นนส.ทบ. 1 ปี 6 เดือน เหล่า ส.(ระยะเวลา 8 เดือน) รุ่นที่ 29/68"
+
+
+def test_strict_create_and_global_manage_permissions(lodging_data):
+    from bookings.lodging_services import can_create_cohort, can_manage_cohort
+
+    cohort = make_cohort(lodging_data, "permission-owned")
+    plain = lodging_data["other"]
+    assert can_create_cohort(plain) is False
+    assert can_manage_cohort(plain, cohort) is False
+
+    change_permission = Permission.objects.get(
+        codename="change_courselodgingcohort", content_type__app_label="bookings"
+    )
+    plain.user_permissions.add(change_permission)
+    plain = User.objects.get(pk=plain.pk)  # clear auth backend permission caches
+    assert can_manage_cohort(plain, cohort) is True
+
+
+def test_student_rejects_non_lodging_resource_even_if_attached(lodging_data):
+    cohort = make_cohort(lodging_data)
+    classroom = Resource.objects.create(
+        code="CLASS-NOT-DORM",
+        name="ห้องเรียนไม่ใช่ห้องพัก",
+        resource_type=Resource.Type.ROOM,
+        room_category=Resource.Category.CLASSROOM,
+        capacity=4,
+    )
+    cohort.rooms.add(classroom)
+    student = CourseStudentLodging(
+        cohort=cohort, room=classroom, bed_number=1, rank="ร.อ.",
+        full_name="ทดสอบ หมวดห้อง", origin_unit="ศสส.", phone="0800000099",
+    )
+    with pytest.raises(ValidationError, match="หมวดห้องพัก"):
+        student.save()
+
+
+def test_assigned_supervisor_can_manage_own_cohort_without_create_permission(client, lodging_data):
+    assigned = lodging_data["other"]
+    cohort = CourseLodgingCohort.objects.create(
+        title="รุ่นที่มอบหมายให้ผู้กำกับ",
+        slug="assigned-supervisor-only",
+        supervisor=assigned,
+        unit=lodging_data["unit"],
+        check_in_date=timezone.localdate() + timedelta(days=2),
+        check_out_date=timezone.localdate() + timedelta(days=5),
+        beds_per_room=4,
+        allocation_status=CourseLodgingCohort.AllocationStatus.RELEASED,
+        is_active=False,
+    )
+    client.force_login(assigned)
+
+    response = client.get(reverse("bookings:lodging_manage"))
+    assert response.status_code == 200
+    content = response.content.decode()
+    assert cohort.title in content
+    assert "ไม่มีสิทธิ์สร้างรอบใหม่" in content
+    assert "สร้างรอบจองและออกลิงก์ทันที" not in content
+
+    post_response = client.post(
+        reverse("bookings:lodging_manage"),
+        {
+            "title": "ต้องสร้างไม่ได้",
+            "slug": "must-not-create",
+            "check_in_date": (timezone.localdate() + timedelta(days=10)).isoformat(),
+            "check_out_date": (timezone.localdate() + timedelta(days=11)).isoformat(),
+            "beds_per_room": "4",
+            "rooms": [str(lodging_data["rooms"][0].pk)],
+        },
+    )
+    assert post_response.status_code == 403
+    assert not CourseLodgingCohort.objects.filter(slug="must-not-create").exists()

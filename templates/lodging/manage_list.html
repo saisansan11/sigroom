@@ -58,6 +58,7 @@
 
   <!-- ฟอร์มสร้างรอบจองใหม่ -->
   <div>
+    {% if can_create %}
     <article class="detail-card" style="margin: 0; background: var(--surface-raised);">
       <div class="section-title" style="margin-bottom: var(--space-md);">
         <div>
@@ -113,6 +114,9 @@
         </button>
       </form>
     </article>
+    {% else %}
+      <div class="notice info">คุณเป็นผู้กำกับหลักสูตรและดูแลรุ่นที่ได้รับมอบหมายได้ แต่ไม่มีสิทธิ์สร้างรอบใหม่</div>
+    {% endif %}
   </div>
 </div>
 {% endblock %}
