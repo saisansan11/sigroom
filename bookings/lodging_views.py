@@ -10,9 +10,11 @@ from django.urls import reverse
 from django.utils import timezone
 from django.views.decorators.http import require_POST
 
+from audit.services import audit
 from resources.models import Resource
 from .lodging_models import CourseLodgingCohort, CourseStudentLodging
 from .lodging_services import (
+    can_access_lodging_management,
     can_create_cohort,
     can_manage_cohort,
     check_in_student,
@@ -192,8 +194,6 @@ def lodging_pass(request, slug, student_id):
     roommates = CourseStudentLodging.objects.filter(
         cohort=cohort, room=student.room
     ).exclude(pk=student.pk).order_by("bed_number")
-    for roommate in roommates:
-        roommate.masked_label = _masked_student_label(roommate)
 
     response = render(
         request,
@@ -204,7 +204,7 @@ def lodging_pass(request, slug, student_id):
             "roommates": roommates,
         },
     )
-    response["Cache-Control"] = "no-store"
+    response["Cache-Control"] = "private, no-store, must-revalidate"
     response["X-Content-Type-Options"] = "nosniff"
     response["X-Robots-Tag"] = "noindex, nofollow"
     return response
@@ -222,10 +222,11 @@ def lodging_index(request):
 @login_required
 def lodging_manage(request):
     """หน้าสำหรับผู้กำกับหลักสูตร: ดูและสร้างรอบการจองที่พัก"""
-    if not can_create_cohort(request.user):
+    if not can_access_lodging_management(request.user):
         raise PermissionDenied("คุณไม่มีสิทธิ์จัดการรอบที่พัก")
+    can_create = can_create_cohort(request.user)
     cohorts = CourseLodgingCohort.objects.all().prefetch_related("rooms", "students")
-    if not (request.user.is_superuser or request.user.is_staff):
+    if not (request.user.is_superuser or request.user.has_perm("bookings.change_courselodgingcohort")):
         cohorts = cohorts.filter(supervisor=request.user)
     lodging_rooms = Resource.objects.filter(
         resource_type=Resource.Type.ROOM,
@@ -234,6 +235,8 @@ def lodging_manage(request):
     ).order_by("building", "code")
 
     if request.method == "POST":
+        if not can_create:
+            raise PermissionDenied("คุณไม่มีสิทธิ์สร้างรอบที่พัก")
         title = request.POST.get("title", "").strip()
         slug = request.POST.get("slug", "").strip().lower()
         check_in_raw = request.POST.get("check_in_date")
@@ -291,6 +294,7 @@ def lodging_manage(request):
         {
             "cohorts": cohorts,
             "lodging_rooms": lodging_rooms,
+            "can_create": can_create,
         },
     )
 
@@ -438,12 +442,19 @@ def lodging_cohort_export_csv(request, slug):
             s.note,
         ])
 
+    audit(
+        request.user,
+        "bookings.courselodgingcohort",
+        cohort.pk,
+        "lodging_csv_exported",
+        after={"slug": cohort.slug, "student_count": students.count()},
+    )
     return response
 
 
 def lodging_checkin(request, student_id):
     """หน้า check-in ด้วย QR บนบัตร — ผู้ไม่มีสิทธิ์เห็นเฉพาะสถานะบัตร (masked),
-    ผู้มีสิทธิ์ (superuser/staff/ผู้กำกับหลักสูตรของรุ่นนี้) เห็นข้อมูลเต็มและยืนยันรายงานตัวได้
+    ผู้มีสิทธิ์ (superuser/ผู้มี permission/ผู้กำกับหลักสูตรของรุ่นนี้) เห็นข้อมูลเต็มและยืนยันรายงานตัวได้
     """
     student = get_object_or_404(
         CourseStudentLodging.objects.select_related("room", "cohort"), pk=student_id

@@ -449,7 +449,12 @@ def frequent_values(unit, field: str) -> list[str]:
     ))
     if not unit:
         return result
-    values = Booking.objects.filter(unit=unit).exclude(**{field: ""}).order_by("-updated_at").values_list(field, flat=True)
+    values = (
+        Booking.objects.filter(unit=unit)
+        .exclude(**{field: ""})
+        .order_by("-updated_at", "-start_at", "-created_at")
+        .values_list(field, flat=True)
+    )
     history_count = 0
     for value in values.iterator():
         if value not in result:

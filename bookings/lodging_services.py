@@ -51,13 +51,11 @@ def cohort_conflict_for_resource(resource: Resource, start_at: datetime, end_at:
 
 
 def can_create_cohort(user) -> bool:
+    if not getattr(user, "is_authenticated", False):
+        return False
     return bool(
-        getattr(user, "is_authenticated", False)
-        and (
-            getattr(user, "is_superuser", False)
-            or getattr(user, "is_staff", False)
-            or getattr(user, "unit_id", None)
-        )
+        getattr(user, "is_superuser", False)
+        or user.has_perm("bookings.add_courselodgingcohort")
     )
 
 
@@ -66,9 +64,22 @@ def can_manage_cohort(user, cohort: CourseLodgingCohort) -> bool:
         return False
     return bool(
         getattr(user, "is_superuser", False)
-        or getattr(user, "is_staff", False)
+        or user.has_perm("bookings.change_courselodgingcohort")
         or cohort.supervisor_id == getattr(user, "pk", None)
     )
+
+
+def can_access_lodging_management(user) -> bool:
+    """เข้าหน้าจัดการได้เมื่อมีสิทธิ์สร้าง/แก้ทั้งหมด หรือเป็นผู้กำกับอย่างน้อยหนึ่งรุ่น."""
+    if not getattr(user, "is_authenticated", False):
+        return False
+    if (
+        getattr(user, "is_superuser", False)
+        or user.has_perm("bookings.add_courselodgingcohort")
+        or user.has_perm("bookings.change_courselodgingcohort")
+    ):
+        return True
+    return CourseLodgingCohort.objects.filter(supervisor_id=getattr(user, "pk", None)).exists()
 
 
 def generate_cohort_qr_svg(url: str) -> bytes:

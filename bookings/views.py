@@ -154,6 +154,7 @@ def _today_board(request, rooms, now):
                 "label": f"สงวนที่พักหลักสูตร — {cohort.title}",
             })
             busy_now.add(room.id)
+            in_use.add(room.id)
         rows.append({"room": room, "blocks": blocks})
 
     now_pct = pct(now) if board_start <= now <= board_end else None
@@ -386,8 +387,10 @@ def calendar_events(request):
                     "title": f"สงวนที่พักหลักสูตร — {room.code}",
                     "start": event_start.isoformat(),
                     "end": event_end.isoformat(),
-                    "url": reverse("bookings:lodging_portal", args=[cohort.slug]),
-                    "classNames": ["lodging-reserved"],
+                    "allDay": True,
+                    "display": "background" if cohort_room_code else "block",
+                    "editable": False,
+                    "classNames": ["lodging-reserved-event"],
                     "extendedProps": {
                         "status": "lodging_reserved",
                         "room": room.code,

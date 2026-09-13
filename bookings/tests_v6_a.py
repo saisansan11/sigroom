@@ -27,6 +27,7 @@ def v6_a_setup():
         building="อาคารนอน 1",
         floor=1,
         resource_type=Resource.Type.ROOM,
+        room_category=Resource.Category.LODGING,
     )
     room2 = Resource.objects.create(
         code="DORM-102",
@@ -34,6 +35,7 @@ def v6_a_setup():
         building="อาคารนอน 1",
         floor=1,
         resource_type=Resource.Type.ROOM,
+        room_category=Resource.Category.LODGING,
     )
     today = timezone.localdate()
     cohort = CourseLodgingCohort.objects.create(

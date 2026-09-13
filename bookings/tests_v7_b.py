@@ -23,9 +23,10 @@ pytestmark = pytest.mark.django_db
 MEET_URL = "https://meet.google.com/abc-defg-hij"
 
 
-def _aware(day=10, hour=10, minute=0):
+def _aware(day=None, hour=10, minute=0):
+    target_day = timezone.localdate() + timedelta(days=2)
     return timezone.make_aware(
-        datetime(2026, 9, day, hour, minute), timezone.get_current_timezone()
+        datetime.combine(target_day, time(hour, minute)), timezone.get_current_timezone()
     )
 
 
