@@ -2968,3 +2968,59 @@ details.operational-calendar-section[open] .disclosure-arrow {
     grid-template-columns: 1fr;
   }
 }
+
+
+/* ===== UX-2 Express Booking ===== */
+.booking-selection-summary {
+  padding: var(--space-md) var(--space-lg);
+}
+.booking-selection-main {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: var(--space-md);
+  align-items: center;
+}
+.booking-selection-copy { min-width: 0; }
+.booking-selection-copy .eyebrow { margin-bottom: var(--space-2xs); }
+.booking-selection-copy h2 { margin: 0; font-size: clamp(1.15rem, 2vw, 1.45rem); }
+.booking-selection-line { margin: var(--space-2xs) 0 0; color: var(--muted); font-size: .9rem; }
+.booking-selection-side { display: flex; align-items: center; justify-content: flex-end; flex-wrap: wrap; gap: var(--space-xs); }
+.booking-selection-side .summary-change-link { min-height: max(44px, 2.75rem); display: inline-flex; align-items: center; padding-inline: var(--space-xs); }
+.booking-express-layout { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(19rem, .65fr); gap: var(--space-lg); align-items: start; }
+.booking-express-main, .booking-express-review-column { min-width: 0; }
+.booking-express-main { display: grid; gap: var(--space-md); }
+.booking-express-review-column { position: sticky; top: 5.5rem; display: grid; gap: var(--space-sm); }
+.booking-express-review-column .booking-review-panel { margin: 0; }
+.booking-express-review-column .booking-submit-bar { margin: 0; padding: var(--space-md); border: 1px solid var(--line); border-radius: var(--radius-md); background: var(--surface); }
+.booking-responsible-details { border: 1px solid var(--line); border-radius: var(--radius-md); background: var(--surface); overflow: clip; }
+.booking-responsible-summary { min-height: max(52px, 3.25rem); display: grid; grid-template-columns: minmax(0, 1fr) auto auto; align-items: center; gap: var(--space-sm); padding: var(--space-sm) var(--space-md); cursor: pointer; list-style: none; }
+.booking-responsible-summary::-webkit-details-marker { display: none; }
+.booking-responsible-summary:hover { background: var(--surface-raised); }
+.booking-responsible-summary:focus-visible { outline: .18rem solid var(--cyan); outline-offset: -.18rem; }
+.booking-responsible-summary-copy { min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.booking-responsible-summary-copy .eyebrow { margin: 0; }
+.booking-responsible-summary-copy strong { overflow-wrap: anywhere; }
+.booking-responsible-meta { color: var(--muted); font-size: .84rem; white-space: nowrap; }
+.booking-responsible-action { color: var(--cyan); font-size: .84rem; font-weight: 700; white-space: nowrap; }
+.booking-responsible-details[open] .booking-responsible-action::before { content: "ตรวจ/แก้ไข"; }
+.booking-responsible-details:not([open]) .booking-responsible-action::before { content: "แก้ไข"; }
+.booking-responsible-fields { padding: var(--space-md); border-top: 1px solid var(--line); }
+.booking-form-express .form-more > summary { min-height: max(44px, 2.75rem); display: flex; align-items: center; padding-block: var(--space-xs); }
+.booking-review-compact .section-title { margin-bottom: var(--space-sm); }
+.booking-review-compact .booking-review-grid { grid-template-columns: 1fr; gap: var(--space-xs); }
+.booking-review-compact .review-item { padding-block: var(--space-xs); border-bottom: 1px solid var(--line); }
+.booking-review-compact .review-item:last-child { border-bottom: 0; }
+.booking-review-compact .review-item small { display: block; margin-bottom: 2px; }
+.booking-express-hint { margin: 0; color: var(--muted); font-size: .84rem; }
+@media (max-width: 64rem) {
+  .booking-express-layout { grid-template-columns: 1fr; }
+  .booking-express-review-column { position: static; }
+  .booking-review-compact .booking-review-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 40rem) {
+  .booking-selection-summary { padding: var(--space-sm); }
+  .booking-selection-main, .booking-responsible-summary, .booking-review-compact .booking-review-grid { grid-template-columns: 1fr; }
+  .booking-selection-side { justify-content: flex-start; }
+  .booking-responsible-meta { white-space: normal; }
+  .booking-responsible-action { min-height: max(44px, 2.75rem); display: inline-flex; align-items: center; }
+}

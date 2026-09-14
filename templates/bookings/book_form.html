@@ -3,13 +3,12 @@
 {% block content %}
 {% include "bookings/partials/booking_stepper.html" with current_step=3 %}
 
-<div class="page-heading booking-flow-heading">
+<div class="page-heading booking-flow-heading booking-express-heading">
   <div>
-    <p class="eyebrow">ขั้นที่ 3 จาก 5</p>
-    <h1>จอง {{ room.code }} · {{ room.name }}</h1>
-    <p class="heading-desc">{{ room.building }}{% if room.floor %} ชั้น {{ room.floor }}{% endif %} · <span class="mono">จุ {{ room.capacity }} คน</span></p>
+    <p class="eyebrow">ขั้นที่ 3 จาก 5 · Express Booking</p>
+    <h1>กรอกรายละเอียดการใช้ห้อง</h1>
+    <p class="heading-desc">ห้องและเวลาถูกเลือกไว้แล้ว กรอกเฉพาะข้อมูลกิจกรรมที่จำเป็น จากนั้นตรวจสอบและส่งคำขอได้ทันที</p>
   </div>
-  <a class="secondary btn-change-room" role="button" href="{% url 'bookings:book_search' %}">เปลี่ยนเวลา/ห้อง ←</a>
 </div>
 
 {% include "bookings/partials/booking_fields.html" with show_draft=True %}
@@ -29,22 +28,44 @@ document.addEventListener('DOMContentLoaded', function () {
     updateSeries();
   }
 
+  // Native <summary> supports Space in Chrome, but Enter is not consistently activated.
+  // Keep this presentation-only keyboard bridge so the responsible disclosure meets
+  // the UX-2 keyboard contract without changing form or booking behavior.
+  const responsibleSummary = document.querySelector('.booking-responsible-summary');
+  if (responsibleSummary) {
+    responsibleSummary.addEventListener('keydown', function (event) {
+      if (event.key === 'Enter') {
+        event.preventDefault();
+        responsibleSummary.click();
+      }
+    });
+  }
+
   // Pre-submit review presentation sync (presentation only, server remains authority)
   const syncReview = () => {
     const titleInput = document.getElementById('id_title');
     const attendeesInput = document.getElementById('id_attendees');
     const respNameInput = document.getElementById('id_responsible_name');
+    const respPhoneInput = document.getElementById('id_responsible_phone');
     const unitSelect = document.getElementById('id_unit');
 
     const reviewTitle = document.getElementById('review-title-display');
     const reviewAttendees = document.getElementById('review-attendees-display');
     const reviewResp = document.getElementById('review-resp-display');
+    const summaryResp = document.getElementById('responsible-summary-name');
+    const summaryPhone = document.getElementById('responsible-summary-phone');
 
     if (reviewTitle && titleInput) {
       reviewTitle.textContent = titleInput.value.trim() || '— (กรุณาระบุกิจกรรม)';
     }
     if (reviewAttendees && attendeesInput) {
       reviewAttendees.textContent = attendeesInput.value.trim() ? attendeesInput.value.trim() + ' คน' : '—';
+    }
+    if (summaryResp && respNameInput) {
+      summaryResp.textContent = respNameInput.value.trim() || 'กรุณาระบุผู้รับผิดชอบ';
+    }
+    if (summaryPhone && respPhoneInput) {
+      summaryPhone.textContent = respPhoneInput.value.trim() || 'ยังไม่มีเบอร์โทร';
     }
     if (reviewResp && respNameInput) {
       let text = respNameInput.value.trim() || '—';

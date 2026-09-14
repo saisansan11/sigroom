@@ -248,6 +248,24 @@ class BookingForm(forms.ModelForm):
             ))
         return False
 
+    @property
+    def responsible_section_open(self):
+        """Presentation hint: expand responsible fields when user attention is required."""
+        names = {"unit", "responsible_name", "responsible_phone"}.intersection(self.fields)
+        if not names:
+            return False
+        if self.is_bound:
+            if any(self[name].errors for name in names):
+                return True
+            return any(self[name].value() in (None, "") for name in names)
+        for name in names:
+            value = self.initial.get(name, self.fields[name].initial)
+            if hasattr(value, "pk"):
+                value = value.pk
+            if value in (None, ""):
+                return True
+        return False
+
     def clean_series_custom_dates(self):
         value = self.cleaned_data.get("series_custom_dates", "")
         if not value.strip():
