@@ -1,116 +1,160 @@
 # UX-1 Task-First Shell & Home Handoff — 2026-09-14
 
-## 1. Verified Repository & Base State
-- **Integration base**: `feat/lodging-v5-2`
-- **Base SHA**: `f0c4fab9b1df9e9825387d8ab8b0e91c00bb41fd` (on `origin/feat/lodging-v5-2`)
-- **Open dependency PRs**: None.
-- **Untracked files preserved**: `.claude/handoffs/` and `.tmp/` remain intact and uncommitted.
+## 1. Verified repository state
+- Integration base: `feat/lodging-v5-2`
+- Base SHA: `f0c4fab9b1df9e9825387d8ab8b0e91c00bb41fd`
+- Feature branch: `feat/ux-1-task-first-shell-home`
+- UX-1 initial implementation: `83e57e1`
+- Initial handoff commit: `2d15a73`
+- Independent-review corrective implementation: `2699214` (`fix(ux): simplify UX-1 home interaction density`)
+- PR: `#22`, head `feat/ux-1-task-first-shell-home`, base `feat/lodging-v5-2`
+- `.claude/handoffs/` and `.tmp/` remain unrelated/untracked and must not be staged, modified, cleaned, or deleted.
+- No production deployment was performed.
 
-## 2. Branch & HEAD Commit
-- **Branch**: `feat/ux-1-task-first-shell-home`
-- **HEAD commit**: `83e57e1` (`feat(ux): implement UX-1 task-first navigation shell and home`)
-- **Remote**: `origin/feat/ux-1-task-first-shell-home` (up to date)
+## 2. Why a corrective pass was required
+The first UX-1 implementation passed automated regression and overflow checks, but an independent real-browser review found that the actual usability goal was not met. At `360x845`, the Guest home still had about `4831px` of initial scroll height with too many competing links/actions.
 
-## 3. Pull Request Details
-- **PR Number**: `#22`
-- **PR URL**: https://github.com/saisansan11/sigroom/pull/22
-- **Head / Base**: `feat/ux-1-task-first-shell-home` -> `feat/lodging-v5-2`
-- **Mergeability**: Clean / Mergeable (`auto-merge: disabled`, **DO NOT MERGE** as per instructions)
-- **CI State**: No remote GitHub Actions workflow configured (`no checks reported`). All verification gates validated locally.
+The corrective pass therefore treated usability as a release gate rather than accepting “tests pass / no overflow” as sufficient.
 
-## 4. Files Changed Grouped by Purpose
-- **Planning & Documentation**:
-  - `docs/plans/2026-09-14-ux-1-task-first-shell-home.md`: Comprehensive UX-1 implementation plan including scope, non-goals, risks, test matrix, and verification gates.
-- **Navigation Shell (`templates/base.html`)**:
-  - Top-level authenticated navigation simplified to core everyday user tasks: หน้าแรก, จองห้อง, การจองของฉัน, จองห้องพัก.
-  - Role-specific operational work consolidated inside an accessible `<details class="ops-menu">` dropdown menu labeled "งานปฏิบัติการ" on desktop and `.mobile-ops-section` inside the mobile drawer.
-  - Secondary grouping for reports (`รายงานสรุป`) inside the operations menu.
-  - Guest navigation kept minimal and direct: สถานะห้องวันนี้, จองห้องพัก, เข้าสู่ระบบ.
-  - Click-outside dismiss handler added for accessible `<details>` menus.
-- **Task-First Homepage (`templates/bookings/calendar.html`)**:
-  - Reorganized the page hierarchy above the fold to present task-first orientation.
-  - Dynamic primary task card prioritizing urgent actions: pending approvals for approvers, custodian today usage checks, user upcoming bookings, or a quick booking search launcher.
-  - Quick action launcher buttons ("จองห้องทันที", "ดูตารางปฏิทิน") alongside direct role actions (`role-actions`).
-  - Compact operational status band summarizing free/occupied/pending metrics without visual clutter.
-  - Retained room category filter tabs, compact entry grid (`home-entry-grid`), and real-time room availability cards.
-  - Reorganized FullCalendar (`#calendar`) and Today Board timeline (`#today-board`) as secondary discoverable content on the same `/` route without semantic or URL breakage.
-- **Styling & Accessibility (`static/css/app.css`)**:
-  - CSS styling for `.ops-menu`, `.ops-menu-summary`, `.ops-dropdown-panel`, `.mobile-ops-section`, `.task-home-hero`, `.primary-task-banner` (with urgent, action, normal, neutral variants), and `.task-statusband`.
-  - Enforced touch target sizes of >= 44x44px via `max(44px, 2.75rem)` and explicit min-heights.
-  - Supported `prefers-reduced-motion: reduce`.
-  - Clean whitespace passing `git diff --check`.
-- **Automated Tests (`bookings/tests_ux1.py`)**:
-  - 13 focused automated tests validating top-level and operational navigation across all user roles (guest, regular user, approver, custodian, lodging supervisor, staff), reports placement, and homepage task hero components.
+## 3. Final UX-1 behavior
+### Task-first shell
+- Authenticated top-level navigation remains focused on everyday tasks: `หน้าแรก`, `จองห้อง`, `การจองของฉัน`, `จองห้องพัก`.
+- Role-specific tools remain grouped under `งานปฏิบัติการ`; server-side permissions/routes were not changed.
+- Reports remain secondary inside the operational grouping.
+- Guest navigation remains minimal.
 
-## 5. Decisions & Rejected Alternatives
-- **Dropdown implementation using semantic HTML `<details>` and `<summary>`**:
-  - *Decision*: Used standard HTML5 `<details>` with `.ops-menu` styling and a lightweight vanilla JS click-outside listener.
-  - *Rationale*: Requires no heavy JS libraries, supports native keyboard navigation and accessibility, and fails open if JS is unavailable.
-- **Header assertion scoping in tests**:
-  - *Decision*: In `bookings/tests_ux1.py`, assertions checking for links like `"รออนุมัติ"` were scoped to `<header>` (`_header_html`) rather than entire page HTML.
-  - *Rationale*: Strings like `"รออนุมัติ"` legitimately occur in the Today Board status legend and primary task banners on the homepage body; asserting `<header>` specifically tests the top-level shell navigation.
-- **Preservation of DOM IDs & Classes**:
-  - *Decision*: Preserved `#calendar`, `#today-board`, `.role-actions`, `#home-entry-grid`, and operational metric IDs.
-  - *Rationale*: Avoided regressing legacy tests (`tests_v6_a.py`, `tests_v7_a.py`, `tests_lodging_v4.py`) that rely on these selectors.
+### Task-first home
+- The dynamic `primary-task-banner` is the single main “next action” for the current user.
+- Duplicate approval/usage/my-booking actions were removed from the status band.
+- Remaining role responsibilities are shown as a compact secondary task strip rather than full repeated cards.
+- The duplicate Guest booking/login banner was removed because the Guest hero already provides those actions.
+- The large room-type cards were replaced by a compact `home-entry-strip`, while preserving the required discovery anchors and lodging course entry points.
+- `home-entry-grid`, `#now-teaching`, `#now-meeting`, lodging cohort links and other compatibility hooks remain available.
 
-## 6. Exact Targeted Test Commands & Results
-- Command: `uv run pytest bookings/tests_ux1.py -q`
-  - Result: **13 passed in 4.96s**
-- Command: `uv run pytest bookings/tests_ux1.py bookings/tests_v6_a.py bookings/tests_v7_a.py bookings/tests_ui5.py -q`
-  - Result: **48 passed, 2 warnings in 9.94s**
+### Progressive operational schedule
+- Today Board and FullCalendar are now inside native `<details id="operational-calendar-section">` and are closed by default.
+- The summary is a semantic keyboard-focusable control with a visible focus state.
+- FullCalendar initializes lazily only when the disclosure is opened, avoiding hidden-container sizing problems and shortening the initial page.
+- Hash targets for `#operational-calendar-section`, `#today-board`, `#calendar`, and `#operational-schedule-summary` automatically open the disclosure and preserve discoverability.
+- On subsequent opens, FullCalendar calls `updateSize()`.
+- Existing calendar event semantics, booking routes, lodging background reservations, filters, and selection behavior were not changed.
 
-## 7. Verification Gates Passed
-- **Django Check**:
-  - Command: `uv run manage.py check`
-  - Result: `System check identified no issues (0 silenced).` (PASS)
-- **Migration Drift Gate**:
-  - Command: `uv run manage.py makemigrations --check --dry-run`
-  - Result: `No changes detected` (PASS)
-- **Full Regression Suite**:
-  - Command: `uv run pytest --tb=short -q`
-  - Result: **210 passed, 2 warnings in 41.40s** (PASS, up from 197 baseline)
-- **Git Whitespace Check**:
-  - Command: `git diff --check`
-  - Result: **Clean / no output** (PASS)
+## 4. Accessibility and touch targets
+- New/affected interactive targets use `max(44px, 2.75rem)` (or larger).
+- Browser measurement reports approximately `43.99px` for a CSS 44px target because of sub-pixel/device scaling.
+- The SIGROOM brand home link and lodging course links were also brought to the 44px target floor during independent review.
+- `<summary>` remained focused and toggled open using the Enter key in real Chromium CDP QA.
+- Reduced-motion support remains intact.
 
-## 8. Browser QA Actually Completed
-Executed via local test server (`http://127.0.0.1:7357`) and Headless Chromium via Chrome DevTools Protocol (CDP):
-- **Viewports Tested**: 360, 390, 430, 768, 1280, 1440 px.
-- **Personas Tested**:
-  1. Guest / Unauthenticated
-  2. Normal Authenticated User
-  3. Approver
-  4. Custodian / Staff / Admin
-- **Results**:
-  - **78 total page/viewport combinations checked**: **0 horizontal layout overflows** (`scrollWidth <= innerWidth` across all combinations).
-  - **18 interactive exercises performed**:
-    - Mobile drawer menu toggling at 360px, 390px, 430px across all roles: confirmed menu opens smoothly, displaying core task links and `.mobile-ops-section` where applicable.
-    - Desktop operations menu `<details class="ops-menu">` toggling at 768px, 1280px, 1440px: verified open/close, focus outline, and dismissal upon outside click.
-    - Task Hero primary action card and quick action links verified visible and fully accessible above the fold.
-    - Touch targets verified >= 44x44px across all viewports.
+## 5. Automated verification
+### Targeted UX-1
+Command:
+`uv run pytest bookings/tests_ux1.py -q`
 
-## 9. Known Issues / Deferred Debt / Environment Warnings
-- Pytest emits 2 expected non-blocking warnings:
-  - `RuntimeWarning: DJANGO_SECURE=0 ขณะ DJANGO_DEBUG=0`: Standard local test environment warning for LAN testing.
-  - `RemovedInDjango60Warning: The default scheme will be changed from 'http' to 'https' in Django 6.0`: Standard upstream URLField form deprecation warning.
+Result:
+- **16 passed, 2 warnings**
 
-## 10. Invariants Next Phase Must Not Regress
-- **Authorization & Security**: No server-side route removal, permission loosening, or URL modifications. All backend permissions remain enforced by Django views.
-- **Privacy Policy**: Student and public room occupancy masking rules remain strictly intact.
-- **Data Integrity**: Zero schema changes; `makemigrations --check --dry-run` must always report no changes.
-- **Responsive Layout**: Zero horizontal overflow on mobile viewports (360px+); touch targets >= 44px.
-- **Untracked Directories**: Preserve `.claude/handoffs/` and `.tmp/` at all times.
+### UX-1 + legacy presentation compatibility
+Command:
+`uv run pytest bookings/tests_ux1.py bookings/tests_v6_a.py -q`
 
-## 11. Next Phase Scope & Non-Goals
-- **Next Phase (UX-2)**: Task-first booking flow and room detail optimization.
-- **Scope**:
-  - Streamline the room selection, search filters, and booking creation journey.
-  - Improve room detail presentation and booking confirmation steps.
-- **Non-Goals**:
-  - Do NOT modify the database schema or booking business logic rules.
-  - Do NOT deploy to production.
+Result:
+- **22 passed, 2 warnings**
 
-## 12. Ready-to-Paste Prompt for Next Chat
-```
-Operate SIGROOM in F:\ogn_ROOM. Base is updated feat/lodging-v5-2. Current branch feat/ux-1-task-first-shell-home has PR #22 open against feat/lodging-v5-2. First re-verify repository state (git status, git log -1, uv run manage.py check, uv run pytest bookings/tests_ux1.py -q). Preserve all unrelated/untracked files (.claude/handoffs and .tmp). Never deploy production. Do not merge PR #22 without instruction. Proceed to next task per workflow instructions.
-```
+### Full regression
+Command:
+`uv run pytest --tb=short -q`
+
+Final result after all corrective fixes:
+- **213 passed, 2 warnings**
+
+The warnings are the existing local `DJANGO_SECURE=0` LAN-pilot warning and the upstream Django 6 URLField scheme deprecation warning.
+
+### Framework/schema/diff gates
+- `uv run manage.py check` → **0 issues**
+- `uv run manage.py makemigrations --check --dry-run` → **No changes detected**
+- `git diff --check` → **PASS / clean**
+
+## 6. Real-browser QA
+Local-only test server: `http://127.0.0.1:7357`.
+No production URL or production infrastructure was used.
+
+Personas exercised:
+1. Guest
+2. Normal authenticated user (`somchai` local test account)
+3. Operational user / approver + custodian (`somsak` local test account)
+
+Viewports exercised:
+- `360`, `390`, `430`, `768`, `1280`, `1440` px
+
+### Initial-page results with operational disclosure closed
+Across all three personas and all six viewports:
+- **0 horizontal overflow**
+- `operational-calendar-section` closed by default
+- Primary task visible in the first viewport for authenticated users
+- UX touch targets measured at the 44px CSS floor (about 43.99px after sub-pixel scaling)
+
+Representative initial scroll heights after the corrective pass:
+- Guest, 360px: about **1865px** (down from about **4831px** before correction)
+- Normal user, 360px: about **2235px**
+- Operational user, 360px: about **2383px**
+
+These are comfortably below the corrective acceptance ceilings of 3300px for Guest and 3600px for a normal authenticated user.
+
+### Disclosure / Calendar behavior
+At desktop width after opening the disclosure:
+- disclosure state became open
+- FullCalendar rendered children successfully
+- calendar height was about 1127px
+- no horizontal overflow
+- no captured Runtime/Log console errors
+
+Keyboard check:
+- focus placed on `#operational-schedule-summary`
+- Enter toggled the native details disclosure open
+- focus remained on the summary
+
+## 7. Files changed in the corrective pass
+- `templates/bookings/calendar.html`
+  - removes duplicate actions
+  - adds compact task strip and compact room entry strip
+  - converts operational calendar/Today Board to progressive disclosure
+  - lazy-renders FullCalendar and handles hash targets
+- `static/css/app.css`
+  - compact task/entry styling
+  - disclosure styling and focus state
+  - touch target corrections
+  - uses existing design tokens only (`var(--canvas)` rather than an undefined token)
+- `bookings/tests_ux1.py`
+  - verifies collapsed disclosure semantics
+  - verifies duplicate Guest CTA removal
+  - verifies compact room entry discovery anchors/lodging access
+  - verifies primary-task de-duplication
+- `docs/handoffs/2026-09-14-ux-1-task-first-shell-home.md`
+  - this final independent-review record
+
+## 8. Invariants confirmed unchanged
+- No model/schema changes.
+- No destructive migration.
+- No booking conflict/business-rule changes.
+- No approval/SLA/delegation logic changes.
+- No usage rule changes.
+- No lodging allocation/conflict/phone/bed rules changed.
+- No server-side authorization or privacy boundary changed.
+- No production deploy.
+
+## 9. PR / merge policy
+PR #22 must be checked again after the corrective commits are pushed for:
+- exact head SHA
+- base branch
+- mergeability
+- CI/status checks when present
+
+**Do not merge PR #22 without explicit user instruction.** The earlier automatic-merge authorization covered UI-3, UI-4, and UI-5 only, not UX-1.
+
+## 10. Recommended next phase after UX-1 is merged
+`UX-2 — Express Booking / Task-First Booking Flow`
+
+Goal: shorten the user journey from “I need a room” to a submitted request without changing booking business rules. Target flow: date/time → room → details + confirmation, with known values prefilled and optional fields moved out of the primary path.
+
+Before UX-2, branch from the updated `feat/lodging-v5-2` only after PR #22 is explicitly approved and merged; do not stack UX-2 on PR #22.
