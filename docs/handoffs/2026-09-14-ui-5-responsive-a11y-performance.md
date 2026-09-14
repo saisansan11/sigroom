@@ -17,7 +17,7 @@
    - Enforced smooth iOS momentum scrolling (`-webkit-overflow-scrolling: touch`) across `.table-wrap` and `.table-scroll`.
    - Verified zero horizontal layout overflows across all target viewports (360, 390, 430, 768, 1280, 1440 px).
 2. **Accessibility (WCAG AA)**:
-   - Touch targets enforced to >= 44x44px (`min-width: 2.75rem; min-height: 2.75rem`) for `.fav-button`, `.booking-room-actions .fav-button`, `.room-gallery-nav`, `.compact-button` (on mobile), and dialog close buttons.
+   - Touch targets enforced to >= 44x44px using `max(44px, 2.75rem)` so the 96% mobile root font cannot shrink controls below 44px for `.fav-button`, `.booking-room-actions .fav-button`, `.room-gallery-nav`, `.compact-button` (on mobile), and dialog close buttons.
    - Dialog focus trapping and focus restoration implemented for `#bookingModal` and `#roomGalleryDialog`.
    - Motion reduced gracefully in CSS and JavaScript (`prefers-reduced-motion: reduce`) for `scrollToNextFreeBed`, 3D keycard flips, and transitions.
    - Color contrast and typography meet WCAG AA standards.
@@ -49,7 +49,7 @@
 ## Browser QA actually performed
 Live local server (`127.0.0.1:7357`) and authenticated mock views with Headless Chromium via Chrome DevTools Protocol (CDP):
 - Viewports tested: **360, 390, 430, 768, 1280, 1440 px**.
-- Pages tested (18 distinct pages across all personas):
+- Pages tested (16 distinct views across all applicable personas):
   - Guest / Public: Homepage & Calendar (`/`), Lodging Index (`/lodging/`), Login (`/accounts/login/`), Public Masked Check-in (`/lodging/checkin/<id>/`).
   - Student Lodging: Student Portal (`/lodging/c/nr-70/`), Student Digital Keycard Pass (`/lodging/c/nr-70/pass/<id>/`).
   - Supervisor / Staff: Cohort Management (`/lodging/manage/`), Cohort Detail & Roster (`/lodging/cohorts/nr-70/`), Cohort Edit (`/lodging/cohorts/nr-70/edit/`), Staff Check-in (`/lodging/checkin/<id>/`), Admin Force-Release Danger Zone.
@@ -57,7 +57,7 @@ Live local server (`127.0.0.1:7357`) and authenticated mock views with Headless 
   - Approver: Approvals Queue (`/approvals/`), Approver Delegation (`/approvals/delegation/`).
   - Custodian: Usage List (`/usage/`), Monthly Reports (`/reports/`).
 - **Results**:
-  - Total combinations evaluated: **108 page/viewport checks (18 pages × 6 viewports)**.
+  - Total combinations evaluated: **96 page/viewport checks (16 views × 6 viewports)**.
   - Horizontal overflow count: **0 (Zero)** across all viewports (`scrollWidth <= innerWidth` and `scrollWidth <= viewportWidth`).
   - Interactive exercises:
     - Guest mobile menu toggle at 360px: confirmed menu opens and reveals navigation links ("สถานะห้องวันนี้", "จองห้องพัก") with proper `aria-current="page"`.
@@ -65,6 +65,15 @@ Live local server (`127.0.0.1:7357`) and authenticated mock views with Headless 
     - Bed selection modal at 360px: clicked bed CTA, verified modal opened (`open === true`), form submit CTA measured >= 44px touch height, modal closed cleanly without overflow.
     - Student digital keycard pass at 390px: verified 3D flip on mouse click (`aria-pressed="true"`, `is-flipped`), verified flip back on keyboard `Enter` (`aria-pressed="false"`).
     - Room photo wrap computed styles: verified `aspectRatio: '16 / 9'` and `overflow: 'hidden'` eliminating Cumulative Layout Shift (CLS).
+
+
+## Independent review fixes before merge
+- Removed a duplicated UI-4/UI-5 room-gallery CSS block so gallery styles have a single source of truth.
+- Browser re-check found `2.75rem` computed to about 42.23px when the mobile root font is 96%; updated shared touch-target rules to `max(44px, 2.75rem)` and tightened `bookings/tests_ui5.py` accordingly.
+- Re-ran targeted tests: **17 passed, 2 warnings**.
+- Re-ran full regression: **197 passed, 2 warnings**.
+- Re-ran `manage.py check`: **PASS**; migration drift check: **No changes detected**; `git diff --check`: **PASS**.
+- Real-browser re-check on the current source via local DEBUG server confirmed gallery navigation computes to **44px minimum** and the student lodging dialog has no horizontal overflow.
 
 ## Known/deferred
 - The 2 warnings during pytest are standard Django framework transitional warnings (`DJANGO_SECURE` LAN warning and Django 6.0 `FORMS_URLFIELD_ASSUME_HTTPS` URLField scheme warning).

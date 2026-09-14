@@ -99,19 +99,19 @@ def test_app_css_touch_targets_meet_wcag():
 
     # .fav-button must have 2.75rem min dimensions
     assert ".fav-button" in css_text
-    assert "min-width: 2.75rem" in css_text
-    assert "min-height: 2.75rem" in css_text
+    assert "min-width: max(44px, 2.75rem)" in css_text
+    assert "min-height: max(44px, 2.75rem)" in css_text
 
     # .room-gallery-nav must have 2.75rem dimensions
     gallery_nav_match = re.search(r"\.room-gallery-nav\s*\{([^}]+)\}", css_text)
     assert gallery_nav_match is not None
     gallery_nav_decl = gallery_nav_match.group(1)
-    assert "min-width: 2.75rem" in gallery_nav_decl or "width: 2.75rem" in gallery_nav_decl
-    assert "min-height: 2.75rem" in gallery_nav_decl or "height: 2.75rem" in gallery_nav_decl
+    assert "min-width: max(44px, 2.75rem)" in gallery_nav_decl or "width: max(44px, 2.75rem)" in gallery_nav_decl
+    assert "min-height: max(44px, 2.75rem)" in gallery_nav_decl or "height: max(44px, 2.75rem)" in gallery_nav_decl
 
     # .compact-button expands on mobile <= 50rem
     assert ".compact-button" in css_text
-    assert "min-height: 2.75rem" in css_text
+    assert "min-height: max(44px, 2.75rem)" in css_text
 
     # .category-pill has min-height: max(44px, 2.75rem)
     cat_pill_match = re.search(r"\.category-pill\s*\{([^}]+)\}", css_text)
