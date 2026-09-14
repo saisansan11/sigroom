@@ -17,9 +17,9 @@
       <div class="room-card-media">
         {% with cover=result.room.cover_photo %}
           {% if cover %}
-            <img src="{{ cover.image.url }}" alt="รูปห้อง {{ result.room.code }}" loading="lazy" class="room-card-thumb">
+            <img src="{{ cover.image.url }}" alt="รูปห้อง {{ result.room.code }}" width="72" height="72" loading="lazy" decoding="async" class="room-card-thumb">
           {% else %}
-            <img src="{% static 'img/room-placeholder.svg' %}" alt="ยังไม่มีรูปห้อง {{ result.room.code }}" loading="lazy" class="room-card-thumb is-placeholder">
+            <img src="{% static 'img/room-placeholder.svg' %}" alt="ยังไม่มีรูปห้อง {{ result.room.code }}" width="72" height="72" loading="lazy" decoding="async" class="room-card-thumb is-placeholder">
           {% endif %}
         {% endwith %}
       </div>

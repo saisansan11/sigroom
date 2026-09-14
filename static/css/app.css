@@ -121,8 +121,8 @@ legend, label { font-weight: 700; } label small, .field small { display: block; 
 
 .filter-bar, .filter-grid, .search-panel, .detail-card, .policy-banner, .auth-card { margin-bottom: var(--space-lg); padding: clamp(var(--space-md), 2vw, var(--space-lg)); border: 1px solid var(--line); border-radius: var(--radius-lg); background: var(--surface); box-shadow: none; }
 .filter-bar, .filter-grid { display: flex; align-items: flex-end; gap: var(--space-md); flex-wrap: wrap; }
-.filter-bar label, .filter-grid label { min-width: min(100%, 12rem); flex: 1 1 12rem; margin-bottom: 0; }
-.filter-bar :is(select, input), .filter-grid :is(select, input) { margin-bottom: 0; }
+.filter-bar label, .filter-grid label { min-width: min(100%, 12rem); max-width: 100%; flex: 1 1 12rem; margin-bottom: 0; }
+.filter-bar :is(select, input), .filter-grid :is(select, input) { width: 100%; max-width: 100%; margin-bottom: 0; box-sizing: border-box; }
 .filter-grid button { flex: 0 0 auto; margin-bottom: 0; }
 .legend { display: flex; align-items: center; gap: var(--space-xs); margin-left: auto; color: var(--muted); font-size: .82rem; line-height: 1.4; }
 .legend-item { display: inline-flex; align-items: center; gap: var(--space-2xs); white-space: nowrap; }
@@ -172,7 +172,7 @@ legend, label { font-weight: 700; } label small, .field small { display: block; 
 .tabs { max-width: 100%; display: flex; gap: var(--space-2xs); margin-bottom: var(--space-lg); padding: var(--space-2xs); overflow-x: auto; border: 1px solid var(--line); border-radius: var(--radius-md); background: var(--surface); scrollbar-width: thin; }
 .tabs a { min-height: 2.75rem; display: inline-flex; align-items: center; padding: var(--space-xs) var(--space-md); border: 1px solid transparent; border-radius: var(--radius-sm); color: var(--muted); text-decoration: none; white-space: nowrap; }
 .tabs a[aria-current="page"] { border-color: var(--cyan-strong); background: var(--info-bg); color: var(--cyan); font-weight: 800; }
-.table-wrap, .table-scroll { max-width: 100%; margin-bottom: var(--space-lg); overflow-x: auto; border: 1px solid var(--line); border-radius: var(--radius-md); background: var(--surface); scrollbar-color: var(--line-strong) var(--surface); }
+.table-wrap, .table-scroll { max-width: 100%; margin-bottom: var(--space-lg); overflow-x: auto; -webkit-overflow-scrolling: touch; border: 1px solid var(--line); border-radius: var(--radius-md); background: var(--surface); scrollbar-color: var(--line-strong) var(--surface); }
 .table-wrap table, .table-scroll table { min-width: 42rem; margin: 0; }
 .table-wrap thead, .table-scroll thead { background: var(--surface-raised); }
 .table-wrap th, .table-scroll th { color: var(--muted); font-size: .76rem; font-weight: 800; letter-spacing: .035em; white-space: nowrap; }
@@ -205,6 +205,7 @@ legend, label { font-weight: 700; } label small, .field small { display: block; 
 .inline-reject { margin: 0; } .success-text { color: var(--green); font-weight: 800; } .danger-text { color: oklch(.81 .11 25); font-weight: 800; }
 .inline-form { display: inline-flex; margin: var(--space-2xs) 0 var(--space-2xs) var(--space-xs); }
 .compact-button { min-height: 2.25rem; margin: 0; padding: var(--space-2xs) var(--space-xs); font-size: .78rem; }
+.row-actions { display: flex; align-items: center; gap: var(--space-xs); flex-wrap: wrap; }
 .muted-row { opacity: .68; }
 .amendment-card { border-color: oklch(.66 .12 83); background: var(--warning-bg); }
 .preemption-card { border-color: oklch(.61 .14 25); background: var(--danger-bg); }
@@ -273,7 +274,7 @@ legend, label { font-weight: 700; } label small, .field small { display: block; 
 .sysline::after { content: ""; flex: 1; height: 1px; background: linear-gradient(90deg, var(--line-strong), transparent); }
 
 @media (max-width: 68rem) {
-  .desktop-nav, .account-menu { display: none; } .mobile-menu { display: block; margin-left: auto; } .header-tools { margin-left: 0; }
+  .desktop-nav, .account-menu { display: none; } .mobile-menu { display: block; } .header-tools { margin-left: auto; }
 }
 @media (max-width: 50rem) {
   :root { --pico-font-size: 96%; }
@@ -284,6 +285,7 @@ legend, label { font-weight: 700; } label small, .field small { display: block; 
   .legend { width: 100%; margin-left: 0; flex-wrap: wrap; } .approval-actions { min-width: 0; flex-basis: auto; } .notification-item small { white-space: normal; }
   .fc .fc-toolbar { align-items: stretch; flex-direction: column; } .fc .fc-toolbar-chunk { display: flex; justify-content: center; }
   .filter-grid button, .filter-bar button { width: 100%; }
+  .compact-button { min-height: 2.75rem; padding: var(--space-xs) var(--space-sm); font-size: .85rem; }
 }
 @media (max-width: 30rem) {
   h1 { font-size: 1.65rem; } h2 { font-size: 1.2rem; }
@@ -316,7 +318,18 @@ legend, label { font-weight: 700; } label small, .field small { display: block; 
 @media (max-width: 50rem) {
   .booking-summary-grid { grid-template-columns: 1fr; gap: var(--space-sm); }
   .booking-form .form-grid { grid-template-columns: 1fr; }
-  .booking-submit-bar { position: sticky; bottom: 0; margin-inline: calc(var(--space-sm) * -1); padding: var(--space-sm); border-top: 1px solid var(--line-strong); background: oklch(.11 .014 246 / .97); box-shadow: 0 -.4rem 1.2rem rgb(0 0 0 / .16); }
+  .booking-submit-bar {
+    position: sticky;
+    bottom: 0;
+    margin-inline: 0;
+    padding: var(--space-sm);
+    border-top: 1px solid var(--line-strong);
+    border-radius: var(--radius-md) var(--radius-md) 0 0;
+    background: oklch(.11 .014 246 / .97);
+    box-shadow: 0 -.4rem 1.2rem rgb(0 0 0 / .16);
+    max-width: 100%;
+    box-sizing: border-box;
+  }
 }
 
 /* Category Filter Tabs & Guest Header */
@@ -354,7 +367,9 @@ legend, label { font-weight: 700; } label small, .field small { display: block; 
 .category-pill {
   display: inline-flex;
   align-items: center;
-  padding: .35rem .85rem;
+  justify-content: center;
+  min-height: 2.75rem;
+  padding: .35rem .95rem;
   border: 1px solid var(--line);
   border-radius: 999px;
   background: var(--surface);
@@ -368,7 +383,7 @@ legend, label { font-weight: 700; } label small, .field small { display: block; 
   border-color: var(--line-strong);
   background: var(--surface-raised);
 }
-.category-pill.active {
+.category-pill.active, .category-pill[aria-current="page"] {
   background: oklch(.78 .13 207 / .1);
   border-color: var(--cyan);
   color: var(--cyan);
@@ -495,7 +510,7 @@ legend, label { font-weight: 700; } label small, .field small { display: block; 
 
 .room-gallery-viewport { position: relative; aspect-ratio: 4 / 3; background: var(--canvas-deep); border-radius: var(--radius-md); overflow: hidden; }
 .room-gallery-viewport img { width: 100%; height: 100%; object-fit: contain; display: block; }
-.room-gallery-nav { position: absolute; top: 50%; transform: translateY(-50%); width: 2.5rem; height: 2.5rem; border-radius: 50%; border: 1px solid var(--line-strong); background: oklch(.12 .02 250 / .6); color: var(--ink); font-size: 1.4rem; line-height: 1; cursor: pointer; }
+.room-gallery-nav { position: absolute; top: 50%; transform: translateY(-50%); min-width: 2.75rem; min-height: 2.75rem; width: 2.75rem; height: 2.75rem; border-radius: 50%; border: 1px solid var(--line-strong); background: oklch(.12 .02 250 / .75); color: var(--ink); font-size: 1.4rem; line-height: 1; cursor: pointer; display: grid; place-items: center; }
 .room-gallery-prev { left: var(--space-xs); }
 .room-gallery-next { right: var(--space-xs); }
 .room-gallery-nav:hover, .room-gallery-nav:focus-visible { border-color: var(--cyan-strong); color: var(--cyan); }
@@ -671,14 +686,43 @@ legend, label { font-weight: 700; } label small, .field small { display: block; 
 /* ปุ่มช่วงเวลาสำเร็จรูป + ห้องโปรด + จองซ้ำ (งาน C) */
 .time-preset-row { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2xs); margin-bottom: var(--space-sm); }
 .time-preset-label { color: var(--muted); font-size: .8rem; }
-.time-preset-button { padding: .35rem .65rem; border: 1px solid var(--line); border-radius: var(--radius-sm); background: var(--surface-raised); color: var(--cyan); font-family: var(--font-mono); font-size: .78rem; cursor: pointer; }
+.time-preset-button {
+  min-height: 2.75rem;
+  padding: .35rem .75rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--surface-raised);
+  color: var(--cyan);
+  font-family: var(--font-mono);
+  font-size: .8rem;
+  cursor: pointer;
+}
 .time-preset-button:hover { border-color: var(--cyan); color: var(--ink); }
-.room-card-actions { display: flex; align-items: center; gap: var(--space-xs); }
+.room-card-actions { display: flex; align-items: center; gap: var(--space-xs); flex-wrap: wrap; }
 .fav-form { margin: 0; }
-.fav-button { padding: .3rem .55rem; border: 1px solid var(--line); border-radius: var(--radius-sm); background: transparent; color: var(--muted); font-size: 1rem; line-height: 1; cursor: pointer; }
+.fav-button {
+  min-width: 2.75rem;
+  min-height: 2.75rem;
+  width: 2.75rem;
+  height: 2.75rem;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--muted);
+  font-size: 1.25rem;
+  line-height: 1;
+  cursor: pointer;
+}
 .fav-button:hover { border-color: var(--amber); color: var(--amber); }
 .fav-button.is-fav { border-color: var(--amber); color: var(--amber); }
-.rebook-link { font-size: .82rem; white-space: nowrap; }
+.rebook-link { min-height: 2.75rem; display: inline-flex; align-items: center; font-size: .82rem; white-space: nowrap; }
 .booking-retry-action { display: flex; align-items: center; justify-content: space-between; gap: var(--space-sm); margin-top: var(--space-sm); padding-top: var(--space-sm); border-top: 1px solid color-mix(in oklab, var(--red) 40%, transparent); }
 .booking-retry-action span { color: var(--muted); font-size: .82rem; }
 @media (max-width: 50rem) {
@@ -1292,11 +1336,14 @@ legend, label { font-weight: 700; } label small, .field small { display: block; 
 }
 
 .booking-room-actions .fav-button {
-  min-height: 38px;
+  min-width: 2.75rem;
+  min-height: 2.75rem;
+  width: 2.75rem;
+  height: 2.75rem;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: .35rem .65rem;
+  padding: 0;
   border: 1px solid var(--line);
   border-radius: var(--radius-sm);
   background: transparent;
@@ -2260,6 +2307,7 @@ legend, label { font-weight: 700; } label small, .field small { display: block; 
 
 .table-responsive-container {
   width: 100%;
+  max-width: 100%;
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
   margin-bottom: var(--space-lg);
@@ -2348,6 +2396,113 @@ legend, label { font-weight: 700; } label small, .field small { display: block; 
 .gallery-dialog-article {
   max-width: 38rem;
   width: 100%;
+}
+
+/* รูปห้องพักและแกลเลอรี (UI-4 / UI-5) */
+.room-photo-wrap {
+  position: relative;
+  aspect-ratio: 16 / 9;
+  background: var(--surface-soft);
+  overflow: hidden;
+  border-bottom: 1px solid var(--line);
+}
+
+.room-photo-cover {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.room-photo-cover.is-placeholder {
+  object-fit: contain;
+  padding: var(--space-lg);
+  opacity: .7;
+}
+
+.room-photo-trigger {
+  all: unset;
+  display: block;
+  width: 100%;
+  height: 100%;
+  cursor: pointer;
+  position: relative;
+}
+
+.room-photo-trigger:focus-visible {
+  outline: .18rem solid var(--cyan);
+  outline-offset: -.18rem;
+}
+
+.room-photo-count {
+  position: absolute;
+  right: var(--space-xs);
+  bottom: var(--space-xs);
+  padding: .15rem .5rem;
+  border-radius: 999px;
+  background: oklch(.12 .02 250 / .75);
+  color: var(--ink);
+  font-size: .72rem;
+  font-weight: 700;
+  pointer-events: none;
+}
+
+.room-gallery-viewport {
+  position: relative;
+  aspect-ratio: 4 / 3;
+  background: var(--canvas-deep);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  display: grid;
+  place-items: center;
+}
+
+.room-gallery-viewport img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+}
+
+.room-gallery-nav {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  min-width: 2.75rem;
+  min-height: 2.75rem;
+  width: 2.75rem;
+  height: 2.75rem;
+  border-radius: 50%;
+  border: 1px solid var(--line-strong);
+  background: oklch(.12 .02 250 / .75);
+  color: var(--ink);
+  font-size: 1.4rem;
+  line-height: 1;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  transition: border-color var(--motion-fast) ease, color var(--motion-fast) ease;
+}
+
+.room-gallery-prev { left: var(--space-xs); }
+.room-gallery-next { right: var(--space-xs); }
+.room-gallery-nav:hover, .room-gallery-nav:focus-visible {
+  border-color: var(--cyan-strong);
+  color: var(--cyan);
+}
+
+.room-gallery-counter {
+  margin: var(--space-sm) 0 0;
+  text-align: center;
+  color: var(--muted);
+  font-family: var(--font-mono);
+  font-size: .82rem;
+}
+
+dialog article > header :is(button, a)[rel="prev"] {
+  min-width: 2.75rem;
+  min-height: 2.75rem;
+  cursor: pointer;
 }
 
 .btn-confirm {
