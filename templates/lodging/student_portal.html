@@ -60,13 +60,13 @@
         {% with photo_urls=rdata.room.photo_url_list %}
           {% if photo_urls %}
             <button type="button" class="room-photo-trigger" aria-label="ดูรูปห้อง {{ rdata.room.code }} ทั้งหมด ({{ photo_urls|length }} รูป)" data-photos="{{ photo_urls|join:'|' }}" data-room-label="{{ rdata.room.code }}">
-              <img src="{{ photo_urls.0 }}" alt="รูปห้อง {{ rdata.room.code }}" loading="lazy" class="room-photo-cover">
+              <img src="{{ photo_urls.0 }}" alt="รูปห้อง {{ rdata.room.code }}" width="320" height="180" loading="lazy" decoding="async" class="room-photo-cover">
               {% if photo_urls|length > 1 %}
                 <span class="room-photo-count">🖼 {{ photo_urls|length }}</span>
               {% endif %}
             </button>
           {% else %}
-            <img src="{% static 'img/room-placeholder.svg' %}" alt="ยังไม่มีรูปห้อง {{ rdata.room.code }}" loading="lazy" class="room-photo-cover is-placeholder">
+            <img src="{% static 'img/room-placeholder.svg' %}" alt="ยังไม่มีรูปห้อง {{ rdata.room.code }}" width="320" height="180" loading="lazy" decoding="async" class="room-photo-cover is-placeholder">
           {% endif %}
         {% endwith %}
       </div>
@@ -200,7 +200,7 @@
       <h3 id="roomGalleryTitle">รูปห้อง</h3>
     </header>
     <div class="room-gallery-viewport">
-      <img id="roomGalleryImage" src="" alt="" loading="lazy">
+      <img id="roomGalleryImage" src="" alt="รูปขยายของห้อง" width="600" height="450" loading="lazy" decoding="async">
       <button type="button" class="room-gallery-nav room-gallery-prev" aria-label="รูปก่อนหน้า" onclick="roomGalleryStep(-1)">‹</button>
       <button type="button" class="room-gallery-nav room-gallery-next" aria-label="รูปถัดไป" onclick="roomGalleryStep(1)">›</button>
     </div>
@@ -270,15 +270,21 @@ document.addEventListener('keydown', function (e) {
 });
 
 function openBookingModal(roomId, roomCode, bedNumber) {
+  lastFocusedElement = document.activeElement;
   document.getElementById('modalRoomId').value = roomId;
   document.getElementById('modalBedNumber').value = bedNumber;
   document.getElementById('modalRoomTitle').textContent = `ห้อง ${roomCode} (เตียง ${bedNumber})`;
   const modal = document.getElementById('bookingModal');
   modal.showModal();
+  const firstInput = modal.querySelector('input:not([type="hidden"]), select, textarea');
+  if (firstInput) firstInput.focus();
 }
 
 function closeBookingModal() {
   document.getElementById('bookingModal').close();
+  if (lastFocusedElement && typeof lastFocusedElement.focus === 'function') {
+    lastFocusedElement.focus();
+  }
 }
 
 let lastJumpIndex = -1;
@@ -286,7 +292,8 @@ function scrollToNextFreeBed() {
   const freeRooms = document.querySelectorAll('.room-lodging-card.has-free-bed');
   if (!freeRooms || freeRooms.length === 0) return;
   lastJumpIndex = (lastJumpIndex + 1) % freeRooms.length;
-  freeRooms[lastJumpIndex].scrollIntoView({ behavior: 'smooth', block: 'center' });
+  const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  freeRooms[lastJumpIndex].scrollIntoView({ behavior: prefersReduced ? 'auto' : 'smooth', block: 'center' });
 }
 
 {% if modal_error %}

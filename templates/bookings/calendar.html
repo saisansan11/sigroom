@@ -73,8 +73,8 @@
         {% for card in group.cards %}
           <article class="homepage-room-card">
             {% with cover=card.result.room.cover_photo %}
-              {% if cover %}<img src="{{ cover.image.url }}" alt="รูปห้อง {{ card.result.room.code }}" loading="lazy" class="room-card-thumb">
-              {% else %}<img src="{% static 'img/room-placeholder.svg' %}" alt="ยังไม่มีรูปห้อง {{ card.result.room.code }}" loading="lazy" class="room-card-thumb is-placeholder">{% endif %}
+              {% if cover %}<img src="{{ cover.image.url }}" alt="รูปห้อง {{ card.result.room.code }}" width="56" height="56" loading="lazy" decoding="async" class="room-card-thumb">
+              {% else %}<img src="{% static 'img/room-placeholder.svg' %}" alt="ยังไม่มีรูปห้อง {{ card.result.room.code }}" width="56" height="56" loading="lazy" decoding="async" class="room-card-thumb is-placeholder">{% endif %}
             {% endwith %}
             <div class="homepage-room-info">
               <div class="homepage-room-title-row">
@@ -96,7 +96,7 @@
 <nav class="category-tabs" aria-label="เลือกหมวดห้อง">
   <span class="category-tabs-label">หมวดห้อง:</span>
   {% for cat_val, cat_name in category_choices %}
-    <a href="?category={{ cat_val }}" class="category-pill {% if selected_category == cat_val %}active{% endif %}">
+    <a href="?category={{ cat_val }}" class="category-pill {% if selected_category == cat_val %}active{% endif %}" {% if selected_category == cat_val %}aria-current="page"{% endif %}>
       {{ cat_name }}
     </a>
   {% endfor %}
@@ -212,8 +212,8 @@
       {% for row in board_rows %}
       <div class="tl-room">
         {% with cover=row.room.cover_photo %}
-          {% if cover %}<img src="{{ cover.image.url }}" alt="" loading="lazy" class="tl-room-thumb">
-          {% else %}<img src="{% static 'img/room-placeholder.svg' %}" alt="" loading="lazy" class="tl-room-thumb is-placeholder">{% endif %}
+          {% if cover %}<img src="{{ cover.image.url }}" alt="ห้อง {{ row.room.code }}" width="30" height="30" loading="lazy" decoding="async" class="tl-room-thumb">
+          {% else %}<img src="{% static 'img/room-placeholder.svg' %}" alt="" width="30" height="30" loading="lazy" decoding="async" class="tl-room-thumb is-placeholder" aria-hidden="true">{% endif %}
         {% endwith %}
         <span><b>{{ row.room.code }}</b>{{ row.room.name }}</span>
       </div>
