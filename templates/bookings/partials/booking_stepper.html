@@ -1,0 +1,46 @@
+{# Reusable Booking Stepper for SIGROOM UI-3 #}
+{# Usage: {% include "bookings/partials/booking_stepper.html" with current_step=1 %} #}
+<nav class="booking-stepper" aria-label="ขั้นตอนการจองห้อง">
+  <div class="booking-stepper-compact" aria-hidden="true">
+    <div class="stepper-compact-header">
+      <span class="stepper-compact-count">ขั้นตอนที่ {{ current_step }} จาก 5</span>
+      <span class="stepper-compact-title">
+        {% if current_step == 1 %}เวลา{% elif current_step == 2 %}ห้อง{% elif current_step == 3 %}รายละเอียด{% elif current_step == 4 %}ตรวจสอบ{% elif current_step == 5 %}ยืนยัน{% endif %}
+      </span>
+    </div>
+    <div class="stepper-compact-bar">
+      <div class="stepper-compact-fill step-{{ current_step }}"></div>
+    </div>
+  </div>
+
+  <ol class="booking-stepper-list">
+    <li class="booking-step {% if current_step > 1 %}is-completed{% elif current_step == 1 %}is-current{% else %}is-upcoming{% endif %}" {% if current_step == 1 %}aria-current="step"{% endif %}>
+      <span class="step-num">{% if current_step > 1 %}✓{% else %}1{% endif %}</span>
+      <span class="step-label">เวลา</span>
+    </li>
+    <li class="booking-step-divider {% if current_step > 1 %}is-completed{% endif %}"></li>
+
+    <li class="booking-step {% if current_step > 2 %}is-completed{% elif current_step == 2 %}is-current{% else %}is-upcoming{% endif %}" {% if current_step == 2 %}aria-current="step"{% endif %}>
+      <span class="step-num">{% if current_step > 2 %}✓{% else %}2{% endif %}</span>
+      <span class="step-label">ห้อง</span>
+    </li>
+    <li class="booking-step-divider {% if current_step > 2 %}is-completed{% endif %}"></li>
+
+    <li class="booking-step {% if current_step > 3 %}is-completed{% elif current_step == 3 %}is-current{% else %}is-upcoming{% endif %}" {% if current_step == 3 %}aria-current="step"{% endif %}>
+      <span class="step-num">{% if current_step > 3 %}✓{% else %}3{% endif %}</span>
+      <span class="step-label">รายละเอียด</span>
+    </li>
+    <li class="booking-step-divider {% if current_step > 3 %}is-completed{% endif %}"></li>
+
+    <li class="booking-step {% if current_step > 4 %}is-completed{% elif current_step == 4 %}is-current{% else %}is-upcoming{% endif %}" {% if current_step == 4 %}aria-current="step"{% endif %}>
+      <span class="step-num">{% if current_step > 4 %}✓{% else %}4{% endif %}</span>
+      <span class="step-label">ตรวจสอบ</span>
+    </li>
+    <li class="booking-step-divider {% if current_step > 4 %}is-completed{% endif %}"></li>
+
+    <li class="booking-step {% if current_step == 5 %}is-current is-completed{% else %}is-upcoming{% endif %}" {% if current_step == 5 %}aria-current="step"{% endif %}>
+      <span class="step-num">{% if current_step == 5 %}✓{% else %}5{% endif %}</span>
+      <span class="step-label">ยืนยัน</span>
+    </li>
+  </ol>
+</nav>

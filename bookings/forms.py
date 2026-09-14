@@ -66,7 +66,10 @@ def _unit_ids_with_children(unit: Unit | None) -> set[int]:
 
 
 class BookingForm(forms.ModelForm):
-    date = BuddhistDateField(label="วันที่", widget=forms.TextInput(attrs={"placeholder": "24/08/2569"}))
+    date = BuddhistDateField(
+        label="วันที่",
+        widget=forms.TextInput(attrs={"placeholder": "24/08/2569", "inputmode": "numeric", "autocomplete": "off"}),
+    )
     start_time = forms.TimeField(label="เริ่ม", widget=forms.Select(choices=time_choices()), input_formats=["%H:%M"])
     end_time = forms.TimeField(label="สิ้นสุด", widget=forms.Select(choices=time_choices()), input_formats=["%H:%M"])
     fixed_equipment_choices = forms.MultipleChoiceField(
@@ -103,9 +106,14 @@ class BookingForm(forms.ModelForm):
     series_end_date = BuddhistDateField(
         label="วันที่สิ้นสุดชุด",
         required=False,
-        widget=forms.TextInput(attrs={"placeholder": "28/11/2569"}),
+        widget=forms.TextInput(attrs={"placeholder": "28/11/2569", "inputmode": "numeric", "autocomplete": "off"}),
     )
-    series_count = forms.IntegerField(label="จำนวนครั้ง", required=False, min_value=1)
+    series_count = forms.IntegerField(
+        label="จำนวนครั้ง",
+        required=False,
+        min_value=1,
+        widget=forms.NumberInput(attrs={"min": "1", "placeholder": "เช่น 4", "inputmode": "numeric"}),
+    )
     series_custom_dates = forms.CharField(
         label="วันที่กำหนดเอง",
         required=False,
@@ -121,10 +129,14 @@ class BookingForm(forms.ModelForm):
             "external_attendees_note", "visibility", "note",
         ]
         widgets = {
+            "title": forms.TextInput(attrs={"placeholder": "เช่น การประชุมประสานงานประจำเดือน", "autocomplete": "off"}),
+            "responsible_name": forms.TextInput(attrs={"placeholder": "ยศ-ชื่อ-สกุล", "autocomplete": "name"}),
+            "responsible_phone": forms.TextInput(attrs={"placeholder": "เช่น 081-234-5678 หรือเบอร์ภายใน", "inputmode": "tel", "autocomplete": "tel"}),
+            "attendees": forms.NumberInput(attrs={"min": "1", "placeholder": "เช่น 30", "inputmode": "numeric"}),
             "equipment": forms.CheckboxSelectMultiple,
             "has_external_attendees": forms.RadioSelect(choices=((False, "ไม่มี"), (True, "มี"))),
             "visibility": forms.RadioSelect,
-            "note": forms.Textarea(attrs={"rows": 3}),
+            "note": forms.Textarea(attrs={"rows": 3, "placeholder": "ระบุหมายเหตุหรือข้อความเพิ่มเติม (ถ้ามี)"}),
         }
 
     def __init__(self, *args, user, room: Resource, allowed_fields: set[str] | None = None, **kwargs):

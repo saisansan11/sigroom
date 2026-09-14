@@ -2,67 +2,206 @@
 {% load thaidate %}
 {% block title %}{{ booking.title }} · SIGROOM{% endblock %}
 {% block content %}
-<div class="page-heading"><div><span class="status status-{{ booking.request_status }}">{{ booking.get_request_status_display }}</span><h1>{{ booking.title }}</h1><p>{{ booking.room.code }} · {{ booking.room.name }}</p></div><a class="secondary" role="button" href="{% url 'bookings:my_bookings' %}">การจองของฉัน</a></div>
-<article class="detail-card">
+{% include "bookings/partials/booking_stepper.html" with current_step=5 %}
+
+<div class="page-heading booking-flow-heading">
+  <div>
+    <p class="eyebrow">ขั้นที่ 5 จาก 5 · รายละเอียดและการยืนยัน</p>
+    <h1>{{ booking.title }}</h1>
+    <p class="heading-desc">{{ booking.room.code }} · {{ booking.room.name }} ({{ booking.room.building }}{% if booking.room.floor %} ชั้น {{ booking.room.floor }}{% endif %})</p>
+  </div>
+  <a class="secondary btn-my-bookings" role="button" href="{% url 'bookings:my_bookings' %}">การจองของฉัน ←</a>
+</div>
+
+<!-- Above-the-fold Status Hero Card -->
+<section class="booking-status-hero status-card-{{ booking.request_status }}" aria-label="สถานะการจอง">
+  <div class="status-hero-main">
+    <div class="status-hero-indicator">
+      <span class="status status-{{ booking.request_status }} status-pill-large">
+        {% if booking.request_status == 'approved' %}อนุมัติแล้ว{% else %}{{ booking.get_request_status_display }}{% endif %}
+      </span>
+      {% if booking.request_status == 'approved' %}
+        <p class="status-hero-message"><strong>อนุมัติแล้ว</strong><br>การจองห้องได้รับการอนุมัติเรียบร้อยแล้ว ห้องพร้อมสำหรับการใช้งานตามวันและเวลาที่กำหนด</p>
+      {% elif booking.request_status == 'pending' %}
+        <p class="status-hero-message"><strong>ส่งคำขอแล้ว · รอผู้อนุมัติ</strong><br>คุณสามารถติดตามสถานะได้จาก “การจองของฉัน”</p>
+      {% elif booking.request_status == 'draft' %}
+        <p class="status-hero-message">รายการนี้ถูกบันทึกเป็นแบบร่าง กรุณากด “ส่งคำขอ” เพื่อเริ่มกระบวนการขออนุมัติใช้งานห้อง</p>
+      {% elif booking.request_status == 'rejected' %}
+        <p class="status-hero-message">คำขอนี้ไม่ได้รับการอนุมัติ ท่านสามารถดูเหตุผลด้านล่าง หรือเลือกจองช่วงเวลา/ห้องอื่น</p>
+      {% elif booking.request_status == 'expired' %}
+        <p class="status-hero-message">คำขอนี้หมดอายุเนื่องจากไม่มีการพิจารณาภายในระยะเวลาที่กำหนด</p>
+      {% elif booking.request_status == 'cancelled' %}
+        <p class="status-hero-message">รายการจองนี้ถูกยกเลิกแล้ว ช่วงเวลาถูกปลดคืนให้ผู้ใช้อื่นจองได้</p>
+      {% endif %}
+    </div>
+
+    <div class="status-hero-quickmeta">
+      <div class="quickmeta-item">
+        <span class="quickmeta-label">วันและเวลา</span>
+        <span class="quickmeta-value">{{ booking.start_at|thai_datetime }}–{{ booking.end_at|date:"H:i" }} น.</span>
+      </div>
+      <div class="quickmeta-item">
+        <span class="quickmeta-label">ผู้รับผิดชอบ</span>
+        <span class="quickmeta-value">{{ booking.responsible_name }} ({{ booking.unit.name }})</span>
+      </div>
+      <div class="quickmeta-item">
+        <span class="quickmeta-label">จำนวนผู้ร่วม</span>
+        <span class="quickmeta-value mono">{{ booking.attendees }} คน</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Detailed Information -->
+<article class="detail-card booking-detail-card">
+  <div class="section-title">
+    <div>
+      <h2>ข้อมูลการจองฉบับเต็ม</h2>
+    </div>
+  </div>
   <dl class="detail-grid">
     <div><dt>วันและเวลา</dt><dd>{{ booking.start_at|thai_datetime }}–{{ booking.end_at|date:"H:i" }} น.</dd></div>
     <div><dt>หน่วยงาน</dt><dd>{{ booking.unit.name }}</dd></div>
-    <div><dt>ผู้รับผิดชอบ</dt><dd>{{ booking.responsible_name }} · {{ booking.responsible_phone }}</dd></div>
+    <div><dt>ผู้รับผิดชอบ</dt><dd>{{ booking.responsible_name }} · <span class="mono">{{ booking.responsible_phone }}</span></dd></div>
     <div><dt>ผู้เข้าร่วม</dt><dd>{{ booking.attendees }} คน{% if booking.attendee_level %} · {{ booking.attendee_level }}{% endif %}</dd></div>
     <div><dt>ประเภท / จัดโต๊ะ</dt><dd>{{ booking.get_purpose_display }}{% if booking.layout %} · {{ booking.layout }}{% endif %}</dd></div>
     <div><dt>อุปกรณ์ประจำห้อง</dt><dd>{{ booking.fixed_equipment_needed|default:"—"|linebreaksbr }}</dd></div>
     <div><dt>อุปกรณ์ส่วนกลาง</dt><dd>{% for item in booking.equipment.all %}{{ item.name }}{% if not forloop.last %}, {% endif %}{% empty %}—{% endfor %}</dd></div>
     <div><dt>การมองเห็น</dt><dd>{{ booking.get_visibility_display }}</dd></div>
-    <div><dt>รหัสการจอง</dt><dd><code>{{ booking.id|stringformat:"s"|slice:":8" }}</code> · รุ่น {{ booking.revision }}</dd></div>
+    <div><dt>รหัสการจอง</dt><dd><code class="mono">{{ booking.id|stringformat:"s"|slice:":8" }}</code> · รุ่น {{ booking.revision }}</dd></div>
     <div><dt>ส่งเมื่อ</dt><dd>{{ booking.submitted_at|thai_datetime }}</dd></div>
-    {% if show_online_link %}<div class="wide"><dt>ลิงก์ห้องเรียนออนไลน์</dt><dd><a href="{{ booking.online_meeting_url }}" rel="noopener noreferrer" target="_blank">{{ booking.online_meeting_url }}</a><br><small>เห็นเฉพาะผู้จอง เจ้าหน้าที่ห้อง และผู้อนุมัติ</small></dd></div>{% endif %}
-    {% if booking.series_id %}<div class="wide"><dt>ชุดการจอง</dt><dd>ส่วนหนึ่งของชุด <a href="{% url 'bookings:series_detail' booking.series_id %}">ดูทั้งชุด</a> · ครั้งที่ {{ booking.series_index }}</dd></div>{% endif %}
-    {% if booking.note %}<div class="wide"><dt>หมายเหตุ</dt><dd>{{ booking.note|linebreaksbr }}</dd></div>{% endif %}
+    {% if show_online_link %}
+      <div class="wide"><dt>ลิงก์ห้องเรียนออนไลน์</dt><dd><a href="{{ booking.online_meeting_url }}" rel="noopener noreferrer" target="_blank">{{ booking.online_meeting_url }}</a><br><small class="muted-text">เห็นเฉพาะผู้จอง เจ้าหน้าที่ห้อง และผู้อนุมัติ</small></dd></div>
+    {% endif %}
+    {% if booking.series_id %}
+      <div class="wide"><dt>ชุดการจอง</dt><dd>ส่วนหนึ่งของชุด <a href="{% url 'bookings:series_detail' booking.series_id %}">ดูทั้งชุด</a> · ครั้งที่ {{ booking.series_index }}</dd></div>
+    {% endif %}
+    {% if booking.note %}
+      <div class="wide"><dt>หมายเหตุ</dt><dd>{{ booking.note|linebreaksbr }}</dd></div>
+    {% endif %}
   </dl>
 </article>
+
 {% if pending_amendment %}
 <article class="detail-card amendment-card">
   <h2>✏ คำขอแก้ไข {{ pending_amendment.display_ref }} รออนุมัติ</h2>
-  <div class="comparison-grid"><div><strong>เดิม</strong><p>{{ booking.room.code }} · {{ booking.start_at|thai_datetime }}–{{ booking.end_at|date:"H:i" }}</p><p>อุปกรณ์: {% for item in booking.equipment.all %}{{ item.name }}{% if not forloop.last %}, {% endif %}{% empty %}—{% endfor %}</p></div><div><strong>ใหม่</strong><p>{{ pending_amendment.new_room.code }} · {{ pending_amendment.new_start_at|thai_datetime }}–{{ pending_amendment.new_end_at|date:"H:i" }}</p><p>อุปกรณ์: {% for item in pending_amendment.proposed_equipment.all %}{{ item.name }}{% if not forloop.last %}, {% endif %}{% empty %}—{% endfor %}</p></div></div>
+  <div class="comparison-grid">
+    <div>
+      <strong>เดิม</strong>
+      <p>{{ booking.room.code }} · {{ booking.start_at|thai_datetime }}–{{ booking.end_at|date:"H:i" }}</p>
+      <p>อุปกรณ์: {% for item in booking.equipment.all %}{{ item.name }}{% if not forloop.last %}, {% endif %}{% empty %}—{% endfor %}</p>
+    </div>
+    <div>
+      <strong>ใหม่</strong>
+      <p>{{ pending_amendment.new_room.code }} · {{ pending_amendment.new_start_at|thai_datetime }}–{{ pending_amendment.new_end_at|date:"H:i" }}</p>
+      <p>อุปกรณ์: {% for item in pending_amendment.proposed_equipment.all %}{{ item.name }}{% if not forloop.last %}, {% endif %}{% empty %}—{% endfor %}</p>
+    </div>
+  </div>
   {% if pending_amendment.reason %}<p>เหตุผล: {{ pending_amendment.reason }}</p>{% endif %}
-  <form method="post" action="{% url 'bookings:amendment_withdraw' pending_amendment.id %}">{% csrf_token %}<label>เหตุผลที่ถอน (ถ้ามี)<input name="reason" maxlength="500"></label><button class="outline danger" type="submit">ถอนคำขอแก้ไข</button></form>
+  <form method="post" action="{% url 'bookings:amendment_withdraw' pending_amendment.id %}">
+    {% csrf_token %}
+    <label>เหตุผลที่ถอน (ถ้ามี)<input name="reason" maxlength="500"></label>
+    <button class="outline danger" type="submit">ถอนคำขอแก้ไข</button>
+  </form>
 </article>
 {% endif %}
+
 {% if preemption %}
 <article class="detail-card preemption-card">
   <h2>ถูกย้ายตามคำสั่ง {{ preemption.reference_no }}</h2>
   <p>โดย {{ preemption.ordered_by_position }} · เหตุผล {{ preemption.reason }}</p>
-  {% if preemption.replacement %}<p><strong>ห้องทดแทน:</strong> {{ preemption.replacement.room.code }} {{ preemption.replacement.room.name }} · {{ preemption.replacement.start_at|thai_datetime }}–{{ preemption.replacement.end_at|date:"H:i" }}</p>{% else %}<p>ไม่มีห้องทดแทน</p>{% endif %}
-  {% if preemption.acknowledged_at %}<p>รับทราบแล้วเมื่อ {{ preemption.acknowledged_at|thai_datetime }}</p>{% elif preemption.deemed_acknowledged %}<p>ครบ 24 ชม. ถือว่ารับทราบแล้ว</p>{% elif can_acknowledge %}<form method="post" action="{% url 'bookings:preemption_acknowledge' preemption.id %}">{% csrf_token %}<button type="submit">รับทราบ</button></form>{% endif %}
+  {% if preemption.replacement %}
+    <p><strong>ห้องทดแทน:</strong> {{ preemption.replacement.room.code }} {{ preemption.replacement.room.name }} · {{ preemption.replacement.start_at|thai_datetime }}–{{ preemption.replacement.end_at|date:"H:i" }}</p>
+  {% else %}
+    <p>ไม่มีห้องทดแทน</p>
+  {% endif %}
+  {% if preemption.acknowledged_at %}
+    <p>รับทราบแล้วเมื่อ {{ preemption.acknowledged_at|thai_datetime }}</p>
+  {% elif preemption.deemed_acknowledged %}
+    <p>ครบ 24 ชม. ถือว่ารับทราบแล้ว</p>
+  {% elif can_acknowledge %}
+    <form method="post" action="{% url 'bookings:preemption_acknowledge' preemption.id %}">
+      {% csrf_token %}
+      <button type="submit">รับทราบ</button>
+    </form>
+  {% endif %}
 </article>
 {% endif %}
+
 <article class="detail-card">
   <h2>ประวัติการพิจารณา</h2>
   <ol class="history-list">
   {% for item in approval_history %}
-    <li><strong>{{ item.get_action_display }}</strong> เมื่อ {{ item.acted_at|thai_datetime }}
+    <li>
+      <strong>{{ item.get_action_display }}</strong> เมื่อ {{ item.acted_at|thai_datetime }}
       {% if item.acted_by %}โดย {{ item.acted_by.display_name }}{% else %}{% if item.action == 'expired' %}โดยระบบ{% endif %}{% endif %}
       {% if item.on_behalf_of %} (รักษาการแทน {{ item.on_behalf_of.display_name }}){% endif %}
-      {% if item.reason %}<div>เหตุผล: {{ item.reason }}</div>{% endif %}
+      {% if item.reason %}<div class="history-reason">เหตุผล: {{ item.reason }}</div>{% endif %}
     </li>
-  {% empty %}<li>ยังไม่มีประวัติการพิจารณา</li>{% endfor %}
+  {% empty %}
+    <li>ยังไม่มีประวัติการพิจารณา</li>
+  {% endfor %}
   </ol>
 </article>
-{% if deadline_message %}<div class="notice warning">{{ deadline_message }}</div>{% endif %}
-<div class="form-actions">
+
+{% if deadline_message %}
+  <div class="notice warning">{{ deadline_message }}</div>
+{% endif %}
+
+<!-- Action Controls -->
+<div class="form-actions booking-detail-actions">
   {% if can_approve %}
-    <form method="post" action="{% url 'approvals:approve' booking.id %}">{% csrf_token %}<input type="hidden" name="next" value="{{ request.path }}"><button type="submit">อนุมัติ</button></form>
-    <details class="inline-reject"><summary role="button" class="outline danger">ปฏิเสธ</summary><form method="post" action="{% url 'approvals:reject' booking.id %}">{% csrf_token %}<input type="hidden" name="next" value="{{ request.path }}"><label>เหตุผล (จำเป็น)<input name="reason" required maxlength="500" list="detail-rejection-reasons" placeholder="เลือกเหตุผลที่เคยใช้หรือพิมพ์เอง"></label><button class="danger" type="submit">ยืนยันการปฏิเสธ</button></form></details>
-    <datalist id="detail-rejection-reasons">{% for reason in rejection_reasons %}<option value="{{ reason }}"></option>{% endfor %}</datalist>
+    <form method="post" action="{% url 'approvals:approve' booking.id %}">
+      {% csrf_token %}
+      <input type="hidden" name="next" value="{{ request.path }}">
+      <button type="submit" class="btn-primary">อนุมัติคำขอ</button>
+    </form>
+    <details class="inline-reject">
+      <summary role="button" class="outline danger">ปฏิเสธ</summary>
+      <form method="post" action="{% url 'approvals:reject' booking.id %}">
+        {% csrf_token %}
+        <input type="hidden" name="next" value="{{ request.path }}">
+        <label>เหตุผล (จำเป็น)
+          <input name="reason" required maxlength="500" list="detail-rejection-reasons" placeholder="เลือกเหตุผลที่เคยใช้หรือพิมพ์เอง">
+        </label>
+        <button class="danger" type="submit">ยืนยันการปฏิเสธ</button>
+      </form>
+    </details>
+    <datalist id="detail-rejection-reasons">
+      {% for reason in rejection_reasons %}<option value="{{ reason }}"></option>{% endfor %}
+    </datalist>
   {% endif %}
-  {% if can_edit %}<a role="button" href="{% url 'bookings:booking_edit' booking.id %}">แก้ไขรายละเอียด</a>{% endif %}
-  {% if can_amend %}<a role="button" href="{% url 'bookings:booking_amend' booking.id %}">ขอแก้ไขเวลา/ห้อง/อุปกรณ์ →</a>{% endif %}
-  {% if can_preempt and booking.request_status == 'approved' and booking.usage_status == 'upcoming' %}<a role="button" class="danger" href="{% url 'bookings:booking_preempt' booking.id %}">บังคับย้าย</a>{% endif %}
+
+  {% if can_edit %}
+    <a role="button" class="secondary" href="{% url 'bookings:booking_edit' booking.id %}">แก้ไขรายละเอียด</a>
+  {% endif %}
+
+  {% if can_amend %}
+    <a role="button" class="secondary" href="{% url 'bookings:booking_amend' booking.id %}">ขอแก้ไขเวลา/ห้อง/อุปกรณ์ →</a>
+  {% endif %}
+
+  {% if can_preempt and booking.request_status == 'approved' and booking.usage_status == 'upcoming' %}
+    <a role="button" class="danger" href="{% url 'bookings:booking_preempt' booking.id %}">บังคับย้าย</a>
+  {% endif %}
+
+  {% if booking.request_status == 'approved' %}
+    <a role="button" class="secondary" href="{% url 'bookings:book_form' booking.room.code %}?rebook={{ booking.id }}">จองแบบเดิมอีกครั้ง ↻</a>
+  {% endif %}
+
   {% if booking.request_status == 'draft' %}
-    <form method="post" action="{% url 'bookings:booking_submit' booking.id %}">{% csrf_token %}<button type="submit">ส่งคำขอ</button></form>
-    <form method="post" action="{% url 'bookings:booking_delete_draft' booking.id %}" onsubmit="return confirm('ลบร่างนี้ใช่หรือไม่')">{% csrf_token %}<button class="outline danger" type="submit">ลบร่าง</button></form>
+    <form method="post" action="{% url 'bookings:booking_submit' booking.id %}">
+      {% csrf_token %}
+      <button type="submit" class="btn-primary">ส่งคำขอ</button>
+    </form>
+    <form method="post" action="{% url 'bookings:booking_delete_draft' booking.id %}" onsubmit="return confirm('ลบร่างนี้ใช่หรือไม่')">
+      {% csrf_token %}
+      <button class="outline danger" type="submit">ลบร่าง</button>
+    </form>
   {% elif can_cancel %}
-    <form method="post" action="{% url 'bookings:booking_cancel' booking.id %}" onsubmit="return confirm('ยืนยันยกเลิกการจองและคืนช่วงเวลานี้ใช่หรือไม่')">{% csrf_token %}<button class="outline danger" type="submit">ยกเลิกการจอง</button></form>
+    <form method="post" action="{% url 'bookings:booking_cancel' booking.id %}" onsubmit="return confirm('ยืนยันยกเลิกการจองและคืนช่วงเวลานี้ใช่หรือไม่')">
+      {% csrf_token %}
+      <button class="outline danger" type="submit">ยกเลิกการจอง</button>
+    </form>
   {% endif %}
 </div>
 {% endblock %}

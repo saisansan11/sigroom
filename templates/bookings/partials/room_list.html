@@ -1,32 +1,90 @@
 {% load static %}
-{% if error %}<div class="notice error">{{ error }}</div>{% endif %}
+{% if error %}
+  <div class="notice error" role="alert">{{ error }}</div>
+{% endif %}
 {% if searched and not error %}
-<section class="results-section">
-  <div class="section-title"><div><p class="eyebrow">ขั้นที่ 2</p><h2 tabindex="-1">{% if available %}พบ {{ available|length }} ห้องว่าง{% else %}ไม่พบห้องว่างในช่วงที่เลือก{% endif %}</h2></div><span class="count-badge">{{ available|length }} ห้อง</span></div>
+<section class="results-section booking-results-section" aria-label="ผลการค้นหาห้องว่าง">
+  <div class="section-title results-header">
+    <div>
+      <p class="eyebrow">ขั้นที่ 2 จาก 5</p>
+      <h2 tabindex="-1">{% if available %}พบ {{ available|length }} ห้องว่าง{% else %}ไม่พบห้องว่างในช่วงที่เลือก{% endif %}</h2>
+    </div>
+    <span class="count-badge">{{ available|length }} ห้อง</span>
+  </div>
+
   {% for result in available %}
-    <article class="room-card">
-      {% with cover=result.room.cover_photo %}
-        {% if cover %}<img src="{{ cover.image.url }}" alt="รูปห้อง {{ result.room.code }}" loading="lazy" class="room-card-thumb">
-        {% else %}<img src="{% static 'img/room-placeholder.svg' %}" alt="ยังไม่มีรูปห้อง {{ result.room.code }}" loading="lazy" class="room-card-thumb is-placeholder">{% endif %}
-      {% endwith %}
-      <div><h3>{{ result.room.code }} · {{ result.room.name }}</h3><p>{{ result.room.building }}{% if result.room.floor %} ชั้น {{ result.room.floor }}{% endif %} · จุ {{ result.room.capacity }} คน</p><p>{{ result.room.fixed_equipment|linebreaksbr }}</p><span class="policy">{{ result.approval_label }}</span>{% if result.capacity_warning %}<span class="warning-text">⚠ ความจุน้อยกว่าจำนวนที่ระบุ</span>{% endif %}</div>
-      <div class="room-card-actions">
+    <article class="room-card booking-room-card">
+      <div class="room-card-media">
+        {% with cover=result.room.cover_photo %}
+          {% if cover %}
+            <img src="{{ cover.image.url }}" alt="รูปห้อง {{ result.room.code }}" loading="lazy" class="room-card-thumb">
+          {% else %}
+            <img src="{% static 'img/room-placeholder.svg' %}" alt="ยังไม่มีรูปห้อง {{ result.room.code }}" loading="lazy" class="room-card-thumb is-placeholder">
+          {% endif %}
+        {% endwith %}
+      </div>
+
+      <div class="room-card-info">
+        <div class="room-card-title-row">
+          <h3>{{ result.room.code }} · {{ result.room.name }}</h3>
+          {% if "อนุมัติอัตโนมัติ" in result.approval_label %}
+            <span class="policy-badge policy-auto">{{ result.approval_label }}</span>
+          {% else %}
+            <span class="policy-badge policy-review">{{ result.approval_label }}</span>
+          {% endif %}
+        </div>
+
+        <p class="room-card-location">
+          {{ result.room.building }}{% if result.room.floor %} ชั้น {{ result.room.floor }}{% endif %}
+          · <span class="mono">จุ {{ result.room.capacity }} คน</span>
+        </p>
+
+        {% if result.room.fixed_equipment %}
+          <p class="room-card-equipment">{{ result.room.fixed_equipment|linebreaksbr }}</p>
+        {% endif %}
+
+        {% if result.capacity_warning %}
+          <div class="room-card-warning" role="note">
+            <span class="warning-icon" aria-hidden="true">⚠</span>
+            <span>ความจุน้อยกว่าจำนวนที่ระบุ ({{ result.room.capacity }} จาก {{ attendees }} คน)</span>
+          </div>
+        {% endif %}
+      </div>
+
+      <div class="room-card-actions booking-room-actions">
         <form class="fav-form" method="post" action="{% url 'bookings:room_favorite_toggle' result.room.code %}">
-          {% csrf_token %}<input type="hidden" name="next" value="{{ request.get_full_path }}">
+          {% csrf_token %}
+          <input type="hidden" name="next" value="{{ request.get_full_path }}">
           {% if result.room.pk in favorite_ids %}
             <button class="fav-button is-fav" type="submit" aria-label="นำ {{ result.room.code }} ออกจากห้องโปรด" title="นำออกจากห้องโปรด">★</button>
           {% else %}
             <button class="fav-button" type="submit" aria-label="เพิ่ม {{ result.room.code }} เป็นห้องโปรด" title="เพิ่มเป็นห้องโปรด">☆</button>
           {% endif %}
         </form>
-        <a role="button" href="{% url 'bookings:book_form' result.room.code %}?{{ query_string }}">จองห้องนี้</a>
+        <a role="button" class="btn-primary room-book-btn" href="{% url 'bookings:book_form' result.room.code %}?{{ query_string }}">จองห้องนี้</a>
       </div>
     </article>
-  {% empty %}<div class="empty-state detail-card"><strong>ไม่พบห้องที่พร้อมใช้</strong>ลองเปลี่ยนเวลา ลดจำนวนผู้เข้าร่วม หรือเลือกอุปกรณ์ส่วนกลางให้น้อยลง</div>{% endfor %}
+  {% empty %}
+    <div class="empty-state detail-card">
+      <strong>ไม่พบห้องที่พร้อมใช้ในช่วงเวลาที่เลือก</strong>
+      <p class="empty-desc">ลองเปลี่ยนวันเวลา ลดจำนวนผู้เข้าร่วม หรือลดอุปกรณ์ส่วนกลางที่ต้องการ</p>
+    </div>
+  {% endfor %}
 </section>
+
 {% if unavailable %}
-<details class="unavailable-list"><summary>ดูห้องที่ใช้ไม่ได้ ({{ unavailable|length }})</summary>
-  {% for result in unavailable %}<article class="room-card muted"><div><h3>{{ result.room.code }} · {{ result.room.name }}</h3><p>{{ result.reason }}</p></div></article>{% endfor %}
+<details class="unavailable-list">
+  <summary><span>ดูห้องที่ไม่พร้อมใช้งานในช่วงนี้ ({{ unavailable|length }} ห้อง)</span></summary>
+  <div class="unavailable-grid">
+    {% for result in unavailable %}
+      <article class="room-card muted unavailable-card">
+        <div>
+          <h4>{{ result.room.code }} · {{ result.room.name }}</h4>
+          <p class="unavailable-reason">{{ result.reason }}</p>
+        </div>
+      </article>
+    {% endfor %}
+  </div>
 </details>
 {% endif %}
 {% endif %}

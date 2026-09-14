@@ -1,18 +1,71 @@
 {% extends "base.html" %}
 {% block title %}ค้นหาห้องว่าง · SIGROOM{% endblock %}
 {% block content %}
-<div class="page-heading"><div><p class="eyebrow">ขั้นที่ 1</p><h1>เลือกวันเวลาและค้นหาห้อง</h1></div></div>
-<form class="search-panel" method="get" hx-get="{% url 'bookings:book_search' %}" hx-target="#room-results" hx-push-url="true" hx-indicator="#searching">
-  <input type="hidden" name="search" value="1">
-  <div class="form-grid four">
-    <label>วันที่ (พ.ศ.)<input name="date" value="{{ date_value }}" placeholder="24/08/2569" required></label>
-    <label>เริ่ม<select name="start" required>{% for value, label in time_options %}<option value="{{ value }}" {% if value == start_value %}selected{% endif %}>{{ label }}</option>{% endfor %}</select></label>
-    <label>สิ้นสุด<select name="end" required>{% for value, label in time_options %}<option value="{{ value }}" {% if value == end_value %}selected{% endif %}>{{ label }}</option>{% endfor %}</select></label>
-    <label>จำนวนคน<input type="number" name="attendees" min="1" value="{{ attendees }}" placeholder="เช่น 30"></label>
+{% include "bookings/partials/booking_stepper.html" with current_step=1 %}
+
+<div class="page-heading booking-flow-heading">
+  <div>
+    <p class="eyebrow">ขั้นที่ 1 จาก 5</p>
+    <h1>เลือกวันเวลาและค้นหาห้อง</h1>
+    <p class="heading-desc">ระบุวันและช่วงเวลาที่ต้องการใช้งานเพื่อตรวจสอบห้องว่างและอุปกรณ์ทันที</p>
   </div>
+</div>
+
+<form class="search-panel booking-search-panel" method="get" hx-get="{% url 'bookings:book_search' %}" hx-target="#room-results" hx-push-url="true" hx-indicator="#searching">
+  <input type="hidden" name="search" value="1">
+  <div class="form-grid four booking-search-grid">
+    <label>วันที่ (พ.ศ.)
+      <input name="date" value="{{ date_value }}" placeholder="24/08/2569" inputmode="numeric" autocomplete="off" required>
+    </label>
+    <label>เริ่ม
+      <select name="start" required>
+        {% for value, label in time_options %}
+          <option value="{{ value }}" {% if value == start_value %}selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+      </select>
+    </label>
+    <label>สิ้นสุด
+      <select name="end" required>
+        {% for value, label in time_options %}
+          <option value="{{ value }}" {% if value == end_value %}selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+      </select>
+    </label>
+    <label>จำนวนคน
+      <input type="number" name="attendees" min="1" value="{{ attendees }}" placeholder="เช่น 30" inputmode="numeric">
+    </label>
+  </div>
+
   {% include "bookings/partials/time_presets.html" %}
-  {% if equipment %}<fieldset><legend>อุปกรณ์ส่วนกลางที่ต้องการ</legend><div class="check-grid">{% for item in equipment %}<label><input type="checkbox" name="equipment" value="{{ item.code }}" {% if item.code in equipment_codes %}checked{% endif %}> {{ item.code }} {{ item.name }}</label>{% endfor %}</div></fieldset>{% endif %}
-  <div class="form-actions"><button type="submit">ค้นหาห้องว่าง</button><small id="searching" class="htmx-indicator" role="status">กำลังตรวจสอบห้องและอุปกรณ์…</small></div>
+
+  {% if equipment %}
+    <details class="search-equipment-details" {% if equipment_codes %}open{% endif %}>
+      <summary class="search-equipment-summary">
+        <span>ตัวเลือกเพิ่มเติม · อุปกรณ์ส่วนกลาง {% if equipment_codes %}<span class="count-pill">{{ equipment_codes|length }} ชิ้น</span>{% endif %}</span>
+      </summary>
+      <div class="search-equipment-content">
+        <fieldset>
+          <legend class="visually-hidden">อุปกรณ์ส่วนกลางที่ต้องการ</legend>
+          <div class="check-grid">
+            {% for item in equipment %}
+              <label class="equipment-check-label">
+                <input type="checkbox" name="equipment" value="{{ item.code }}" {% if item.code in equipment_codes %}checked{% endif %}>
+                <span class="equipment-name"><strong>{{ item.code }}</strong> {{ item.name }}</span>
+              </label>
+            {% endfor %}
+          </div>
+        </fieldset>
+      </div>
+    </details>
+  {% endif %}
+
+  <div class="form-actions booking-search-actions">
+    <button type="submit" class="btn-primary booking-search-submit">ค้นหาห้องว่าง</button>
+    <small id="searching" class="htmx-indicator searching-indicator" role="status" aria-live="polite">กำลังตรวจสอบห้องและอุปกรณ์…</small>
+  </div>
 </form>
-<div id="room-results" aria-live="polite" data-scroll-on-swap>{% include "bookings/partials/room_list.html" %}</div>
+
+<div id="room-results" aria-live="polite" data-scroll-on-swap>
+  {% include "bookings/partials/room_list.html" %}
+</div>
 {% endblock %}

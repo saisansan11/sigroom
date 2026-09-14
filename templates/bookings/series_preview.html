@@ -2,14 +2,80 @@
 {% load thaidate %}
 {% block title %}ตรวจสอบชุดการจอง · SIGROOM{% endblock %}
 {% block content %}
-<div class="page-heading"><div><p class="eyebrow">ตรวจสอบก่อนยืนยัน</p><h1>{{ booking.title }} — {{ room.code }}</h1><p>{{ preview.items.0.start_at|date:"H:i" }}–{{ preview.items.0.end_at|date:"H:i" }} น. · รวม {{ preview.items|length }} ครั้ง</p></div><a class="secondary" role="button" href="{% url 'bookings:book_form' room.code %}">← กลับไปเปลี่ยนเวลา</a></div>
-<div class="table-wrap"><table><thead><tr><th>ครั้ง</th><th>วันที่</th><th>ผลตรวจ</th></tr></thead><tbody>
-{% for item in preview.items %}<tr><td>{{ item.index }}</td><td>{{ item.occur_date|thai_date }}</td><td>{% if item.status == 'free' %}<span class="status status-approved">ว่าง</span>{% elif item.status == 'blackout' %}<span class="status status-draft">ข้าม</span> {{ item.reason }}{% else %}<span class="status status-rejected">เวลาชน</span> {{ item.reason }}{% endif %}</td></tr>{% endfor %}
-</tbody></table></div>
-<article class="detail-card"><strong>สรุป:</strong> ว่าง {{ preview.free_count }} · ชน {{ preview.conflict_count }} · ข้ามอัตโนมัติ {{ preview.skipped_count }}
-<p class="muted-text">ถ้ามีคนจองตัดหน้าระหว่างยืนยัน ครั้งนั้นจะถูกข้ามและแจ้งในผลลัพธ์</p></article>
-<form method="post" action="{% url 'bookings:series_create' room.code %}">
-  {% csrf_token %}{% for field in form %}{{ field.as_hidden }}{% endfor %}{% for item in preview.items %}{% if item.is_free %}<input type="hidden" name="_preview_free_dates" value="{{ item.occur_date|date:'Y-m-d' }}">{% endif %}{% endfor %}
-  <div class="form-actions"><button type="submit">จองเฉพาะครั้งที่ว่าง ({{ preview.free_count }} ครั้ง)</button><a class="secondary" role="button" href="{% url 'bookings:book_search' %}">ยกเลิกทั้งชุด</a></div>
+{% include "bookings/partials/booking_stepper.html" with current_step=4 %}
+
+<div class="page-heading booking-flow-heading">
+  <div>
+    <p class="eyebrow">ขั้นที่ 4 จาก 5 · ตรวจสอบก่อนยืนยัน</p>
+    <h1>{{ booking.title }} — {{ room.code }}</h1>
+    <p class="heading-desc">{{ preview.items.0.start_at|date:"H:i" }}–{{ preview.items.0.end_at|date:"H:i" }} น. · รวม {{ preview.items|length }} ครั้ง</p>
+  </div>
+  <a class="secondary" role="button" href="{% url 'bookings:book_form' room.code %}">← กลับไปแก้ไขข้อมูล</a>
+</div>
+
+<article class="detail-card series-summary-card">
+  <div class="series-summary-grid">
+    <div class="summary-pill free-pill">
+      <span class="pill-label">ว่างพร้อมจอง</span>
+      <strong class="pill-count">{{ preview.free_count }} ครั้ง</strong>
+    </div>
+    <div class="summary-pill conflict-pill">
+      <span class="pill-label">เวลาชน</span>
+      <strong class="pill-count">{{ preview.conflict_count }} ครั้ง</strong>
+    </div>
+    <div class="summary-pill skip-pill">
+      <span class="pill-label">ข้ามอัตโนมัติ</span>
+      <strong class="pill-count">{{ preview.skipped_count }} ครั้ง</strong>
+    </div>
+  </div>
+  <p class="muted-text series-notice">ระบบจะสร้างคำขอจองเฉพาะครั้งที่สถานะ “ว่าง” เท่านั้น ครั้งที่ชนหรือข้ามจะไม่ถูกสร้างและไม่มีผลต่อการจองครั้งอื่น</p>
+</article>
+
+<div class="table-wrap">
+  <table class="series-preview-table">
+    <caption class="visually-hidden">ตารางรายการความพร้อมของแต่ละครั้งในชุดการจอง</caption>
+    <thead>
+      <tr>
+        <th scope="col">ครั้งที่</th>
+        <th scope="col">วันที่</th>
+        <th scope="col">ผลการตรวจสอบ</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for item in preview.items %}
+        <tr>
+          <td class="mono">{{ item.index }}</td>
+          <td>{{ item.occur_date|thai_date }}</td>
+          <td>
+            {% if item.status == 'free' %}
+              <span class="status status-approved">ว่าง</span>
+            {% elif item.status == 'blackout' %}
+              <span class="status status-draft">ข้าม</span> {{ item.reason }}
+            {% else %}
+              <span class="status status-rejected">เวลาชน</span> {{ item.reason }}
+            {% endif %}
+          </td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<form method="post" action="{% url 'bookings:series_create' room.code %}" class="series-confirm-form">
+  {% csrf_token %}
+  {% for field in form %}{{ field.as_hidden }}{% endfor %}
+  {% for item in preview.items %}
+    {% if item.is_free %}
+      <input type="hidden" name="_preview_free_dates" value="{{ item.occur_date|date:'Y-m-d' }}">
+    {% endif %}
+  {% endfor %}
+  <div class="form-actions booking-submit-bar">
+    <a class="secondary" role="button" href="{% url 'bookings:book_search' %}">ยกเลิกทั้งชุด</a>
+    {% if preview.free_count > 0 %}
+      <button class="btn-primary" type="submit">จองเฉพาะครั้งที่ว่าง ({{ preview.free_count }} ครั้ง)</button>
+    {% else %}
+      <button class="btn-primary" type="submit" disabled>ไม่มีครั้งที่ว่างให้จอง</button>
+    {% endif %}
+  </div>
 </form>
 {% endblock %}
