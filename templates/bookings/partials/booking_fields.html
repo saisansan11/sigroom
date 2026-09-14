@@ -40,7 +40,8 @@
         <div class="summary-item">
           <small>การอนุมัติ</small>
           {% if room.rule.approval_policy == 'auto' %}
-            <span class="policy-badge policy-auto">อนุมัติอัตโนมัติเมื่อว่าง</span>
+            <span class="policy-badge policy-auto">นโยบายพื้นฐาน: อนุมัติอัตโนมัติ</span>
+            <span class="summary-sub">ผู้เข้าร่วมภายนอกหรือเงื่อนไขเพิ่มเติมอาจทำให้ต้องผ่านผู้อนุมัติ</span>
           {% else %}
             <span class="policy-badge policy-review">ต้องผ่านผู้อนุมัติ</span>
           {% endif %}
@@ -190,7 +191,8 @@
           <small>การอนุมัติ</small>
           <div>
             {% if room.rule.approval_policy == 'auto' %}
-              <span class="policy-badge policy-auto">อนุมัติอัตโนมัติเมื่อว่าง</span>
+              <span class="policy-badge policy-auto">นโยบายพื้นฐาน: อนุมัติอัตโนมัติ</span>
+              <span class="summary-sub">ผู้เข้าร่วมภายนอกหรือเงื่อนไขเพิ่มเติมอาจทำให้ต้องผ่านผู้อนุมัติ</span>
             {% else %}
               <span class="policy-badge policy-review">ต้องผ่านผู้อนุมัติ</span>
             {% endif %}
@@ -214,8 +216,6 @@
     <button class="btn-primary booking-submit-btn single-booking-action" type="submit" name="action" value="submit">
       {% if submit_label %}
         {{ submit_label }}
-      {% elif room.rule.approval_policy == 'auto' %}
-        ยืนยันการจอง
       {% else %}
         ยืนยันและส่งคำขอ
       {% endif %}

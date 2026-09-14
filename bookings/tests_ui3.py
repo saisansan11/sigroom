@@ -107,7 +107,10 @@ def test_booking_stepper_rendered_on_search_form_and_detail(client, ui3_setup):
     assert "ขั้นตอนที่ 3 จาก 5" in content_form
     assert "สรุปการจอง" in content_form
     assert "ตรวจสอบข้อมูลก่อนส่ง" in content_form
-    assert "ยืนยันการจอง" in content_form
+    assert "ยืนยันและส่งคำขอ" in content_form
+    assert 'class="booking-stepper-compact"' in content_form
+    assert 'class="booking-stepper-compact" aria-hidden="true"' not in content_form
+    assert "ผู้เข้าร่วมภายนอกหรือเงื่อนไขเพิ่มเติมอาจทำให้ต้องผ่านผู้อนุมัติ" in content_form
 
     # Step 5 Detail
     start_dt = timezone.now() + timedelta(days=2)
