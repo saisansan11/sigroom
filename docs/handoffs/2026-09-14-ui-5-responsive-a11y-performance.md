@@ -47,22 +47,24 @@
   `git diff --check` → **PASS (clean)**.
 
 ## Browser QA actually performed
-Live local server (`127.0.0.1:7357`) with Headless Chromium via Chrome DevTools Protocol (CDP):
+Live local server (`127.0.0.1:7357`) and authenticated mock views with Headless Chromium via Chrome DevTools Protocol (CDP):
 - Viewports tested: **360, 390, 430, 768, 1280, 1440 px**.
-- Pages tested (16 distinct pages across all 6 personas):
-  - Guest / Public: Homepage (`/`), Lodging Index (`/lodging/`), Login (`/login/`), Public Masked Check-in (`/lodging/checkin/<id>/`).
-  - Student Lodging: Student Portal (`/lodging/c/nr-70/`), Student Digital Pass (`/lodging/c/nr-70/pass/<id>/`).
-  - Supervisor / Staff: Cohort Management (`/lodging/manage/`), Cohort Detail (`/lodging/cohort/nr-70/manage/`), Cohort Edit (`/lodging/cohort/nr-70/edit/`), Staff Check-in (`/lodging/checkin/<id>/`).
-  - Booking User: Quick Search (`/search/`), Book Form (`/book/<room>/`), My Bookings (`/my/`).
-  - Approver: Approvals Queue (`/approvals/queue/`).
-  - Custodian: Usage List (`/usage/`), Monthly Reports (`/reports/dashboard/`).
+- Pages tested (18 distinct pages across all personas):
+  - Guest / Public: Homepage & Calendar (`/`), Lodging Index (`/lodging/`), Login (`/accounts/login/`), Public Masked Check-in (`/lodging/checkin/<id>/`).
+  - Student Lodging: Student Portal (`/lodging/c/nr-70/`), Student Digital Keycard Pass (`/lodging/c/nr-70/pass/<id>/`).
+  - Supervisor / Staff: Cohort Management (`/lodging/manage/`), Cohort Detail & Roster (`/lodging/cohorts/nr-70/`), Cohort Edit (`/lodging/cohorts/nr-70/edit/`), Staff Check-in (`/lodging/checkin/<id>/`), Admin Force-Release Danger Zone.
+  - Booking User: Room Search (`/book/`), My Bookings (`/bookings/mine/`), Booking Detail (`/bookings/<id>/`).
+  - Approver: Approvals Queue (`/approvals/`), Approver Delegation (`/approvals/delegation/`).
+  - Custodian: Usage List (`/usage/`), Monthly Reports (`/reports/`).
 - **Results**:
-  - Total combinations evaluated: **96 page/viewport combinations**.
-  - Horizontal overflow count: **0 (Zero)** across all viewports (`scrollWidth <= innerWidth`).
+  - Total combinations evaluated: **108 page/viewport checks (18 pages × 6 viewports)**.
+  - Horizontal overflow count: **0 (Zero)** across all viewports (`scrollWidth <= innerWidth` and `scrollWidth <= viewportWidth`).
   - Interactive exercises:
-    - Guest mobile menu toggle at 360px: confirmed menu opens and reveals navigation links with proper `aria-current="page"`.
-    - Student booking modal at 360px: clicked bed CTA, verified modal opened (`open === true`), form input heights measured 51px (>= 44px min), cancel button closed modal without overflow.
-    - Student digital key-card at 390px: clicked to flip (`aria-pressed="true"`, `is-flipped`), pressed `Enter` key to flip back (`aria-pressed="false"`).
+    - Guest mobile menu toggle at 360px: confirmed menu opens and reveals navigation links ("สถานะห้องวันนี้", "จองห้องพัก") with proper `aria-current="page"`.
+    - Category pills at 360px: verified all pills meet WCAG AA touch height of exactly 44px (`min-height: max(44px, 2.75rem)`).
+    - Bed selection modal at 360px: clicked bed CTA, verified modal opened (`open === true`), form submit CTA measured >= 44px touch height, modal closed cleanly without overflow.
+    - Student digital keycard pass at 390px: verified 3D flip on mouse click (`aria-pressed="true"`, `is-flipped`), verified flip back on keyboard `Enter` (`aria-pressed="false"`).
+    - Room photo wrap computed styles: verified `aspectRatio: '16 / 9'` and `overflow: 'hidden'` eliminating Cumulative Layout Shift (CLS).
 
 ## Known/deferred
 - The 2 warnings during pytest are standard Django framework transitional warnings (`DJANGO_SECURE` LAN warning and Django 6.0 `FORMS_URLFIELD_ASSUME_HTTPS` URLField scheme warning).

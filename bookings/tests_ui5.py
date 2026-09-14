@@ -113,10 +113,11 @@ def test_app_css_touch_targets_meet_wcag():
     assert ".compact-button" in css_text
     assert "min-height: 2.75rem" in css_text
 
-    # .category-pill has min-height: 2.75rem
+    # .category-pill has min-height: max(44px, 2.75rem)
     cat_pill_match = re.search(r"\.category-pill\s*\{([^}]+)\}", css_text)
     assert cat_pill_match is not None
-    assert "min-height: 2.75rem" in cat_pill_match.group(1)
+    assert "min-height: max(44px, 2.75rem)" in cat_pill_match.group(1)
+
 
 
 def test_app_css_responsive_table_touch_scrolling():

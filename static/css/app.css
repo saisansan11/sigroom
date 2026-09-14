@@ -368,7 +368,7 @@ legend, label { font-weight: 700; } label small, .field small { display: block; 
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-height: 2.75rem;
+  min-height: max(44px, 2.75rem);
   padding: .35rem .95rem;
   border: 1px solid var(--line);
   border-radius: 999px;
@@ -687,7 +687,7 @@ legend, label { font-weight: 700; } label small, .field small { display: block; 
 .time-preset-row { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2xs); margin-bottom: var(--space-sm); }
 .time-preset-label { color: var(--muted); font-size: .8rem; }
 .time-preset-button {
-  min-height: 2.75rem;
+  min-height: max(44px, 2.75rem);
   padding: .35rem .75rem;
   display: inline-flex;
   align-items: center;
@@ -704,10 +704,10 @@ legend, label { font-weight: 700; } label small, .field small { display: block; 
 .room-card-actions { display: flex; align-items: center; gap: var(--space-xs); flex-wrap: wrap; }
 .fav-form { margin: 0; }
 .fav-button {
-  min-width: 2.75rem;
-  min-height: 2.75rem;
-  width: 2.75rem;
-  height: 2.75rem;
+  min-width: max(44px, 2.75rem);
+  min-height: max(44px, 2.75rem);
+  width: max(44px, 2.75rem);
+  height: max(44px, 2.75rem);
   padding: 0;
   display: inline-flex;
   align-items: center;
@@ -722,7 +722,7 @@ legend, label { font-weight: 700; } label small, .field small { display: block; 
 }
 .fav-button:hover { border-color: var(--amber); color: var(--amber); }
 .fav-button.is-fav { border-color: var(--amber); color: var(--amber); }
-.rebook-link { min-height: 2.75rem; display: inline-flex; align-items: center; font-size: .82rem; white-space: nowrap; }
+.rebook-link { min-height: max(44px, 2.75rem); display: inline-flex; align-items: center; font-size: .82rem; white-space: nowrap; }
 .booking-retry-action { display: flex; align-items: center; justify-content: space-between; gap: var(--space-sm); margin-top: var(--space-sm); padding-top: var(--space-sm); border-top: 1px solid color-mix(in oklab, var(--red) 40%, transparent); }
 .booking-retry-action span { color: var(--muted); font-size: .82rem; }
 @media (max-width: 50rem) {
