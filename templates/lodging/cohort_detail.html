@@ -14,28 +14,32 @@
 </div>
 
 <!-- กล่องคัดลอกลิงก์ส่ง LINE ให้นักเรียน -->
-<div class="guest-action-banner" style="border-left-color: var(--green);">
+<div class="lodging-share-banner">
   <div>
-    <span class="hud-tag" style="background: oklch(.76 .14 156 / .2); color: var(--green);">ลิงก์สำหรับส่งในกลุ่ม LINE นักเรียน</span>
-    <h3 style="font-family: var(--font-mono); font-size: 1.05rem; word-break: break-all;">{{ share_url }}</h3>
-    <p>นักเรียนสามารถกดลิงก์นี้จากมือถือ เพื่อเลือกห้องและเตียงพักด้วยตนเองได้ทันที ไม่ต้องมีบัญชีในระบบ</p>
+    <span class="room-badge-free">ลิงก์สำหรับส่งในกลุ่ม LINE นักเรียน</span>
+    <div class="lodging-share-url">{{ share_url }}</div>
+    <p class="muted-text">นักเรียนสามารถกดลิงก์นี้จากโทรศัพท์มือถือ เพื่อเลือกห้องและเตียงพักด้วยตนเองได้ทันที ไม่ต้องมีบัญชีในระบบ</p>
   </div>
-  <div class="guest-action-buttons">
+  <div class="lodging-share-actions">
     <button type="button" class="btn-primary" id="copyLinkBtn" onclick="copyShareLink('{{ share_url }}')">
       📋 คัดลอกลิงก์ส่ง LINE
     </button>
-    <a role="button" class="secondary" href="{{ share_url }}" target="_blank">
+    <a role="button" class="secondary" href="{{ line_share_url }}" target="_blank" rel="noopener noreferrer">
+      แชร์ผ่าน LINE ↗
+    </a>
+    <a role="button" class="secondary" href="{{ qr_url }}" target="_blank" rel="noopener noreferrer">
+      เปิด QR Code
+    </a>
+    <a role="button" class="secondary" href="{{ share_url }}" target="_blank" rel="noopener noreferrer">
       ทดลองเปิดดูหน้านักเรียน ↗
     </a>
-    <a role="button" class="secondary" href="{{ line_share_url }}" target="_blank">แชร์ผ่าน LINE ↗</a>
-    <a role="button" class="secondary" href="{{ qr_url }}" target="_blank">เปิด QR Code</a>
-    <a role="button" class="secondary" href="{% url 'bookings:lodging_cohort_edit' cohort.slug %}">แก้ไขรอบ</a>
+    <a role="button" class="secondary" href="{% url 'bookings:lodging_cohort_edit' cohort.slug %}">
+      แก้ไขรอบ
+    </a>
   </div>
 </div>
 
-<p class="stat-detail">สถานะการจัดสรร: <strong>{{ cohort.get_allocation_status_display }}</strong> · รับจองผ่านเว็บ: <strong>{% if cohort.is_active %}เปิด{% else %}ปิด{% endif %}</strong></p>
-
-<div class="statusband" style="margin-bottom: var(--space-xl);">
+<div class="statusband">
   <article class="stat">
     <span class="stat-label">ห้องพักทั้งหมด</span>
     <div class="stat-value">{{ cohort.rooms.count }}<small> ห้อง</small></div>
@@ -49,7 +53,7 @@
   <article class="stat stat-amber">
     <span class="stat-label">ลงทะเบียนแล้ว</span>
     <div class="stat-value">{{ cohort.booked_count }}<small> คน</small></div>
-    <p class="stat-detail">คิดเป็น {{ cohort.booked_count|floatformat:0 }} คน</p>
+    <p class="stat-detail">คิดเป็น {{ cohort.booked_count }} คน</p>
   </article>
   <article class="stat stat-green">
     <span class="stat-label">ว่างคงเหลือ</span>
@@ -58,7 +62,7 @@
   </article>
 </div>
 
-<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--space-md); flex-wrap: wrap; gap: var(--space-sm);">
+<div class="lodging-section-header">
   <h2>ผังรายชื่อนักเรียนแยกตามห้องพัก</h2>
   <a role="button" class="btn-primary" href="{% url 'bookings:lodging_cohort_export_csv' cohort.slug %}">
     📥 ส่งออก Excel / CSV (สำหรับฝ่ายดูแลอาคาร)
@@ -75,15 +79,15 @@
         </div>
         <div>
           {% if rsum.free == 0 %}
-            <span class="hud-tag" style="background: var(--surface-soft); color: var(--muted);">เต็ม ({{ rsum.count }}/{{ cohort.beds_per_room }})</span>
+            <span class="room-badge-full">เต็ม ({{ rsum.count }}/{{ cohort.beds_per_room }})</span>
           {% else %}
-            <span class="hud-tag" style="background: oklch(.76 .14 156 / .2); color: var(--green);">ว่าง {{ rsum.free }}/{{ cohort.beds_per_room }}</span>
+            <span class="room-badge-free">ว่าง {{ rsum.free }}/{{ cohort.beds_per_room }}</span>
           {% endif %}
         </div>
       </div>
       <div class="room-card-body">
         {% if rsum.students %}
-          <div style="display: flex; flex-direction: column; gap: var(--space-xs);">
+          <div class="beds-list">
             {% for s in rsum.students %}
               <div class="bed-row occupied">
                 <div>
@@ -97,13 +101,13 @@
               </div>
             {% endfor %}
             {% if rsum.free > 0 %}
-              <div style="padding: var(--space-2xs) var(--space-sm); border: 1px dashed var(--line); border-radius: var(--radius-sm); color: var(--muted); font-size: .85rem; text-align: center;">
+              <div class="bed-empty-slot">
                 + เตียงว่างอีก {{ rsum.free }} ที่
               </div>
             {% endif %}
           </div>
         {% else %}
-          <div style="padding: var(--space-sm); text-align: center; color: var(--muted); font-size: .9rem;">
+          <div class="bed-empty-room">
             ยังไม่มีผู้เข้าพัก (ว่าง {{ cohort.beds_per_room }} ที่)
           </div>
         {% endif %}
@@ -113,60 +117,66 @@
 </div>
 
 {% if students %}
-  <div class="section-title" style="margin-top: var(--space-2xl);">
-    <div>
-      <p class="eyebrow">ทำเนียบรายชื่อ</p>
-      <h2>รายชื่อผู้เข้าพักทั้งหมด ({{ students.count }} นาย)</h2>
+  <section class="lodging-roster-section" aria-labelledby="heading-roster">
+    <div class="section-title">
+      <div>
+        <p class="eyebrow">ทำเนียบรายชื่อ</p>
+        <h2 id="heading-roster">รายชื่อผู้เข้าพักทั้งหมด ({{ students.count }} นาย)</h2>
+      </div>
     </div>
-  </div>
 
-  <table role="grid" style="font-size: .9rem;">
-    <thead>
-      <tr>
-        <th>ลำดับ</th>
-        <th>ห้อง / เตียง</th>
-        <th>ยศ - ชื่อ - สกุล</th>
-        <th>หน่วยต้นสังกัด</th>
-        <th>เบอร์โทร</th>
-        <th>เวลาที่ลงทะเบียน</th>
-        <th>สถานะรายงานตัว</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for s in students %}
-        <tr>
-          <td>{{ forloop.counter }}</td>
-          <td><strong style="color: var(--cyan);">{{ s.room.code }}</strong> (เตียง {{ s.bed_number }})</td>
-          <td><strong>{{ s.rank }} {{ s.full_name }}</strong></td>
-          <td>{{ s.origin_unit }}</td>
-          <td class="mono">{{ s.phone }}</td>
-          <td>{{ s.booked_at|thai_datetime }}</td>
-          <td>
-            {% if s.checked_in_at %}
-              <span class="success-text">✓ {{ s.checked_in_at|thai_datetime }}</span>
-              {% if s.checked_in_by %}<br><small style="color: var(--muted);">โดย {{ s.checked_in_by.display_name }}</small>{% endif %}
-            {% else %}
-              <span class="muted-text">-</span>
-            {% endif %}
-          </td>
-        </tr>
-      {% endfor %}
-    </tbody>
-  </table>
+    <div class="table-responsive-container">
+      <table role="grid">
+        <thead>
+          <tr>
+            <th>ลำดับ</th>
+            <th>ห้อง / เตียง</th>
+            <th>ยศ - ชื่อ - สกุล</th>
+            <th>หน่วยต้นสังกัด</th>
+            <th>เบอร์โทร</th>
+            <th>เวลาที่ลงทะเบียน</th>
+            <th>สถานะรายงานตัว</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for s in students %}
+            <tr>
+              <td>{{ forloop.counter }}</td>
+              <td><strong class="lodging-accent-text">{{ s.room.code }}</strong> (เตียง {{ s.bed_number }})</td>
+              <td><strong>{{ s.rank }} {{ s.full_name }}</strong></td>
+              <td>{{ s.origin_unit }}</td>
+              <td class="mono">{{ s.phone }}</td>
+              <td>{{ s.booked_at|thai_datetime }}</td>
+              <td>
+                {% if s.checked_in_at %}
+                  <span class="success-text">✓ {{ s.checked_in_at|thai_datetime }}</span>
+                  {% if s.checked_in_by %}
+                    <br><small class="muted-text">โดย {{ s.checked_in_by.display_name }}</small>
+                  {% endif %}
+                {% else %}
+                  <span class="muted-text">-</span>
+                {% endif %}
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
 {% endif %}
 
 <script>
 function copyShareLink(url) {
-  navigator.clipboard.writeText(url).then(() => {
-    const btn = document.getElementById('copyLinkBtn');
-    const originalText = btn.textContent;
+  navigator.clipboard.writeText(url).then(function () {
+    var btn = document.getElementById('copyLinkBtn');
+    var originalText = btn.textContent;
     btn.textContent = '✓ คัดลอกสำเร็จ!';
-    btn.style.background = 'var(--green)';
-    setTimeout(() => {
+    btn.classList.add('is-copied');
+    setTimeout(function () {
       btn.textContent = originalText;
-      btn.style.background = '';
+      btn.classList.remove('is-copied');
     }, 2500);
-  }).catch(() => {
+  }).catch(function () {
     alert('ไม่สามารถคัดลอกอัตโนมัติได้ กรุณาคัดลอกข้อความในช่องเอง');
   });
 }

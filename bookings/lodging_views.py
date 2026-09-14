@@ -98,6 +98,10 @@ def lodging_portal(request, slug):
         is_active=True,
     )
     context = _build_portal_context(cohort)
+    portal_path = reverse("bookings:lodging_portal", args=[cohort.slug])
+    share_url = get_canonical_public_url(request, portal_path)
+    context["share_url"] = share_url
+    context["line_share_url"] = generate_line_share_url(cohort.title, share_url)
     if "lodging_modal_error" in request.session:
         context["modal_error"] = request.session.pop("lodging_modal_error")
         context["modal_data"] = request.session.pop("lodging_modal_data", {})
@@ -195,6 +199,13 @@ def lodging_pass(request, slug, student_id):
         cohort=cohort, room=student.room
     ).exclude(pk=student.pk).order_by("bed_number")
 
+    pass_path = reverse("bookings:lodging_pass", args=[cohort.slug, student.id])
+    pass_url = get_canonical_public_url(request, pass_path)
+    line_share_url = generate_line_share_url(
+        f"บัตรรายงานตัวเข้าที่พัก {student.room.code} (เตียง {student.bed_number}) - {cohort.title}",
+        pass_url,
+    )
+
     response = render(
         request,
         "lodging/student_pass.html",
@@ -202,6 +213,8 @@ def lodging_pass(request, slug, student_id):
             "cohort": cohort,
             "student": student,
             "roommates": roommates,
+            "pass_url": pass_url,
+            "line_share_url": line_share_url,
         },
     )
     response["Cache-Control"] = "private, no-store, must-revalidate"
