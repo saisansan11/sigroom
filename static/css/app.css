@@ -1623,7 +1623,8 @@ dialog article > header :is(button, a)[rel="prev"] { min-width: max(44px, 2.75re
 }
 
 /* My Bookings Table Enhancements */
-.my-bookings-table-wrap {
+.my-bookings-table-wrap,
+.my-series-table-wrap {
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
   border: 1px solid var(--line);
@@ -1632,7 +1633,8 @@ dialog article > header :is(button, a)[rel="prev"] { min-width: max(44px, 2.75re
   margin-bottom: var(--space-lg);
 }
 
-.my-bookings-table {
+.my-bookings-table,
+.my-series-table {
   width: 100%;
   margin: 0;
   border-collapse: collapse;
@@ -3023,4 +3025,256 @@ details.operational-calendar-section[open] .disclosure-arrow {
   .booking-selection-side { justify-content: flex-start; }
   .booking-responsible-meta { white-space: normal; }
   .booking-responsible-action { min-height: max(44px, 2.75rem); display: inline-flex; align-items: center; }
+}
+
+/* ===== UX-3 My Bookings & Request Tracking ===== */
+@media (max-width: 47.99rem) {
+  .my-bookings-tabs {
+    flex-wrap: wrap;
+    overflow-x: visible;
+  }
+
+  .my-bookings-tabs a {
+    flex: 1 1 calc(50% - var(--space-2xs));
+    justify-content: center;
+    text-align: center;
+  }
+
+  .my-bookings-table-wrap,
+  .my-series-table-wrap {
+    overflow-x: visible;
+    border: none;
+    background: transparent;
+    margin-bottom: var(--space-md);
+    padding: 0;
+  }
+
+  .my-bookings-table-wrap .my-bookings-table,
+  .my-series-table-wrap .my-series-table,
+  .table-wrap.my-bookings-table-wrap table,
+  .table-wrap.my-series-table-wrap table {
+    display: block;
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+    box-sizing: border-box;
+    margin: 0;
+  }
+
+  .my-bookings-table thead,
+  .my-series-table thead {
+    display: none;
+  }
+
+  .my-bookings-table tbody,
+  .my-series-table tbody {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-md);
+    width: 100%;
+    min-width: 0;
+  }
+
+  .my-bookings-table tbody tr,
+  .my-series-table tbody tr {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-xs);
+    width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-md);
+    padding: var(--space-md);
+  }
+
+  .my-bookings-table tbody tr:hover,
+  .my-series-table tbody tr:hover {
+    background: var(--surface-raised);
+  }
+
+  .my-bookings-table tbody tr.empty-row {
+    background: transparent;
+    border: none;
+    padding: 0;
+  }
+
+  .my-bookings-table tbody tr.empty-row .empty-state {
+    display: block;
+    width: 100%;
+  }
+
+  .my-bookings-table tbody td,
+  .my-series-table tbody td {
+    display: block;
+    width: 100%;
+    min-width: 0;
+    padding: 0;
+    border: none;
+    box-sizing: border-box;
+  }
+
+  /* Mobile card visual hierarchy: title -> status -> date-time -> room -> equipment -> actions */
+  .my-bookings-table .booking-cell-title {
+    order: 1;
+  }
+
+  .my-bookings-table .booking-cell-status {
+    order: 2;
+  }
+
+  .my-bookings-table .booking-cell-datetime {
+    order: 3;
+  }
+
+  .my-bookings-table .booking-cell-room {
+    order: 4;
+  }
+
+  .my-bookings-table .booking-cell-equipment {
+    order: 5;
+  }
+
+  .my-bookings-table .booking-cell-actions {
+    order: 6;
+  }
+
+  .my-bookings-table .booking-item-title {
+    display: block;
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: var(--ink);
+    overflow-wrap: anywhere;
+    word-break: break-word;
+  }
+
+  .my-bookings-table .booking-cell-status {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-xs);
+  }
+
+  .my-bookings-table .booking-cell-status .decision-reason {
+    width: 100%;
+    margin-top: var(--space-2xs);
+    overflow-wrap: anywhere;
+    word-break: break-word;
+  }
+
+  .my-bookings-table .booking-cell-datetime {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: var(--space-xs);
+    font-size: .88rem;
+    color: var(--dim);
+  }
+
+  .my-bookings-table .booking-cell-datetime strong {
+    display: inline;
+    color: var(--ink);
+  }
+
+  .my-bookings-table .booking-time-span {
+    display: inline;
+  }
+
+  .my-bookings-table .booking-cell-room {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: var(--space-xs);
+    font-size: .88rem;
+  }
+
+  .my-bookings-table .booking-cell-room strong {
+    color: var(--cyan);
+  }
+
+  .my-bookings-table .booking-cell-room .room-sub-name {
+    display: inline;
+    color: var(--muted);
+  }
+
+  .my-bookings-table .booking-cell-equipment {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-2xs);
+    font-size: .85rem;
+  }
+
+  .my-bookings-table .booking-cell-equipment::before {
+    content: "อุปกรณ์:";
+    color: var(--muted);
+    font-size: .82rem;
+    margin-right: var(--space-2xs);
+  }
+
+  .my-bookings-table .booking-cell-actions {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-xs);
+    margin-top: var(--space-xs);
+    padding-top: var(--space-xs);
+    border-top: 1px solid var(--line);
+    width: 100%;
+  }
+
+  .my-bookings-table .booking-cell-actions .compact-button,
+  .my-bookings-table .booking-cell-actions .rebook-link {
+    min-height: 44px;
+    width: 100%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    box-sizing: border-box;
+    margin: 0;
+    padding: var(--space-xs) var(--space-md);
+  }
+
+  .my-series-table .series-cell-ref {
+    font-size: 1.05rem;
+    color: var(--cyan);
+  }
+
+  .my-series-table .series-cell-room::before {
+    content: "ห้อง: ";
+    color: var(--muted);
+    font-size: .82rem;
+  }
+
+  .my-series-table .series-cell-count::before {
+    content: "จำนวน: ";
+    color: var(--muted);
+    font-size: .82rem;
+  }
+
+  .my-series-table .series-cell-next::before {
+    content: "ครั้งถัดไป: ";
+    color: var(--muted);
+    font-size: .82rem;
+  }
+
+  .my-series-table .series-cell-actions {
+    margin-top: var(--space-xs);
+    padding-top: var(--space-xs);
+    border-top: 1px solid var(--line);
+    width: 100%;
+  }
+
+  .my-series-table .series-cell-actions .compact-button {
+    min-height: 44px;
+    width: 100%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    box-sizing: border-box;
+    margin: 0;
+    padding: var(--space-xs) var(--space-md);
+  }
 }
