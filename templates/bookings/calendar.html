@@ -4,243 +4,336 @@
 {% block title %}ปฏิทินห้อง · SIGROOM{% endblock %}
 {% block head %}<script src="{% static 'vendor/fullcalendar/index.global.min.js' %}"></script><script src="{% static 'vendor/fullcalendar/locales-all.global.min.js' %}"></script>{% endblock %}
 {% block content %}
-<section class="hero-section" aria-label="ศูนย์บริการจองห้อง">
-  {% if user.is_authenticated %}
-    <p class="eyebrow">ศูนย์งาน SIGROOM</p>
-    <h1 class="hero-headline">ห้องที่คุณต้องใช้ ควรหาเจอได้ในไม่กี่วินาที</h1>
-    <p class="hero-sub">ดูห้องว่างช่วงถัดไป จองได้ทันที ไม่ต้องโทรถาม</p>
-    <div class="hero-actions">
-      <a class="btn-primary" href="#homepage-availability">ดูห้องว่างตอนนี้ <span aria-hidden="true">↓</span></a>
-      <a class="btn-secondary" href="{% url 'bookings:book_search' %}">จองห้อง <span aria-hidden="true">→</span></a>
+{% if user.is_authenticated %}
+  <section class="hero-section task-home-hero" aria-label="ศูนย์งานและการจองห้อง">
+    <div class="task-hero-header">
+      <div class="task-hero-intro">
+        <p class="eyebrow">ศูนย์งาน SIGROOM</p>
+        <h1 class="hero-headline">สวัสดี, {{ user.display_name }}</h1>
+        <p class="hero-sub">{% if user.unit %}{{ user.unit.name }} · {% endif %}ตรวจสอบงานด่วน ดูห้องว่าง และจองห้องได้ทันที</p>
+      </div>
+      <div class="task-hero-quick-actions">
+        <a class="btn-primary" href="{% url 'bookings:book_search' %}">
+          <svg viewBox="0 0 20 20" fill="currentColor" width="18" height="18" aria-hidden="true"><path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd"/></svg>
+          <span>จองห้อง</span>
+        </a>
+        <a class="btn-secondary" href="#homepage-availability">ห้องว่างช่วงนี้ <span aria-hidden="true">↓</span></a>
+        <a class="btn-secondary" href="#today-board">ผังห้องวันนี้ <span aria-hidden="true">↓</span></a>
+      </div>
     </div>
-  {% else %}
+
+    {# Primary Task / Next Action Card #}
+    {% if nav_can_access_approvals and nav_pending_approval_count and nav_pending_approval_count > 0 %}
+      <div class="primary-task-banner is-urgent">
+        <div class="primary-task-icon" aria-hidden="true">⚖</div>
+        <div class="primary-task-content">
+          <span class="task-badge badge-urgent">ภารกิจด่วนที่ต้องตัดสินใจ</span>
+          <h2>มี {{ nav_pending_approval_count }} รายการรอการอนุมัติ</h2>
+          <p>รายการใกล้วันใช้งานจัดลำดับไว้ก่อน ตรวจสอบและพิจารณาคำขอจองห้อง</p>
+        </div>
+        <a class="btn-primary primary-task-cta" href="{% url 'approvals:queue' %}">เปิดคิวอนุมัติ ({{ nav_pending_approval_count }}) →</a>
+      </div>
+    {% elif nav_can_manage_usage and usage_today_count and usage_today_count > 0 %}
+      <div class="primary-task-banner is-action">
+        <div class="primary-task-icon" aria-hidden="true">📋</div>
+        <div class="primary-task-content">
+          <span class="task-badge badge-action">ภารกิจเจ้าหน้าที่ดูแลห้องวันนี้</span>
+          <h2>มี {{ usage_today_count }} รายการต้องตรวจบันทึกการใช้งาน</h2>
+          <p>ตรวจสถานะเข้าใช้ห้องหรือบันทึกกรณีไม่มาใช้ภายในเวลาที่กำหนด</p>
+        </div>
+        <a class="btn-primary primary-task-cta" href="{% url 'usage:list' %}">เปิดการใช้งานห้อง ({{ usage_today_count }}) →</a>
+      </div>
+    {% elif next_booking %}
+      <div class="primary-task-banner is-normal">
+        <div class="primary-task-icon" aria-hidden="true">📅</div>
+        <div class="primary-task-content">
+          <span class="task-badge badge-normal">การจองถัดไปของคุณ</span>
+          <h2>{{ next_booking.title }}</h2>
+          <p>{{ next_booking.room.code }} · {{ next_booking.room.name }} · {{ next_booking.start_at|thai_datetime }} · {{ next_booking.get_request_status_display }}</p>
+        </div>
+        <a class="btn-secondary primary-task-cta" href="{% url 'bookings:booking_detail' next_booking.id %}">ดูรายละเอียดการจอง →</a>
+      </div>
+    {% else %}
+      <div class="primary-task-banner is-neutral">
+        <div class="primary-task-icon" aria-hidden="true">🔍</div>
+        <div class="primary-task-content">
+          <span class="task-badge badge-neutral">ค้นหาและจองห้องว่าง</span>
+          <h2>ต้องการใช้ห้องเรียน ห้องประชุม หรือห้องพัก?</h2>
+          <p>เลือกวัน เวลา และจำนวนผู้เข้าร่วม เพื่อค้นหาเฉพาะห้องที่ว่างจริงทันที</p>
+        </div>
+        <a class="btn-primary primary-task-cta" href="{% url 'bookings:book_search' %}">เริ่มค้นหาห้องว่าง →</a>
+      </div>
+    {% endif %}
+
+    {# Statusband #}
+    <div class="statusband task-statusband" aria-label="สถานการณ์ขณะนี้">
+      <article class="stat stat-green">
+        <span class="stat-label">ว่างตอนนี้</span>
+        <div class="stat-value">{{ stat_free_now }}<small> ห้อง</small></div>
+        <p class="stat-detail">พร้อมใช้งานทันที</p>
+      </article>
+      <article class="stat stat-cyan">
+        <span class="stat-label">กำลังใช้งาน</span>
+        <div class="stat-value">{{ stat_in_use }}<small>/{{ stat_total }} ห้อง</small></div>
+        <p class="stat-detail">จากห้องหมวดนี้ที่เปิดใช้</p>
+      </article>
+      <article class="stat">
+        <span class="stat-label">Mission Clock</span>
+        <div class="stat-value" id="mission-clock" aria-hidden="true">--:--:--</div>
+        <p class="stat-detail">{{ board_today|thai_date }}</p>
+      </article>
+      <article class="stat stat-amber">
+        {% if nav_can_access_approvals %}
+        <a href="{% url 'approvals:queue' %}">
+          <span class="stat-label">รออนุมัติ</span>
+          <div class="stat-value">{{ nav_pending_approval_count }}<small> รายการ</small></div>
+          <p class="stat-detail">เปิดคิวอนุมัติ →</p>
+        </a>
+        {% else %}
+        <a href="{% url 'bookings:my_bookings' %}">
+          <span class="stat-label">คำขอของฉันที่รอ</span>
+          <div class="stat-value">{{ my_pending_count }}<small> รายการ</small></div>
+          <p class="stat-detail">ดูการจองของฉัน →</p>
+        </a>
+        {% endif %}
+      </article>
+    </div>
+
+    {# Role Actions: Placed above fold directly in task-home-hero #}
+    <section class="role-actions" aria-label="งานของฉัน">
+      {# 1. การ์ดคิวอนุมัติ ถ้า nav_pending_approval_count > 0 #}
+      {% if nav_can_access_approvals and nav_pending_approval_count and nav_pending_approval_count > 0 %}
+      <article class="role-action">
+        <div><p class="action-label">งานผู้อนุมัติ</p><h2>มี {{ nav_pending_approval_count }} รายการรอตัดสิน</h2><p>รายการใกล้วันใช้งานจะอยู่ก่อน</p></div>
+        <a href="{% url 'approvals:queue' %}">เปิดคิวอนุมัติ →</a>
+      </article>
+      {% endif %}
+
+      {# 2. การ์ดการใช้งานห้อง ถ้า usage_today_count > 0 #}
+      {% if nav_can_manage_usage and usage_today_count and usage_today_count > 0 %}
+      <article class="role-action">
+        <div><p class="action-label">งานเจ้าหน้าที่ดูแลห้อง</p><h2>วันนี้มี {{ usage_today_count }} รายการให้ตรวจ</h2><p>ตรวจสถานะใช้งานแล้วหรือไม่มาใช้ภายในกำหนด</p></div>
+        <a href="{% url 'usage:list' %}">เปิดการใช้งานห้อง →</a>
+      </article>
+      {% endif %}
+
+      {# 3. การ์ดที่เหลือตามลำดับเดิม (ที่ตัวเลขเป็น 0 หรือ None คงอยู่ในหน้าแต่ต่อท้ายเสมอ) #}
+      {% if nav_can_access_approvals and not nav_pending_approval_count %}
+      <article class="role-action">
+        <div><p class="action-label">งานผู้อนุมัติ</p><h2>คิวอนุมัติเรียบร้อย</h2><p>ขณะนี้ไม่มีคำขอที่ต้องดำเนินการ</p></div>
+        <a href="{% url 'approvals:queue' %}">เปิดคิวอนุมัติ →</a>
+      </article>
+      {% endif %}
+
+      {% if nav_can_manage_usage and not usage_today_count %}
+      <article class="role-action">
+        <div><p class="action-label">งานเจ้าหน้าที่ดูแลห้อง</p><h2>งานบันทึกวันนี้เรียบร้อย</h2><p>ตรวจสถานะใช้งานแล้วหรือไม่มาใช้ภายในกำหนด</p></div>
+        <a href="{% url 'usage:list' %}">เปิดการใช้งานห้อง →</a>
+      </article>
+      {% endif %}
+
+      <article class="role-action">
+        <div><p class="action-label">การจองของฉัน</p>{% if next_booking %}<h2>{{ next_booking.title }}</h2><p>{{ next_booking.room.code }} · {{ next_booking.start_at|thai_datetime }} · {{ next_booking.get_request_status_display }}</p>{% else %}<h2>ยังไม่มีการจองที่กำลังจะถึง</h2><p>ค้นหาห้องว่างจากวัน เวลา และจำนวนผู้เข้าร่วม</p>{% endif %}</div>
+        {% if next_booking %}<a href="{% url 'bookings:booking_detail' next_booking.id %}">ดูรายละเอียด →</a>{% else %}<a href="{% url 'bookings:book_search' %}">เริ่มจองห้อง →</a>{% endif %}
+      </article>
+    </section>
+  </section>
+{% else %}
+  <section class="hero-section guest-hero" aria-label="ศูนย์บริการจองห้อง">
     <p class="eyebrow">ระบบจองและบริหารการใช้ห้อง รร.ส.สส.</p>
     <h1 class="hero-headline">สถานะห้องและที่พักวันนี้</h1>
     <p class="hero-sub">ตรวจสอบห้องที่ว่างอยู่จริง — เข้าสู่ระบบเพื่อจอง</p>
     <div class="hero-actions">
       <a class="btn-primary" href="{% url 'login' %}?next={% url 'bookings:book_search' %}">เข้าสู่ระบบ <span aria-hidden="true">→</span></a>
       <a class="btn-secondary" href="{% url 'bookings:lodging_index' %}">จองห้องพัก <span aria-hidden="true">→</span></a>
+      <a class="btn-secondary" href="#today-board">ผังห้องวันนี้ <span aria-hidden="true">↓</span></a>
     </div>
-  {% endif %}
-</section>
 
-<section class="home-entry-grid" aria-label="เลือกประเภทห้องที่ต้องการใช้">
-  <article class="home-entry-card card-cyan">
-    <div class="home-entry-head"><span class="hud-tag">รายชั่วโมง</span></div>
-    <h2>ห้องเรียน / ห้องปฏิบัติ</h2>
-    <p>ดูห้องที่ว่างในช่วงถัดไป แล้วกดจองเลย</p>
-    <a class="home-entry-link" href="#now-teaching">ดูห้องว่างตอนนี้ <span aria-hidden="true">↓</span></a>
-  </article>
-  <article class="home-entry-card card-amber">
-    <div class="home-entry-head"><span class="hud-tag">รายชั่วโมง</span></div>
-    <h2>ห้องประชุม</h2>
-    <p>ตรวจห้องประชุมและห้องพิเศษที่จองได้</p>
-    <a class="home-entry-link" href="#now-meeting">ดูห้องว่างตอนนี้ <span aria-hidden="true">↓</span></a>
-  </article>
-  {% if homepage_availability.has_online %}
-  <article class="home-entry-card card-violet">
-    <div class="home-entry-head"><span class="hud-tag">รายชั่วโมง</span></div>
-    <h2>ห้องสอนออนไลน์</h2>
-    <p>ห้องพร้อมกล้อง ไมค์ และไฟสตูดิโอ ที่ บก.กศ.</p>
-    <a class="home-entry-link" href="#now-online">ดูห้องว่างตอนนี้ <span aria-hidden="true">↓</span></a>
-  </article>
-  {% endif %}
-  <article class="home-entry-card card-green" id="lodging-courses">
-    <div class="home-entry-head"><span class="hud-tag">ตามรอบหลักสูตร</span></div>
-    <h2>ห้องพักหลักสูตร</h2>
-    <p>เลือกหลักสูตรแล้วเข้า portal เลือกเตียงโดยตรง</p>
-    {% if active_lodging_cohorts %}
-      <div class="home-course-list">
-        {% for cohort in active_lodging_cohorts %}
-          <a href="{% url 'bookings:lodging_portal' cohort.slug %}">{{ cohort.title }} <span aria-hidden="true">→</span></a>
-        {% endfor %}
+    <div class="statusband task-statusband" aria-label="สถานการณ์ขณะนี้">
+      <article class="stat stat-green">
+        <span class="stat-label">ว่างตอนนี้</span>
+        <div class="stat-value">{{ stat_free_now }}<small> ห้อง</small></div>
+        <p class="stat-detail">พร้อมใช้งานทันที</p>
+      </article>
+      <article class="stat stat-cyan">
+        <span class="stat-label">กำลังใช้งาน</span>
+        <div class="stat-value">{{ stat_in_use }}<small>/{{ stat_total }} ห้อง</small></div>
+        <p class="stat-detail">จากห้องหมวดนี้ที่เปิดใช้</p>
+      </article>
+      <article class="stat">
+        <span class="stat-label">Mission Clock</span>
+        <div class="stat-value" id="mission-clock" aria-hidden="true">--:--:--</div>
+        <p class="stat-detail">{{ board_today|thai_date }}</p>
+      </article>
+    </div>
+
+    <div class="guest-action-banner">
+      <div>
+        <h2>ต้องการจองห้องเรียน หรือห้องประชุม?</h2>
+        <p>เข้าสู่ระบบด้วยบัญชีของหน่วยเพื่อจองห้อง หรือติดต่อนายสิบธุรการ/แผนกวิชา</p>
       </div>
-    {% else %}
-      <p class="home-empty-note">ยังไม่มีหลักสูตรเปิดรับเข้าพัก</p>
-    {% endif %}
-  </article>
-</section>
-
-<section id="homepage-availability" class="homepage-availability" aria-label="ห้องว่างช่วงถัดไป">
-  <div class="section-title homepage-availability-heading">
-    <div><p class="eyebrow">ช่วงถัดไป {{ homepage_availability.start_label }}–{{ homepage_availability.end_label }}</p><h2>ว่างตอนนี้ · จองเลย</h2></div>
-    <small>เริ่มในช่วง 15 นาทีถัดไป · ระยะเวลา 60 นาที</small>
-  </div>
-  <div class="homepage-availability-grid">
-    {% for group in homepage_availability.groups %}
-      <section id="now-{{ group.key }}" class="homepage-availability-group" aria-labelledby="now-{{ group.key }}-title">
-        <div class="homepage-group-title"><h3 id="now-{{ group.key }}-title">{{ group.label }}</h3><span class="count-badge">{{ group.cards|length }} ห้อง</span></div>
-        {% for card in group.cards %}
-          <article class="homepage-room-card">
-            {% with cover=card.result.room.cover_photo %}
-              {% if cover %}<img src="{{ cover.image.url }}" alt="รูปห้อง {{ card.result.room.code }}" width="56" height="56" loading="lazy" decoding="async" class="room-card-thumb">
-              {% else %}<img src="{% static 'img/room-placeholder.svg' %}" alt="ยังไม่มีรูปห้อง {{ card.result.room.code }}" width="56" height="56" loading="lazy" decoding="async" class="room-card-thumb is-placeholder">{% endif %}
-            {% endwith %}
-            <div class="homepage-room-info">
-              <div class="homepage-room-title-row">
-                <h4>{{ card.result.room.code }} · {{ card.result.room.name }}</h4>
-                <span class="avail-status-badge">ว่างอยู่</span>
-              </div>
-              <p>{{ card.result.room.building }}{% if card.result.room.floor %} ชั้น {{ card.result.room.floor }}{% endif %} · จุ {{ card.result.room.capacity }} คน</p>
-            </div>
-            <a role="button" class="homepage-book-button" href="{{ card.book_url }}">จองเลย</a>
-          </article>
-        {% empty %}
-          <div class="empty-state homepage-empty"><strong>ยังไม่มีห้องว่างในช่วงนี้</strong><span>ลองดูช่วงเวลาอื่นจากหน้าค้นหาห้อง</span></div>
-        {% endfor %}
-      </section>
-    {% endfor %}
-  </div>
-</section>
-
-<nav class="category-tabs" aria-label="เลือกหมวดห้อง">
-  <span class="category-tabs-label">หมวดห้อง:</span>
-  {% for cat_val, cat_name in category_choices %}
-    <a href="?category={{ cat_val }}" class="category-pill {% if selected_category == cat_val %}active{% endif %}" {% if selected_category == cat_val %}aria-current="page"{% endif %}>
-      {{ cat_name }}
-    </a>
-  {% endfor %}
-</nav>
-
-{% if selected_category == 'lodging' %}
-  <div class="notice info" style="margin-top: var(--space-md);">
-    <strong>กำลังดูห้องพัก</strong> — นักเรียนที่มีลิงก์หลักสูตรสามารถเลือกเตียงได้จากหน้า
-    <a href="{% url 'bookings:lodging_index' %}">จองห้องพักหลักสูตร →</a>
-  </div>
+      <div class="guest-action-buttons">
+        <a role="button" class="btn-primary" href="{% url 'login' %}?next={% url 'bookings:book_search' %}">เข้าสู่ระบบเพื่อจองห้อง →</a>
+      </div>
+    </div>
+  </section>
 {% endif %}
 
-<section class="statusband" aria-label="สถานการณ์ขณะนี้">
-  <article class="stat stat-green">
-    <span class="stat-label">ว่างตอนนี้</span>
-    <div class="stat-value">{{ stat_free_now }}<small> ห้อง</small></div>
-    <p class="stat-detail">พร้อมใช้งานทันที</p>
-  </article>
-  <article class="stat stat-cyan">
-    <span class="stat-label">กำลังใช้งาน</span>
-    <div class="stat-value">{{ stat_in_use }}<small>/{{ stat_total }} ห้อง</small></div>
-    <p class="stat-detail">จากห้องหมวดนี้ที่เปิดใช้</p>
-  </article>
-  <article class="stat">
-    <span class="stat-label">Mission Clock</span>
-    <div class="stat-value" id="mission-clock" aria-hidden="true">--:--:--</div>
-    <p class="stat-detail">{{ board_today|thai_date }}</p>
-  </article>
-  {% if user.is_authenticated %}
-    <article class="stat stat-amber">
-      {% if nav_can_access_approvals %}
-      <a href="{% url 'approvals:queue' %}">
-        <span class="stat-label">รออนุมัติ</span>
-        <div class="stat-value">{{ nav_pending_approval_count }}<small> รายการ</small></div>
-        <p class="stat-detail">เปิดคิวอนุมัติ →</p>
-      </a>
-      {% else %}
-      <a href="{% url 'bookings:my_bookings' %}">
-        <span class="stat-label">คำขอของฉันที่รอ</span>
-        <div class="stat-value">{{ my_pending_count }}<small> รายการ</small></div>
-        <p class="stat-detail">ดูการจองของฉัน →</p>
-      </a>
-      {% endif %}
-    </article>
-  {% endif %}
-</section>
-
-{% if user.is_authenticated %}
-  <div class="quickrow">
-    <a role="button" href="{% url 'bookings:book_search' %}">⊕ จองห้องด่วน</a>
-    <span class="quick-hint">เลือกวัน เวลา แล้วระบบแสดงเฉพาะห้องที่ว่างจริง</span>
+<section id="homepage-availability-section" class="homepage-availability-section" aria-label="ห้องว่างและความพร้อมใช้งาน">
+  <div class="section-title">
+    <div>
+      <p class="eyebrow">เลือกหมวดและตรวจสอบห้องว่าง</p>
+      <h2>ห้องว่างช่วงถัดไป · จองได้ทันที</h2>
+    </div>
+    <small class="availability-timespan">ช่วงถัดไป {{ homepage_availability.start_label }}–{{ homepage_availability.end_label }}</small>
   </div>
-  <section class="role-actions" aria-label="งานของฉัน">
-    {# 1. การ์ดคิวอนุมัติ ถ้า nav_pending_approval_count > 0 #}
-    {% if nav_can_access_approvals and nav_pending_approval_count and nav_pending_approval_count > 0 %}
-    <article class="role-action">
-      <div><p class="action-label">งานผู้อนุมัติ</p><h2>มี {{ nav_pending_approval_count }} รายการรอตัดสิน</h2><p>รายการใกล้วันใช้งานจะอยู่ก่อน</p></div>
-      <a href="{% url 'approvals:queue' %}">เปิดคิวอนุมัติ →</a>
+
+  <nav class="category-tabs" aria-label="เลือกหมวดห้อง">
+    <span class="category-tabs-label">หมวดห้อง:</span>
+    {% for cat_val, cat_name in category_choices %}
+      <a href="?category={{ cat_val }}" class="category-pill {% if selected_category == cat_val %}active{% endif %}" {% if selected_category == cat_val %}aria-current="page"{% endif %}>
+        {{ cat_name }}
+      </a>
+    {% endfor %}
+  </nav>
+
+  {% if selected_category == 'lodging' %}
+    <div class="notice info" style="margin-top: var(--space-md);">
+      <strong>กำลังดูห้องพัก</strong> — นักเรียนที่มีลิงก์หลักสูตรสามารถเลือกเตียงได้จากหน้า
+      <a href="{% url 'bookings:lodging_index' %}">จองห้องพักหลักสูตร →</a>
+    </div>
+  {% endif %}
+
+  <section class="home-entry-grid" aria-label="เลือกประเภทห้องที่ต้องการใช้">
+    <article class="home-entry-card card-cyan">
+      <div class="home-entry-head"><span class="hud-tag">รายชั่วโมง</span></div>
+      <h2>ห้องเรียน / ห้องปฏิบัติ</h2>
+      <p>ดูห้องที่ว่างในช่วงถัดไป แล้วกดจองเลย</p>
+      <a class="home-entry-link" href="#now-teaching">ดูห้องว่างตอนนี้ <span aria-hidden="true">↓</span></a>
+    </article>
+    <article class="home-entry-card card-amber">
+      <div class="home-entry-head"><span class="hud-tag">รายชั่วโมง</span></div>
+      <h2>ห้องประชุม</h2>
+      <p>ตรวจห้องประชุมและห้องพิเศษที่จองได้</p>
+      <a class="home-entry-link" href="#now-meeting">ดูห้องว่างตอนนี้ <span aria-hidden="true">↓</span></a>
+    </article>
+    {% if homepage_availability.has_online %}
+    <article class="home-entry-card card-violet">
+      <div class="home-entry-head"><span class="hud-tag">รายชั่วโมง</span></div>
+      <h2>ห้องสอนออนไลน์</h2>
+      <p>ห้องพร้อมกล้อง ไมค์ และไฟสตูดิโอ ที่ บก.กศ.</p>
+      <a class="home-entry-link" href="#now-online">ดูห้องว่างตอนนี้ <span aria-hidden="true">↓</span></a>
     </article>
     {% endif %}
-
-    {# 2. การ์ดการใช้งานห้อง ถ้า usage_today_count > 0 #}
-    {% if nav_can_manage_usage and usage_today_count and usage_today_count > 0 %}
-    <article class="role-action">
-      <div><p class="action-label">งานเจ้าหน้าที่ดูแลห้อง</p><h2>วันนี้มี {{ usage_today_count }} รายการให้ตรวจ</h2><p>ตรวจสถานะใช้งานแล้วหรือไม่มาใช้ภายในกำหนด</p></div>
-      <a href="{% url 'usage:list' %}">เปิดการใช้งานห้อง →</a>
-    </article>
-    {% endif %}
-
-    {# 3. การ์ดที่เหลือตามลำดับเดิม (ที่ตัวเลขเป็น 0 หรือ None คงอยู่ในหน้าแต่ต่อท้ายเสมอ) #}
-    {% if nav_can_access_approvals and not nav_pending_approval_count %}
-    <article class="role-action">
-      <div><p class="action-label">งานผู้อนุมัติ</p><h2>คิวอนุมัติเรียบร้อย</h2><p>ขณะนี้ไม่มีคำขอที่ต้องดำเนินการ</p></div>
-      <a href="{% url 'approvals:queue' %}">เปิดคิวอนุมัติ →</a>
-    </article>
-    {% endif %}
-
-    {% if nav_can_manage_usage and not usage_today_count %}
-    <article class="role-action">
-      <div><p class="action-label">งานเจ้าหน้าที่ดูแลห้อง</p><h2>งานบันทึกวันนี้เรียบร้อย</h2><p>ตรวจสถานะใช้งานแล้วหรือไม่มาใช้ภายในกำหนด</p></div>
-      <a href="{% url 'usage:list' %}">เปิดการใช้งานห้อง →</a>
-    </article>
-    {% endif %}
-
-    <article class="role-action">
-      <div><p class="action-label">การจองของฉัน</p>{% if next_booking %}<h2>{{ next_booking.title }}</h2><p>{{ next_booking.room.code }} · {{ next_booking.start_at|thai_datetime }} · {{ next_booking.get_request_status_display }}</p>{% else %}<h2>ยังไม่มีการจองที่กำลังจะถึง</h2><p>ค้นหาห้องว่างจากวัน เวลา และจำนวนผู้เข้าร่วม</p>{% endif %}</div>
-      {% if next_booking %}<a href="{% url 'bookings:booking_detail' next_booking.id %}">ดูรายละเอียด →</a>{% else %}<a href="{% url 'bookings:book_search' %}">เริ่มจองห้อง →</a>{% endif %}
+    <article class="home-entry-card card-green" id="lodging-courses">
+      <div class="home-entry-head"><span class="hud-tag">ตามรอบหลักสูตร</span></div>
+      <h2>ห้องพักหลักสูตร</h2>
+      <p>เลือกหลักสูตรแล้วเข้า portal เลือกเตียงโดยตรง</p>
+      {% if active_lodging_cohorts %}
+        <div class="home-course-list">
+          {% for cohort in active_lodging_cohorts %}
+            <a href="{% url 'bookings:lodging_portal' cohort.slug %}">{{ cohort.title }} <span aria-hidden="true">→</span></a>
+          {% endfor %}
+        </div>
+      {% else %}
+        <p class="home-empty-note">ยังไม่มีหลักสูตรเปิดรับเข้าพัก</p>
+      {% endif %}
     </article>
   </section>
-{% else %}
-  <div class="guest-action-banner">
-    <div>
-      <h2>ต้องการจองห้องเรียน หรือห้องประชุม?</h2>
-      <p>เข้าสู่ระบบด้วยบัญชีของหน่วยเพื่อจองห้อง หรือติดต่อนายสิบธุรการ/แผนกวิชา</p>
-    </div>
-    <div class="guest-action-buttons">
-      <a role="button" class="btn-primary" href="{% url 'login' %}?next={% url 'bookings:book_search' %}">เข้าสู่ระบบเพื่อจองห้อง →</a>
-    </div>
-  </div>
-{% endif %}
-<section id="today-board" class="today-board" aria-label="สถานการณ์ห้องวันนี้">
-  <div class="board-head">
-    <span class="hud-tag mono">Today</span>
-    <h2>สถานการณ์ห้องวันนี้</h2>
-    {% if selected_category == 'lodging' %}<a href="{% url 'bookings:lodging_index' %}">เปิดรอบที่พัก →</a>{% else %}<a href="{% url 'bookings:book_search' %}">จองช่วงที่ว่าง →</a>{% endif %}
-  </div>
-  <div class="tl-scroll">
-    <div class="tl-grid">
-      <div></div>
-      <div class="tl-hours" style="grid-template-columns: repeat({{ board_hours|length }}, 1fr);">
-        {% for h in board_hours %}<span>{{ h|stringformat:"02d" }}</span>{% endfor %}
-      </div>
-      {% for row in board_rows %}
-      <div class="tl-room">
-        {% with cover=row.room.cover_photo %}
-          {% if cover %}<img src="{{ cover.image.url }}" alt="ห้อง {{ row.room.code }}" width="30" height="30" loading="lazy" decoding="async" class="tl-room-thumb">
-          {% else %}<img src="{% static 'img/room-placeholder.svg' %}" alt="" width="30" height="30" loading="lazy" decoding="async" class="tl-room-thumb is-placeholder" aria-hidden="true">{% endif %}
-        {% endwith %}
-        <span><b>{{ row.room.code }}</b>{{ row.room.name }}</span>
-      </div>
-      <div class="tl-track">
-        {% for block in row.blocks %}
-        <span class="tl-block {{ block.cls }}" style="left:{{ block.left|floatformat:2 }}%;width:{{ block.width|floatformat:2 }}%" title="{{ block.label }}">{{ block.label }}</span>
-        {% endfor %}
-      </div>
+
+  <div id="homepage-availability" class="homepage-availability" aria-label="ห้องว่างช่วงถัดไป">
+    <div class="homepage-availability-grid">
+      {% for group in homepage_availability.groups %}
+        <section id="now-{{ group.key }}" class="homepage-availability-group" aria-labelledby="now-{{ group.key }}-title">
+          <div class="homepage-group-title"><h3 id="now-{{ group.key }}-title">{{ group.label }}</h3><span class="count-badge">{{ group.cards|length }} ห้อง</span></div>
+          {% for card in group.cards %}
+            <article class="homepage-room-card">
+              {% with cover=card.result.room.cover_photo %}
+                {% if cover %}<img src="{{ cover.image.url }}" alt="รูปห้อง {{ card.result.room.code }}" width="56" height="56" loading="lazy" decoding="async" class="room-card-thumb">
+                {% else %}<img src="{% static 'img/room-placeholder.svg' %}" alt="ยังไม่มีรูปห้อง {{ card.result.room.code }}" width="56" height="56" loading="lazy" decoding="async" class="room-card-thumb is-placeholder">{% endif %}
+              {% endwith %}
+              <div class="homepage-room-info">
+                <div class="homepage-room-title-row">
+                  <h4>{{ card.result.room.code }} · {{ card.result.room.name }}</h4>
+                  <span class="avail-status-badge">ว่างอยู่</span>
+                </div>
+                <p>{{ card.result.room.building }}{% if card.result.room.floor %} ชั้น {{ card.result.room.floor }}{% endif %} · จุ {{ card.result.room.capacity }} คน</p>
+              </div>
+              <a role="button" class="homepage-book-button" href="{{ card.book_url }}">จองเลย</a>
+            </article>
+          {% empty %}
+            <div class="empty-state homepage-empty"><strong>ยังไม่มีห้องว่างในช่วงนี้</strong><span>ลองดูช่วงเวลาอื่นจากหน้าค้นหาห้อง</span></div>
+          {% endfor %}
+        </section>
       {% endfor %}
-      {% if board_now_pct is not None %}
-      <span class="tl-now" data-label="ขณะนี้ {{ board_now_label }}" style="left: calc(9.5rem + (100% - 9.5rem) * {{ board_now_pct|floatformat:2 }} / 100);" aria-hidden="true"></span>
-      {% endif %}
     </div>
   </div>
-  <span class="legend" aria-label="คำอธิบายสถานะ"><span class="legend-item"><i style="background:var(--cyan)"></i> กำลังใช้</span><span class="legend-item"><i class="approved"></i> อนุมัติแล้ว</span><span class="legend-item"><i class="pending"></i> รออนุมัติ</span><span class="legend-item"><i style="background:var(--red)"></i> งดใช้</span></span>
 </section>
-<div class="section-title"><div><p class="eyebrow">ภาพรวมห้อง</p><h2>ปฏิทินการใช้ห้อง</h2></div></div>
-<div class="filter-bar">
-  <label for="room-filter">ห้อง
-    <select id="room-filter"><option value="">ทุกห้อง</option>{% for room in rooms %}<option value="{{ room.code }}">{{ room.code }} {{ room.name }}</option>{% endfor %}</select>
-  </label>
-  <label for="building-filter">อาคาร
-    <select id="building-filter"><option value="">ทั้งหมด</option>{% for building in buildings %}<option>{{ building }}</option>{% endfor %}</select>
-  </label>
-  <span class="legend" aria-label="คำอธิบายสถานะ"><span class="legend-item"><i class="approved"></i> อนุมัติ</span><span class="legend-item"><i class="pending"></i> รออนุมัติ</span><span class="legend-item"><i class="buffer-key"></i> เวลาเตรียม/เก็บห้อง</span></span>
-</div>
-<div id="calendar" aria-label="ปฏิทินการจอง"></div>
+
+<section id="operational-calendar-section" class="operational-calendar-section" aria-label="ผังเวลาและปฏิทินรวม">
+  <div class="section-title">
+    <div>
+      <p class="eyebrow">ผังการใช้ห้องรายวัน</p>
+      <h2>สถานการณ์ห้องวันนี้</h2>
+    </div>
+    <div class="schedule-actions">
+      {% if selected_category == 'lodging' %}
+        <a class="btn-secondary compact-button" href="{% url 'bookings:lodging_index' %}">เปิดรอบที่พัก →</a>
+      {% else %}
+        <a class="btn-secondary compact-button" href="{% url 'bookings:book_search' %}">จองช่วงที่ว่าง →</a>
+      {% endif %}
+      <a href="#main-content" class="back-to-top-link"><small>กลับด้านบน ↑</small></a>
+    </div>
+  </div>
+
+  <section id="today-board" class="today-board" aria-label="สถานการณ์ห้องวันนี้">
+    <div class="board-head">
+      <span class="hud-tag mono">Today</span>
+      <h2>ผังเวลาห้องวันนี้</h2>
+      {% if selected_category == 'lodging' %}<a href="{% url 'bookings:lodging_index' %}">เปิดรอบที่พัก →</a>{% else %}<a href="{% url 'bookings:book_search' %}">จองช่วงที่ว่าง →</a>{% endif %}
+    </div>
+    <div class="tl-scroll">
+      <div class="tl-grid">
+        <div></div>
+        <div class="tl-hours" style="grid-template-columns: repeat({{ board_hours|length }}, 1fr);">
+          {% for h in board_hours %}<span>{{ h|stringformat:"02d" }}</span>{% endfor %}
+        </div>
+        {% for row in board_rows %}
+        <div class="tl-room">
+          {% with cover=row.room.cover_photo %}
+            {% if cover %}<img src="{{ cover.image.url }}" alt="ห้อง {{ row.room.code }}" width="30" height="30" loading="lazy" decoding="async" class="tl-room-thumb">
+            {% else %}<img src="{% static 'img/room-placeholder.svg' %}" alt="" width="30" height="30" loading="lazy" decoding="async" class="tl-room-thumb is-placeholder" aria-hidden="true">{% endif %}
+          {% endwith %}
+          <span><b>{{ row.room.code }}</b>{{ row.room.name }}</span>
+        </div>
+        <div class="tl-track">
+          {% for block in row.blocks %}
+          <span class="tl-block {{ block.cls }}" style="left:{{ block.left|floatformat:2 }}%;width:{{ block.width|floatformat:2 }}%" title="{{ block.label }}">{{ block.label }}</span>
+          {% endfor %}
+        </div>
+        {% endfor %}
+        {% if board_now_pct is not None %}
+        <span class="tl-now" data-label="ขณะนี้ {{ board_now_label }}" style="left: calc(9.5rem + (100% - 9.5rem) * {{ board_now_pct|floatformat:2 }} / 100);" aria-hidden="true"></span>
+        {% endif %}
+      </div>
+    </div>
+    <span class="legend" aria-label="คำอธิบายสถานะ"><span class="legend-item"><i style="background:var(--cyan)"></i> กำลังใช้</span><span class="legend-item"><i class="approved"></i> อนุมัติแล้ว</span><span class="legend-item"><i class="pending"></i> รออนุมัติ</span><span class="legend-item"><i style="background:var(--red)"></i> งดใช้</span></span>
+  </section>
+
+  <div class="section-title" style="margin-top: var(--space-xl);">
+    <div><p class="eyebrow">ภาพรวมห้อง</p><h2>ปฏิทินการใช้ห้อง</h2></div>
+  </div>
+  <div class="filter-bar">
+    <label for="room-filter">ห้อง
+      <select id="room-filter"><option value="">ทุกห้อง</option>{% for room in rooms %}<option value="{{ room.code }}">{{ room.code }} {{ room.name }}</option>{% endfor %}</select>
+    </label>
+    <label for="building-filter">อาคาร
+      <select id="building-filter"><option value="">ทั้งหมด</option>{% for building in buildings %}<option>{{ building }}</option>{% endfor %}</select>
+    </label>
+    <span class="legend" aria-label="คำอธิบายสถานะ"><span class="legend-item"><i class="approved"></i> อนุมัติ</span><span class="legend-item"><i class="pending"></i> รออนุมัติ</span><span class="legend-item"><i class="buffer-key"></i> เวลาเตรียม/เก็บห้อง</span></span>
+  </div>
+  <div id="calendar" aria-label="ปฏิทินการจอง"></div>
+</section>
 {% endblock %}
 {% block scripts %}
 <script>
