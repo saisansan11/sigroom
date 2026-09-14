@@ -1749,3 +1749,669 @@ legend, label { font-weight: 700; } label small, .field small { display: block; 
     padding: var(--space-md);
   }
 }
+
+/* ===== UI-4 Lodging UX ===== */
+/* 1. Public Lodging Cohort Listing */
+.lodging-cohort-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(20rem, 1fr));
+  gap: var(--space-lg);
+  margin-bottom: var(--space-2xl);
+}
+
+.lodging-cohort-card {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: var(--space-lg);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  transition: border-color var(--motion-fast) ease, box-shadow var(--motion-fast) ease;
+}
+
+.lodging-cohort-card:hover {
+  border-color: var(--line-strong);
+}
+
+.lodging-cohort-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-xs);
+  margin-bottom: var(--space-sm);
+}
+
+.lodging-cohort-title {
+  margin: 0 0 var(--space-xs);
+  font-size: 1.25rem;
+  line-height: 1.35;
+}
+
+.lodging-cohort-title a {
+  color: var(--ink);
+  text-decoration: none;
+}
+
+.lodging-cohort-title a:hover {
+  color: var(--cyan);
+}
+
+.lodging-cohort-dates {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2xs);
+  margin-bottom: var(--space-sm);
+  color: var(--muted);
+  font-size: var(--text-sm);
+}
+
+.lodging-capacity-wrapper {
+  margin: var(--space-sm) 0 var(--space-md);
+}
+
+.lodging-capacity-text {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: var(--space-2xs);
+  font-size: var(--text-xs);
+  color: var(--dim);
+}
+
+.lodging-capacity-text strong {
+  color: var(--green);
+  font-family: var(--font-mono);
+}
+
+.lodging-capacity-progress {
+  display: block;
+  width: 100%;
+  height: .55rem;
+  border: 0;
+  border-radius: 999px;
+  overflow: hidden;
+  background: var(--surface-soft);
+  accent-color: var(--green);
+}
+
+.lodging-capacity-progress::-webkit-progress-bar {
+  background: var(--surface-soft);
+  border-radius: 999px;
+}
+
+.lodging-capacity-progress::-webkit-progress-value {
+  background: var(--green);
+  border-radius: 999px;
+}
+
+.lodging-capacity-progress::-moz-progress-bar {
+  background: var(--green);
+  border-radius: 999px;
+}
+
+.lodging-select-btn {
+  width: 100%;
+  min-height: 2.75rem;
+  font-weight: 700;
+}
+
+/* 2. Student Portal Hero & Room Layout */
+.lodging-portal-hero {
+  padding: var(--space-lg) var(--space-xl);
+  margin-bottom: var(--space-xl);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+}
+
+.lodging-portal-hero h1 {
+  margin-bottom: var(--space-2xs);
+}
+
+.lodging-stats-strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-sm);
+  margin-top: var(--space-md);
+}
+
+.lodging-stat-pill {
+  padding: var(--space-xs) var(--space-md);
+  background: var(--surface-raised);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  font-size: var(--text-sm);
+  color: var(--muted);
+}
+
+.lodging-stat-pill strong {
+  color: var(--ink);
+  font-family: var(--font-mono);
+}
+
+.lodging-stat-pill.is-highlight strong {
+  color: var(--green);
+}
+
+.lodging-privacy-callout {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: var(--space-xs) var(--space-md);
+  margin-top: var(--space-sm);
+  background: var(--surface-raised);
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--cyan);
+  border-radius: var(--radius-sm);
+  font-size: var(--text-xs);
+  color: var(--muted);
+}
+
+.room-badge-free {
+  display: inline-flex;
+  align-items: center;
+  padding: .2rem .6rem;
+  border-radius: 999px;
+  background: oklch(.76 .14 156 / .18);
+  color: var(--green);
+  font-size: .8rem;
+  font-weight: 700;
+}
+
+.room-badge-full {
+  display: inline-flex;
+  align-items: center;
+  padding: .2rem .6rem;
+  border-radius: 999px;
+  background: var(--surface-soft);
+  color: var(--muted);
+  font-size: .8rem;
+  font-weight: 600;
+}
+
+.bed-occupant-status {
+  color: var(--muted);
+  font-size: var(--text-sm);
+  font-weight: 600;
+}
+
+.bed-free-status {
+  color: var(--green);
+  font-size: var(--text-sm);
+  font-weight: 700;
+}
+
+/* 3. Digital Key-Card Enhanced Styles */
+.keycard-chip {
+  width: 2rem;
+  height: 1.5rem;
+  border-radius: .25rem;
+  background: color-mix(in oklab, var(--amber) 52%, var(--surface-raised));
+  border: 1px solid color-mix(in oklab, var(--amber) 60%, var(--line));
+  margin-bottom: var(--space-2xs);
+}
+
+.keycard-flip-hint {
+  margin: var(--space-2xs) 0 0;
+  font-size: .72rem;
+  color: var(--cyan);
+  opacity: .85;
+}
+
+.keycard-actions-bar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-sm);
+  flex-wrap: wrap;
+  margin-bottom: var(--space-lg);
+}
+
+.keycard-roommates-card {
+  max-width: 26rem;
+  margin: 0 auto var(--space-xl);
+  padding: var(--space-md);
+  background: var(--surface-raised);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  text-align: left;
+}
+
+.keycard-roommates-card h4 {
+  margin: 0 0 var(--space-xs);
+  font-size: var(--text-xs);
+  color: var(--dim);
+  text-transform: uppercase;
+  letter-spacing: .06em;
+}
+
+.keycard-roommates-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2xs);
+}
+
+.keycard-roommates-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--space-2xs) var(--space-xs);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  font-size: var(--text-xs);
+}
+
+/* 4. Check-in Verification Interface */
+.checkin-card {
+  max-width: 32rem;
+  margin: var(--space-xl) auto;
+  padding: var(--space-xl);
+  background: var(--surface);
+  border: 2px solid var(--cyan);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-panel);
+  text-align: center;
+}
+
+.checkin-mark {
+  display: inline-grid;
+  place-items: center;
+  width: 4rem;
+  height: 4rem;
+  margin: 0 auto var(--space-sm);
+  border-radius: 50%;
+  background: oklch(.76 .14 156 / .15);
+  color: var(--green);
+  font-size: 2.2rem;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.checkin-room-pill {
+  display: inline-block;
+  padding: var(--space-xs) var(--space-lg);
+  margin: var(--space-md) 0;
+  background: var(--surface-raised);
+  border: 1px solid var(--line-strong);
+  border-radius: 999px;
+  font-family: var(--font-mono);
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--cyan);
+  letter-spacing: .04em;
+}
+
+.checkin-details-list {
+  text-align: left;
+  margin: var(--space-md) 0;
+  padding: var(--space-sm);
+  background: var(--surface-raised);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  font-size: var(--text-sm);
+}
+
+.checkin-details-row {
+  display: flex;
+  justify-content: space-between;
+  padding: var(--space-2xs) 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.checkin-details-row:last-child {
+  border-bottom: none;
+}
+
+.checkin-details-label {
+  color: var(--dim);
+  width: 38%;
+}
+
+.checkin-details-value {
+  color: var(--ink);
+  font-weight: 600;
+  width: 62%;
+  text-align: right;
+}
+
+.checkin-authorized-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2xs);
+  padding: .25rem .75rem;
+  border-radius: 999px;
+  background: oklch(.78 .12 207 / .15);
+  color: var(--cyan);
+  font-weight: 700;
+  font-size: .82rem;
+  margin-bottom: var(--space-xs);
+}
+
+.checkin-public-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2xs);
+  padding: .25rem .75rem;
+  border-radius: 999px;
+  background: var(--surface-soft);
+  color: var(--muted);
+  font-weight: 600;
+  font-size: .82rem;
+  margin-bottom: var(--space-xs);
+}
+
+.checkin-title {
+  font-size: 1.5rem;
+  margin: var(--space-2xs) 0 0;
+}
+
+.checkin-submit-btn {
+  width: 100%;
+  min-height: 2.75rem;
+  font-size: 1.05rem;
+  margin-top: var(--space-md);
+}
+
+.checkin-footer-nav {
+  margin-top: var(--space-lg);
+}
+
+/* 5. Supervisor Management & Detail Views */
+.lodging-manage-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-xl);
+  align-items: flex-start;
+}
+
+.lodging-cohorts-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+.lodging-manage-card {
+  margin: 0;
+}
+
+.lodging-manage-card-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: var(--space-xs);
+}
+
+.lodging-manage-card-head h3 {
+  margin: 0;
+  font-size: 1.15rem;
+}
+
+.lodging-status-tags {
+  display: flex;
+  gap: var(--space-2xs);
+  flex-wrap: wrap;
+}
+
+.lodging-manage-card-meta {
+  margin: var(--space-sm) 0;
+  font-size: var(--text-sm);
+}
+
+.lodging-manage-card-actions {
+  display: flex;
+  gap: var(--space-sm);
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.lodging-create-card {
+  margin: 0;
+  background: var(--surface-raised);
+}
+
+.grid-dates {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-sm);
+}
+
+.btn-submit-full {
+  width: 100%;
+  min-height: 2.75rem;
+  margin-top: var(--space-md);
+}
+
+.lodging-room-checklist {
+  max-height: 14rem;
+  overflow-y: auto;
+  padding: var(--space-sm);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--canvas-deep);
+}
+
+.lodging-checklist-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  padding: var(--space-2xs) 0;
+  font-size: var(--text-sm);
+  cursor: pointer;
+}
+
+.lodging-share-banner {
+  padding: var(--space-md) var(--space-lg);
+  margin-bottom: var(--space-lg);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-left: 4px solid var(--green);
+  border-radius: var(--radius-md);
+}
+
+.lodging-share-url {
+  font-family: var(--font-mono);
+  font-size: 1.05rem;
+  word-break: break-all;
+  color: var(--cyan);
+  margin: var(--space-2xs) 0;
+}
+
+.lodging-share-actions {
+  display: flex;
+  gap: var(--space-sm);
+  align-items: center;
+  flex-wrap: wrap;
+  margin-top: var(--space-sm);
+}
+
+.lodging-section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--space-md);
+  flex-wrap: wrap;
+  gap: var(--space-sm);
+}
+
+.bed-empty-slot {
+  padding: var(--space-2xs) var(--space-sm);
+  border: 1px dashed var(--line);
+  border-radius: var(--radius-sm);
+  color: var(--muted);
+  font-size: .85rem;
+  text-align: center;
+}
+
+.bed-empty-room {
+  padding: var(--space-sm);
+  text-align: center;
+  color: var(--muted);
+  font-size: .9rem;
+}
+
+.lodging-roster-section {
+  margin-top: var(--space-2xl);
+}
+
+.table-responsive-container {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  margin-bottom: var(--space-lg);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--line);
+}
+
+.table-responsive-container table {
+  margin-bottom: 0;
+}
+
+/* 6. Force-Release Danger Zone */
+.lodging-edit-card {
+  max-width: 52rem;
+}
+
+.lodging-checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  cursor: pointer;
+  margin-bottom: var(--space-sm);
+}
+
+.lodging-danger-zone {
+  margin-top: var(--space-lg);
+  padding: var(--space-md) var(--space-lg);
+  background: var(--danger-bg);
+  border: 1px solid color-mix(in oklab, var(--red) 50%, var(--line));
+  border-radius: var(--radius-md);
+}
+
+.lodging-danger-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  margin-bottom: var(--space-xs);
+  color: var(--red);
+  font-weight: 700;
+  font-size: 1.05rem;
+}
+
+.lodging-danger-warning {
+  margin-bottom: var(--space-md);
+  color: var(--muted);
+  font-size: var(--text-sm);
+  line-height: 1.6;
+}
+
+.danger-checkbox {
+  color: var(--red);
+  font-weight: 700;
+}
+
+.lodging-edit-card .form-actions {
+  justify-content: flex-end;
+  margin-top: var(--space-md);
+}
+
+.lodging-accent-text {
+  color: var(--cyan);
+  font-weight: 700;
+}
+
+.lodging-warning-text {
+  color: var(--amber);
+}
+
+#modalRoomTitle {
+  margin: 0;
+}
+
+/* Dialog & Button Helpers */
+.booking-dialog-article {
+  max-width: 28rem;
+  width: 100%;
+}
+
+.modal-form-actions {
+  display: flex;
+  gap: var(--space-sm);
+  justify-content: flex-end;
+  margin-top: var(--space-md);
+}
+
+.gallery-dialog-article {
+  max-width: 38rem;
+  width: 100%;
+}
+
+.btn-confirm {
+  background: var(--green);
+  border-color: var(--green);
+  color: var(--canvas-deep);
+}
+
+.btn-confirm:hover {
+  background: var(--ink);
+  color: var(--canvas-deep);
+}
+
+#copyPassBtn.is-copied,
+#copyLinkBtn.is-copied {
+  background: var(--green);
+  border-color: var(--green);
+  color: var(--canvas-deep);
+}
+
+/* Responsive Breakpoints */
+@media (max-width: 54rem) {
+  .lodging-manage-grid {
+    grid-template-columns: 1fr;
+    gap: var(--space-lg);
+  }
+}
+
+@media (max-width: 30rem) {
+  .lodging-portal-hero {
+    padding: var(--space-md);
+  }
+
+  .lodging-cohort-card {
+    padding: var(--space-md);
+  }
+
+  .checkin-card {
+    padding: var(--space-md);
+  }
+
+  .checkin-room-pill {
+    font-size: 1.05rem;
+    padding: var(--space-2xs) var(--space-md);
+  }
+
+  .keycard {
+    width: 100%;
+  }
+
+  .keycard-front {
+    padding: var(--space-md);
+  }
+
+  .grid-dates {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .keycard {
+    animation: none;
+  }
+  .keycard-flip {
+    transition: none;
+  }
+}

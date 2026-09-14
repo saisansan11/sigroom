@@ -5,31 +5,43 @@
 {% block title %}เลือกห้องพัก · {{ cohort.title }} · SIGROOM{% endblock %}
 
 {% block content %}
-<div class="lodging-hero">
-  <span class="hud-tag">รร.ส.สส. · ระบบจองที่พักหลักสูตร</span>
+<div class="lodging-portal-hero">
+  <div class="lodging-cohort-top">
+    <span class="room-badge-free">รร.ส.สส. · ระบบจองที่พักหลักสูตร</span>
+    {% if share_url %}
+      <a role="button" class="secondary" href="{{ line_share_url }}" target="_blank" rel="noopener noreferrer">
+        แชร์เข้า LINE ↗
+      </a>
+    {% endif %}
+  </div>
   <h1>{{ cohort.title }}</h1>
-  <p class="stat-detail">
+  <p class="muted-text">
     ช่วงเวลาเข้าพัก: <strong>{{ cohort.check_in_date|thai_date }}</strong> ถึง <strong>{{ cohort.check_out_date|thai_date }}</strong>
   </p>
   {% if cohort.note %}
-    <div class="notice info" style="margin-top: var(--space-sm);">
+    <div class="notice info">
       <small><strong>คำชี้แจง/ข้อปฏิบัติ:</strong> {{ cohort.note }}</small>
     </div>
   {% endif %}
 
-  <div class="lodging-stats">
-    <div class="lodging-stat-item">
+  <div class="lodging-stats-strip">
+    <div class="lodging-stat-pill">
       <span>ความจุทั้งหมด:</span> <strong>{{ total_slots }}</strong> ที่พัก
     </div>
-    <div class="lodging-stat-item">
+    <div class="lodging-stat-pill">
       <span>จองแล้ว:</span> <strong>{{ occupied_slots }}</strong> คน
     </div>
-    <div class="lodging-stat-item">
-      <span>ว่างคงเหลือ:</span> <strong style="color: var(--green);">{{ free_slots }}</strong> ที่พัก
+    <div class="lodging-stat-pill is-highlight">
+      <span>ว่างคงเหลือ:</span> <strong>{{ free_slots }}</strong> ที่พัก
     </div>
-    <div class="lodging-stat-item">
+    <div class="lodging-stat-pill">
       <span>อัตราส่วน:</span> <strong>{{ cohort.beds_per_room }}</strong> คน/ห้อง
     </div>
+  </div>
+
+  <div class="lodging-privacy-callout">
+    <span aria-hidden="true">🔒</span>
+    <span>ระบบรักษาความเป็นส่วนตัว: ไม่แสดงข้อมูลส่วนบุคคลหรือรายชื่อเพื่อนร่วมห้องในหน้านี้</span>
   </div>
 </div>
 
@@ -37,7 +49,7 @@
   <div>
     <p class="eyebrow">ผังห้องพัก</p>
     <h2>เลือกห้องและเตียงที่ต้องการเข้าพัก</h2>
-    <p>กดเลือกเตียงที่ยังว่างเพื่อลงทะเบียนเข้าพัก (สามารถดูเพื่อนร่วมห้องที่พักอยู่ก่อนได้)</p>
+    <p>เลือกเตียงที่ยังว่างเพื่อลงทะเบียนเข้าพัก (ระบบแสดงเฉพาะสถานะว่างหรือมีผู้เข้าพักแล้ว เพื่อความเป็นส่วนตัว)</p>
   </div>
 </div>
 
@@ -49,7 +61,9 @@
           {% if photo_urls %}
             <button type="button" class="room-photo-trigger" aria-label="ดูรูปห้อง {{ rdata.room.code }} ทั้งหมด ({{ photo_urls|length }} รูป)" data-photos="{{ photo_urls|join:'|' }}" data-room-label="{{ rdata.room.code }}">
               <img src="{{ photo_urls.0 }}" alt="รูปห้อง {{ rdata.room.code }}" loading="lazy" class="room-photo-cover">
-              {% if photo_urls|length > 1 %}<span class="room-photo-count">🖼 {{ photo_urls|length }}</span>{% endif %}
+              {% if photo_urls|length > 1 %}
+                <span class="room-photo-count">🖼 {{ photo_urls|length }}</span>
+              {% endif %}
             </button>
           {% else %}
             <img src="{% static 'img/room-placeholder.svg' %}" alt="ยังไม่มีรูปห้อง {{ rdata.room.code }}" loading="lazy" class="room-photo-cover is-placeholder">
@@ -63,9 +77,9 @@
         </div>
         <div>
           {% if rdata.is_full %}
-            <span class="hud-tag" style="background: var(--surface-soft); color: var(--muted);">เต็ม ({{ rdata.occupied_count }}/{{ rdata.beds_count }})</span>
+            <span class="room-badge-full">เต็ม ({{ rdata.occupied_count }}/{{ rdata.beds_count }})</span>
           {% else %}
-            <span class="hud-tag" style="background: oklch(.76 .14 156 / .2); color: var(--green);">ว่าง {{ rdata.beds_count|add:"-"|add:rdata.occupied_count }}/{{ rdata.beds_count }}</span>
+            <span class="room-badge-free">ว่าง {{ rdata.beds_count|add:"-"|add:rdata.occupied_count }}/{{ rdata.beds_count }}</span>
           {% endif %}
         </div>
       </div>
@@ -79,14 +93,14 @@
               <div>
                 <strong>เตียง {{ bed.number }}:</strong>
                 {% if bed.is_occupied %}
-                  <span class="bed-occupant-name">{{ bed.occupant_label }}</span>
+                  <span class="bed-occupant-status">มีผู้เข้าพักแล้ว</span>
                 {% else %}
-                  <span style="color: var(--green);">ว่าง</span>
+                  <span class="bed-free-status">ว่าง</span>
                 {% endif %}
               </div>
               <div>
                 {% if bed.is_occupied %}
-                  <small class="mono" style="color: var(--muted);">จองแล้ว</small>
+                  <small class="mono muted-text">จองแล้ว</small>
                 {% else %}
                   <button type="button" class="bed-select-btn" onclick="openBookingModal('{{ rdata.room.id }}', '{{ rdata.room.code }}', '{{ bed.number }}')">
                     เลือกเตียงนี้
@@ -113,11 +127,11 @@
 
 <!-- Modal Dialog สำหรับกรอกข้อมูลจองเตียง -->
 <dialog id="bookingModal">
-  <article style="max-width: 28rem; width: 100%;">
+  <article class="booking-dialog-article">
     <header>
       <button aria-label="Close" rel="prev" onclick="closeBookingModal()"></button>
       <h3>ลงทะเบียนเข้าพัก</h3>
-      <p id="modalRoomTitle" style="margin: 0; color: var(--cyan); font-weight: 700;">
+      <p id="modalRoomTitle" class="lodging-accent-text">
         {% if modal_data.room_code %}
           ห้อง {{ modal_data.room_code }} (เตียง {{ modal_data.bed_number }})
         {% else %}
@@ -127,7 +141,7 @@
     </header>
 
     {% if modal_error %}
-      <div class="notice danger" style="margin: var(--space-xs) 0 var(--space-sm) 0; font-size: .88rem;">
+      <div class="notice danger">
         <strong>ข้อผิดพลาด:</strong> {{ modal_error }}
       </div>
     {% endif %}
@@ -170,20 +184,20 @@
         <input type="text" id="id_note" name="note" value="{{ modal_data.note|default:'' }}" placeholder="เช่น ขอเตียงชั้นล่าง">
       </label>
 
-      <div style="margin-top: var(--space-md); display: flex; gap: var(--space-sm); justify-content: flex-end;">
+      <div class="modal-form-actions">
         <button type="button" class="secondary" onclick="closeBookingModal()">ยกเลิก</button>
-        <button type="submit" class="btn-primary" style="background: var(--green); border-color: var(--green); color: var(--canvas-deep);">ยืนยันการเข้าพัก</button>
+        <button type="submit" class="btn-primary btn-confirm">ยืนยันการเข้าพัก</button>
       </div>
     </form>
   </article>
 </dialog>
 
-<!-- แกลเลอรีรูปห้อง (งาน v6-c) — dialog เดียวใช้ร่วมกันทุกห้อง เติมรูปด้วย JS ตอนกดรูป cover -->
+<!-- แกลเลอรีรูปห้อง — dialog เดียวใช้ร่วมกันทุกห้อง เติมรูปด้วย JS ตอนกดรูป cover -->
 <dialog id="roomGalleryDialog" aria-label="แกลเลอรีรูปห้อง">
-  <article style="max-width: 34rem; width: 100%;">
+  <article class="gallery-dialog-article">
     <header>
       <button aria-label="ปิดแกลเลอรี" rel="prev" onclick="closeRoomGallery()"></button>
-      <h3 id="roomGalleryTitle" style="margin: 0;">รูปห้อง</h3>
+      <h3 id="roomGalleryTitle">รูปห้อง</h3>
     </header>
     <div class="room-gallery-viewport">
       <img id="roomGalleryImage" src="" alt="" loading="lazy">
@@ -197,6 +211,7 @@
 <script>
 let roomGalleryPhotos = [];
 let roomGalleryPos = 0;
+let lastFocusedElement = null;
 
 function updateRoomGalleryImage() {
   document.getElementById('roomGalleryImage').src = roomGalleryPhotos[roomGalleryPos] || '';
@@ -210,31 +225,47 @@ function roomGalleryStep(delta) {
   updateRoomGalleryImage();
 }
 
-function openRoomGallery(photos, roomLabel) {
+function openRoomGallery(photos, roomLabel, triggerEl) {
+  lastFocusedElement = triggerEl || document.activeElement;
   roomGalleryPhotos = photos;
   roomGalleryPos = 0;
   document.getElementById('roomGalleryTitle').textContent = 'รูปห้อง ' + roomLabel;
   updateRoomGalleryImage();
-  document.getElementById('roomGalleryDialog').showModal();
+  const dialog = document.getElementById('roomGalleryDialog');
+  dialog.showModal();
+  const prevBtn = dialog.querySelector('.room-gallery-prev');
+  if (prevBtn) prevBtn.focus();
 }
 
 function closeRoomGallery() {
-  document.getElementById('roomGalleryDialog').close();
+  const dialog = document.getElementById('roomGalleryDialog');
+  dialog.close();
+  if (lastFocusedElement && typeof lastFocusedElement.focus === 'function') {
+    lastFocusedElement.focus();
+  }
 }
 
 document.querySelectorAll('.room-photo-trigger').forEach(function (btn) {
   btn.addEventListener('click', function () {
     const photos = (btn.dataset.photos || '').split('|').filter(Boolean);
     if (!photos.length) return;
-    openRoomGallery(photos, btn.dataset.roomLabel || '');
+    openRoomGallery(photos, btn.dataset.roomLabel || '', btn);
   });
 });
 
 document.addEventListener('keydown', function (e) {
   const dialog = document.getElementById('roomGalleryDialog');
   if (dialog && dialog.open) {
-    if (e.key === 'ArrowLeft') roomGalleryStep(-1);
-    if (e.key === 'ArrowRight') roomGalleryStep(1);
+    if (e.key === 'ArrowLeft') {
+      e.preventDefault();
+      roomGalleryStep(-1);
+    } else if (e.key === 'ArrowRight') {
+      e.preventDefault();
+      roomGalleryStep(1);
+    } else if (e.key === 'Escape') {
+      e.preventDefault();
+      closeRoomGallery();
+    }
   }
 });
 

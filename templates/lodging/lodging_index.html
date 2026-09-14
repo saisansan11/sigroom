@@ -6,24 +6,51 @@
 {% block content %}
 <div class="page-heading">
   <div>
-    <p class="eyebrow">ที่พักหลักสูตร</p>
+    <p class="eyebrow">ที่พักและหอพักหลักสูตร</p>
     <h1>เลือกรอบหลักสูตรเพื่อจองห้องพัก</h1>
-    <p>เปิดลิงก์ของรุ่นที่ได้รับจากผู้กำกับหลักสูตร แล้วเลือกห้องและเตียงที่ว่าง</p>
+    <p>เลือกรอบหลักสูตรของท่านเพื่อดูผังห้องและเลือกเตียงพักด้วยตนเอง หรือเข้าผ่านลิงก์เฉพาะรุ่นที่ได้รับ</p>
   </div>
-  {% if nav_can_manage_lodging %}<a role="button" class="secondary" href="{% url 'bookings:lodging_manage' %}">จัดการรอบหลักสูตร →</a>{% endif %}
+  {% if nav_can_manage_lodging %}
+    <a role="button" class="secondary" href="{% url 'bookings:lodging_manage' %}">จัดการรอบหลักสูตร →</a>
+  {% endif %}
 </div>
 
-<div class="rooms-grid">
+<div class="lodging-cohort-grid">
   {% for cohort in cohorts %}
-    <article class="detail-card" style="margin: 0;">
-      <span class="hud-tag" style="background: oklch(.76 .14 156 / .2); color: var(--green);">เปิดรับจอง</span>
-      <h2 style="margin-top: var(--space-sm);"><a href="{% url 'bookings:lodging_portal' cohort.slug %}">{{ cohort.title }}</a></h2>
-      <p>เข้าพัก {{ cohort.check_in_date|thai_date }} – {{ cohort.check_out_date|thai_date }}</p>
-      <p class="stat-detail">ว่าง {{ cohort.remaining_slots }} จาก {{ cohort.total_capacity }} ที่พัก</p>
-      <a role="button" class="btn-primary" href="{% url 'bookings:lodging_portal' cohort.slug %}">เลือกห้องพัก →</a>
+    <article class="lodging-cohort-card">
+      <div>
+        <div class="lodging-cohort-top">
+          <span class="room-badge-free">✓ เปิดรับจอง</span>
+          <span class="count-badge">ห้องละ {{ cohort.beds_per_room }} คน</span>
+        </div>
+        <h2 class="lodging-cohort-title">
+          <a href="{% url 'bookings:lodging_portal' cohort.slug %}">{{ cohort.title }}</a>
+        </h2>
+        <div class="lodging-cohort-dates">
+          <span aria-hidden="true">📅</span>
+          <span>เข้าพัก: <strong>{{ cohort.check_in_date|thai_date }}</strong> – <strong>{{ cohort.check_out_date|thai_date }}</strong></span>
+        </div>
+        <div class="lodging-capacity-wrapper">
+          <div class="lodging-capacity-text">
+            <span>สถานะเตียงว่าง</span>
+            <span>ว่าง <strong>{{ cohort.remaining_slots }}</strong> จาก {{ cohort.total_capacity }} ที่พัก</span>
+          </div>
+          <progress class="lodging-capacity-progress" value="{{ cohort.remaining_slots }}" max="{{ cohort.total_capacity }}" aria-label="ที่พักว่าง {{ cohort.remaining_slots }} จาก {{ cohort.total_capacity }}">
+            {{ cohort.remaining_slots }} / {{ cohort.total_capacity }}
+          </progress>
+        </div>
+      </div>
+      <div class="lodging-cohort-actions">
+        <a role="button" class="btn-primary lodging-select-btn" href="{% url 'bookings:lodging_portal' cohort.slug %}">
+          เลือกห้องพัก <span aria-hidden="true">→</span>
+        </a>
+      </div>
     </article>
   {% empty %}
-    <div class="notice info">ขณะนี้ยังไม่มีรอบหลักสูตรที่เปิดรับจอง กรุณาขอลิงก์จากผู้กำกับหลักสูตร</div>
+    <div class="notice info">
+      <p><strong>ขณะนี้ยังไม่มีรอบหลักสูตรที่เปิดรับจองในระบบ</strong></p>
+      <p>หากท่านเป็นผู้เข้ารับการอบรม กรุณาขอรับลิงก์เฉพาะรุ่นได้จากนายทหารผู้กำกับหลักสูตร</p>
+    </div>
   {% endfor %}
 </div>
 {% endblock %}

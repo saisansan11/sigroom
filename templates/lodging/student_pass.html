@@ -4,6 +4,14 @@
 {% block title %}บัตรรายงานตัวเข้าที่พัก · {{ student.room.code }} · SIGROOM{% endblock %}
 
 {% block content %}
+<div class="page-heading">
+  <div>
+    <p class="eyebrow">บัตรประจำตัวผู้เข้าพักดิจิทัล</p>
+    <h1>บัตรรายงานตัวเข้าที่พัก</h1>
+    <p>ใช้แสดงต่อเจ้าหน้าที่หรือเวรรับรายงานตัวเมื่อเดินทางมาถึงอาคารที่พัก</p>
+  </div>
+</div>
+
 <div class="keycard-stage">
   <div
     id="keycard"
@@ -18,6 +26,7 @@
         <div>
           <div class="keycard-brand">SIG<strong>ROOM</strong></div>
           <p class="keycard-org">รร.ส.สส. · โรงเรียนทหารสื่อสาร</p>
+          <div class="keycard-chip" aria-hidden="true"></div>
         </div>
         <div>
           <div class="keycard-room">
@@ -27,6 +36,7 @@
           <p class="keycard-name">{{ student.rank }} {{ student.full_name }}</p>
           <p class="keycard-cohort">{{ cohort.title }}</p>
           <p class="keycard-dates">{{ cohort.check_in_date|thai_date }} – {{ cohort.check_out_date|thai_date }}</p>
+          <p class="keycard-flip-hint">↺ แตะหรือกด Space เพื่อพลิกดู QR รายงานตัว</p>
         </div>
       </div>
       <div class="keycard-face keycard-back">
@@ -39,28 +49,42 @@
           alt="QR code สำหรับรายงานตัวเข้าที่พัก"
         >
         <p class="keycard-qr-caption">แสดงบัตรนี้ต่อเวรรับรายงานตัว</p>
+        <p class="keycard-flip-hint">↺ แตะเพื่อพลิกกลับด้านหน้า</p>
       </div>
     </div>
   </div>
 </div>
 
-<div class="keycard-actions">
+<div class="keycard-actions-bar">
+  <button type="button" class="btn-primary" id="copyPassBtn" onclick="copyPassLink()">
+    📋 คัดลอกลิงก์บัตร
+  </button>
+  {% if line_share_url %}
+    <a role="button" class="secondary" href="{{ line_share_url }}" target="_blank" rel="noopener noreferrer">
+      แชร์เข้า LINE ↗
+    </a>
+  {% endif %}
   <details class="keycard-save-tip">
-    <summary>บันทึกลงเครื่อง</summary>
-    <p>แนะนำให้ <strong>จับภาพหน้าจอ (Screenshot)</strong> บัตรนี้ไว้เป็นหลักฐาน — มือถือส่วนใหญ่กดปุ่ม Power + ปุ่มลดเสียงพร้อมกัน</p>
+    <summary>คำแนะนำการบันทึกบัตร</summary>
+    <p>แนะนำให้ <strong>จับภาพหน้าจอ (Screenshot)</strong> บัตรนี้ไว้บนมือถือ เพื่อความสะดวกรวดเร็วในการแสดงต่อเวรรับรายงานตัว</p>
   </details>
-  <a role="button" class="secondary" href="{% url 'bookings:lodging_portal' cohort.slug %}">เปิดลิงก์รุ่น</a>
+  <a role="button" class="secondary" href="{% url 'bookings:lodging_portal' cohort.slug %}">
+    ← ผังห้องรุ่นนี้
+  </a>
 </div>
 
 {% if roommates %}
-  <div style="max-width: 26rem; margin: 0 auto var(--space-xl); text-align: left; padding: var(--space-sm); background: var(--surface-raised); border-radius: var(--radius-sm);">
-    <small style="color: var(--muted); display: block; margin-bottom: var(--space-2xs);">เพื่อนร่วมห้องปัจจุบัน:</small>
-    <ul style="margin: 0; padding-left: 1.2rem; font-size: .85rem;">
+  <section class="keycard-roommates-card" aria-label="สถานะเพื่อนร่วมห้อง">
+    <h4>สถานะเตียงในห้องพัก {{ student.room.code }}</h4>
+    <ul class="keycard-roommates-list">
       {% for mate in roommates %}
-        <li>เตียง {{ mate.bed_number }}: มีผู้เข้าพักแล้ว</li>
+        <li class="keycard-roommates-item">
+          <span>เตียง {{ mate.bed_number }}: มีผู้เข้าพักแล้ว</span>
+          <span class="room-badge-full">จองแล้ว</span>
+        </li>
       {% endfor %}
     </ul>
-  </div>
+  </section>
 {% endif %}
 
 <script>
@@ -82,5 +106,21 @@
     }
   });
 })();
+
+function copyPassLink() {
+  var url = window.location.href;
+  navigator.clipboard.writeText(url).then(function () {
+    var btn = document.getElementById('copyPassBtn');
+    var originalText = btn.textContent;
+    btn.textContent = '✓ คัดลอกสำเร็จ!';
+    btn.classList.add('is-copied');
+    setTimeout(function () {
+      btn.textContent = originalText;
+      btn.classList.remove('is-copied');
+    }, 2500);
+  }).catch(function () {
+    alert('ไม่สามารถคัดลอกอัตโนมัติได้ กรุณาคัดลอก URL จากแถบเบราว์เซอร์');
+  });
+}
 </script>
 {% endblock %}

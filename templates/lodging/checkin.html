@@ -4,38 +4,105 @@
 {% block title %}Check-in ห้อง {{ student.room.code }} · SIGROOM{% endblock %}
 
 {% block content %}
-<div class="digital-pass">
-  <div class="digital-pass-mark">✓</div>
-  <span class="hud-tag" style="background: oklch(.76 .14 156 / .2); color: var(--green);">บัตรถูกต้อง</span>
+<div class="checkin-card">
+  <div class="checkin-mark" aria-hidden="true">✓</div>
+  <div>
+    <span class="room-badge-free">✓ บัตรถูกต้องผ่านการตรวจสอบ</span>
+  </div>
+
+  <div class="checkin-room-pill">ห้อง {{ student.room.code }} · เตียง {{ student.bed_number }}</div>
 
   {% if has_permission %}
-    <h1 style="font-size: 1.4rem; margin-top: var(--space-sm);">{{ student.rank }} {{ student.full_name }}</h1>
+    <div class="checkin-authorized-badge">
+      <span aria-hidden="true">🛡️</span> เจ้าหน้าที่รับรายงานตัว
+    </div>
+    <h1 class="checkin-title">{{ student.rank }} {{ student.full_name }}</h1>
     <p class="muted-text">{{ student.origin_unit }} · {{ cohort.title }}</p>
-  {% else %}
-    <h1 style="font-size: 1.4rem; margin-top: var(--space-sm);">{{ masked_label }}</h1>
-    <p class="muted-text">{{ cohort.title }}</p>
-  {% endif %}
 
-  <div class="pass-room-badge">ห้อง {{ student.room.code }} · เตียง {{ student.bed_number }}</div>
+    <div class="checkin-details-list">
+      <div class="checkin-details-row">
+        <span class="checkin-details-label">ยศ - ชื่อ - สกุล:</span>
+        <span class="checkin-details-value">{{ student.rank }} {{ student.full_name }}</span>
+      </div>
+      <div class="checkin-details-row">
+        <span class="checkin-details-label">หน่วยต้นสังกัด:</span>
+        <span class="checkin-details-value">{{ student.origin_unit }}</span>
+      </div>
+      <div class="checkin-details-row">
+        <span class="checkin-details-label">เบอร์โทรศัพท์:</span>
+        <span class="checkin-details-value mono"><a href="tel:{{ student.phone }}">{{ student.phone }}</a></span>
+      </div>
+      <div class="checkin-details-row">
+        <span class="checkin-details-label">หลักสูตร:</span>
+        <span class="checkin-details-value">{{ cohort.title }}</span>
+      </div>
+      <div class="checkin-details-row">
+        <span class="checkin-details-label">ช่วงเวลาเข้าพัก:</span>
+        <span class="checkin-details-value">{{ cohort.check_in_date|thai_date }} – {{ cohort.check_out_date|thai_date }}</span>
+      </div>
+      <div class="checkin-details-row">
+        <span class="checkin-details-label">เวลาจอง:</span>
+        <span class="checkin-details-value">{{ student.booked_at|thai_datetime }}</span>
+      </div>
+      {% if student.note %}
+        <div class="checkin-details-row">
+          <span class="checkin-details-label">หมายเหตุ:</span>
+          <span class="checkin-details-value">{{ student.note }}</span>
+        </div>
+      {% endif %}
+    </div>
 
-  {% if has_permission %}
     {% if student.checked_in_at %}
-      <div class="notice success" style="text-align: left;">
-        <p style="margin: 0;">
-          รายงานตัวแล้วเมื่อ <strong>{{ student.checked_in_at|thai_datetime }}</strong><br>
-          ผู้ยืนยัน: {{ student.checked_in_by.display_name|default:"ไม่ทราบผู้ยืนยัน" }}
+      <div class="notice success">
+        <p><strong>✓ รายงานตัวเรียบร้อยแล้ว</strong></p>
+        <p>
+          เวลา: <strong>{{ student.checked_in_at|thai_datetime }}</strong><br>
+          เจ้าหน้าที่ผู้ยืนยัน: {{ student.checked_in_by.display_name|default:"ไม่ทราบผู้ยืนยัน" }}
         </p>
       </div>
     {% else %}
-      <form method="post" style="margin-top: var(--space-lg);">
+      <form method="post" class="checkin-action-form">
         {% csrf_token %}
-        <button type="submit" class="btn-primary">ยืนยันรายงานตัว</button>
+        <button type="submit" class="btn-primary btn-confirm checkin-submit-btn">
+          ✓ ยืนยันรายงานตัว
+        </button>
       </form>
     {% endif %}
   {% else %}
-    <p class="muted-text" style="margin-top: var(--space-md);">
-      กรุณาแสดงบัตรนี้ต่อเวรรับรายงานตัว เพื่อยืนยันตัวตนแบบเต็มและบันทึกเวลารายงานตัว
-    </p>
+    <div class="checkin-public-badge">
+      <span aria-hidden="true">🔒</span> บัตรประจำตัวผู้เข้าพัก (ข้อมูลถูกปกปิด)
+    </div>
+    <h1 class="checkin-title">{{ masked_label }}</h1>
+    <p class="muted-text">{{ cohort.title }}</p>
+
+    <div class="checkin-details-list">
+      <div class="checkin-details-row">
+        <span class="checkin-details-label">ผู้เข้าพัก:</span>
+        <span class="checkin-details-value">{{ masked_label }}</span>
+      </div>
+      <div class="checkin-details-row">
+        <span class="checkin-details-label">ห้อง / เตียง:</span>
+        <span class="checkin-details-value">ห้อง {{ student.room.code }} (เตียง {{ student.bed_number }})</span>
+      </div>
+      <div class="checkin-details-row">
+        <span class="checkin-details-label">หลักสูตร:</span>
+        <span class="checkin-details-value">{{ cohort.title }}</span>
+      </div>
+      <div class="checkin-details-row">
+        <span class="checkin-details-label">ช่วงเวลาเข้าพัก:</span>
+        <span class="checkin-details-value">{{ cohort.check_in_date|thai_date }} – {{ cohort.check_out_date|thai_date }}</span>
+      </div>
+    </div>
+
+    <div class="notice info">
+      <p>กรุณาแสดงบัตรนี้ต่อเจ้าหน้าที่หรือเวรรับรายงานตัว เพื่อยืนยันตัวตนแบบเต็มและบันทึกเวลารายงานตัวเข้าที่พัก</p>
+    </div>
   {% endif %}
+
+  <div class="checkin-footer-nav">
+    <a role="button" class="secondary" href="{% url 'bookings:lodging_pass' cohort.slug student.id %}">
+      ← กลับไปที่บัตรดิจิทัล
+    </a>
+  </div>
 </div>
 {% endblock %}

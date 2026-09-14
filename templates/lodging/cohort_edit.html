@@ -12,49 +12,82 @@
   </div>
 </div>
 
-<article class="detail-card" style="max-width: 52rem;">
+<article class="detail-card lodging-edit-card">
   <form method="post">
     {% csrf_token %}
-    <label>ชื่อหลักสูตร / รุ่น
-      <input name="title" value="{{ cohort.title }}" required maxlength="200">
+    <label for="id_title">ชื่อหลักสูตร / รุ่น
+      <input type="text" id="id_title" name="title" value="{{ cohort.title }}" required maxlength="200">
     </label>
-    <div class="grid" style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-sm);">
-      <label>วันที่เริ่มเข้าพัก<input type="date" name="check_in_date" value="{{ cohort.check_in_date|date:'Y-m-d' }}" required></label>
-      <label>วันที่สิ้นสุดการเข้าพัก<input type="date" name="check_out_date" value="{{ cohort.check_out_date|date:'Y-m-d' }}" required></label>
+
+    <div class="grid-dates">
+      <label for="id_check_in_date">วันที่เริ่มเข้าพัก
+        <input type="date" id="id_check_in_date" name="check_in_date" value="{{ cohort.check_in_date|date:'Y-m-d' }}" required>
+      </label>
+      <label for="id_check_out_date">วันที่สิ้นสุดการเข้าพัก
+        <input type="date" id="id_check_out_date" name="check_out_date" value="{{ cohort.check_out_date|date:'Y-m-d' }}" required>
+      </label>
     </div>
-    <label>สถานะการจัดสรรห้องพัก
-      <select name="allocation_status">
-        {% for value, label in status_choices %}<option value="{{ value }}" {% if cohort.allocation_status == value %}selected{% endif %}>{{ label }}</option>{% endfor %}
+
+    <label for="id_allocation_status">สถานะการจัดสรรห้องพัก
+      <select id="id_allocation_status" name="allocation_status">
+        {% for value, label in status_choices %}
+          <option value="{{ value }}" {% if cohort.allocation_status == value %}selected{% endif %}>{{ label }}</option>
+        {% endfor %}
       </select>
     </label>
-    <label>จำนวนคน/เตียงต่อห้อง
-      <input type="number" name="beds_per_room" min="1" max="12" value="{{ cohort.beds_per_room }}" required>
+
+    <label for="id_beds_per_room">จำนวนคน/เตียงต่อห้อง
+      <input type="number" id="id_beds_per_room" name="beds_per_room" min="1" max="12" value="{{ cohort.beds_per_room }}" required>
     </label>
-    <label style="display:flex;align-items:center;gap:var(--space-xs);">
+
+    <label class="lodging-checkbox-label">
       <input type="checkbox" name="is_active" value="1" {% if cohort.is_active %}checked{% endif %}>
-      เปิดให้นักเรียนจองผ่านลิงก์
+      <span>เปิดให้นักเรียนจองผ่านลิงก์</span>
     </label>
+
     <label>ห้องพักที่จัดสรรในรอบนี้
-      <div style="max-height:16rem;overflow-y:auto;padding:var(--space-sm);border:1px solid var(--line);border-radius:var(--radius-sm);">
+      <div class="lodging-room-checklist">
         {% for room in lodging_rooms %}
-          <label style="display:flex;align-items:center;gap:var(--space-xs);margin-bottom:var(--space-2xs);">
+          <label class="lodging-checklist-item">
             <input type="checkbox" name="rooms" value="{{ room.pk }}" {% if room in cohort.rooms.all %}checked{% endif %}>
-            <strong>{{ room.code }}</strong> {{ room.name }}
+            <span><strong>{{ room.code }}</strong> {{ room.name }} ({{ room.building }})</span>
           </label>
-        {% empty %}<small style="color:var(--amber);">ยังไม่มีห้องพักที่เปิดใช้งาน</small>{% endfor %}
+        {% empty %}
+          <small class="lodging-warning-text">ยังไม่มีห้องพักที่เปิดใช้งาน</small>
+        {% endfor %}
       </div>
     </label>
-    <label>คำชี้แจง / ระเบียบการเข้าพัก<textarea name="note" rows="3">{{ cohort.note }}</textarea></label>
+
+    <label for="id_note">คำชี้แจง / ระเบียบการเข้าพัก
+      <textarea id="id_note" name="note" rows="3">{{ cohort.note }}</textarea>
+    </label>
+
     {% if user.is_superuser %}
-      <fieldset style="margin-top:var(--space-md);">
-        <legend>การดำเนินการพิเศษ</legend>
-        <label style="display:flex;align-items:center;gap:var(--space-xs);"><input type="checkbox" name="force_release" value="1"> บังคับปลดการสงวนหรือร่นวันสิ้นสุด</label>
-        <label>เหตุผล (จำเป็นเมื่อใช้การดำเนินการพิเศษ)<input name="release_reason" maxlength="500"></label>
-      </fieldset>
+      <div class="lodging-danger-zone">
+        <div class="lodging-danger-header">
+          <span aria-hidden="true">⚠️</span>
+          <span>เขตการดำเนินการพิเศษ (Danger Zone) — บังคับปลดการสงวนห้องพัก</span>
+        </div>
+        <p class="lodging-danger-warning">
+          การบังคับปลดการสงวนห้องพักหรือร่นวันสิ้นสุดจะยกเลิกการสงวนห้องพัก และอาจส่งผลกระทบต่อนักเรียนที่ลงทะเบียนไปแล้ว กรุณาตรวจสอบให้รอบคอบและระบุเหตุผลในการดำเนินการทุกครั้ง
+        </p>
+        <label class="lodging-checkbox-label danger-checkbox">
+          <input type="checkbox" name="force_release" value="1">
+          <strong>บังคับปลดการสงวนหรือร่นวันสิ้นสุด</strong>
+        </label>
+        <label for="id_release_reason">เหตุผล (จำเป็นเมื่อใช้การดำเนินการพิเศษ)
+          <input type="text" id="id_release_reason" name="release_reason" maxlength="500" placeholder="เช่น ยกเลิกหลักสูตรกะทันหัน หรือย้ายอาคารที่พัก">
+        </label>
+      </div>
     {% endif %}
-    <div style="display:flex;gap:var(--space-sm);justify-content:flex-end;margin-top:var(--space-md);">
-      <a role="button" class="secondary" href="{% url 'bookings:lodging_cohort_detail' cohort.slug %}">ยกเลิก</a>
-      <button type="submit" class="btn-primary">บันทึกการเปลี่ยนแปลง</button>
+
+    <div class="form-actions">
+      <a role="button" class="secondary" href="{% url 'bookings:lodging_cohort_detail' cohort.slug %}">
+        ยกเลิก
+      </a>
+      <button type="submit" class="btn-primary">
+        บันทึกการเปลี่ยนแปลง
+      </button>
     </div>
   </form>
 </article>
