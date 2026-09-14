@@ -24,14 +24,37 @@
       {% if user.is_authenticated %}
         <nav class="desktop-nav" aria-label="เมนูหลัก">
           <ul class="main-nav">
-            <li><a {% if request.resolver_match.url_name == 'calendar' %}aria-current="page"{% endif %} href="{% url 'bookings:calendar' %}">ปฏิทิน/สถานะห้อง</a></li>
+            <li><a {% if request.resolver_match.url_name == 'calendar' %}aria-current="page"{% endif %} href="{% url 'bookings:calendar' %}">หน้าแรก</a></li>
             <li><a {% if request.resolver_match.url_name == 'book_search' or request.resolver_match.url_name == 'book_form' %}aria-current="page"{% endif %} href="{% url 'bookings:book_search' %}">จองห้อง</a></li>
             <li><a {% if request.resolver_match.url_name == 'my_bookings' %}aria-current="page"{% endif %} href="{% url 'bookings:my_bookings' %}">การจองของฉัน</a></li>
-            {% if nav_can_access_approvals %}<li><a {% if request.resolver_match.namespace == 'approvals' %}aria-current="page"{% endif %} href="{% url 'approvals:queue' %}">รออนุมัติ <span class="count-badge">{{ nav_pending_approval_count }}</span></a></li>{% endif %}
-            {% if nav_can_manage_usage %}<li><a {% if request.resolver_match.namespace == 'usage' %}aria-current="page"{% endif %} href="{% url 'usage:list' %}">การใช้งานห้อง</a></li>{% endif %}
-            {% if nav_can_access_reports %}<li><a {% if request.resolver_match.namespace == 'reports' %}aria-current="page"{% endif %} href="{% url 'reports:dashboard' %}">รายงาน</a></li>{% endif %}
             <li><a {% if request.resolver_match.url_name == 'lodging_index' %}aria-current="page"{% endif %} href="{% url 'bookings:lodging_index' %}">จองห้องพัก</a></li>
-            {% if nav_can_manage_lodging %}<li><a {% if 'lodging' in request.path and request.resolver_match.url_name != 'lodging_index' %}aria-current="page"{% endif %} href="{% url 'bookings:lodging_manage' %}">จัดการที่พักหลักสูตร</a></li>{% endif %}
+            {% if nav_can_access_approvals or nav_can_manage_usage or nav_can_manage_lodging or nav_can_access_reports %}
+              <li class="nav-ops-item">
+                <details class="ops-menu">
+                  <summary class="ops-menu-summary" aria-haspopup="true" {% if request.resolver_match.namespace == 'approvals' or request.resolver_match.namespace == 'usage' or request.resolver_match.namespace == 'reports' or 'lodging' in request.path and request.resolver_match.url_name != 'lodging_index' %}aria-current="true"{% endif %}>
+                    <span>งานปฏิบัติการ</span>
+                    {% if nav_pending_approval_count %}<span class="count-badge">{{ nav_pending_approval_count }}</span>{% endif %}
+                  </summary>
+                  <div class="ops-dropdown-panel">
+                    <ul class="ops-nav-list">
+                      {% if nav_can_access_approvals %}
+                        <li><a {% if request.resolver_match.namespace == 'approvals' %}aria-current="page"{% endif %} href="{% url 'approvals:queue' %}">รออนุมัติ {% if nav_pending_approval_count %}<span class="count-badge">{{ nav_pending_approval_count }}</span>{% endif %}</a></li>
+                      {% endif %}
+                      {% if nav_can_manage_usage %}
+                        <li><a {% if request.resolver_match.namespace == 'usage' %}aria-current="page"{% endif %} href="{% url 'usage:list' %}">การใช้งานห้อง</a></li>
+                      {% endif %}
+                      {% if nav_can_manage_lodging %}
+                        <li><a {% if 'lodging' in request.path and request.resolver_match.url_name != 'lodging_index' %}aria-current="page"{% endif %} href="{% url 'bookings:lodging_manage' %}">จัดการที่พักหลักสูตร</a></li>
+                      {% endif %}
+                      {% if nav_can_access_reports %}
+                        <li class="ops-divider" role="separator"></li>
+                        <li class="ops-secondary-item"><a class="nav-secondary-link" {% if request.resolver_match.namespace == 'reports' %}aria-current="page"{% endif %} href="{% url 'reports:dashboard' %}">รายงาน</a></li>
+                      {% endif %}
+                    </ul>
+                  </div>
+                </details>
+              </li>
+            {% endif %}
           </ul>
         </nav>
         <div class="header-tools">
@@ -51,15 +74,30 @@
             <div class="mobile-menu-panel">
               <nav aria-label="เมนูหลักสำหรับมือถือ">
                 <ul class="main-nav">
-                  <li><a {% if request.resolver_match.url_name == 'calendar' %}aria-current="page"{% endif %} href="{% url 'bookings:calendar' %}">ปฏิทิน/สถานะห้อง</a></li>
+                  <li><a {% if request.resolver_match.url_name == 'calendar' %}aria-current="page"{% endif %} href="{% url 'bookings:calendar' %}">หน้าแรก</a></li>
                   <li><a {% if request.resolver_match.url_name == 'book_search' or request.resolver_match.url_name == 'book_form' %}aria-current="page"{% endif %} href="{% url 'bookings:book_search' %}">จองห้อง</a></li>
                   <li><a {% if request.resolver_match.url_name == 'my_bookings' %}aria-current="page"{% endif %} href="{% url 'bookings:my_bookings' %}">การจองของฉัน</a></li>
-                  {% if nav_can_access_approvals %}<li><a {% if request.resolver_match.namespace == 'approvals' %}aria-current="page"{% endif %} href="{% url 'approvals:queue' %}">รออนุมัติ ({{ nav_pending_approval_count }})</a></li>{% endif %}
-                  {% if nav_can_manage_usage %}<li><a {% if request.resolver_match.namespace == 'usage' %}aria-current="page"{% endif %} href="{% url 'usage:list' %}">การใช้งานห้อง</a></li>{% endif %}
-                  {% if nav_can_access_reports %}<li><a {% if request.resolver_match.namespace == 'reports' %}aria-current="page"{% endif %} href="{% url 'reports:dashboard' %}">รายงาน</a></li>{% endif %}
                   <li><a {% if request.resolver_match.url_name == 'lodging_index' %}aria-current="page"{% endif %} href="{% url 'bookings:lodging_index' %}">จองห้องพัก</a></li>
-                  {% if nav_can_manage_lodging %}<li><a {% if 'lodging' in request.path and request.resolver_match.url_name != 'lodging_index' %}aria-current="page"{% endif %} href="{% url 'bookings:lodging_manage' %}">จัดการที่พักหลักสูตร</a></li>{% endif %}
                 </ul>
+                {% if nav_can_access_approvals or nav_can_manage_usage or nav_can_manage_lodging or nav_can_access_reports %}
+                  <div class="mobile-ops-section">
+                    <span class="mobile-ops-heading">งานปฏิบัติการ</span>
+                    <ul class="main-nav mobile-ops-nav">
+                      {% if nav_can_access_approvals %}
+                        <li><a {% if request.resolver_match.namespace == 'approvals' %}aria-current="page"{% endif %} href="{% url 'approvals:queue' %}">รออนุมัติ {% if nav_pending_approval_count %}<span class="count-badge">{{ nav_pending_approval_count }}</span>{% endif %}</a></li>
+                      {% endif %}
+                      {% if nav_can_manage_usage %}
+                        <li><a {% if request.resolver_match.namespace == 'usage' %}aria-current="page"{% endif %} href="{% url 'usage:list' %}">การใช้งานห้อง</a></li>
+                      {% endif %}
+                      {% if nav_can_manage_lodging %}
+                        <li><a {% if 'lodging' in request.path and request.resolver_match.url_name != 'lodging_index' %}aria-current="page"{% endif %} href="{% url 'bookings:lodging_manage' %}">จัดการที่พักหลักสูตร</a></li>
+                      {% endif %}
+                      {% if nav_can_access_reports %}
+                        <li class="mobile-ops-secondary"><a class="nav-secondary-link" {% if request.resolver_match.namespace == 'reports' %}aria-current="page"{% endif %} href="{% url 'reports:dashboard' %}">รายงาน</a></li>
+                      {% endif %}
+                    </ul>
+                  </div>
+                {% endif %}
               </nav>
               <div class="mobile-account">
                 <span>{{ user.display_name }}{% if user.unit %}<br><small>{{ user.unit.code }}</small>{% endif %}</span>
@@ -128,10 +166,18 @@
     });
     document.addEventListener('DOMContentLoaded', function () {
       const error = document.querySelector('.field-error');
-      if (!error) return;
-      const fieldId = error.dataset.fieldId;
-      const field = fieldId ? document.getElementById(fieldId) : error.closest('.field')?.querySelector('input, select, textarea');
-      scrollAndFocus(field || error);
+      if (error) {
+        const fieldId = error.dataset.fieldId;
+        const field = fieldId ? document.getElementById(fieldId) : error.closest('.field')?.querySelector('input, select, textarea');
+        scrollAndFocus(field || error);
+      }
+      document.addEventListener('click', function (event) {
+        document.querySelectorAll('.ops-menu[open], .account-menu[open]').forEach(function (el) {
+          if (!el.contains(event.target)) {
+            el.removeAttribute('open');
+          }
+        });
+      });
     });
   })();
   </script>
