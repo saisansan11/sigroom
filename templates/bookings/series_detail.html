@@ -22,7 +22,7 @@
   </div>
 </article>
 
-<div class="table-wrap">
+<div class="table-wrap series-occurrences-wrap">
   <table class="series-occurrences-table">
     <caption class="visually-hidden">รายการครั้งการจองทั้งหมดในชุดนี้</caption>
     <thead>
@@ -36,13 +36,13 @@
     </thead>
     <tbody>
       {% for booking in occurrences %}
-        <tr>
-          <td class="mono">{{ booking.series_index }}</td>
-          <td>{{ booking.start_at|thai_datetime }}</td>
-          <td><span class="status status-{{ booking.request_status }}">{{ booking.get_request_status_display }}</span></td>
-          <td>{{ booking.decision_reason|default:"—" }}</td>
-          <td class="row-actions">
-            <a role="button" class="compact-button secondary" href="{% url 'bookings:booking_detail' booking.id %}">ดู</a>
+        <tr class="series-occurrence-row">
+          <td class="mono series-occurrence-index">{{ booking.series_index }}</td>
+          <td class="series-occurrence-datetime">{{ booking.start_at|thai_datetime }}</td>
+          <td class="series-occurrence-status"><span class="status status-{{ booking.request_status }}">{{ booking.get_request_status_display }}</span></td>
+          <td class="series-occurrence-note">{{ booking.decision_reason|default:"—" }}</td>
+          <td class="row-actions series-occurrence-actions">
+            <a role="button" class="compact-button secondary" href="{% url 'bookings:booking_detail' booking.id %}" aria-label="ดูรายละเอียดครั้งที่ {{ booking.series_index }}">ดู</a>
             {% if can_cancel and booking.start_at > now and booking.request_status == 'pending' or can_cancel and booking.start_at > now and booking.request_status == 'approved' %}
               <form class="inline-form" method="post" action="{% url 'bookings:booking_cancel' booking.id %}">
                 {% csrf_token %}
@@ -53,12 +53,12 @@
         </tr>
       {% endfor %}
       {% for item in skips %}
-        <tr class="muted-row">
-          <td class="mono">—</td>
-          <td>{{ item.occur_date|thai_date }}</td>
-          <td><span class="status status-draft">ข้าม</span></td>
-          <td>{{ item.reason }}</td>
-          <td></td>
+        <tr class="muted-row series-skip-row">
+          <td class="mono series-occurrence-index">—</td>
+          <td class="series-occurrence-datetime">{{ item.occur_date|thai_date }}</td>
+          <td class="series-occurrence-status"><span class="status status-draft">ข้าม</span></td>
+          <td class="series-occurrence-note">{{ item.reason }}</td>
+          <td class="row-actions series-occurrence-actions series-skip-actions"></td>
         </tr>
       {% endfor %}
     </tbody>
