@@ -3777,3 +3777,135 @@ details.operational-calendar-section[open] .disclosure-arrow {
     margin-left: auto;
   }
 }
+
+
+/* UX-7 Outage Management Mobile Clarity */
+@media (max-width: 47.99rem) {
+  .outage-list-wrap {
+    overflow: visible;
+    border: 0;
+    background: transparent;
+  }
+
+  .outage-list-wrap .outage-table {
+    display: block;
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+    margin: 0;
+  }
+
+  .outage-table thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    clip-path: inset(50%);
+    white-space: nowrap;
+    border: 0;
+  }
+
+  .outage-table tbody {
+    display: grid;
+    gap: var(--space-sm);
+    width: 100%;
+    min-width: 0;
+  }
+
+  .outage-table .outage-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas:
+      "status"
+      "time"
+      "reason"
+      "action";
+    gap: var(--space-sm);
+    width: 100%;
+    min-width: 0;
+    padding: var(--space-md);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-md);
+    background: var(--surface);
+    box-sizing: border-box;
+  }
+
+  .outage-table .outage-row > td {
+    display: block;
+    min-width: 0;
+    padding: 0;
+    border: 0;
+  }
+
+  .outage-status-cell {
+    grid-area: status;
+  }
+
+  .outage-status-cell .status {
+    padding: .35rem .7rem;
+    font-size: .85rem;
+  }
+
+  .outage-time {
+    grid-area: time;
+  }
+
+  .outage-reason {
+    grid-area: reason;
+    max-width: 100%;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+  }
+
+  .outage-time::before,
+  .outage-reason::before {
+    display: block;
+    margin-bottom: .15rem;
+    color: var(--dim);
+    font-size: .72rem;
+    font-weight: 800;
+  }
+
+  .outage-time::before {
+    content: "ช่วงเวลา";
+  }
+
+  .outage-reason::before {
+    content: "เหตุผล";
+  }
+
+  .outage-action-cell {
+    grid-area: action;
+    padding-top: var(--space-xs) !important;
+    border-top: 1px solid var(--line) !important;
+  }
+
+  .outage-end-form,
+  .outage-end-button {
+    width: 100%;
+  }
+
+  .outage-end-button {
+    min-height: 44px;
+    margin: 0;
+    white-space: normal;
+  }
+
+  .outage-table .outage-row-ended {
+    border-style: dashed;
+    background: var(--surface-soft);
+  }
+
+  .outage-table .outage-row-ended > .outage-action-cell {
+    display: none;
+  }
+
+  .outage-table .outage-empty-row,
+  .outage-empty-row .empty-state {
+    display: block;
+    width: 100%;
+  }
+}
