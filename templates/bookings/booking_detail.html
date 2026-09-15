@@ -27,7 +27,10 @@
       {% elif booking.request_status == 'draft' %}
         <p class="status-hero-message">รายการนี้ถูกบันทึกเป็นแบบร่าง กรุณากด “ส่งคำขอ” เพื่อเริ่มกระบวนการขออนุมัติใช้งานห้อง</p>
       {% elif booking.request_status == 'rejected' %}
-        <p class="status-hero-message">คำขอนี้ไม่ได้รับการอนุมัติ ท่านสามารถดูเหตุผลด้านล่าง หรือเลือกจองช่วงเวลา/ห้องอื่น</p>
+        <p class="status-hero-message">คำขอนี้ไม่ได้รับการอนุมัติ</p>
+        {% if booking.decision_reason %}
+          <div class="status-hero-reason"><strong>เหตุผล:</strong> {{ booking.decision_reason }}</div>
+        {% endif %}
       {% elif booking.request_status == 'expired' %}
         <p class="status-hero-message">คำขอนี้หมดอายุเนื่องจากไม่มีการพิจารณาภายในระยะเวลาที่กำหนด</p>
       {% elif booking.request_status == 'cancelled' %}
@@ -51,6 +54,83 @@
     </div>
   </div>
 </section>
+
+{% if deadline_message %}
+  <div class="notice warning booking-deadline-notice">{{ deadline_message }}</div>
+{% endif %}
+
+<!-- Action Center -->
+{% if can_approve or booking.request_status == 'draft' or can_edit or can_amend or booking.request_status == 'approved' or can_cancel %}
+<div class="booking-action-center form-actions booking-detail-actions" aria-label="การจัดการคำขอ">
+  {% if can_approve or booking.request_status == 'draft' or can_edit or can_amend or booking.request_status == 'approved' %}
+    <div class="action-group action-group-primary">
+      {% if can_approve %}
+        <form method="post" action="{% url 'approvals:approve' booking.id %}">
+          {% csrf_token %}
+          <input type="hidden" name="next" value="{{ request.path }}">
+          <button type="submit" class="btn-primary">อนุมัติคำขอ</button>
+        </form>
+      {% endif %}
+
+      {% if booking.request_status == 'draft' %}
+        <form method="post" action="{% url 'bookings:booking_submit' booking.id %}">
+          {% csrf_token %}
+          <button type="submit" class="btn-primary">ส่งคำขอ</button>
+        </form>
+      {% endif %}
+
+      {% if can_edit %}
+        <a role="button" class="secondary" href="{% url 'bookings:booking_edit' booking.id %}">แก้ไขรายละเอียด</a>
+      {% endif %}
+
+      {% if can_amend %}
+        <a role="button" class="secondary" href="{% url 'bookings:booking_amend' booking.id %}">ขอแก้ไขเวลา/ห้อง/อุปกรณ์ →</a>
+      {% endif %}
+
+      {% if booking.request_status == 'approved' %}
+        <a role="button" class="secondary" href="{% url 'bookings:book_form' booking.room.code %}?rebook={{ booking.id }}">จองแบบเดิมอีกครั้ง ↻</a>
+      {% endif %}
+    </div>
+  {% endif %}
+
+  {% if can_approve or can_preempt and booking.request_status == 'approved' and booking.usage_status == 'upcoming' or booking.request_status == 'draft' or can_cancel %}
+    <div class="action-group action-group-destructive danger-separator">
+      {% if can_approve %}
+        <details class="inline-reject">
+          <summary role="button" class="outline danger">ปฏิเสธ</summary>
+          <form method="post" action="{% url 'approvals:reject' booking.id %}">
+            {% csrf_token %}
+            <input type="hidden" name="next" value="{{ request.path }}">
+            <label>เหตุผล (จำเป็น)
+              <input name="reason" required maxlength="500" list="detail-rejection-reasons" placeholder="เลือกเหตุผลที่เคยใช้หรือพิมพ์เอง">
+            </label>
+            <button class="danger" type="submit">ยืนยันการปฏิเสธ</button>
+          </form>
+        </details>
+        <datalist id="detail-rejection-reasons">
+          {% for reason in rejection_reasons %}<option value="{{ reason }}"></option>{% endfor %}
+        </datalist>
+      {% endif %}
+
+      {% if can_preempt and booking.request_status == 'approved' and booking.usage_status == 'upcoming' %}
+        <a role="button" class="danger" href="{% url 'bookings:booking_preempt' booking.id %}">บังคับย้าย</a>
+      {% endif %}
+
+      {% if booking.request_status == 'draft' %}
+        <form method="post" action="{% url 'bookings:booking_delete_draft' booking.id %}" onsubmit="return confirm('ลบร่างนี้ใช่หรือไม่')">
+          {% csrf_token %}
+          <button class="outline danger" type="submit">ลบร่าง</button>
+        </form>
+      {% elif can_cancel %}
+        <form method="post" action="{% url 'bookings:booking_cancel' booking.id %}" onsubmit="return confirm('ยืนยันยกเลิกการจองและคืนช่วงเวลานี้ใช่หรือไม่')">
+          {% csrf_token %}
+          <button class="outline danger" type="submit">ยกเลิกการจอง</button>
+        </form>
+      {% endif %}
+    </div>
+  {% endif %}
+</div>
+{% endif %}
 
 <!-- Detailed Information -->
 <article class="detail-card booking-detail-card">
@@ -128,80 +208,24 @@
 </article>
 {% endif %}
 
-<article class="detail-card">
-  <h2>ประวัติการพิจารณา</h2>
-  <ol class="history-list">
-  {% for item in approval_history %}
-    <li>
-      <strong>{{ item.get_action_display }}</strong> เมื่อ {{ item.acted_at|thai_datetime }}
-      {% if item.acted_by %}โดย {{ item.acted_by.display_name }}{% else %}{% if item.action == 'expired' %}โดยระบบ{% endif %}{% endif %}
-      {% if item.on_behalf_of %} (รักษาการแทน {{ item.on_behalf_of.display_name }}){% endif %}
-      {% if item.reason %}<div class="history-reason">เหตุผล: {{ item.reason }}</div>{% endif %}
-    </li>
-  {% empty %}
-    <li>ยังไม่มีประวัติการพิจารณา</li>
-  {% endfor %}
-  </ol>
-</article>
-
-{% if deadline_message %}
-  <div class="notice warning">{{ deadline_message }}</div>
-{% endif %}
-
-<!-- Action Controls -->
-<div class="form-actions booking-detail-actions">
-  {% if can_approve %}
-    <form method="post" action="{% url 'approvals:approve' booking.id %}">
-      {% csrf_token %}
-      <input type="hidden" name="next" value="{{ request.path }}">
-      <button type="submit" class="btn-primary">อนุมัติคำขอ</button>
-    </form>
-    <details class="inline-reject">
-      <summary role="button" class="outline danger">ปฏิเสธ</summary>
-      <form method="post" action="{% url 'approvals:reject' booking.id %}">
-        {% csrf_token %}
-        <input type="hidden" name="next" value="{{ request.path }}">
-        <label>เหตุผล (จำเป็น)
-          <input name="reason" required maxlength="500" list="detail-rejection-reasons" placeholder="เลือกเหตุผลที่เคยใช้หรือพิมพ์เอง">
-        </label>
-        <button class="danger" type="submit">ยืนยันการปฏิเสธ</button>
-      </form>
-    </details>
-    <datalist id="detail-rejection-reasons">
-      {% for reason in rejection_reasons %}<option value="{{ reason }}"></option>{% endfor %}
-    </datalist>
-  {% endif %}
-
-  {% if can_edit %}
-    <a role="button" class="secondary" href="{% url 'bookings:booking_edit' booking.id %}">แก้ไขรายละเอียด</a>
-  {% endif %}
-
-  {% if can_amend %}
-    <a role="button" class="secondary" href="{% url 'bookings:booking_amend' booking.id %}">ขอแก้ไขเวลา/ห้อง/อุปกรณ์ →</a>
-  {% endif %}
-
-  {% if can_preempt and booking.request_status == 'approved' and booking.usage_status == 'upcoming' %}
-    <a role="button" class="danger" href="{% url 'bookings:booking_preempt' booking.id %}">บังคับย้าย</a>
-  {% endif %}
-
-  {% if booking.request_status == 'approved' %}
-    <a role="button" class="secondary" href="{% url 'bookings:book_form' booking.room.code %}?rebook={{ booking.id }}">จองแบบเดิมอีกครั้ง ↻</a>
-  {% endif %}
-
-  {% if booking.request_status == 'draft' %}
-    <form method="post" action="{% url 'bookings:booking_submit' booking.id %}">
-      {% csrf_token %}
-      <button type="submit" class="btn-primary">ส่งคำขอ</button>
-    </form>
-    <form method="post" action="{% url 'bookings:booking_delete_draft' booking.id %}" onsubmit="return confirm('ลบร่างนี้ใช่หรือไม่')">
-      {% csrf_token %}
-      <button class="outline danger" type="submit">ลบร่าง</button>
-    </form>
-  {% elif can_cancel %}
-    <form method="post" action="{% url 'bookings:booking_cancel' booking.id %}" onsubmit="return confirm('ยืนยันยกเลิกการจองและคืนช่วงเวลานี้ใช่หรือไม่')">
-      {% csrf_token %}
-      <button class="outline danger" type="submit">ยกเลิกการจอง</button>
-    </form>
-  {% endif %}
-</div>
+<!-- History Section -->
+<details class="detail-card booking-history-details" id="booking-history">
+  <summary class="history-summary">
+    <h2>ประวัติการพิจารณา</h2>
+  </summary>
+  <div class="history-content">
+    <ol class="history-list">
+    {% for item in approval_history %}
+      <li>
+        <strong>{{ item.get_action_display }}</strong> เมื่อ {{ item.acted_at|thai_datetime }}
+        {% if item.acted_by %}โดย {{ item.acted_by.display_name }}{% else %}{% if item.action == 'expired' %}โดยระบบ{% endif %}{% endif %}
+        {% if item.on_behalf_of %} (รักษาการแทน {{ item.on_behalf_of.display_name }}){% endif %}
+        {% if item.reason %}<div class="history-reason">เหตุผล: {{ item.reason }}</div>{% endif %}
+      </li>
+    {% empty %}
+      <li>ยังไม่มีประวัติการพิจารณา</li>
+    {% endfor %}
+    </ol>
+  </div>
+</details>
 {% endblock %}
