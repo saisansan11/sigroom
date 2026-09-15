@@ -3278,3 +3278,188 @@ details.operational-calendar-section[open] .disclosure-arrow {
     padding: var(--space-xs) var(--space-md);
   }
 }
+
+/* ===== UX-4 Booking Detail & Action Center ===== */
+.status-hero-reason {
+  margin-top: var(--space-xs);
+  padding: var(--space-xs) var(--space-sm);
+  background: var(--surface-soft);
+  border-left: 3px solid var(--red);
+  border-radius: var(--radius-sm);
+  font-size: .92rem;
+  color: var(--ink);
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.booking-deadline-notice {
+  margin-bottom: var(--space-lg);
+}
+
+.booking-action-center {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-md);
+  margin-bottom: var(--space-lg);
+  padding: var(--space-md) var(--space-lg);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  box-sizing: border-box;
+  max-width: 100%;
+}
+
+.action-group {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+.action-group-primary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+.action-group-destructive {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-sm);
+  margin-left: auto;
+}
+
+.action-group-destructive.danger-separator {
+  border-top: none;
+}
+
+.booking-action-center form {
+  margin: 0;
+  display: inline-flex;
+}
+
+.booking-action-center button,
+.booking-action-center a[role="button"] {
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-xs) var(--space-md);
+  box-sizing: border-box;
+  font-size: .95rem;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.booking-action-center button:focus-visible,
+.booking-action-center a[role="button"]:focus-visible,
+.booking-action-center summary:focus-visible,
+.booking-action-center input:focus-visible {
+  outline: 2px solid var(--cyan);
+  outline-offset: 2px;
+}
+
+/* History Details / Summary */
+.booking-history-details {
+  cursor: default;
+}
+
+.booking-history-details summary {
+  cursor: pointer;
+  user-select: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.booking-history-details summary h2 {
+  margin: 0;
+  font-size: 1.15rem;
+}
+
+.booking-history-details summary:focus-visible {
+  outline: 2px solid var(--cyan);
+  outline-offset: 2px;
+}
+
+.booking-history-details .history-content {
+  margin-top: var(--space-md);
+  padding-top: var(--space-md);
+  border-top: 1px solid var(--line);
+}
+
+/* Mobile responsive layout (< 768px) */
+@media (max-width: 47.99rem) {
+  .booking-action-center {
+    flex-direction: column;
+    align-items: stretch;
+    padding: var(--space-md);
+    gap: var(--space-md);
+    width: 100%;
+    box-sizing: border-box;
+    overflow: hidden;
+  }
+
+  .action-group,
+  .action-group-primary,
+  .action-group-destructive {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    width: 100%;
+    margin-left: 0;
+    gap: var(--space-sm);
+    box-sizing: border-box;
+  }
+
+  .action-group form {
+    display: flex;
+    width: 100%;
+  }
+
+  .booking-action-center button,
+  .booking-action-center a[role="button"] {
+    width: 100%;
+    min-height: 44px;
+    text-align: center;
+    white-space: normal;
+  }
+
+  /* Danger separator between primary and destructive groups on mobile */
+  .action-group-primary + .action-group-destructive,
+  .action-group-destructive.danger-separator {
+    border-top: 1px solid var(--line);
+    padding-top: var(--space-md);
+    margin-top: var(--space-xs);
+  }
+
+  .booking-action-center .inline-reject {
+    width: 100%;
+  }
+
+  .booking-action-center .inline-reject summary {
+    width: 100%;
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    box-sizing: border-box;
+  }
+
+  .booking-action-center .inline-reject form {
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  .booking-action-center .inline-reject form button {
+    width: 100%;
+    min-height: 44px;
+  }
+}
