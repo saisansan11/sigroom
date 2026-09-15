@@ -1,7 +1,7 @@
 # SIGROOM CI / PR Safety Gate — Implementation Plan
 
 ## Status
-`LOCAL VERIFICATION PASS — READY FOR PR`
+`GITHUB CI PASS + BRANCH PROTECTION ACTIVE — FINAL DOCS CI PENDING`
 
 ## 1. Verified source of truth
 - Repository: `saisansan11/sigroom`
@@ -99,7 +99,14 @@ Observed gates:
 
 The two accepted HSTS warnings are not silently fixed here: `SECURE_HSTS_INCLUDE_SUBDOMAINS` and `SECURE_HSTS_PRELOAD` require an explicit domain-wide HTTPS/preload decision and are unsafe to enable merely to make CI green.
 
-## 8. Acceptance criteria
+## 8. GitHub rollout observed — 2026-09-16
+- PR #27 opened against `feat/lodging-v5-2`.
+- GitHub Actions run `35029859996`: **SUCCESS**.
+- `Repository checks`, `Critical regression`, `Full regression`, `Security audit`, and aggregate `PR Safety Gate`: **SUCCESS**.
+- Branch protection is active on `feat/lodging-v5-2` with strict required check `PR Safety Gate`, PR-required flow, admin enforcement, 0 approving reviews, force-push disabled, and deletion disabled.
+- A non-blocking setup-uv cache reservation annotation was observed from parallel jobs; it did not affect dependency installation or test results.
+
+## 9. Acceptance criteria
 - GitHub Actions executes successfully on the CI PR using PostgreSQL 16 and the repository lockfile.
 - Aggregate check reports success only when all four subordinate jobs succeed.
 - No workflow job has write permissions.
