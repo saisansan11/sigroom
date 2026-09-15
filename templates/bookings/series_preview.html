@@ -31,7 +31,7 @@
   <p class="muted-text series-notice">ระบบจะสร้างคำขอจองเฉพาะครั้งที่สถานะ “ว่าง” เท่านั้น ครั้งที่ชนหรือข้ามจะไม่ถูกสร้างและไม่มีผลต่อการจองครั้งอื่น</p>
 </article>
 
-<div class="table-wrap">
+<div class="table-wrap series-preview-wrap">
   <table class="series-preview-table">
     <caption class="visually-hidden">ตารางรายการความพร้อมของแต่ละครั้งในชุดการจอง</caption>
     <thead>
@@ -43,10 +43,10 @@
     </thead>
     <tbody>
       {% for item in preview.items %}
-        <tr>
-          <td class="mono">{{ item.index }}</td>
-          <td>{{ item.occur_date|thai_date }}</td>
-          <td>
+        <tr class="series-preview-row">
+          <td class="mono series-preview-index">{{ item.index }}</td>
+          <td class="series-preview-date">{{ item.occur_date|thai_date }}</td>
+          <td class="series-preview-result">
             {% if item.status == 'free' %}
               <span class="status status-approved">ว่าง</span>
             {% elif item.status == 'blackout' %}
