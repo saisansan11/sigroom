@@ -1,0 +1,260 @@
+name: SIGROOM PR Safety
+
+on:
+  pull_request:
+  push:
+    branches:
+      - feat/lodging-v5-2
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: sigroom-pr-safety-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+env:
+  PYTHON_VERSION: "3.12"
+  UV_VERSION: "0.11.19"
+  DJANGO_SECRET_KEY: "ci-only-not-a-secret-sigroom-2026-long-key-for-system-checks"
+  DJANGO_DEBUG: "1"
+  DJANGO_SECURE: "0"
+  DJANGO_ALLOWED_HOSTS: "127.0.0.1,localhost"
+  DB_NAME: "sigroom_ci"
+  DB_USER: "postgres"
+  DB_PASSWORD: "postgres"
+  DB_HOST: "127.0.0.1"
+  DB_PORT: "5432"
+  ALLOWED_EMAIL_DOMAIN: "signalschool.ac.th"
+  PUBLIC_BASE_URL: "http://127.0.0.1:8000"
+
+jobs:
+  repository-checks:
+    name: Repository checks
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@bec219d24cd3e171d82865faccec33120bb574f4 # v10.1.0
+        with:
+          version: ${{ env.UV_VERSION }}
+          enable-cache: true
+          cache-dependency-glob: uv.lock
+
+      - name: Install locked dependencies
+        run: uv sync --frozen --group dev
+
+      - name: Check changed lines for whitespace errors
+        shell: bash
+        env:
+          PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          PUSH_BEFORE_SHA: ${{ github.event.before }}
+          CURRENT_SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          zero_sha="0000000000000000000000000000000000000000"
+          if [[ "$GITHUB_EVENT_NAME" == "pull_request" ]]; then
+            git diff --check "$PR_BASE_SHA..$PR_HEAD_SHA"
+          elif [[ "$GITHUB_EVENT_NAME" == "push" && -n "$PUSH_BEFORE_SHA" && "$PUSH_BEFORE_SHA" != "$zero_sha" ]]; then
+            git diff --check "$PUSH_BEFORE_SHA..$CURRENT_SHA"
+          elif git rev-parse HEAD^ >/dev/null 2>&1; then
+            git diff --check HEAD^..HEAD
+          else
+            git diff --check
+          fi
+
+      - name: Run Django system checks
+        run: uv run manage.py check
+
+      - name: Reject unintended migration drift
+        run: uv run manage.py makemigrations --check --dry-run
+
+  critical-regression:
+    name: Critical regression
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: sigroom_ci
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d sigroom_ci"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@bec219d24cd3e171d82865faccec33120bb574f4 # v10.1.0
+        with:
+          version: ${{ env.UV_VERSION }}
+          enable-cache: true
+          cache-dependency-glob: uv.lock
+
+      - name: Install locked dependencies
+        run: uv sync --frozen --group dev
+
+      - name: Run critical security and booking regression
+        run: >-
+          uv run pytest -q
+          config/tests.py
+          accounts/tests_m6.py
+          audit/tests.py
+          approvals/tests.py
+          bookings/tests.py
+          bookings/tests_guest_and_lodging.py
+          bookings/tests_lodging_v4.py
+          bookings/tests_v7_b.py
+          resources/tests.py
+
+  full-regression:
+    name: Full regression
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: sigroom_ci
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d sigroom_ci"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@bec219d24cd3e171d82865faccec33120bb574f4 # v10.1.0
+        with:
+          version: ${{ env.UV_VERSION }}
+          enable-cache: true
+          cache-dependency-glob: uv.lock
+
+      - name: Install locked dependencies
+        run: uv sync --frozen --group dev
+
+      - name: Run full test suite
+        run: uv run pytest --tb=short -q
+
+  security-audit:
+    name: Security audit
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@bec219d24cd3e171d82865faccec33120bb574f4 # v10.1.0
+        with:
+          version: ${{ env.UV_VERSION }}
+          enable-cache: true
+          cache-dependency-glob: uv.lock
+
+      - name: Install locked dependencies
+        run: uv sync --frozen --group dev
+
+      - name: Run production-like Django security checks
+        shell: bash
+        env:
+          DJANGO_DEBUG: "0"
+          DJANGO_SECURE: "1"
+          DJANGO_ALLOWED_HOSTS: "sigroom.example.invalid"
+          CSRF_TRUSTED_ORIGINS: "https://sigroom.example.invalid"
+          PUBLIC_BASE_URL: "https://sigroom.example.invalid"
+          SESSION_COOKIE_NAME: "__session"
+        run: |
+          set -euo pipefail
+          if ! output="$(uv run manage.py check --deploy 2>&1)"; then
+            printf '%s\n' "$output"
+            exit 1
+          fi
+          printf '%s\n' "$output"
+          unexpected="$(printf '%s\n' "$output" | grep -E '\(security\.[WE][0-9]+\)' | grep -Ev '\(security\.W005\)|\(security\.W021\)' || true)"
+          if [[ -n "$unexpected" ]]; then
+            echo 'Unexpected Django deploy security warning/error:'
+            printf '%s\n' "$unexpected"
+            exit 1
+          fi
+
+      - name: Export locked runtime dependencies
+        run: >-
+          uv export --frozen --no-dev --no-emit-project
+          --format requirements.txt
+          --output-file "$RUNNER_TEMP/sigroom-runtime-requirements.txt"
+
+      - name: Audit runtime dependencies
+        run: >-
+          uvx --from pip-audit==2.10.1 pip-audit
+          --requirement "$RUNNER_TEMP/sigroom-runtime-requirements.txt"
+          --disable-pip
+          --progress-spinner off
+
+  pr-safety-gate:
+    name: PR Safety Gate
+    if: always()
+    needs:
+      - repository-checks
+      - critical-regression
+      - full-regression
+      - security-audit
+    runs-on: ubuntu-24.04
+    timeout-minutes: 2
+    steps:
+      - name: Require every safety job to pass
+        shell: bash
+        env:
+          REPOSITORY_CHECKS: ${{ needs.repository-checks.result }}
+          CRITICAL_REGRESSION: ${{ needs.critical-regression.result }}
+          FULL_REGRESSION: ${{ needs.full-regression.result }}
+          SECURITY_AUDIT: ${{ needs.security-audit.result }}
+        run: |
+          set -euo pipefail
+          printf 'Repository checks: %s\n' "$REPOSITORY_CHECKS"
+          printf 'Critical regression: %s\n' "$CRITICAL_REGRESSION"
+          printf 'Full regression: %s\n' "$FULL_REGRESSION"
+          printf 'Security audit: %s\n' "$SECURITY_AUDIT"
+          [[ "$REPOSITORY_CHECKS" == "success" ]]
+          [[ "$CRITICAL_REGRESSION" == "success" ]]
+          [[ "$FULL_REGRESSION" == "success" ]]
+          [[ "$SECURITY_AUDIT" == "success" ]]

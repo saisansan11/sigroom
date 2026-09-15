@@ -13,7 +13,7 @@ Required before a normal SIGROOM PR is declared ready:
 - only scoped files staged
 - branch pushed
 - PR diff re-reviewed
-- CI/status checks PASS when configured; if none exist, state that explicitly
+- GitHub Actions aggregate check **PR Safety Gate** PASS when CI is available for the target PR; once required on the protected default branch, never bypass it
 - dependency/base PR state recorded for stacked work
 
 Never merge without an explicit user instruction.
