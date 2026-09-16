@@ -64,7 +64,7 @@
 
 <div class="lodging-section-header">
   <h2>ผังรายชื่อนักเรียนแยกตามห้องพัก</h2>
-  <a role="button" class="btn-primary" href="{% url 'bookings:lodging_cohort_export_csv' cohort.slug %}">
+  <a role="button" class="btn-primary lodging-export-cta" href="{% url 'bookings:lodging_cohort_export_csv' cohort.slug %}">
     📥 ส่งออก Excel / CSV (สำหรับฝ่ายดูแลอาคาร)
   </a>
 </div>
@@ -125,29 +125,30 @@
       </div>
     </div>
 
-    <div class="table-responsive-container">
-      <table role="grid">
+    <div class="table-responsive-container lodging-roster-wrap">
+      <table role="grid" class="lodging-roster-table">
+        <caption class="sr-only">ทำเนียบรายชื่อผู้เข้าพักทั้งหมดในรอบหลักสูตร</caption>
         <thead>
           <tr>
-            <th>ลำดับ</th>
-            <th>ห้อง / เตียง</th>
-            <th>ยศ - ชื่อ - สกุล</th>
-            <th>หน่วยต้นสังกัด</th>
-            <th>เบอร์โทร</th>
-            <th>เวลาที่ลงทะเบียน</th>
-            <th>สถานะรายงานตัว</th>
+            <th scope="col">ลำดับ</th>
+            <th scope="col">ห้อง / เตียง</th>
+            <th scope="col">ยศ - ชื่อ - สกุล</th>
+            <th scope="col">หน่วยต้นสังกัด</th>
+            <th scope="col">เบอร์โทร</th>
+            <th scope="col">เวลาที่ลงทะเบียน</th>
+            <th scope="col">สถานะรายงานตัว</th>
           </tr>
         </thead>
         <tbody>
           {% for s in students %}
-            <tr>
-              <td>{{ forloop.counter }}</td>
-              <td><strong class="lodging-accent-text">{{ s.room.code }}</strong> (เตียง {{ s.bed_number }})</td>
-              <td><strong>{{ s.rank }} {{ s.full_name }}</strong></td>
-              <td>{{ s.origin_unit }}</td>
-              <td class="mono">{{ s.phone }}</td>
-              <td>{{ s.booked_at|thai_datetime }}</td>
-              <td>
+            <tr class="roster-row">
+              <td data-label="ลำดับ" class="roster-col-order">{{ forloop.counter }}</td>
+              <td data-label="ห้อง / เตียง" class="roster-col-room"><strong class="lodging-accent-text">{{ s.room.code }}</strong> (เตียง {{ s.bed_number }})</td>
+              <td data-label="ยศ - ชื่อ - สกุล" class="roster-col-name"><strong>{{ s.rank }} {{ s.full_name }}</strong></td>
+              <td data-label="หน่วยต้นสังกัด" class="roster-col-unit">{{ s.origin_unit }}</td>
+              <td data-label="เบอร์โทร" class="mono roster-col-phone">{{ s.phone }}</td>
+              <td data-label="เวลาที่ลงทะเบียน" class="roster-col-time">{{ s.booked_at|thai_datetime }}</td>
+              <td data-label="สถานะรายงานตัว" class="roster-col-status">
                 {% if s.checked_in_at %}
                   <span class="success-text">✓ {{ s.checked_in_at|thai_datetime }}</span>
                   {% if s.checked_in_by %}
