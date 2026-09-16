@@ -1,6 +1,6 @@
 # SIGROOM UX-10 — Usage Status Mobile Clarity
 
-Status: LOCAL VERIFICATION PASS — READY FOR PR
+Status: PR #32 INITIAL CI PASS — FINAL DOCS CI PENDING
 
 Verified base: `origin/feat/lodging-v5-2` @ `842b20dc806636b6365c1f1e1b617d6a070cab78` (PR #31 merged)
 Post-merge CI: GitHub Actions run `35047943009` PASS, including aggregate `PR Safety Gate`
@@ -122,6 +122,21 @@ The isolated worktree contains local untracked QA artifacts such as rendered HTM
 - changing lodging roster/table presentation;
 - changing booking/home task counts;
 - models, migrations, deployment or security policy.
+
+## Initial GitHub PR verification
+
+- PR: **#32** — `UX-10: Improve usage status actions on mobile`
+- URL: `https://github.com/saisansan11/sigroom/pull/32`
+- base: `feat/lodging-v5-2`
+- implementation HEAD: `8b66052ea142c7858876f15ff12380b5075b42aa`
+- GitHub Actions run: `35050506796`
+- Repository checks: **SUCCESS**
+- Critical regression: **SUCCESS**
+- Full regression: **SUCCESS**
+- Security audit: **SUCCESS**
+- aggregate `PR Safety Gate`: **SUCCESS**
+- PR state after implementation run: **OPEN / MERGEABLE / CLEAN**
+- This documentation update creates a new final PR HEAD, so GitHub CI must pass again before READY FOR MERGE.
 
 ## Definition of Done
 

@@ -1,6 +1,6 @@
 # SIGROOM UX-10 — Usage Status Mobile Clarity — Handoff
 
-Status: LOCAL VERIFICATION PASS — READY FOR PR
+Status: PR #32 INITIAL CI PASS — FINAL DOCS CI PENDING
 Date: 2026-09-16
 
 ## Verified repository state
@@ -112,21 +112,28 @@ Leave these untracked unless explicitly cleaning later:
 
 Do not delete unrelated or QA files merely to make `git status` clean.
 
+## Initial GitHub PR verification
+
+- PR: **#32** — `UX-10: Improve usage status actions on mobile`
+- URL: `https://github.com/saisansan11/sigroom/pull/32`
+- base: `feat/lodging-v5-2`
+- implementation HEAD: `8b66052ea142c7858876f15ff12380b5075b42aa`
+- GitHub Actions run: `35050506796`
+- Repository checks: **SUCCESS**
+- Critical regression: **SUCCESS**
+- Full regression: **SUCCESS**
+- Security audit: **SUCCESS**
+- aggregate `PR Safety Gate`: **SUCCESS**
+- PR state after implementation run: **OPEN / MERGEABLE / CLEAN**
+- This documentation update creates a new final PR HEAD, so GitHub CI must pass again before READY FOR MERGE.
+
 ## Remaining release steps
 
-1. final full diff review complete;
-2. stage only the five scoped files:
-   - `static/css/app.css`
-   - `templates/usage/list.html`
-   - `usage/tests_ux10.py`
-   - `docs/plans/2026-09-16-ux-10-usage-status-mobile.md`
-   - `docs/handoffs/2026-09-16-ux-10-usage-status-mobile.md`
-3. commit and push `feat/ux-10-usage-status-mobile`;
-4. open PR into `feat/lodging-v5-2`;
-5. re-review PR diff;
-6. require aggregate GitHub `PR Safety Gate` PASS on the final PR HEAD;
-7. report READY FOR MERGE only after final HEAD is `MERGEABLE / CLEAN` and all required checks are green;
-8. do **not** merge without a new explicit user instruction.
+1. commit and push this docs-only evidence update;
+2. wait for GitHub aggregate `PR Safety Gate` on the new final HEAD;
+3. confirm PR #32 remains `OPEN / MERGEABLE / CLEAN` with all required checks SUCCESS;
+4. report **READY FOR MERGE — NOT MERGED**;
+5. do **not** merge without a new explicit user instruction.
 
 ## Suggested PR
 
