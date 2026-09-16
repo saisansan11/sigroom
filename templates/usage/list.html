@@ -4,24 +4,24 @@
 {% block content %}
 <div class="page-heading"><div><p class="eyebrow">งานเจ้าหน้าที่ดูแลห้อง</p><h1>บันทึกการใช้งานห้อง</h1><p>รายการที่สิ้นสุดในวันนี้และ 3 วันที่ผ่านมา แก้สถานะได้ไม่เกิน 3 วันหลังวันใช้ห้อง</p></div></div>
 {% if bookings %}
-<div class="table-scroll">
-  <table><caption class="visually-hidden">รายการรอบใช้ห้องที่บันทึกสถานะได้</caption>
+<div class="table-scroll usage-list-wrap">
+  <table class="usage-table"><caption class="visually-hidden">รายการรอบใช้ห้องที่บันทึกสถานะได้</caption>
     <thead><tr><th>วันเวลา</th><th>ห้อง</th><th>ผู้จอง / หน่วย</th><th>สถานะ</th><th>บันทึก</th></tr></thead>
     <tbody>
     {% for booking in bookings %}
-      <tr>
-        <td>{{ booking.start_at|thai_datetime }}–{{ booking.end_at|date:"H:i" }}</td>
-        <td>{{ booking.room.code }} {{ booking.room.name }}</td>
-        <td>{{ booking.requester.display_name }}{% if booking.unit %}<br><small>{{ booking.unit.code }}</small>{% endif %}</td>
-        <td><span class="status status-{{ booking.usage_status }}">{{ booking.get_usage_status_display }}</span></td>
-        <td>
+      <tr class="usage-row {% if booking.usage_change_open %}usage-row-editable{% else %}usage-row-closed{% endif %}">
+        <td class="usage-time">{{ booking.start_at|thai_datetime }}–{{ booking.end_at|date:"H:i" }}</td>
+        <td class="usage-room">{{ booking.room.code }} {{ booking.room.name }}</td>
+        <td class="usage-requester">{{ booking.requester.display_name }}{% if booking.unit %}<br><small class="usage-unit">{{ booking.unit.code }}</small>{% endif %}</td>
+        <td class="usage-status-cell"><span class="status status-{{ booking.usage_status }}">{{ booking.get_usage_status_display }}</span></td>
+        <td class="usage-action-cell">
           {% if booking.usage_change_open %}
-          <form method="post" action="{% url 'usage:update' booking.pk %}" class="inline-actions">
+          <form method="post" action="{% url 'usage:update' booking.pk %}" class="inline-actions usage-status-form">
             {% csrf_token %}
-            <button type="submit" name="status" value="used"{% if booking.usage_status == 'used' %} disabled{% endif %}>ใช้งานแล้ว</button>
-            <button type="submit" name="status" value="no_show" class="secondary"{% if booking.usage_status == 'no_show' %} disabled{% endif %}>ไม่มาใช้</button>
+            <button class="usage-status-button usage-status-used" type="submit" name="status" value="used"{% if booking.usage_status == 'used' %} disabled{% endif %}>ใช้งานแล้ว</button>
+            <button class="secondary usage-status-button usage-status-no-show" type="submit" name="status" value="no_show"{% if booking.usage_status == 'no_show' %} disabled{% endif %}>ไม่มาใช้</button>
           </form>
-          {% else %}<small>พ้นกำหนดแก้ไข</small>{% endif %}
+          {% else %}<small class="usage-closed-note">พ้นกำหนดแก้ไข</small>{% endif %}
         </td>
       </tr>
     {% endfor %}
