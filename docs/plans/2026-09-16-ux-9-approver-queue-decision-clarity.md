@@ -1,6 +1,6 @@
 # SIGROOM UX-9 — Approver Queue Decision Clarity
 
-Status: LOCAL VERIFICATION PASS — READY FOR PR
+Status: PR #31 INITIAL CI PASS — FINAL DOCS CI PENDING
 
 Verified base: `origin/feat/lodging-v5-2` @ `b3d70bfa3a67c77bbdfb0381d4d65790b7aa337a` (PR #30 merged)
 Post-merge CI: run `35041991844` PASS
@@ -78,6 +78,19 @@ Runtime pinned to Python **3.12.10**.
   - visual review of 360/1440 and dedicated series screenshots passed;
   - app CSS/Pico/HTMX/fonts loaded 200; simple static QA server alone produced expected `manifest.webmanifest`/`favicon.ico` 404s.
 - No destructive approve/reject action was submitted during Browser QA.
+
+## Initial GitHub verification
+
+- PR: **#31**
+- implementation HEAD: `a661a3eacff7ffdb24e599e77047b6f78114f111`
+- GitHub Actions run: `35046866327`
+- Repository checks: PASS
+- Critical regression: PASS
+- Full regression: PASS
+- Security audit: PASS
+- aggregate `PR Safety Gate`: PASS
+- PR state: `MERGEABLE / CLEAN`
+- a docs-only final evidence update will trigger one final CI run.
 
 ## Implementation workflow note
 

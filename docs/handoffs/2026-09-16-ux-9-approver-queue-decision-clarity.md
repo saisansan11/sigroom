@@ -1,7 +1,7 @@
 # SIGROOM UX-9 Handoff — Approver Queue Decision Clarity
 
 Date: 16 Sep 2026
-Status: LOCAL VERIFICATION PASS — READY FOR PR
+Status: PR #31 INITIAL CI PASS — FINAL DOCS CI PENDING
 
 ## Verified base
 
@@ -105,14 +105,20 @@ Local QA database records use the `UX9-QA` / `[UX9 QA]` prefix only and do not a
 
 ## Release state
 
-At handoff creation:
+After the implementation commit and first GitHub verification:
 
-- implementation commit: pending
-- push: pending
-- PR: pending
-- GitHub `PR Safety Gate`: pending
-- merge: not authorized by this handoff; explicit user merge instruction is still required.
+- implementation commit: `a661a3eacff7ffdb24e599e77047b6f78114f111`
+- PR: **#31 — UX-9: Improve approver queue decision clarity**
+- initial GitHub run: `35046866327`
+- Repository checks: PASS
+- Critical regression: PASS
+- Full regression: PASS
+- Security audit: PASS
+- aggregate `PR Safety Gate`: PASS
+- PR state after initial run: `MERGEABLE / CLEAN`
+- final docs-only evidence commit will trigger one final CI run before READY FOR MERGE.
+- merge remains unauthorized until the user gives an explicit merge instruction.
 
 ## Next gate
 
-Stage only the five tracked UX-9 files above, review the staged diff, commit and push the branch, open a PR against `feat/lodging-v5-2`, require all GitHub safety jobs plus aggregate `PR Safety Gate` to pass, then record PR/run evidence in a docs-only final commit and require CI green again on that final HEAD before declaring READY FOR MERGE.
+Commit and push this docs-only evidence update, then require the protected-branch CI to pass again on the new final HEAD. Do not merge without an explicit user merge instruction.
