@@ -4047,3 +4047,87 @@ details.operational-calendar-section[open] .disclosure-arrow {
     width: 100%;
   }
 }
+
+/* UX-9 Approver Queue Decision Clarity */
+.approval-queue-card { min-width: 0; }
+.approval-queue-context { min-width: 0; }
+.series-decision-panel { margin: var(--space-md) 0 0; padding-top: var(--space-md); border-top: 1px solid var(--line); }
+.series-decision-intro { display: grid; gap: var(--space-2xs); margin-bottom: var(--space-sm); }
+.series-decision-intro strong { color: var(--ink); font-size: 1rem; }
+.series-decision-intro small { color: var(--muted); }
+.series-occurrence-details { margin-bottom: var(--space-sm); padding: var(--space-sm); border: 1px solid var(--line); border-radius: var(--radius-sm); background: var(--canvas-deep); }
+.series-occurrence-details > summary { cursor: pointer; font-weight: 800; color: var(--ink); }
+.series-occurrence-list { display: grid; gap: var(--space-xs); margin-top: var(--space-sm); }
+.series-occurrence-list label { min-width: 0; margin: 0; overflow-wrap: anywhere; }
+.series-reason-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-sm); }
+.series-reason-grid label { min-width: 0; }
+.series-reason-grid input { width: 100%; min-width: 0; }
+.series-decision-actions { margin-top: var(--space-md); padding-top: var(--space-sm); border-top: 1px solid var(--line); }
+.series-decision-actions button { min-height: 44px; }
+
+@media (max-width: 47.99rem) {
+  .approval-queue-list,
+  .approval-queue-card,
+  .approval-queue-context,
+  .approval-queue-actions,
+  .series-decision-panel {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .approval-queue-card {
+    gap: var(--space-md);
+    padding: var(--space-sm);
+  }
+
+  .approval-queue-card h2,
+  .approval-queue-card p,
+  .approval-queue-card a,
+  .approval-queue-card label,
+  .approval-queue-card summary {
+    overflow-wrap: anywhere;
+    word-break: break-word;
+  }
+
+  .approval-queue-actions {
+    width: 100%;
+  }
+
+  .approval-queue-actions > form,
+  .approval-queue-actions > details,
+  .approval-queue-actions button,
+  .approval-queue-actions summary[role="button"] {
+    width: 100%;
+  }
+
+  .approval-queue-actions button,
+  .approval-queue-actions summary[role="button"],
+  .series-decision-actions button {
+    min-height: 44px;
+  }
+
+  .series-decision-panel {
+    padding: var(--space-sm);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-md);
+    background: var(--canvas-deep);
+  }
+
+  .series-occurrence-details {
+    padding: var(--space-sm);
+  }
+
+  .series-reason-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .series-decision-actions {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--space-xs);
+  }
+
+  .series-decision-actions > * {
+    width: 100%;
+  }
+}
