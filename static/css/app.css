@@ -3909,3 +3909,141 @@ details.operational-calendar-section[open] .disclosure-arrow {
     width: 100%;
   }
 }
+
+
+/* UX-8 Approver Delegation Mobile Clarity */
+@media (max-width: 47.99rem) {
+  .delegation-list-wrap {
+    overflow: visible;
+    border: 0;
+    background: transparent;
+  }
+
+  .delegation-list-wrap .delegation-table {
+    display: block;
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+    margin: 0;
+  }
+
+  .delegation-table thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    clip-path: inset(50%);
+    white-space: nowrap;
+    border: 0;
+  }
+
+  .delegation-table tbody {
+    display: grid;
+    gap: var(--space-sm);
+    width: 100%;
+    min-width: 0;
+  }
+
+  .delegation-table .delegation-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas:
+      "status"
+      "delegate"
+      "date"
+      "action";
+    gap: var(--space-sm);
+    width: 100%;
+    min-width: 0;
+    padding: var(--space-md);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-md);
+    background: var(--surface);
+    box-sizing: border-box;
+  }
+
+  .delegation-table .delegation-row > td {
+    display: block;
+    min-width: 0;
+    padding: 0;
+    border: 0;
+  }
+
+  .delegation-status-cell {
+    grid-area: status;
+  }
+
+  .delegation-status-cell .status {
+    padding: .35rem .7rem;
+    font-size: .85rem;
+  }
+
+  .delegation-delegate {
+    grid-area: delegate;
+    font-weight: 700;
+    color: var(--ink);
+    max-width: 100%;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+  }
+
+  .delegation-date {
+    grid-area: date;
+    color: var(--muted);
+    max-width: 100%;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+  }
+
+  .delegation-delegate::before,
+  .delegation-date::before {
+    display: block;
+    margin-bottom: .15rem;
+    color: var(--dim);
+    font-size: .72rem;
+    font-weight: 800;
+  }
+
+  .delegation-delegate::before {
+    content: "ผู้รักษาการ";
+  }
+
+  .delegation-date::before {
+    content: "ช่วงวันที่";
+  }
+
+  .delegation-action-cell {
+    grid-area: action;
+    padding-top: var(--space-xs) !important;
+    border-top: 1px solid var(--line) !important;
+  }
+
+  .delegation-cancel-form,
+  .delegation-cancel-button {
+    width: 100%;
+  }
+
+  .delegation-cancel-button {
+    min-height: 44px;
+    margin: 0;
+    white-space: normal;
+  }
+
+  .delegation-table .delegation-row-ended {
+    border-style: dashed;
+    background: var(--surface-soft);
+  }
+
+  .delegation-table .delegation-row-ended > .delegation-action-cell {
+    display: none;
+  }
+
+  .delegation-table .delegation-empty-row,
+  .delegation-empty-row .empty-state {
+    display: block;
+    width: 100%;
+  }
+}
