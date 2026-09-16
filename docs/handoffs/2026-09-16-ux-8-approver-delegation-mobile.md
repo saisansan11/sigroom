@@ -1,7 +1,7 @@
 # SIGROOM UX-8 Handoff — Approver Delegation Mobile Clarity
 
 Date: 16 Sep 2026
-Status: LOCAL VERIFICATION PASS — PR/CI PENDING
+Status: PR OPEN — INITIAL CI PASS; FINAL DOCS CI PENDING
 
 ## Verified base
 
@@ -95,14 +95,20 @@ A local-only QA primary approver/resource/delegation fixture was created in the 
 
 ## Release state
 
-At handoff creation:
+After the implementation commit and first GitHub verification:
 
-- commit: pending
-- push: pending
-- PR: pending
-- GitHub `PR Safety Gate`: pending
-- merge: not authorized by this handoff; explicit user merge instruction is still required.
+- implementation commit: `73013c31f251c1e24cbc4c5e0c5e5709573ae2b2`
+- PR: **#30 — UX-8: Improve approver delegation on mobile**
+- initial GitHub run: `35039818608`
+- Repository checks: PASS
+- Critical regression: PASS
+- Full regression: PASS
+- Security audit: PASS
+- aggregate `PR Safety Gate`: PASS
+- PR state after initial run: `MERGEABLE / CLEAN`
+- final docs-only handoff commit will trigger one final CI run before READY FOR MERGE.
+- merge remains unauthorized until the user gives an explicit merge instruction.
 
 ## Next gate
 
-Stage only the five scoped files above, inspect staged diff, commit, push, open a PR against `feat/lodging-v5-2`, wait for all GitHub CI jobs including aggregate `PR Safety Gate`, update this handoff with final commit/PR/run evidence, push the docs-only update, and require final CI green again before declaring READY FOR MERGE.
+Commit and push this docs-only handoff update, then require the protected-branch CI to pass again on the new final HEAD. Do not merge without an explicit user merge instruction.

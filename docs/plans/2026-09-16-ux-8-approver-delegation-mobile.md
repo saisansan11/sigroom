@@ -1,6 +1,6 @@
 # SIGROOM UX-8 — Approver Delegation Mobile Clarity
 
-Status: LOCAL VERIFICATION PASS — READY FOR PR
+Status: PR OPEN — INITIAL CI PASS; FINAL DOCS CI PENDING
 
 Verified base: `origin/feat/lodging-v5-2` @ `b07a7e7b49ffac618f7b65cf583fdb7bf28e0bb6` (PR #29 merged)
 Open PRs at discovery: none
@@ -66,6 +66,19 @@ Make the approver delegation list mobile-first without changing approval/delegat
   - keyboard Tab reached cancel button with visible focus outline; destructive cancel action was not submitted.
   - safe navigation `กลับคิวอนุมัติ` reaches `/approvals/` and delegation page can be revisited without state change.
   - changed-page resources return 200; baseline `favicon.ico` returns 404 and is unrelated to UX-8.
+
+## Initial GitHub verification
+
+- PR: **#30**
+- implementation HEAD: `73013c31f251c1e24cbc4c5e0c5e5709573ae2b2`
+- GitHub Actions run: `35039818608`
+- Repository checks: PASS
+- Critical regression: PASS
+- Full regression: PASS
+- Security audit: PASS
+- aggregate `PR Safety Gate`: PASS
+- PR state: `MERGEABLE / CLEAN`
+- a docs-only final handoff update will trigger one final CI run.
 
 ## Out of scope
 
