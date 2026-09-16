@@ -2,40 +2,43 @@
 {% load thaidate %}
 {% block title %}คิวรออนุมัติ · SIGROOM{% endblock %}
 {% block content %}
-<div class="page-heading">
+<div class="page-heading approval-queue-heading">
   <div><p class="eyebrow">ระบบอนุมัติ</p><h1>รายการรอการอนุมัติของฉัน</h1><p>มี {{ bookings|length }} รายการ · เรียงรายการที่ใกล้วันใช้งานก่อน</p></div>
   {% if can_delegate %}<a class="secondary" role="button" href="{% url 'approvals:delegation' %}">ตั้งผู้รักษาการ</a>{% endif %}
 </div>
 <datalist id="rejection-reasons">
   {% for reason in rejection_reasons %}<option value="{{ reason }}"></option>{% endfor %}
 </datalist>
-<div class="approval-list">
+<div class="approval-list approval-queue-list">
 {% for booking in bookings %}
-  <article class="approval-card">
+  <article class="approval-card approval-queue-card{% if booking.is_amendment_card %} approval-queue-card-amendment{% elif booking.is_series_card %} approval-queue-card-series{% else %} approval-queue-card-booking{% endif %}">
     {% if booking.is_amendment_card %}
-    <div class="approval-card-main">
+    <div class="approval-card-main approval-queue-context">
       <p class="approval-flags"><span class="policy">✏ คำขอแก้ไข</span>{% if booking.is_urgent %}<span class="urgent-flag">🔴 เร่งด่วน</span>{% endif %}{% if booking.is_over_sla %}<span class="sla-flag">🟡 เกิน SLA{% if booking.acting_as_backup %} · ฉันเป็นสำรอง{% endif %}</span>{% endif %}</p>
       <h2><a href="{% url 'bookings:booking_detail' booking.booking_id %}">{{ booking.booking.title }}</a> · {{ booking.id|stringformat:"s"|slice:":4"|upper }}</h2>
       <div class="comparison-grid"><div><strong>เดิม</strong><p>{{ booking.old_room.code }} · {{ booking.old_start_at|thai_datetime }}–{{ booking.old_end_at|date:"H:i" }}</p><p>อุปกรณ์: {% for item in booking.old_equipment %}{{ item.name }}{% if not forloop.last %}, {% endif %}{% empty %}—{% endfor %}</p></div><div><strong>ใหม่</strong><p>{{ booking.new_room.code }} · {{ booking.new_start_at|thai_datetime }}–{{ booking.new_end_at|date:"H:i" }}</p><p>อุปกรณ์: {% for item in booking.new_equipment %}{{ item.name }}{% if not forloop.last %}, {% endif %}{% empty %}—{% endfor %}</p></div></div>
       <p>{{ booking.booking.unit.name }} · {{ booking.booking.requester.display_name }} · หมดอายุใน {{ booking.expires_in_hours }} ชม.</p>{% if booking.reason %}<p>เหตุผล: {{ booking.reason }}</p>{% endif %}
     </div>
-    <div class="approval-actions"><form method="post" action="{% url 'approvals:amendment_approve' booking.id %}">{% csrf_token %}<button type="submit">อนุมัติ</button></form><details><summary role="button" class="outline danger">ปฏิเสธ</summary><form method="post" action="{% url 'approvals:amendment_reject' booking.id %}">{% csrf_token %}<label>เหตุผล (จำเป็น)<input name="reason" required maxlength="500" list="rejection-reasons"></label><button class="danger" type="submit">ยืนยันการปฏิเสธ</button></form></details></div>
+    <div class="approval-actions approval-queue-actions"><form method="post" action="{% url 'approvals:amendment_approve' booking.id %}">{% csrf_token %}<button type="submit">อนุมัติ</button></form><details><summary role="button" class="outline danger">ปฏิเสธ</summary><form method="post" action="{% url 'approvals:amendment_reject' booking.id %}">{% csrf_token %}<label>เหตุผล (จำเป็น)<input name="reason" required maxlength="500" list="rejection-reasons"></label><button class="danger" type="submit">ยืนยันการปฏิเสธ</button></form></details></div>
     {% elif booking.is_series_card %}
-    <div class="approval-card-main">
+    <div class="approval-card-main approval-queue-context">
       <p class="approval-flags"><span class="policy">ชุดการจอง</span>{% if booking.is_urgent %}<span class="urgent-flag">🔴 เร่งด่วน</span>{% endif %}{% if booking.is_over_sla %}<span class="sla-flag">🟡 เกิน SLA</span>{% endif %}</p>
       <h2><a href="{% url 'bookings:series_detail' booking.series_id %}">{{ booking.title }}</a></h2>
       <p><strong>{{ booking.room.code }} {{ booking.room.name }}</strong> · {{ booking.series_occurrences|length }} ครั้ง · {{ booking.series_occurrences.0.start_at|thai_datetime }}–{{ booking.series_last_at|thai_date }}</p>
       <p>{{ booking.unit.name }} · {{ booking.requester.display_name }} · หมดอายุใน {{ booking.expires_in_hours }} ชม.</p>
-      <form method="post" action="{% url 'approvals:series_decide' booking.series_id %}">
+      <form class="series-decision-panel" method="post" action="{% url 'approvals:series_decide' booking.series_id %}">
         {% csrf_token %}
-        <details><summary>ดูรายการทุกครั้ง / ตัดบางครั้งออก</summary>{% for item in booking.series_occurrences %}<label><input type="checkbox" name="excluded" value="{{ item.id }}"> ตัดครั้งที่ {{ item.series_index }} · {{ item.start_at|thai_datetime }}</label>{% endfor %}</details>
-        <label>เหตุผลของครั้งที่ตัดออก<input name="reason_excluded" maxlength="500" list="rejection-reasons" placeholder="จำเป็นเมื่อเลือกตัดบางครั้ง"></label>
-        <label>เหตุผลปฏิเสธทั้งชุด<input name="reason_reject" maxlength="500" list="rejection-reasons" placeholder="จำเป็นเมื่อปฏิเสธทั้งชุด"></label>
-        <div class="form-actions"><button type="submit" name="action" value="approve">อนุมัติทั้งชุด</button><button class="danger" type="submit" name="action" value="reject">ปฏิเสธทั้งชุด</button></div>
+        <div class="series-decision-intro"><strong>การตัดสินใจชุดนี้</strong><small>ตรวจรายละเอียดที่จำเป็น แล้วเลือกอนุมัติหรือปฏิเสธด้านล่าง</small></div>
+        <details class="series-occurrence-details"><summary>ดูรายการทุกครั้ง / ตัดบางครั้งออก</summary><div class="series-occurrence-list">{% for item in booking.series_occurrences %}<label><input type="checkbox" name="excluded" value="{{ item.id }}"> ตัดครั้งที่ {{ item.series_index }} · {{ item.start_at|thai_datetime }}</label>{% endfor %}</div></details>
+        <div class="series-reason-grid">
+          <label>เหตุผลของครั้งที่ตัดออก<input name="reason_excluded" maxlength="500" list="rejection-reasons" placeholder="จำเป็นเมื่อเลือกตัดบางครั้ง"></label>
+          <label>เหตุผลปฏิเสธทั้งชุด<input name="reason_reject" maxlength="500" list="rejection-reasons" placeholder="จำเป็นเมื่อปฏิเสธทั้งชุด"></label>
+        </div>
+        <div class="form-actions series-decision-actions"><button type="submit" name="action" value="approve">อนุมัติทั้งชุด</button><button class="danger" type="submit" name="action" value="reject">ปฏิเสธทั้งชุด</button></div>
       </form>
     </div>
     {% else %}
-    <div class="approval-card-main">
+    <div class="approval-card-main approval-queue-context">
       <p class="approval-flags">
         {% if booking.is_urgent %}<span class="urgent-flag">🔴 เร่งด่วน</span>{% endif %}
         {% if booking.is_over_sla %}<span class="sla-flag">🟡 เกิน SLA{% if booking.acting_as_backup %} · ฉันเป็นสำรอง{% endif %}</span>{% endif %}
@@ -46,7 +49,7 @@
       <p>ผู้เข้าร่วม {{ booking.attendees }} คน · อุปกรณ์: {% for item in booking.equipment.all %}{{ item.name }}{% if not forloop.last %}, {% endif %}{% empty %}—{% endfor %} · ส่งเมื่อ {{ booking.submitted_at|thai_datetime }}</p>
       <p class="expiry-text">หมดอายุใน {{ booking.expires_in_hours }} ชม.</p>
     </div>
-    <div class="approval-actions">
+    <div class="approval-actions approval-queue-actions">
       <form method="post" action="{% url 'approvals:approve' booking.id %}">
         {% csrf_token %}<button type="submit">อนุมัติ</button>
       </form>
