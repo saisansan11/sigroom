@@ -3,26 +3,66 @@
 {% block content %}
 <div class="page-heading"><div><p class="eyebrow">ข้อมูลเพื่อการตัดสินใจ</p><h1>รายงานประจำเดือน</h1><p>เลือกเดือน ห้อง และหน่วย จากนั้นอ่านบนหน้าจอหรือดาวน์โหลด CSV สำหรับ Excel</p></div></div>
 {% if error %}<div class="notice error">{{ error }}</div>{% endif %}
-<form method="get" class="filter-grid">
+<form method="get" class="filter-grid report-filter-grid">
   <label>เดือน (พ.ศ.)<input name="month" value="{{ month_value }}" placeholder="2569-08"></label>
   <label>ห้อง<select name="room"><option value="">ทุกห้องที่มีสิทธิ์</option>{% for room in rooms %}<option value="{{ room.code }}"{% if selected_room == room.code %} selected{% endif %}>{{ room.code }} {{ room.name }}</option>{% endfor %}</select></label>
   <label>หน่วย<select name="unit"><option value="">ทุกหน่วย</option>{% for unit in units %}<option value="{{ unit.pk }}"{% if selected_unit == unit.pk %} selected{% endif %}>{{ unit.code }} {{ unit.name }}</option>{% endfor %}</select></label>
   <button type="submit">กรองรายงาน</button>
 </form>
 
-<section class="report-section"><div class="section-heading"><h2>1. อัตราการใช้ห้อง</h2><a role="button" class="secondary" href="?month={{ month_value }}&room={{ selected_room }}&unit={{ selected_unit|default:'' }}&format=csv&report=room_usage">ดาวน์โหลด CSV</a></div>
-<div class="table-scroll"><table><thead><tr><th>ห้อง</th><th>ประเภท</th><th>หน่วย</th><th>ใช้จริง (ชม.)</th><th>อนุมัติ (ชม.)</th><th>ให้บริการ (ชม.)</th><th>ใช้จริง</th><th>อนุมัติ</th></tr></thead><tbody>{% for row in reports.room_usage %}<tr><td>{{ row.room }}</td><td>{{ row.purpose }}</td><td>{{ row.unit }}</td><td>{{ row.used_hours }}</td><td>{{ row.approved_hours }}</td><td>{{ row.service_hours }}</td><td>{{ row.used_rate }}%</td><td>{{ row.approved_rate }}%</td></tr>{% empty %}<tr><td colspan="8">ไม่มีข้อมูล</td></tr>{% endfor %}</tbody></table></div></section>
+<section class="report-section report-section-room-usage">
+  <div class="section-heading"><h2>1. อัตราการใช้ห้อง</h2><a role="button" class="secondary report-download-button" href="?month={{ month_value }}&room={{ selected_room }}&unit={{ selected_unit|default:'' }}&format=csv&report=room_usage">ดาวน์โหลด CSV</a></div>
+  <div class="table-scroll report-table-wrap">
+    <table class="report-table report-table-room-usage">
+      <caption class="visually-hidden">อัตราการใช้ห้อง</caption>
+      <thead><tr><th>ห้อง</th><th>ประเภท</th><th>หน่วย</th><th>ใช้จริง (ชม.)</th><th>อนุมัติ (ชม.)</th><th>ให้บริการ (ชม.)</th><th>ใช้จริง</th><th>อนุมัติ</th></tr></thead>
+      <tbody>{% for row in reports.room_usage %}<tr class="report-row"><td data-label="ห้อง">{{ row.room }}</td><td data-label="ประเภท">{{ row.purpose }}</td><td data-label="หน่วย">{{ row.unit }}</td><td data-label="ใช้จริง (ชม.)">{{ row.used_hours }}</td><td data-label="อนุมัติ (ชม.)">{{ row.approved_hours }}</td><td data-label="ให้บริการ (ชม.)">{{ row.service_hours }}</td><td data-label="ใช้จริง">{{ row.used_rate }}%</td><td data-label="อนุมัติ">{{ row.approved_rate }}%</td></tr>{% empty %}<tr class="report-empty-row"><td colspan="8" class="report-empty-cell">ไม่มีข้อมูล</td></tr>{% endfor %}</tbody>
+    </table>
+  </div>
+</section>
 
-<section class="report-section"><div class="section-heading"><h2>2. ยกเลิกและไม่มาใช้</h2><a role="button" class="secondary" href="?month={{ month_value }}&room={{ selected_room }}&unit={{ selected_unit|default:'' }}&format=csv&report=cancellation">ดาวน์โหลด CSV</a></div>
-<div class="table-scroll"><table><thead><tr><th>หน่วย</th><th>บุคคล</th><th>ทั้งหมด</th><th>ยกเลิก</th><th>ไม่มาใช้</th><th>อัตรารวม</th></tr></thead><tbody>{% for row in reports.cancellation %}<tr><td>{{ row.unit }}</td><td>{{ row.person }}</td><td>{{ row.total }}</td><td>{{ row.cancelled }} ({{ row.cancelled_rate }}%)</td><td>{{ row.no_show }} ({{ row.no_show_rate }}%)</td><td>{{ row.combined_rate }}%</td></tr>{% empty %}<tr><td colspan="6">ไม่มีข้อมูล</td></tr>{% endfor %}</tbody></table></div></section>
+<section class="report-section report-section-cancellation">
+  <div class="section-heading"><h2>2. ยกเลิกและไม่มาใช้</h2><a role="button" class="secondary report-download-button" href="?month={{ month_value }}&room={{ selected_room }}&unit={{ selected_unit|default:'' }}&format=csv&report=cancellation">ดาวน์โหลด CSV</a></div>
+  <div class="table-scroll report-table-wrap">
+    <table class="report-table report-table-cancellation">
+      <caption class="visually-hidden">ยกเลิกและไม่มาใช้</caption>
+      <thead><tr><th>หน่วย</th><th>บุคคล</th><th>ทั้งหมด</th><th>ยกเลิก</th><th>ไม่มาใช้</th><th>อัตรารวม</th></tr></thead>
+      <tbody>{% for row in reports.cancellation %}<tr class="report-row"><td data-label="หน่วย">{{ row.unit }}</td><td data-label="บุคคล">{{ row.person }}</td><td data-label="ทั้งหมด">{{ row.total }}</td><td data-label="ยกเลิก">{{ row.cancelled }} ({{ row.cancelled_rate }}%)</td><td data-label="ไม่มาใช้">{{ row.no_show }} ({{ row.no_show_rate }}%)</td><td data-label="อัตรารวม">{{ row.combined_rate }}%</td></tr>{% empty %}<tr class="report-empty-row"><td colspan="6" class="report-empty-cell">ไม่มีข้อมูล</td></tr>{% endfor %}</tbody>
+    </table>
+  </div>
+</section>
 
-<section class="report-section"><div class="section-heading"><h2>3. การอนุมัติ</h2><a role="button" class="secondary" href="?month={{ month_value }}&room={{ selected_room }}&unit={{ selected_unit|default:'' }}&format=csv&report=approval">ดาวน์โหลด CSV</a></div>
-<div class="table-scroll"><table><thead><tr><th>ผู้อนุมัติ</th><th>ตัดสิน</th><th>เฉลี่ย (ชม.)</th><th>เกิน SLA</th><th>หมดอายุ</th></tr></thead><tbody>{% for row in reports.approval %}<tr><td>{{ row.approver }}</td><td>{{ row.decisions }}</td><td>{{ row.average_hours }}</td><td>{{ row.over_sla }}</td><td>{{ row.expired }}</td></tr>{% empty %}<tr><td colspan="5">ไม่มีข้อมูล</td></tr>{% endfor %}</tbody></table></div></section>
+<section class="report-section report-section-approval">
+  <div class="section-heading"><h2>3. การอนุมัติ</h2><a role="button" class="secondary report-download-button" href="?month={{ month_value }}&room={{ selected_room }}&unit={{ selected_unit|default:'' }}&format=csv&report=approval">ดาวน์โหลด CSV</a></div>
+  <div class="table-scroll report-table-wrap">
+    <table class="report-table report-table-approval">
+      <caption class="visually-hidden">การอนุมัติ</caption>
+      <thead><tr><th>ผู้อนุมัติ</th><th>ตัดสิน</th><th>เฉลี่ย (ชม.)</th><th>เกิน SLA</th><th>หมดอายุ</th></tr></thead>
+      <tbody>{% for row in reports.approval %}<tr class="report-row"><td data-label="ผู้อนุมัติ">{{ row.approver }}</td><td data-label="ตัดสิน">{{ row.decisions }}</td><td data-label="เฉลี่ย (ชม.)">{{ row.average_hours }}</td><td data-label="เกิน SLA">{{ row.over_sla }}</td><td data-label="หมดอายุ">{{ row.expired }}</td></tr>{% empty %}<tr class="report-empty-row"><td colspan="5" class="report-empty-cell">ไม่มีข้อมูล</td></tr>{% endfor %}</tbody>
+    </table>
+  </div>
+</section>
 
-<section class="report-section"><div class="section-heading"><h2>4. บังคับย้าย</h2><a role="button" class="secondary" href="?month={{ month_value }}&room={{ selected_room }}&unit={{ selected_unit|default:'' }}&format=csv&report=preemption">ดาวน์โหลด CSV</a></div>
-<div class="table-scroll"><table><thead><tr><th>วันเวลา</th><th>ห้อง</th><th>การจอง</th><th>เลขอ้างอิง</th><th>ผู้สั่ง</th><th>รับทราบ</th></tr></thead><tbody>{% for row in reports.preemption %}<tr><td>{{ row.at }}</td><td>{{ row.room }}</td><td>{{ row.booking }}</td><td>{{ row.reference_no }}</td><td>{{ row.ordered_by }}</td><td>{{ row.acknowledged }}</td></tr>{% empty %}<tr><td colspan="6">ไม่มีข้อมูล</td></tr>{% endfor %}</tbody></table></div></section>
+<section class="report-section report-section-preemption">
+  <div class="section-heading"><h2>4. บังคับย้าย</h2><a role="button" class="secondary report-download-button" href="?month={{ month_value }}&room={{ selected_room }}&unit={{ selected_unit|default:'' }}&format=csv&report=preemption">ดาวน์โหลด CSV</a></div>
+  <div class="table-scroll report-table-wrap">
+    <table class="report-table report-table-preemption">
+      <caption class="visually-hidden">บังคับย้าย</caption>
+      <thead><tr><th>วันเวลา</th><th>ห้อง</th><th>การจอง</th><th>เลขอ้างอิง</th><th>ผู้สั่ง</th><th>รับทราบ</th></tr></thead>
+      <tbody>{% for row in reports.preemption %}<tr class="report-row"><td data-label="วันเวลา">{{ row.at }}</td><td data-label="ห้อง">{{ row.room }}</td><td data-label="การจอง">{{ row.booking }}</td><td data-label="เลขอ้างอิง">{{ row.reference_no }}</td><td data-label="ผู้สั่ง">{{ row.ordered_by }}</td><td data-label="รับทราบ">{{ row.acknowledged }}</td></tr>{% empty %}<tr class="report-empty-row"><td colspan="6" class="report-empty-cell">ไม่มีข้อมูล</td></tr>{% endfor %}</tbody>
+    </table>
+  </div>
+</section>
 
-<section class="report-section"><div class="section-heading"><h2>5. อุปกรณ์ส่วนกลาง</h2><a role="button" class="secondary" href="?month={{ month_value }}&room={{ selected_room }}&unit={{ selected_unit|default:'' }}&format=csv&report=equipment">ดาวน์โหลด CSV</a></div>
-<p class="report-note"><small>ข้อจำกัดช่วง pilot: ยังไม่เก็บจำนวนครั้งที่ค้นหาแล้วอุปกรณ์ชน และยังไม่มีไฟล์ PDF</small></p>
-<div class="table-scroll"><table><thead><tr><th>อุปกรณ์</th><th>จำนวนครั้ง</th><th>ชั่วโมง</th></tr></thead><tbody>{% for row in reports.equipment %}<tr><td>{{ row.equipment }}</td><td>{{ row.uses }}</td><td>{{ row.hours }}</td></tr>{% empty %}<tr><td colspan="3">ไม่มีข้อมูล</td></tr>{% endfor %}</tbody></table></div></section>
+<section class="report-section report-section-equipment">
+  <div class="section-heading"><h2>5. อุปกรณ์ส่วนกลาง</h2><a role="button" class="secondary report-download-button" href="?month={{ month_value }}&room={{ selected_room }}&unit={{ selected_unit|default:'' }}&format=csv&report=equipment">ดาวน์โหลด CSV</a></div>
+  <p class="report-note"><small>ข้อจำกัดช่วง pilot: ยังไม่เก็บจำนวนครั้งที่ค้นหาแล้วอุปกรณ์ชน และยังไม่มีไฟล์ PDF</small></p>
+  <div class="table-scroll report-table-wrap">
+    <table class="report-table report-table-equipment">
+      <caption class="visually-hidden">อุปกรณ์ส่วนกลาง</caption>
+      <thead><tr><th>อุปกรณ์</th><th>จำนวนครั้ง</th><th>ชั่วโมง</th></tr></thead>
+      <tbody>{% for row in reports.equipment %}<tr class="report-row"><td data-label="อุปกรณ์">{{ row.equipment }}</td><td data-label="จำนวนครั้ง">{{ row.uses }}</td><td data-label="ชั่วโมง">{{ row.hours }}</td></tr>{% empty %}<tr class="report-empty-row"><td colspan="3" class="report-empty-cell">ไม่มีข้อมูล</td></tr>{% endfor %}</tbody>
+    </table>
+  </div>
+</section>
 {% endblock %}
