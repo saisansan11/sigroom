@@ -4497,3 +4497,141 @@ details.operational-calendar-section[open] .disclosure-arrow {
     font-family: var(--font-mono);
   }
 }
+
+/* UX-13 Lodging Cohort Management Mobile Clarity */
+.lodging-room-fieldset {
+  margin: 0 0 var(--space-md);
+  padding: 0;
+  border: 0;
+  min-width: 0;
+}
+
+.lodging-room-fieldset > legend {
+  display: block;
+  margin-bottom: var(--space-xs);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.lodging-room-selection-tools {
+  display: flex;
+  gap: var(--space-xs);
+  margin-bottom: var(--space-xs);
+}
+
+.lodging-selection-btn {
+  width: auto;
+  margin: 0;
+  padding: .35rem .75rem;
+  font-size: var(--text-xs);
+  min-height: 38px;
+  cursor: pointer;
+  box-sizing: border-box;
+}
+
+.lodging-room-fieldset .lodging-checklist-item {
+  min-height: 44px;
+  box-sizing: border-box;
+  padding: var(--space-xs) var(--space-2xs);
+  border-radius: var(--radius-sm);
+  transition: background var(--motion-fast) var(--ease-product);
+}
+
+.lodging-room-fieldset .lodging-checklist-item:focus-within {
+  outline: 2px solid var(--cyan);
+  outline-offset: 2px;
+}
+
+.lodging-room-fieldset .lodging-checklist-item input[type="checkbox"]:focus-visible {
+  outline: 2px solid var(--cyan);
+  outline-offset: 2px;
+}
+
+.lodging-manage-card-head h3 {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.lodging-manage-card-head small.mono {
+  overflow-wrap: anywhere;
+  word-break: break-all;
+}
+
+.lodging-manage-card-title-wrap {
+  min-width: 0;
+}
+
+.lodging-status-tags span {
+  white-space: normal;
+}
+
+.lodging-copy-btn.is-copied {
+  color: var(--green);
+  border-color: var(--green);
+}
+
+@media (max-width: 47.99rem) {
+  .lodging-manage-card-head {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-xs);
+  }
+
+  .lodging-manage-card-head .lodging-status-tags {
+    width: 100%;
+  }
+
+  .lodging-manage-card-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-xs);
+    width: 100%;
+  }
+
+  .lodging-manage-card-actions .lodging-card-primary-action {
+    grid-column: 1 / -1;
+    width: 100%;
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    margin: 0;
+    box-sizing: border-box;
+  }
+
+  .lodging-manage-card-actions a[role="button"].secondary,
+  .lodging-manage-card-actions button.secondary {
+    min-height: 44px;
+    margin: 0;
+    padding: .5rem .65rem;
+    font-size: .88rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    box-sizing: border-box;
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+
+  .lodging-manage-grid .grid-dates {
+    grid-template-columns: 1fr;
+    gap: var(--space-sm);
+  }
+
+  .lodging-room-selection-tools {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-xs);
+  }
+
+  .lodging-selection-btn {
+    min-height: 44px;
+    width: 100%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+}
