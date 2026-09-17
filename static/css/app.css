@@ -2120,6 +2120,7 @@ dialog article > header :is(button, a)[rel="prev"] { min-width: max(44px, 2.75re
 .checkin-details-label {
   color: var(--dim);
   width: 38%;
+  margin: 0;
 }
 
 .checkin-details-value {
@@ -2127,6 +2128,7 @@ dialog article > header :is(button, a)[rel="prev"] { min-width: max(44px, 2.75re
   font-weight: 600;
   width: 62%;
   text-align: right;
+  margin: 0;
 }
 
 .checkin-authorized-badge {
@@ -2169,6 +2171,21 @@ dialog article > header :is(button, a)[rel="prev"] { min-width: max(44px, 2.75re
 
 .checkin-footer-nav {
   margin-top: var(--space-lg);
+}
+
+.checkin-submit-btn:focus-visible,
+.checkin-footer-btn:focus-visible,
+.checkin-footer-nav a:focus-visible,
+.checkin-details-value a:focus-visible,
+.checkin-phone-link:focus-visible,
+.checkin-submit-btn:focus,
+.checkin-footer-btn:focus,
+.checkin-footer-nav a:focus,
+.checkin-details-value a:focus,
+.checkin-phone-link:focus {
+  outline: 2px solid var(--cyan) !important;
+  outline-offset: 2px !important;
+  box-shadow: 0 0 0 3px oklch(0.78 0.12 207 / 0.35) !important;
 }
 
 /* 5. Supervisor Management & Detail Views */
@@ -4763,5 +4780,65 @@ details.operational-calendar-section[open] .disclosure-arrow {
 
   .lodging-danger-zone input[type="text"] {
     width: 100%;
+  }
+}
+
+/* UX-15 Lodging Check-in Mobile Clarity */
+@media (max-width: 47.99rem) {
+  .checkin-card {
+    padding: var(--space-md);
+    margin: var(--space-md) auto;
+  }
+
+  .checkin-room-pill {
+    font-size: 1rem;
+    padding: var(--space-2xs) var(--space-md);
+    max-width: 100%;
+    overflow-wrap: anywhere;
+  }
+
+  .checkin-details-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2px;
+    padding: var(--space-xs) 0;
+  }
+
+  .checkin-details-label {
+    width: 100%;
+    font-size: var(--text-xs);
+    color: var(--dim);
+    text-align: left;
+  }
+
+  .checkin-details-value {
+    width: 100%;
+    text-align: left;
+    font-size: var(--text-sm);
+    overflow-wrap: anywhere;
+  }
+
+  .checkin-phone-link,
+  .checkin-details-value.mono a {
+    display: inline-flex;
+    align-items: center;
+    padding: var(--space-2xs) 0;
+    min-height: 44px;
+    line-height: 1.5;
+  }
+
+  .checkin-submit-btn {
+    min-height: 48px;
+    font-size: 1rem;
+  }
+
+  .checkin-footer-nav a[role="button"],
+  .checkin-footer-btn {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    min-height: 44px;
+    text-align: center;
   }
 }
