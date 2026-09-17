@@ -19,38 +19,38 @@
     <h1 class="checkin-title">{{ student.rank }} {{ student.full_name }}</h1>
     <p class="muted-text">{{ student.origin_unit }} · {{ cohort.title }}</p>
 
-    <div class="checkin-details-list">
+    <dl class="checkin-details-list" aria-label="รายละเอียดการรายงานตัว">
       <div class="checkin-details-row">
-        <span class="checkin-details-label">ยศ - ชื่อ - สกุล:</span>
-        <span class="checkin-details-value">{{ student.rank }} {{ student.full_name }}</span>
+        <dt class="checkin-details-label">ยศ - ชื่อ - สกุล:</dt>
+        <dd class="checkin-details-value">{{ student.rank }} {{ student.full_name }}</dd>
       </div>
       <div class="checkin-details-row">
-        <span class="checkin-details-label">หน่วยต้นสังกัด:</span>
-        <span class="checkin-details-value">{{ student.origin_unit }}</span>
+        <dt class="checkin-details-label">หน่วยต้นสังกัด:</dt>
+        <dd class="checkin-details-value">{{ student.origin_unit }}</dd>
       </div>
       <div class="checkin-details-row">
-        <span class="checkin-details-label">เบอร์โทรศัพท์:</span>
-        <span class="checkin-details-value mono"><a href="tel:{{ student.phone }}">{{ student.phone }}</a></span>
+        <dt class="checkin-details-label">เบอร์โทรศัพท์:</dt>
+        <dd class="checkin-details-value mono"><a class="checkin-phone-link" href="tel:{{ student.phone }}">{{ student.phone }}</a></dd>
       </div>
       <div class="checkin-details-row">
-        <span class="checkin-details-label">หลักสูตร:</span>
-        <span class="checkin-details-value">{{ cohort.title }}</span>
+        <dt class="checkin-details-label">หลักสูตร:</dt>
+        <dd class="checkin-details-value">{{ cohort.title }}</dd>
       </div>
       <div class="checkin-details-row">
-        <span class="checkin-details-label">ช่วงเวลาเข้าพัก:</span>
-        <span class="checkin-details-value">{{ cohort.check_in_date|thai_date }} – {{ cohort.check_out_date|thai_date }}</span>
+        <dt class="checkin-details-label">ช่วงเวลาเข้าพัก:</dt>
+        <dd class="checkin-details-value">{{ cohort.check_in_date|thai_date }} – {{ cohort.check_out_date|thai_date }}</dd>
       </div>
       <div class="checkin-details-row">
-        <span class="checkin-details-label">เวลาจอง:</span>
-        <span class="checkin-details-value">{{ student.booked_at|thai_datetime }}</span>
+        <dt class="checkin-details-label">เวลาจอง:</dt>
+        <dd class="checkin-details-value">{{ student.booked_at|thai_datetime }}</dd>
       </div>
       {% if student.note %}
         <div class="checkin-details-row">
-          <span class="checkin-details-label">หมายเหตุ:</span>
-          <span class="checkin-details-value">{{ student.note }}</span>
+          <dt class="checkin-details-label">หมายเหตุ:</dt>
+          <dd class="checkin-details-value">{{ student.note }}</dd>
         </div>
       {% endif %}
-    </div>
+    </dl>
 
     {% if student.checked_in_at %}
       <div class="notice success">
@@ -75,24 +75,24 @@
     <h1 class="checkin-title">{{ masked_label }}</h1>
     <p class="muted-text">{{ cohort.title }}</p>
 
-    <div class="checkin-details-list">
+    <dl class="checkin-details-list" aria-label="รายละเอียดการรายงานตัว">
       <div class="checkin-details-row">
-        <span class="checkin-details-label">ผู้เข้าพัก:</span>
-        <span class="checkin-details-value">{{ masked_label }}</span>
+        <dt class="checkin-details-label">ผู้เข้าพัก:</dt>
+        <dd class="checkin-details-value">{{ masked_label }}</dd>
       </div>
       <div class="checkin-details-row">
-        <span class="checkin-details-label">ห้อง / เตียง:</span>
-        <span class="checkin-details-value">ห้อง {{ student.room.code }} (เตียง {{ student.bed_number }})</span>
+        <dt class="checkin-details-label">ห้อง / เตียง:</dt>
+        <dd class="checkin-details-value">ห้อง {{ student.room.code }} (เตียง {{ student.bed_number }})</dd>
       </div>
       <div class="checkin-details-row">
-        <span class="checkin-details-label">หลักสูตร:</span>
-        <span class="checkin-details-value">{{ cohort.title }}</span>
+        <dt class="checkin-details-label">หลักสูตร:</dt>
+        <dd class="checkin-details-value">{{ cohort.title }}</dd>
       </div>
       <div class="checkin-details-row">
-        <span class="checkin-details-label">ช่วงเวลาเข้าพัก:</span>
-        <span class="checkin-details-value">{{ cohort.check_in_date|thai_date }} – {{ cohort.check_out_date|thai_date }}</span>
+        <dt class="checkin-details-label">ช่วงเวลาเข้าพัก:</dt>
+        <dd class="checkin-details-value">{{ cohort.check_in_date|thai_date }} – {{ cohort.check_out_date|thai_date }}</dd>
       </div>
-    </div>
+    </dl>
 
     <div class="notice info">
       <p>กรุณาแสดงบัตรนี้ต่อเจ้าหน้าที่หรือเวรรับรายงานตัว เพื่อยืนยันตัวตนแบบเต็มและบันทึกเวลารายงานตัวเข้าที่พัก</p>
@@ -100,7 +100,7 @@
   {% endif %}
 
   <div class="checkin-footer-nav">
-    <a role="button" class="secondary" href="{% url 'bookings:lodging_pass' cohort.slug student.id %}">
+    <a role="button" class="secondary checkin-footer-btn" href="{% url 'bookings:lodging_pass' cohort.slug student.id %}">
       ← กลับไปที่บัตรดิจิทัล
     </a>
   </div>
