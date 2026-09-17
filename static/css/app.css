@@ -3037,11 +3037,15 @@ details.operational-calendar-section[open] .disclosure-arrow {
   .my-bookings-tabs a {
     flex: 1 1 calc(50% - var(--space-2xs));
     justify-content: center;
+    min-width: 0;
+    min-height: 44px;
+    white-space: normal;
     text-align: center;
   }
 
   .my-bookings-table-wrap,
-  .my-series-table-wrap {
+  .my-series-table-wrap,
+  .my-series-section .table-wrap {
     overflow-x: visible;
     border: none;
     background: transparent;
@@ -3052,10 +3056,12 @@ details.operational-calendar-section[open] .disclosure-arrow {
   .my-bookings-table-wrap .my-bookings-table,
   .my-series-table-wrap .my-series-table,
   .table-wrap.my-bookings-table-wrap table,
-  .table-wrap.my-series-table-wrap table {
+  .table-wrap.my-series-table-wrap table,
+  .my-bookings-table,
+  .my-series-table {
     display: block;
     width: 100%;
-    min-width: 0;
+    min-width: 0 !important;
     max-width: 100%;
     box-sizing: border-box;
     margin: 0;
@@ -3063,30 +3069,37 @@ details.operational-calendar-section[open] .disclosure-arrow {
 
   .my-bookings-table thead,
   .my-series-table thead {
-    display: none;
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    clip-path: inset(50%);
+    white-space: nowrap;
+    border: 0;
   }
 
   .my-bookings-table tbody,
   .my-series-table tbody {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-md);
+    display: grid;
+    gap: var(--space-sm);
     width: 100%;
     min-width: 0;
   }
 
   .my-bookings-table tbody tr,
   .my-series-table tbody tr {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-xs);
+    display: grid;
+    gap: var(--space-xs) var(--space-sm);
+    padding: var(--space-md);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-md);
+    background: var(--surface);
     width: 100%;
     min-width: 0;
     box-sizing: border-box;
-    background: var(--surface);
-    border: 1px solid var(--line);
-    border-radius: var(--radius-md);
-    padding: var(--space-md);
   }
 
   .my-bookings-table tbody tr:hover,
@@ -3094,76 +3107,63 @@ details.operational-calendar-section[open] .disclosure-arrow {
     background: var(--surface-raised);
   }
 
-  .my-bookings-table tbody tr.empty-row {
-    background: transparent;
-    border: none;
-    padding: 0;
+  .my-bookings-table tbody tr {
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+      "title status"
+      "datetime datetime"
+      "room room"
+      "equipment equipment"
+      "actions actions";
   }
 
-  .my-bookings-table tbody tr.empty-row .empty-state {
-    display: block;
-    width: 100%;
+  .my-series-table tbody tr {
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+      "ref actions"
+      "room room"
+      "count count"
+      "next next";
   }
 
   .my-bookings-table tbody td,
-  .my-series-table tbody td {
-    display: block;
-    width: 100%;
+  .my-series-table tbody td,
+  .my-bookings-table td,
+  .my-series-table td {
     min-width: 0;
     padding: 0;
-    border: none;
+    border: 0;
     box-sizing: border-box;
   }
 
-  /* Mobile card visual hierarchy: title -> status -> date-time -> room -> equipment -> actions */
-  .my-bookings-table .booking-cell-title {
-    order: 1;
+  .my-bookings-table .booking-cell-title,
+  .booking-cell-title {
+    grid-area: title;
   }
 
-  .my-bookings-table .booking-cell-status {
-    order: 2;
-  }
-
-  .my-bookings-table .booking-cell-datetime {
-    order: 3;
-  }
-
-  .my-bookings-table .booking-cell-room {
-    order: 4;
-  }
-
-  .my-bookings-table .booking-cell-equipment {
-    order: 5;
-  }
-
-  .my-bookings-table .booking-cell-actions {
-    order: 6;
-  }
-
-  .my-bookings-table .booking-item-title {
-    display: block;
-    font-size: 1.05rem;
-    font-weight: 700;
-    color: var(--ink);
-    overflow-wrap: anywhere;
-    word-break: break-word;
-  }
-
-  .my-bookings-table .booking-cell-status {
+  .my-bookings-table .booking-cell-status,
+  .booking-cell-status {
+    grid-area: status;
+    justify-self: end;
+    text-align: right;
     display: flex;
     flex-wrap: wrap;
     align-items: center;
+    justify-content: flex-end;
     gap: var(--space-xs);
   }
 
-  .my-bookings-table .booking-cell-status .decision-reason {
+  .my-bookings-table .booking-cell-status .decision-reason,
+  .booking-cell-status .decision-reason {
     width: 100%;
     margin-top: var(--space-2xs);
     overflow-wrap: anywhere;
     word-break: break-word;
   }
 
-  .my-bookings-table .booking-cell-datetime {
+  .my-bookings-table .booking-cell-datetime,
+  .booking-cell-datetime {
+    grid-area: datetime;
     display: flex;
     flex-wrap: wrap;
     align-items: baseline;
@@ -3172,16 +3172,20 @@ details.operational-calendar-section[open] .disclosure-arrow {
     color: var(--dim);
   }
 
-  .my-bookings-table .booking-cell-datetime strong {
+  .my-bookings-table .booking-cell-datetime strong,
+  .booking-cell-datetime strong {
     display: inline;
     color: var(--ink);
   }
 
-  .my-bookings-table .booking-time-span {
+  .my-bookings-table .booking-time-span,
+  .booking-time-span {
     display: inline;
   }
 
-  .my-bookings-table .booking-cell-room {
+  .my-bookings-table .booking-cell-room,
+  .booking-cell-room {
+    grid-area: room;
     display: flex;
     flex-wrap: wrap;
     align-items: baseline;
@@ -3189,16 +3193,20 @@ details.operational-calendar-section[open] .disclosure-arrow {
     font-size: .88rem;
   }
 
-  .my-bookings-table .booking-cell-room strong {
+  .my-bookings-table .booking-cell-room strong,
+  .booking-cell-room strong {
     color: var(--cyan);
   }
 
-  .my-bookings-table .booking-cell-room .room-sub-name {
+  .my-bookings-table .booking-cell-room .room-sub-name,
+  .booking-cell-room .room-sub-name {
     display: inline;
     color: var(--muted);
   }
 
-  .my-bookings-table .booking-cell-equipment {
+  .my-bookings-table .booking-cell-equipment,
+  .booking-cell-equipment {
+    grid-area: equipment;
     display: flex;
     flex-wrap: wrap;
     align-items: center;
@@ -3206,16 +3214,12 @@ details.operational-calendar-section[open] .disclosure-arrow {
     font-size: .85rem;
   }
 
-  .my-bookings-table .booking-cell-equipment::before {
-    content: "อุปกรณ์:";
-    color: var(--muted);
-    font-size: .82rem;
-    margin-right: var(--space-2xs);
-  }
-
-  .my-bookings-table .booking-cell-actions {
+  .my-bookings-table .booking-cell-actions,
+  .booking-cell-actions {
+    grid-area: actions;
     display: flex;
     flex-direction: column;
+    align-items: stretch;
     gap: var(--space-xs);
     margin-top: var(--space-xs);
     padding-top: var(--space-xs);
@@ -3223,51 +3227,76 @@ details.operational-calendar-section[open] .disclosure-arrow {
     width: 100%;
   }
 
-  .my-bookings-table .booking-cell-actions .compact-button,
-  .my-bookings-table .booking-cell-actions .rebook-link {
-    min-height: 44px;
-    width: 100%;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    text-align: center;
-    box-sizing: border-box;
-    margin: 0;
-    padding: var(--space-xs) var(--space-md);
-  }
-
-  .my-series-table .series-cell-ref {
+  .my-series-table .series-cell-ref,
+  .series-cell-ref {
+    grid-area: ref;
     font-size: 1.05rem;
     color: var(--cyan);
   }
 
-  .my-series-table .series-cell-room::before {
-    content: "ห้อง: ";
-    color: var(--muted);
-    font-size: .82rem;
+  .my-series-table .series-cell-room,
+  .series-cell-room {
+    grid-area: room;
+    font-size: .88rem;
   }
 
-  .my-series-table .series-cell-count::before {
-    content: "จำนวน: ";
-    color: var(--muted);
-    font-size: .82rem;
+  .my-series-table .series-cell-count,
+  .series-cell-count {
+    grid-area: count;
+    font-size: .88rem;
   }
 
-  .my-series-table .series-cell-next::before {
-    content: "ครั้งถัดไป: ";
-    color: var(--muted);
-    font-size: .82rem;
+  .my-series-table .series-cell-next,
+  .series-cell-next {
+    grid-area: next;
+    font-size: .88rem;
   }
 
-  .my-series-table .series-cell-actions {
-    margin-top: var(--space-xs);
-    padding-top: var(--space-xs);
-    border-top: 1px solid var(--line);
-    width: 100%;
+  .my-series-table .series-cell-actions,
+  .series-cell-actions {
+    grid-area: actions;
+    justify-self: end;
+    margin-top: 0;
+    width: auto;
   }
 
-  .my-series-table .series-cell-actions .compact-button {
+  .booking-item-title {
+    display: block;
+    font-size: 1.05rem;
+    font-weight: 700;
+    line-height: 1.35;
+    color: var(--ink);
+    overflow-wrap: anywhere;
+    word-break: break-word;
+  }
+
+  .booking-cell-datetime::before,
+  .booking-cell-room::before,
+  .booking-cell-equipment::before,
+  .series-cell-room::before,
+  .series-cell-count::before,
+  .series-cell-next::before {
+    display: block;
+    margin-bottom: .15rem;
+    color: var(--dim);
+    font-size: .72rem;
+    font-weight: 800;
+    letter-spacing: .03em;
+  }
+
+  .booking-cell-datetime::before { content: "วันและเวลา"; }
+  .booking-cell-room::before { content: "ห้อง"; }
+  .booking-cell-equipment::before { content: "อุปกรณ์ส่วนกลาง"; }
+  .series-cell-room::before { content: "ห้อง"; }
+  .series-cell-count::before { content: "จำนวนครั้ง"; }
+  .series-cell-next::before { content: "ครั้งถัดไป"; }
+
+  .my-bookings-table .booking-cell-actions .compact-button,
+  .my-bookings-table .booking-cell-actions .rebook-link,
+  .booking-cell-actions .compact-button,
+  .booking-cell-actions .rebook-link {
     min-height: 44px;
+    min-height: max(44px, 2.75rem);
     width: 100%;
     display: inline-flex;
     align-items: center;
@@ -3276,6 +3305,35 @@ details.operational-calendar-section[open] .disclosure-arrow {
     box-sizing: border-box;
     margin: 0;
     padding: var(--space-xs) var(--space-md);
+  }
+
+  .my-series-table .series-cell-actions .compact-button,
+  .series-cell-actions .compact-button {
+    min-height: 44px;
+    min-height: max(44px, 2.75rem);
+    width: 100%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    box-sizing: border-box;
+    margin: 0;
+    padding: var(--space-xs) var(--space-md);
+  }
+
+  .my-bookings-table tbody tr.empty-row,
+  .my-bookings-empty-row {
+    display: block !important;
+    background: transparent;
+    border: none;
+    padding: 0;
+  }
+
+  .my-bookings-table tbody tr.empty-row .empty-state,
+  .my-bookings-empty-row .empty-state {
+    display: block;
+    width: 100%;
+    padding: var(--space-lg);
   }
 }
 
