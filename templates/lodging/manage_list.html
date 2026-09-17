@@ -27,7 +27,7 @@
       {% for c in cohorts %}
         <article class="detail-card lodging-manage-card">
           <div class="lodging-manage-card-head">
-            <div>
+            <div class="lodging-manage-card-title-wrap">
               <h3><a href="{% url 'bookings:lodging_cohort_detail' c.slug %}">{{ c.title }}</a></h3>
               <small class="mono lodging-accent-text">/lodging/c/{{ c.slug }}/</small>
             </div>
@@ -51,14 +51,21 @@
             </p>
           </div>
           <div class="lodging-manage-card-actions">
-            <a role="button" class="btn-primary" href="{% url 'bookings:lodging_cohort_detail' c.slug %}">
+            {% url 'bookings:lodging_portal' c.slug as portal_url %}
+            <a role="button" class="btn-primary lodging-card-primary-action" href="{% url 'bookings:lodging_cohort_detail' c.slug %}">
               ดูรายชื่อนักเรียน →
             </a>
-            <a role="button" class="secondary" href="{% url 'bookings:lodging_cohort_edit' c.slug %}">
-              แก้ไข
+            <button type="button" class="secondary lodging-copy-btn" data-portal-path="{{ portal_url }}" onclick="copyCohortLink(this)">
+              📋 คัดลอกลิงก์
+            </button>
+            <a role="button" class="secondary lodging-line-share-btn" href="https://line.me/R/share?text={{ c.title|urlencode }}%0A{{ request.scheme }}%3A%2F%2F{{ request.get_host }}{{ portal_url|urlencode }}" data-portal-path="{{ portal_url }}" data-cohort-title="{{ c.title }}" target="_blank" rel="noopener noreferrer">
+              แชร์ผ่าน LINE ↗
             </a>
-            <a role="button" class="secondary" href="{% url 'bookings:lodging_portal' c.slug %}" target="_blank" rel="noopener noreferrer">
+            <a role="button" class="secondary lodging-portal-link" href="{{ portal_url }}" target="_blank" rel="noopener noreferrer">
               เปิดหน้านักเรียน ↗
+            </a>
+            <a role="button" class="secondary lodging-edit-link" href="{% url 'bookings:lodging_cohort_edit' c.slug %}">
+              แก้ไข
             </a>
           </div>
         </article>
@@ -106,7 +113,16 @@
             <small>ค่ามาตรฐานคือ 4 คนต่อห้อง (เตียง 1 ถึง 4)</small>
           </label>
 
-          <label>เลือกห้องพักที่เปิดให้จองในรอบนี้
+          <fieldset class="lodging-room-fieldset">
+            <legend>เลือกห้องพักที่เปิดให้จองในรอบนี้</legend>
+            <div class="lodging-room-selection-tools" role="group" aria-label="เครื่องมือเลือกห้องพัก">
+              <button type="button" class="secondary lodging-selection-btn" onclick="setRoomCheckboxes(true)">
+                เลือกทั้งหมด
+              </button>
+              <button type="button" class="secondary lodging-selection-btn" onclick="setRoomCheckboxes(false)">
+                ยกเลิกทั้งหมด
+              </button>
+            </div>
             <div class="lodging-room-checklist">
               {% for rm in lodging_rooms %}
                 <label class="lodging-checklist-item">
@@ -117,7 +133,7 @@
                 <small class="lodging-warning-text">ยังไม่มีห้องในหมวดห้องพัก กรุณาเพิ่มห้องในระบบ</small>
               {% endfor %}
             </div>
-          </label>
+          </fieldset>
 
           <label for="id_note">คำชี้แจง/ระเบียบการเข้าพัก (ถ้ามี)
             <textarea id="id_note" name="note" rows="3" placeholder="เช่น รายงานตัวก่อน 18:00 น., เตรียมผ้าปูที่นอนมาเอง"></textarea>
@@ -135,4 +151,71 @@
     {% endif %}
   </section>
 </div>
+
+<script>
+function copyCohortLink(btn) {
+  var path = btn.getAttribute('data-portal-path');
+  var url = path ? (window.location.origin + path) : window.location.href;
+  var originalText = btn.textContent;
+
+  function showSuccess() {
+    btn.textContent = '✓ คัดลอกสำเร็จ!';
+    btn.classList.add('is-copied');
+    setTimeout(function () {
+      btn.textContent = originalText;
+      btn.classList.remove('is-copied');
+    }, 2500);
+  }
+
+  function fallbackCopy() {
+    try {
+      var ta = document.createElement('textarea');
+      ta.value = url;
+      ta.style.position = 'fixed';
+      ta.style.left = '-9999px';
+      ta.style.top = '0';
+      document.body.appendChild(ta);
+      ta.focus();
+      ta.select();
+      var successful = document.execCommand('copy');
+      document.body.removeChild(ta);
+      if (successful) {
+        showSuccess();
+        return;
+      }
+    } catch (e) {}
+    prompt('ไม่สามารถคัดลอกอัตโนมัติได้ กรุณาคัดลอกลิงก์ด้านล่าง:', url);
+  }
+
+  if (navigator.clipboard && window.isSecureContext) {
+    navigator.clipboard.writeText(url).then(showSuccess).catch(function () {
+      fallbackCopy();
+    });
+  } else {
+    fallbackCopy();
+  }
+}
+
+function setRoomCheckboxes(checked) {
+  var container = document.querySelector('.lodging-room-checklist');
+  if (!container) return;
+  var checkboxes = container.querySelectorAll('input[type="checkbox"][name="rooms"]');
+  checkboxes.forEach(function (cb) {
+    cb.checked = checked;
+  });
+}
+
+document.addEventListener('DOMContentLoaded', function () {
+  var lineBtns = document.querySelectorAll('.lodging-line-share-btn');
+  lineBtns.forEach(function (btn) {
+    var path = btn.getAttribute('data-portal-path');
+    var title = btn.getAttribute('data-cohort-title') || '';
+    if (path) {
+      var fullUrl = window.location.origin + path;
+      var text = title ? (title + '\n' + fullUrl) : fullUrl;
+      btn.href = 'https://line.me/R/share?text=' + encodeURIComponent(text);
+    }
+  });
+});
+</script>
 {% endblock %}
