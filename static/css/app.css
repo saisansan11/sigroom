@@ -4693,3 +4693,75 @@ details.operational-calendar-section[open] .disclosure-arrow {
     justify-content: center;
   }
 }
+
+/* UX-14 Lodging Cohort Edit Mobile Clarity */
+.lodging-edit-card {
+  min-width: 0;
+}
+
+.lodging-edit-card label {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.lodging-edit-card .lodging-checkbox-label {
+  min-height: 44px;
+  align-items: center;
+  box-sizing: border-box;
+  padding: var(--space-2xs) 0;
+  border-radius: var(--radius-sm);
+}
+
+.lodging-edit-card .lodging-checkbox-label:focus-within,
+.lodging-edit-card .lodging-checkbox-label input[type="checkbox"]:focus-visible {
+  outline: 2px solid var(--cyan);
+  outline-offset: 2px;
+}
+
+.lodging-edit-card .form-actions button,
+.lodging-edit-card .form-actions a[role="button"] {
+  min-height: 44px;
+}
+
+.lodging-danger-header,
+.lodging-danger-warning {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+@media (max-width: 47.99rem) {
+  .lodging-edit-card .grid-dates {
+    grid-template-columns: 1fr;
+    gap: var(--space-sm);
+  }
+
+  .lodging-edit-card .form-actions {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--space-xs);
+    width: 100%;
+  }
+
+  .lodging-edit-card .form-actions > * {
+    width: 100%;
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    box-sizing: border-box;
+  }
+
+  .lodging-danger-zone {
+    padding: var(--space-md);
+  }
+
+  .lodging-danger-header {
+    flex-direction: row;
+    align-items: flex-start;
+  }
+
+  .lodging-danger-zone input[type="text"] {
+    width: 100%;
+  }
+}

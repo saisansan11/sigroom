@@ -45,7 +45,16 @@
       <span>เปิดให้นักเรียนจองผ่านลิงก์</span>
     </label>
 
-    <label>ห้องพักที่จัดสรรในรอบนี้
+    <fieldset class="lodging-room-fieldset">
+      <legend>ห้องพักที่จัดสรรในรอบนี้</legend>
+      <div class="lodging-room-selection-tools" role="group" aria-label="เครื่องมือเลือกห้องพัก">
+        <button type="button" class="secondary lodging-selection-btn" onclick="setRoomCheckboxes(true)">
+          เลือกทั้งหมด
+        </button>
+        <button type="button" class="secondary lodging-selection-btn" onclick="setRoomCheckboxes(false)">
+          ยกเลิกทั้งหมด
+        </button>
+      </div>
       <div class="lodging-room-checklist">
         {% for room in lodging_rooms %}
           <label class="lodging-checklist-item">
@@ -56,7 +65,7 @@
           <small class="lodging-warning-text">ยังไม่มีห้องพักที่เปิดใช้งาน</small>
         {% endfor %}
       </div>
-    </label>
+    </fieldset>
 
     <label for="id_note">คำชี้แจง / ระเบียบการเข้าพัก
       <textarea id="id_note" name="note" rows="3">{{ cohort.note }}</textarea>
@@ -81,7 +90,7 @@
       </div>
     {% endif %}
 
-    <div class="form-actions">
+    <div class="form-actions lodging-edit-actions">
       <a role="button" class="secondary" href="{% url 'bookings:lodging_cohort_detail' cohort.slug %}">
         ยกเลิก
       </a>
@@ -91,4 +100,15 @@
     </div>
   </form>
 </article>
+
+<script>
+function setRoomCheckboxes(checked) {
+  var container = document.querySelector('.lodging-edit-card .lodging-room-checklist');
+  if (!container) return;
+  var checkboxes = container.querySelectorAll('input[type="checkbox"][name="rooms"]');
+  checkboxes.forEach(function (cb) {
+    cb.checked = checked;
+  });
+}
+</script>
 {% endblock %}
