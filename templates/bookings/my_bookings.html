@@ -40,11 +40,11 @@
         <tbody>
           {% for series in series_items %}
             <tr>
-              <td class="mono font-bold">{{ series.display_ref }}</td>
-              <td>{{ series.room.code }}</td>
-              <td>{{ series.display_total }} ครั้ง · ข้าม {{ series.skips.count }}</td>
-              <td>{{ series.display_next|thai_datetime }}</td>
-              <td class="row-actions">
+              <td class="mono font-bold series-cell-ref">{{ series.display_ref }}</td>
+              <td class="series-cell-room">{{ series.room.code }}</td>
+              <td class="series-cell-count">{{ series.display_total }} ครั้ง · ข้าม {{ series.skips.count }}</td>
+              <td class="series-cell-next">{{ series.display_next|thai_datetime }}</td>
+              <td class="row-actions series-cell-actions">
                 <a role="button" class="compact-button secondary" href="{% url 'bookings:series_detail' series.id %}">ดูทั้งชุด</a>
               </td>
             </tr>
@@ -75,14 +75,14 @@
             <strong>{{ booking.start_at|thai_datetime }}</strong>
             <span class="booking-time-span">ถึง {{ booking.end_at|date:"H:i" }} น.</span>
           </td>
-          <td>
+          <td class="booking-cell-room">
             <strong class="mono">{{ booking.room.code }}</strong>
             <span class="room-sub-name">{{ booking.room.name }}</span>
           </td>
-          <td>
+          <td class="booking-cell-title">
             <span class="booking-item-title">{{ booking.title }}</span>
           </td>
-          <td>
+          <td class="booking-cell-status">
             <span class="status status-{{ booking.request_status }}">{{ booking.get_request_status_display }}</span>
             {% if booking.decision_reason %}
               <small class="decision-reason">{{ booking.decision_reason|truncatechars:80 }}</small>
@@ -90,14 +90,14 @@
               <small class="decision-reason">ไม่มีการพิจารณาภายในเวลาที่กำหนด</small>
             {% endif %}
           </td>
-          <td>
+          <td class="booking-cell-equipment">
             {% for item in booking.equipment.all %}
               <span class="equipment-badge">{{ item.code }}</span>
             {% empty %}
               —
             {% endfor %}
           </td>
-          <td class="row-actions">
+          <td class="row-actions booking-cell-actions">
             <a role="button" class="compact-button secondary" href="{% url 'bookings:booking_detail' booking.id %}" aria-label="ดูรายละเอียด {{ booking.title }}">ดูรายละเอียด</a>
             {% if booking.request_status == 'approved' %}
               <a class="rebook-link" href="{% url 'bookings:book_form' booking.room.code %}?rebook={{ booking.id }}" aria-label="จองแบบเดิมอีกครั้ง {{ booking.title }}">จองแบบเดิมอีกครั้ง ↻</a>
@@ -105,7 +105,7 @@
           </td>
         </tr>
       {% empty %}
-        <tr>
+        <tr class="my-bookings-empty-row">
           <td colspan="6" class="empty-state">
             <strong>ยังไม่มีรายการในหมวดนี้</strong>
             <p class="empty-desc">ท่านสามารถเลือกดูหมวดอื่น หรือเริ่มทำรายการจองห้องใหม่ได้ทันที</p>
