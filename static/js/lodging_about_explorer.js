@@ -312,17 +312,21 @@
   });
 
   /* ─── Floor toggle ───────────────────────────────────────────── */
+  function switchFloor(floorNum) {
+    currentFloor = parseInt(floorNum, 10);
+    document.querySelectorAll('.lka-ftoggle').forEach(b => {
+      const match = parseInt(b.dataset.floor, 10) === currentFloor;
+      b.classList.toggle('active', match);
+      b.setAttribute('aria-pressed', match ? 'true' : 'false');
+    });
+    closePanel();
+    scheduleRender();
+  }
+  window.lkaSwitchFloor = switchFloor;
+
   document.querySelectorAll('.lka-ftoggle').forEach(btn => {
     btn.addEventListener('click', () => {
-      currentFloor = parseInt(btn.dataset.floor, 10);
-      document.querySelectorAll('.lka-ftoggle').forEach(b => {
-        b.classList.remove('active');
-        b.setAttribute('aria-pressed', 'false');
-      });
-      btn.classList.add('active');
-      btn.setAttribute('aria-pressed', 'true');
-      closePanel();
-      scheduleRender();
+      switchFloor(btn.dataset.floor);
     });
   });
 

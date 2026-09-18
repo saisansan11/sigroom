@@ -1,0 +1,246 @@
+"""
+UX-20 Lodging About Immersive Stay Experience — contract tests.
+
+Covers:
+1. Public 200 access without authentication
+2. New experience architecture sections in order:
+   - Hero with modern hospitality copy, floating chips, and pseudo-3D building card
+   - Quick Highlights section with 4 fact cards
+   - Room Experience showcase with 2-person (Floor 4) & 4-person (Floor 5) feature cards
+   - Preserved Interactive Floor Explorer with all control IDs, canvas, and fallback
+   - Stay Photo Gallery with featured mosaic and real photos
+   - Facilities & Shared Spaces with structured amenity cards and 3 bath photos
+   - Rates & Important Notes with summary pills, official table, and announcement image
+   - Final CTA linking to bookings:lodging_index
+3. Disclaimers: Hero 3D and Floor Explorer must carry clear non-BIM representational notes
+4. Performance & offline rules: no external CDNs, no remote 3D (Spline/Three.js), no WebGL
+5. Lazy loading on non-hero imagery (at least 8 images)
+6. Scoped CSS under .lka-* with reduced motion and overflow shield
+7. JS floor switcher helper (lkaSwitchFloor)
+
+Run with: uv run pytest bookings/tests_ux20_lodging_about.py -v
+"""
+
+from pathlib import Path
+import pytest
+from django.test import Client
+from django.urls import reverse
+
+from bookings.lodging_about_data import (
+    ELECTRICITY_AIR_BAHT_PER_UNIT,
+    ELECTRICITY_FAN_FLAT_BAHT_PER_MONTH,
+    FLOOR4_BED_COUNT,
+    FLOOR4_ROOM_COUNT,
+    FLOOR5_BED_COUNT,
+    FLOOR5_ROOM_COUNT,
+    MONTHLY_THRESHOLD_DAYS,
+    RATES,
+    TOTAL_BEDS,
+    TOTAL_ROOMS,
+)
+
+WORKTREE_ROOT = Path(__file__).resolve().parent.parent
+TEMPLATE_PATH = WORKTREE_ROOT / "templates" / "lodging" / "lodging_about.html"
+CSS_PATH = WORKTREE_ROOT / "static" / "css" / "lodging_about.css"
+JS_PATH = WORKTREE_ROOT / "static" / "js" / "lodging_about_explorer.js"
+STATIC_DIR = WORKTREE_ROOT / "static" / "img" / "showcase"
+
+pytestmark = pytest.mark.django_db
+
+
+def _read_file(path: Path) -> str:
+    return path.read_text(encoding="utf-8")
+
+
+# ---------------------------------------------------------------------------
+# 1. Public Access & Route
+# ---------------------------------------------------------------------------
+
+def test_ux20_lodging_about_public_access():
+    """GET /lodging/about/ returns 200 without login redirect."""
+    client = Client()
+    response = client.get(reverse("bookings:lodging_about"))
+    assert response.status_code == 200, f"Expected 200, got {response.status_code}"
+
+
+# ---------------------------------------------------------------------------
+# 2. Information Architecture & Key Sections in Rendered HTML
+# ---------------------------------------------------------------------------
+
+def test_ux20_hero_section_elements(client):
+    """Hero section contains modern hospitality copy, floating chips, and 3D card."""
+    response = client.get(reverse("bookings:lodging_about"))
+    html = response.content.decode("utf-8")
+
+    assert "lka-hero" in html, "Missing hero section"
+    assert "ที่พักสะดวก สะอาด พร้อมเข้าพัก" in html, "Missing hero headline"
+    assert "พักสบาย ใกล้พร้อมใช้งานใน SIGROOM" in html, "Missing hero sub-headline"
+    assert "lka-hero-chips" in html, "Missing floating hero chips container"
+    assert "lka-hero-card-3d" in html, "Missing 3D visual card in hero"
+    assert "สำรวจห้องพัก" in html, "Missing primary CTA text"
+    assert "ดูห้องว่าง" in html, "Missing secondary CTA text"
+
+
+def test_ux20_hero_3d_disclaimer(client):
+    """Hero 3D card and explorer contain non-BIM disclaimer to prevent confusion."""
+    response = client.get(reverse("bookings:lodging_about"))
+    html = response.content.decode("utf-8")
+    assert "ไม่ใช่แบบสถาปัตยกรรม BIM หรือระบุขนาดจริง" in html, (
+        "Must clarify 3D/diagram is not architectural BIM or exact dimensions"
+    )
+
+
+def test_ux20_quick_highlights_section(client):
+    """Highlights section contains 4 cards with total rooms, beds, and explorer hint."""
+    response = client.get(reverse("bookings:lodging_about"))
+    html = response.content.decode("utf-8")
+
+    assert "lka-highlights-section" in html, "Missing highlights section"
+    assert str(TOTAL_ROOMS) in html, "Missing 87 total rooms in highlights"
+    assert str(TOTAL_BEDS) in html, "Missing 234 total beds in highlights"
+    assert "2–4" in html or "2-4" in html, "Missing 2-4 persons/room highlight"
+
+
+def test_ux20_room_experience_section(client):
+    """Room Experience showcase features 2-person and 4-person rooms with accurate facts."""
+    response = client.get(reverse("bookings:lodging_about"))
+    html = response.content.decode("utf-8")
+
+    assert "lka-experience-section" in html, "Missing room experience section"
+    assert "ห้องพัก 2 คน" in html, "Missing 2-person room title"
+    assert "ห้องพัก 4 คน" in html, "Missing 4-person room title"
+
+    # Floor 4 facts
+    assert str(FLOOR4_ROOM_COUNT) in html, "Missing Floor 4 room count (57)"
+    assert str(FLOOR4_BED_COUNT) in html, "Missing Floor 4 bed count (114)"
+    assert "401–407" in html or "401-407" in html, "Missing Floor 4 air room range"
+    assert "417–448" in html or "417-448" in html, "Missing Floor 4 fan room range"
+
+    # Floor 5 facts
+    assert str(FLOOR5_ROOM_COUNT) in html, "Missing Floor 5 room count (30)"
+    assert str(FLOOR5_BED_COUNT) in html, "Missing Floor 5 bed count (120)"
+    assert "501–530" in html or "501-530" in html, "Missing Floor 5 air room range"
+
+
+def test_ux20_floor_overview_cards_retained(client):
+    """Floor overview diagrams (floor4.png, floor5.png) are retained."""
+    response = client.get(reverse("bookings:lodging_about"))
+    html = response.content.decode("utf-8")
+
+    assert "floor4.png" in html, "Missing floor4.png diagram"
+    assert "floor5.png" in html, "Missing floor5.png diagram"
+
+
+def test_ux20_interactive_explorer_hooks_intact(client):
+    """Explorer maintains all critical DOM IDs, ARIA semantics, and control attributes."""
+    response = client.get(reverse("bookings:lodging_about"))
+    html = response.content.decode("utf-8")
+
+    assert 'id="lka-explorer"' in html, "Missing #lka-explorer anchor"
+    assert 'id="lka-btn-f4"' in html, "Missing Floor 4 toggle button"
+    assert 'id="lka-btn-f5"' in html, "Missing Floor 5 toggle button"
+    assert 'data-floor="4"' in html, "Missing data-floor=4"
+    assert 'data-floor="5"' in html, "Missing data-floor=5"
+
+    assert 'data-filter="all"' in html, "Missing all filter"
+    assert 'data-filter="air"' in html, "Missing air filter"
+    assert 'data-filter="fan"' in html, "Missing fan filter"
+    assert 'data-filter="facility"' in html, "Missing facility filter"
+
+    assert 'id="lka-explorer-canvas"' in html, "Missing canvas container"
+    assert 'id="lka-iso-scene"' in html, "Missing iso scene container"
+    assert 'id="lka-zoom-in"' in html, "Missing zoom in"
+    assert 'id="lka-zoom-out"' in html, "Missing zoom out"
+    assert 'id="lka-reset"' in html, "Missing reset button"
+    assert 'id="lka-room-panel"' in html, "Missing room detail panel"
+    assert 'id="lka-panel-close"' in html, "Missing panel close button"
+    assert 'id="lka-explorer-fallback"' in html, "Missing accessible fallback"
+
+
+def test_ux20_stay_gallery_section(client):
+    """Gallery section contains featured and supporting real photos."""
+    response = client.get(reverse("bookings:lodging_about"))
+    html = response.content.decode("utf-8")
+
+    assert "lka-gallery-section" in html, "Missing gallery section"
+    assert "room2p_444.jpg" in html, "Missing room2p_444.jpg"
+    assert "room2p_222.jpg" in html, "Missing room2p_222.jpg"
+    assert "room4p_3421.jpg" in html, "Missing room4p_3421.jpg"
+    assert "room4p_4444.jpg" in html, "Missing room4p_4444.jpg"
+
+
+def test_ux20_facilities_cards_and_photos(client):
+    """Facilities section displays structured amenity cards and 3 bathroom photos."""
+    response = client.get(reverse("bookings:lodging_about"))
+    html = response.content.decode("utf-8")
+
+    assert "lka-facilities-section" in html, "Missing facilities section"
+    assert "ห้องน้ำส่วนกลาง" in html, "Missing bathrooms title"
+    assert "ห้องอาบน้ำส่วนกลาง" in html, "Missing showers title"
+    assert "โถปัสสาวะ 10, ห้องสุขา 10" in html, "Missing bathroom fixture details"
+    assert "ฝั่งละ 20 ห้อง" in html, "Missing shower count details"
+    assert "bath1.jpg" in html, "Missing bath1.jpg"
+    assert "bath2.jpg" in html, "Missing bath2.jpg"
+    assert "bath3.jpg" in html, "Missing bath3.jpg"
+
+
+def test_ux20_rates_section_structure(client):
+    """Rates section has summary cards, full table with all categories, and rates.png."""
+    response = client.get(reverse("bookings:lodging_about"))
+    html = response.content.decode("utf-8")
+
+    assert 'id="lka-rates"' in html, "Missing #lka-rates section"
+    assert "lka-rates-summary-grid" in html, "Missing rates summary grid"
+    assert f"{ELECTRICITY_AIR_BAHT_PER_UNIT} บาท" in html or str(ELECTRICITY_AIR_BAHT_PER_UNIT) in html
+    assert f"{ELECTRICITY_FAN_FLAT_BAHT_PER_MONTH}" in html
+    assert f"{MONTHLY_THRESHOLD_DAYS} วัน" in html or str(MONTHLY_THRESHOLD_DAYS) in html
+
+    for rate in RATES:
+        assert rate["category"] in html, f"Missing rate category {rate['category']}"
+
+    assert "rates.png" in html, "Missing official rates announcement image"
+
+
+def test_ux20_final_cta_links_to_lodging_index(client):
+    """Final CTA section prominently links to lodging_index."""
+    response = client.get(reverse("bookings:lodging_about"))
+    html = response.content.decode("utf-8")
+
+    assert "lka-cta" in html, "Missing final CTA section"
+    lodging_url = reverse("bookings:lodging_index")
+    assert lodging_url in html, f"CTA must link to {lodging_url}"
+
+
+# ---------------------------------------------------------------------------
+# 3. Performance, Security & Asset Hygiene
+# ---------------------------------------------------------------------------
+
+def test_ux20_no_remote_cdn_or_3d_engine():
+    """Template must have no external CDNs, Spline, Three.js, or WebGL renderer."""
+    html = _read_file(TEMPLATE_PATH)
+    js = _read_file(JS_PATH)
+
+    for forbidden in ["cdn.jsdelivr.net", "unpkg.com", "cdnjs.cloudflare.com", "three.js", "spline", "sketchfab"]:
+        assert forbidden not in html.lower(), f"Forbidden external dependency in template: {forbidden}"
+        assert forbidden not in js.lower(), f"Forbidden external dependency in JS: {forbidden}"
+
+
+def test_ux20_lazy_loading_image_count():
+    """At least 8 below-the-fold showcase images must have loading='lazy'."""
+    html = _read_file(TEMPLATE_PATH)
+    lazy_count = html.count('loading="lazy"')
+    assert lazy_count >= 8, f"Expected at least 8 lazy loaded images, got {lazy_count}"
+
+
+def test_ux20_css_rules_and_reduced_motion():
+    """CSS must define scoped styles, overflow shield, and prefers-reduced-motion."""
+    css = _read_file(CSS_PATH)
+    assert ".lka-hero" in css, "Missing .lka-hero in CSS"
+    assert "overflow-x: clip" in css or "overflow: hidden" in css, "Missing overflow protection in CSS"
+    assert "@media (prefers-reduced-motion: reduce)" in css, "Missing reduced-motion media query"
+
+
+def test_ux20_js_floor_switch_helper():
+    """JS must expose window.lkaSwitchFloor helper function."""
+    js = _read_file(JS_PATH)
+    assert "window.lkaSwitchFloor = switchFloor;" in js, "Missing lkaSwitchFloor helper in JS"
