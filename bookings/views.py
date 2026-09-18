@@ -859,7 +859,11 @@ def booking_edit(request, id):
             return redirect("bookings:booking_detail", id=booking.id)
     else:
         form = BookingForm(user=request.user, room=booking.room, instance=booking, allowed_fields=fields)
-    return render(request, "bookings/booking_edit.html", {"form": form, "booking": booking})
+    return render(
+        request,
+        "bookings/booking_edit.html",
+        {"form": form, "booking": booking, "time_presets": time_presets()},
+    )
 
 
 @login_required
