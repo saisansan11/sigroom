@@ -12,7 +12,12 @@ from django.views.decorators.http import require_POST
 
 from audit.services import audit
 from resources.models import Resource
-from .lodging_about_data import RATES
+from .lodging_about_data import (
+    ELECTRICITY_AIR_BAHT_PER_UNIT,
+    ELECTRICITY_FAN_FLAT_BAHT_PER_MONTH,
+    MONTHLY_THRESHOLD_DAYS,
+    RATES,
+)
 from .lodging_models import CourseLodgingCohort, CourseStudentLodging
 from .lodging_services import (
     can_access_lodging_management,
@@ -35,7 +40,13 @@ def lodging_about(request):
     Requires no authentication. Contains no student PII.
     No dependency on active cohort records.
     """
-    return render(request, "lodging/lodging_about.html", {"rates": RATES})
+    context = {
+        "rates": RATES,
+        "electricity_air_baht_per_unit": ELECTRICITY_AIR_BAHT_PER_UNIT,
+        "electricity_fan_flat_baht_per_month": ELECTRICITY_FAN_FLAT_BAHT_PER_MONTH,
+        "monthly_threshold_days": MONTHLY_THRESHOLD_DAYS,
+    }
+    return render(request, "lodging/lodging_about.html", context)
 
 
 def _masked_name(full_name: str) -> str:
