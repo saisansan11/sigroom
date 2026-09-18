@@ -5,11 +5,12 @@
 {% block title %}เลือกห้องพัก · {{ cohort.title }} · SIGROOM{% endblock %}
 
 {% block content %}
+<div class="student-lodging-portal">
 <div class="lodging-portal-hero">
   <div class="lodging-cohort-top">
     <span class="room-badge-free">รร.ส.สส. · ระบบจองที่พักหลักสูตร</span>
     {% if share_url %}
-      <a role="button" class="secondary" href="{{ line_share_url }}" target="_blank" rel="noopener noreferrer">
+      <a role="button" class="secondary lodging-portal-share-btn" href="{{ line_share_url }}" target="_blank" rel="noopener noreferrer">
         แชร์เข้า LINE ↗
       </a>
     {% endif %}
@@ -90,7 +91,7 @@
         <div class="beds-list">
           {% for bed in rdata.beds %}
             <div class="bed-row {% if bed.is_occupied %}occupied{% else %}free{% endif %}">
-              <div>
+              <div class="bed-status-group">
                 <strong>เตียง {{ bed.number }}:</strong>
                 {% if bed.is_occupied %}
                   <span class="bed-occupant-status">มีผู้เข้าพักแล้ว</span>
@@ -98,11 +99,11 @@
                   <span class="bed-free-status">ว่าง</span>
                 {% endif %}
               </div>
-              <div>
+              <div class="bed-action-group">
                 {% if bed.is_occupied %}
                   <small class="mono muted-text">จองแล้ว</small>
                 {% else %}
-                  <button type="button" class="bed-select-btn" onclick="openBookingModal('{{ rdata.room.id }}', '{{ rdata.room.code }}', '{{ bed.number }}')">
+                  <button type="button" class="bed-select-btn" aria-label="เลือกห้อง {{ rdata.room.code }} เตียง {{ bed.number }}" onclick="openBookingModal('{{ rdata.room.id }}', '{{ rdata.room.code }}', '{{ bed.number }}')">
                     เลือกเตียงนี้
                   </button>
                 {% endif %}
@@ -207,6 +208,7 @@
     <p class="room-gallery-counter"><span id="roomGalleryIndex">1</span> / <span id="roomGalleryTotal">1</span></p>
   </article>
 </dialog>
+</div>
 
 <script>
 let roomGalleryPhotos = [];
