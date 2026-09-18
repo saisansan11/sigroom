@@ -181,7 +181,7 @@
             <li>ห้องพัดลม: 417–448 อากาศถ่ายเทสะดวก</li>
           </ul>
           <div class="lka-exp-foot">
-            <a href="#lka-explorer" class="lka-link-button">สำรวจผังห้องชั้น 4 บนแผนที่ <span aria-hidden="true">↓</span></a>
+            <a href="#lka-explorer" class="lka-link-button" data-explorer-floor="4">สำรวจผังห้องชั้น 4 บนแผนที่ <span aria-hidden="true">↓</span></a>
           </div>
         </div>
       </article>
@@ -209,7 +209,7 @@
             <li>พื้นที่ตรงกลางกว้างขวาง สะดวกต่อการจัดเก็บสัมภาระ</li>
           </ul>
           <div class="lka-exp-foot">
-            <a href="#lka-explorer" class="lka-link-button">สำรวจผังห้องชั้น 5 บนแผนที่ <span aria-hidden="true">↓</span></a>
+            <a href="#lka-explorer" class="lka-link-button" data-explorer-floor="5">สำรวจผังห้องชั้น 5 บนแผนที่ <span aria-hidden="true">↓</span></a>
           </div>
         </div>
       </article>
@@ -428,7 +428,7 @@
     <div class="lka-section-header">
       <p class="eyebrow">ค่าธรรมเนียมและระเบียบ</p>
       <h2 id="lka-rates-heading">อัตราค่าที่พัก</h2>
-      <p class="lka-section-sub">ตามประกาศอัตราค่าที่พัก · พักตั้งแต่ 20 วันขึ้นไปนับเป็น 1 เดือน</p>
+      <p class="lka-section-sub">ตามประกาศอัตราค่าที่พัก · พักตั้งแต่ {{ monthly_threshold_days }} วันขึ้นไปนับเป็น 1 เดือน</p>
     </div>
 
     {# Electricity and calculation rules summary cards #}
@@ -436,17 +436,17 @@
       <div class="lka-rsum-card">
         <span class="lka-rsum-badge air">แอร์</span>
         <h3 class="lka-rsum-title">ห้องปรับอากาศ</h3>
-        <p class="lka-rsum-detail">คิดค่าไฟฟ้าตามมิเตอร์จริง หน่วยละ <strong>5 บาท</strong></p>
+        <p class="lka-rsum-detail">คิดค่าไฟฟ้าตามมิเตอร์จริง หน่วยละ <strong>{{ electricity_air_baht_per_unit }} บาท</strong></p>
       </div>
       <div class="lka-rsum-card">
         <span class="lka-rsum-badge fan">พัดลม</span>
         <h3 class="lka-rsum-title">ห้องพัดลม</h3>
-        <p class="lka-rsum-detail">เหมาจ่ายค่าไฟฟ้า <strong>200 บาท/เดือน</strong></p>
+        <p class="lka-rsum-detail">เหมาจ่ายค่าไฟฟ้า <strong>{{ electricity_fan_flat_baht_per_month }} บาท/เดือน</strong></p>
       </div>
       <div class="lka-rsum-card">
         <span class="lka-rsum-badge period">เกณฑ์การคิด</span>
         <h3 class="lka-rsum-title">การนับรอบเดือน</h3>
-        <p class="lka-rsum-detail">พักตั้งแต่ <strong>20 วัน</strong> ขึ้นไป นับเป็น 1 เดือน</p>
+        <p class="lka-rsum-detail">พักตั้งแต่ <strong>{{ monthly_threshold_days }} วัน</strong> ขึ้นไป นับเป็น 1 เดือน</p>
       </div>
     </div>
 
@@ -483,9 +483,9 @@
         <div class="lka-rates-notes">
           <h3>หมายเหตุค่าไฟฟ้า</h3>
           <ul>
-            <li>ห้องปรับอากาศ: คิดตามมิเตอร์ หน่วยละ <strong>5 บาท</strong></li>
-            <li>ห้องพัดลม: เหมาจ่าย <strong>200 บาท/เดือน</strong></li>
-            <li>พัก 20 วันขึ้นไป นับเป็น 1 เดือน</li>
+            <li>ห้องปรับอากาศ: คิดตามมิเตอร์ หน่วยละ <strong>{{ electricity_air_baht_per_unit }} บาท</strong></li>
+            <li>ห้องพัดลม: เหมาจ่าย <strong>{{ electricity_fan_flat_baht_per_month }} บาท/เดือน</strong></li>
+            <li>พัก {{ monthly_threshold_days }} วันขึ้นไป นับเป็น 1 เดือน</li>
           </ul>
         </div>
         <div class="lka-rates-img-wrap">

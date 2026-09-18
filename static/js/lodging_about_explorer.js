@@ -330,6 +330,16 @@
     });
   });
 
+  // Room Experience cards / external floor switches
+  document.querySelectorAll('[data-explorer-floor]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const targetFloor = btn.dataset.explorerFloor;
+      if (targetFloor) {
+        switchFloor(targetFloor);
+      }
+    });
+  });
+
   /* ─── Filter buttons ─────────────────────────────────────────── */
   document.querySelectorAll('.lka-filter').forEach(btn => {
     btn.addEventListener('click', () => {

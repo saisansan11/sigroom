@@ -24,12 +24,13 @@
 
 | File | Change | Description |
 |------|--------|-------------|
-| `templates/lodging/lodging_about.html` | MODIFIED | Re-architected into 8 showcase sections with modern hero, floating facts, 3D card, room experience cards, structured facilities, and bottom rates |
+| `bookings/lodging_views.py` | MODIFIED | Pass authoritative rate constants (`ELECTRICITY_AIR_BAHT_PER_UNIT`, `ELECTRICITY_FAN_FLAT_BAHT_PER_MONTH`, `MONTHLY_THRESHOLD_DAYS`) to `lodging_about()` template context |
+| `templates/lodging/lodging_about.html` | MODIFIED | Added `data-explorer-floor="4"` / `"5"` to Room Experience cards; replaced hardcoded rate literals with context variables across subtitle, summary cards, and notes |
 | `static/css/lodging_about.css` | MODIFIED | Modern hospitality aesthetic, soft 3D/isometric depth, sky blue & mint palette, ambient glows, overflow shield, reduced motion support |
-| `static/js/lodging_about_explorer.js` | MODIFIED | Preserved SVG isometric explorer engine, added `lkaSwitchFloor` helper |
-| `bookings/tests_ux20_lodging_about.py` | NEW | Dedicated UX-20 contract test suite (15 tests) |
-| `docs/plans/2026-09-19-ux-20-lodging-about-immersive-stay.md` | NEW | In-repo plan document |
-| `docs/handoffs/2026-09-19-ux-20-lodging-about-immersive-stay.md` | NEW | This handoff document |
+| `static/js/lodging_about_explorer.js` | MODIFIED | Added `[data-explorer-floor]` event listener triggering `switchFloor()`, preserving `lkaSwitchFloor` helper and full isometric SVG floor explorer engine |
+| `bookings/tests_ux20_lodging_about.py` | MODIFIED | Expanded contract tests to 19 tests covering view context, rate constants, non-hardcoded templates, and floor switcher wiring |
+| `docs/plans/2026-09-19-ux-20-lodging-about-immersive-stay.md` | MODIFIED | In-repo plan document updated with review blocker resolution |
+| `docs/handoffs/2026-09-19-ux-20-lodging-about-immersive-stay.md` | MODIFIED | This handoff document |
 
 ---
 
@@ -37,13 +38,15 @@
 
 1. **Hospitality-First Visual Transformation**:
    Replaced dense academic summary tables with an engaging "Feel first, detail second" experience. The hero features high-impact Thai typography, floating stat chips, dual CTAs, and a soft 3D isometric building card with a clear non-BIM representational disclaimer.
-2. **Room Experience Cards**:
-   Highlights genuine room types (Floor 4: 2 persons, 57 rooms (25 air, 32 fan), 114 beds; Floor 5: 4 persons, 30 rooms (all air), 120 beds) mapped to real photography (`room2p_444.jpg`, `room4p_3421.jpg`) and provides direct links to activate the corresponding floor on the interactive map.
-3. **Preservation of Interactive Floor Explorer Invariants**:
+2. **Room Experience Cards to Floor Explorer Wiring**:
+   Room Experience feature cards (Floor 4: 2 persons vs Floor 5: 4 persons) feature semantic `data-explorer-floor="4"` and `data-explorer-floor="5"` attributes bound in `lodging_about_explorer.js` to `switchFloor()`. Preserves native anchor `href="#lka-explorer"` for progressive enhancement, maintains `aria-pressed` states, closes open room panels, and re-renders SVG maps dynamically.
+3. **Single Source of Truth for Rates**:
+   Eliminated duplicate hardcoded literals ("5 บาท", "200 บาท", "20 วัน") from `lodging_about.html`. Authoritative constants (`ELECTRICITY_AIR_BAHT_PER_UNIT`, `ELECTRICITY_FAN_FLAT_BAHT_PER_MONTH`, `MONTHLY_THRESHOLD_DAYS`) are imported from `bookings/lodging_about_data.py` and passed into the view context.
+4. **Preservation of Interactive Floor Explorer Invariants**:
    Retained 100% of DOM hooks, event handlers, keyboard controls (arrows/+/-/R/Esc), touch rotation, zoom/reset, room detail panel, and `<details>` text fallback.
-4. **Zero Backend Risk & Strict Scoping**:
-   No changes to booking logic, models, permissions, auth, allocations, or database schema. Authoritative numbers strictly trace back to `bookings/lodging_about_data.py`.
-5. **Performance & Security**:
+5. **Zero Backend Risk & Strict Scoping**:
+   No changes to booking logic, models, permissions, auth, allocations, or database schema. Scope strictly bounded to PR #43 (unrelated `/favicon.ico` 404 left out as global/pre-existing debt).
+6. **Performance & Security**:
    Zero external CDNs, zero WebGL, zero Three.js/Spline. Hardware-accelerated CSS transforms (`translateY`, `rotateX`, `opacity`), lazy loading on all below-the-fold imagery (12 lazy images), and strict `prefers-reduced-motion` fallbacks.
 
 ---
@@ -52,22 +55,37 @@
 
 ### Automated Tests
 - `uv run pytest bookings/tests_ux17_showcase.py -v`: **85 passed**
-- `uv run pytest bookings/tests_ux20_lodging_about.py -v`: **15 passed**
-- Combined showcase & UX-20 tests: **100 passed**
-- Full test suite: `uv run pytest -q`: **468 passed, 0 failures** in 1m 48s.
+- `uv run pytest bookings/tests_ux20_lodging_about.py -v`: **19 passed**
+- Combined showcase & UX-20 tests: **104 passed**
+- Lodging regression tests (`tests_guest_and_lodging.py`, `tests_lodging_v4.py`, `tests_ux18.py`, `tests_ux19.py`): **37 passed**
+- Full test suite: `uv run pytest -q`: **472 passed, 0 failures** in 1m 21s.
 - Django checks: `uv run manage.py check`: **0 issues**
 - Migration dry-run: `uv run manage.py makemigrations --check --dry-run`: **No changes detected**
 - Whitespace validation: `git diff --check`: **Clean (0 errors)**
 
-### Browser QA
-- Dev server running on `http://127.0.0.1:8000/lodging/about/`.
-- Verified zero horizontal page overflow across viewports via CSS container clipping (`overflow-x: clip`, `max-width: 100%`).
-- Verified responsive layout hierarchy across 360px, 390px, 430px, 768px, 1280px.
+### Real Browser QA (Chrome CDP Headless Matrix)
+- Tested across 5 viewports:
+  - 360×800 (Mobile compact): `docScrollWidth=360, winInnerWidth=360` — **PASS (No overflow)**
+  - 390×844 (Mobile standard): `docScrollWidth=390, winInnerWidth=390` — **PASS (No overflow)**
+  - 430×932 (Mobile large): `docScrollWidth=430, winInnerWidth=430` — **PASS (No overflow)**
+  - 768×1024 (Tablet portrait): `docScrollWidth=753, winInnerWidth=768` — **PASS (No overflow)**
+  - 1280×720 (Desktop standard): `docScrollWidth=1265, winInnerWidth=1280` — **PASS (No overflow)**
+- Interactions verified:
+  - Floor 5 Experience card click -> `#lka-btn-f5.active`, `aria-pressed="true"`, Floor 5 rooms (501–530) rendered — **PASS**
+  - Floor 4 Experience card click -> `#lka-btn-f4.active`, `aria-pressed="true"`, Floor 4 rooms (401–460) rendered — **PASS**
+  - Filters (Air: 25 rooms, Fan: 32 rooms, All: 60 blocks) — **PASS**
+  - Room Detail Panel (Click Room 401 opens panel, close button hides panel) — **PASS**
+  - Zoom & Reset (zoom scale 1.3, reset scale 1.0) — **PASS**
+  - Keyboard Interaction (Focus on Room 402 + Enter opens panel) — **PASS**
+  - Rates Table Container (`overflow-x: auto`) on mobile — **PASS**
+  - Console / Runtime Exceptions: **0** — **PASS**
 
 ---
 
 ## 5. Next Steps
 
 1. Review git diff and commit scoped files on branch `feat/ux-20-lodging-about-immersive-stay`.
-2. Push branch and open PR against `feat/lodging-v5-2`.
-3. Wait for user review and explicit merge approval (no deploy).
+2. Push commit to remote `origin/feat/ux-20-lodging-about-immersive-stay` (PR #43).
+3. Await GitHub Actions CI passing.
+4. Provide new commit SHA and QA summary for final review.
+5. **DO NOT MERGE** until explicit user approval.

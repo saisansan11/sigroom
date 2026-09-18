@@ -184,6 +184,58 @@ def test_ux20_facilities_cards_and_photos(client):
     assert "bath3.jpg" in html, "Missing bath3.jpg"
 
 
+def test_ux20_lodging_about_view_context(client):
+    """View passes authoritative constants from lodging_about_data.py in context."""
+    response = client.get(reverse("bookings:lodging_about"))
+    assert response.context["rates"] == RATES
+    assert response.context["electricity_air_baht_per_unit"] == ELECTRICITY_AIR_BAHT_PER_UNIT
+    assert response.context["electricity_fan_flat_baht_per_month"] == ELECTRICITY_FAN_FLAT_BAHT_PER_MONTH
+    assert response.context["monthly_threshold_days"] == MONTHLY_THRESHOLD_DAYS
+
+
+def test_ux20_rates_no_hardcoded_literals_in_template():
+    """Template must use context variables rather than hardcoded rate constants."""
+    tmpl = _read_file(TEMPLATE_PATH)
+    # Check that context variables are used in the template
+    assert "{{ electricity_air_baht_per_unit }}" in tmpl
+    assert "{{ electricity_fan_flat_baht_per_month }}" in tmpl
+    assert "{{ monthly_threshold_days }}" in tmpl
+    # Check that hardcoded literals in rates section have been removed
+    assert "หน่วยละ <strong>5 บาท</strong>" not in tmpl
+    assert "<strong>200 บาท/เดือน</strong>" not in tmpl
+    assert "<strong>20 วัน</strong>" not in tmpl
+
+
+def test_ux20_rates_rendered_from_authoritative_constants(client):
+    """Rendered HTML displays rate constants matching source of truth across all sections."""
+    response = client.get(reverse("bookings:lodging_about"))
+    html = response.content.decode("utf-8")
+
+    # Rates subtitle
+    assert f"พักตั้งแต่ {MONTHLY_THRESHOLD_DAYS} วันขึ้นไปนับเป็น 1 เดือน" in html
+    # Summary cards
+    assert f"หน่วยละ <strong>{ELECTRICITY_AIR_BAHT_PER_UNIT} บาท</strong>" in html
+    assert f"เหมาจ่ายค่าไฟฟ้า <strong>{ELECTRICITY_FAN_FLAT_BAHT_PER_MONTH} บาท/เดือน</strong>" in html
+    assert f"พักตั้งแต่ <strong>{MONTHLY_THRESHOLD_DAYS} วัน</strong> ขึ้นไป นับเป็น 1 เดือน" in html
+    # Notes list
+    assert f"ห้องปรับอากาศ: คิดตามมิเตอร์ หน่วยละ <strong>{ELECTRICITY_AIR_BAHT_PER_UNIT} บาท</strong>" in html
+    assert f"ห้องพัดลม: เหมาจ่าย <strong>{ELECTRICITY_FAN_FLAT_BAHT_PER_MONTH} บาท/เดือน</strong>" in html
+    assert f"พัก {MONTHLY_THRESHOLD_DAYS} วันขึ้นไป นับเป็น 1 เดือน" in html
+
+
+def test_ux20_room_experience_floor_switching_attributes(client):
+    """Room Experience cards have semantic data-explorer-floor targets and valid href fallback."""
+    response = client.get(reverse("bookings:lodging_about"))
+    html = response.content.decode("utf-8")
+
+    # Floor 4 card button
+    assert 'data-explorer-floor="4"' in html, "Missing data-explorer-floor=4 on Floor 4 card"
+    # Floor 5 card button
+    assert 'data-explorer-floor="5"' in html, "Missing data-explorer-floor=5 on Floor 5 card"
+    # Both preserve href="#lka-explorer" for progressive enhancement
+    assert 'href="#lka-explorer"' in html
+
+
 def test_ux20_rates_section_structure(client):
     """Rates section has summary cards, full table with all categories, and rates.png."""
     response = client.get(reverse("bookings:lodging_about"))
@@ -191,9 +243,9 @@ def test_ux20_rates_section_structure(client):
 
     assert 'id="lka-rates"' in html, "Missing #lka-rates section"
     assert "lka-rates-summary-grid" in html, "Missing rates summary grid"
-    assert f"{ELECTRICITY_AIR_BAHT_PER_UNIT} บาท" in html or str(ELECTRICITY_AIR_BAHT_PER_UNIT) in html
+    assert f"{ELECTRICITY_AIR_BAHT_PER_UNIT} บาท" in html
     assert f"{ELECTRICITY_FAN_FLAT_BAHT_PER_MONTH}" in html
-    assert f"{MONTHLY_THRESHOLD_DAYS} วัน" in html or str(MONTHLY_THRESHOLD_DAYS) in html
+    assert f"{MONTHLY_THRESHOLD_DAYS} วัน" in html
 
     for rate in RATES:
         assert rate["category"] in html, f"Missing rate category {rate['category']}"
@@ -240,7 +292,11 @@ def test_ux20_css_rules_and_reduced_motion():
     assert "@media (prefers-reduced-motion: reduce)" in css, "Missing reduced-motion media query"
 
 
-def test_ux20_js_floor_switch_helper():
-    """JS must expose window.lkaSwitchFloor helper function."""
+def test_ux20_js_floor_switch_helper_and_wiring():
+    """JS must expose window.lkaSwitchFloor helper function and wire data-explorer-floor clicks."""
     js = _read_file(JS_PATH)
     assert "window.lkaSwitchFloor = switchFloor;" in js, "Missing lkaSwitchFloor helper in JS"
+    assert "data-explorer-floor" in js, "Missing querySelectorAll for data-explorer-floor in JS"
+    assert "switchFloor(targetFloor)" in js or "switchFloor(btn.dataset.explorerFloor)" in js or "targetFloor" in js, (
+        "Missing switchFloor call on data-explorer-floor click"
+    )
