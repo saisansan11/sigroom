@@ -4842,3 +4842,224 @@ details.operational-calendar-section[open] .disclosure-arrow {
     text-align: center;
   }
 }
+
+/* UX-16 Student Digital Pass Mobile Clarity */
+.keycard {
+  box-sizing: border-box;
+  min-height: 16.5rem;
+  height: auto;
+}
+
+.keycard-flip {
+  display: grid;
+  grid-template-areas: "card";
+  box-sizing: border-box;
+  width: 100%;
+  height: auto;
+  min-height: 100%;
+  transform-style: preserve-3d;
+}
+
+.keycard-face {
+  grid-area: card;
+  position: relative;
+  inset: auto;
+  box-sizing: border-box;
+  width: 100%;
+  height: auto;
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  line-height: 1.35;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+
+.keycard-front {
+  padding: 1.15rem 1.25rem;
+  box-sizing: border-box;
+  transform: rotateY(0deg);
+}
+
+.keycard-back {
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-sm);
+  box-sizing: border-box;
+  transform: rotateY(180deg);
+}
+
+.keycard-front-top,
+.keycard-front-bottom {
+  box-sizing: border-box;
+  width: 100%;
+}
+
+.keycard-front p,
+.keycard-back p {
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.keycard-brand {
+  line-height: 1.25;
+}
+
+.keycard-org {
+  line-height: 1.3;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.keycard-room {
+  line-height: 1.2;
+}
+
+.keycard-name {
+  margin: var(--space-2xs) 0 0;
+  line-height: 1.3;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.keycard-cohort {
+  margin: var(--space-2xs) 0 0;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.keycard-dates {
+  margin: var(--space-2xs) 0 0;
+  line-height: 1.3;
+}
+
+.keycard-flip-hint {
+  margin: var(--space-2xs) 0 0;
+  line-height: 1.3;
+}
+
+.keycard:focus-visible {
+  outline: 2px solid var(--cyan);
+  outline-offset: 3px;
+  border-radius: var(--radius-lg);
+}
+
+.keycard-actions-bar button:focus-visible,
+.keycard-actions-bar a[role="button"]:focus-visible,
+.keycard-save-tip > summary:focus-visible {
+  outline: 2px solid var(--cyan);
+  outline-offset: 2px;
+}
+
+#copyPassBtn.is-copied {
+  background-color: var(--green);
+  border-color: var(--green);
+  color: #fff;
+}
+
+.keycard:not(.is-flipped) .keycard-back {
+  pointer-events: none;
+}
+
+.keycard.is-flipped .keycard-front {
+  pointer-events: none;
+}
+
+@media (max-width: 47.99rem) {
+  .keycard-stage {
+    margin: var(--space-md) auto;
+    padding-inline: var(--space-sm);
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  .keycard {
+    width: 100%;
+    max-width: 26rem;
+    aspect-ratio: auto;
+    height: auto;
+    min-height: auto;
+    animation: none;
+    transform: none;
+    box-sizing: border-box;
+  }
+
+  .keycard-flip {
+    display: grid;
+    grid-template-areas: "card";
+    width: 100%;
+    height: auto;
+    min-height: 100%;
+  }
+
+  .keycard-face {
+    grid-area: card;
+    position: relative;
+    inset: auto;
+    width: 100%;
+    height: auto;
+    min-height: 100%;
+    box-sizing: border-box;
+  }
+
+  .keycard-front {
+    padding: var(--space-md);
+    box-sizing: border-box;
+  }
+
+  .keycard-back {
+    padding: var(--space-md);
+    box-sizing: border-box;
+  }
+
+  .keycard-qr {
+    width: min(55%, 8.5rem);
+    max-width: 140px;
+    height: auto;
+  }
+
+  .keycard-actions-bar {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    max-width: 26rem;
+    margin: 0 auto var(--space-lg);
+    gap: var(--space-xs);
+    box-sizing: border-box;
+  }
+
+  .keycard-actions-bar button,
+  .keycard-actions-bar a[role="button"],
+  .keycard-actions-bar .keycard-save-tip,
+  .keycard-actions-bar .keycard-save-tip > summary {
+    width: 100%;
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    box-sizing: border-box;
+    margin: 0;
+  }
+
+  .keycard-save-tip {
+    max-width: 100%;
+  }
+
+  .keycard-save-tip p {
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  .keycard-roommates-card {
+    width: 100%;
+    max-width: 26rem;
+    box-sizing: border-box;
+  }
+}
