@@ -56,48 +56,72 @@
         </div>
       </div>
 
-      {# Hero 3D / Isometric Visual Showcase #}
+      {# Hero Visual Showcase — Real Photography First + Supportive 3D Preview #}
       <div class="lka-hero-visual" aria-hidden="true">
         <div class="lka-hero-card-3d">
-          <div class="lka-card-glow-layer"></div>
-          <div class="lka-iso-dorm-mockup">
-            <div class="lka-mockup-header">
-              <span class="lka-mockup-title">DORMITORY 3D SHOWCASE</span>
-              <span class="lka-mockup-status">LIVE VIEW</span>
-            </div>
-            <div class="lka-mockup-layers">
-              {# Isometric Level 5 #}
-              <div class="lka-iso-floor-plate lka-iso-floor-5">
-                <div class="lka-plate-badge">ชั้น 5 · แอร์ 30 ห้อง (120 เตียง)</div>
-                <div class="lka-plate-grid">
-                  <span class="lka-grid-cell air"></span>
-                  <span class="lka-grid-cell air"></span>
-                  <span class="lka-grid-cell air"></span>
-                  <span class="lka-grid-cell air"></span>
-                  <span class="lka-grid-cell air"></span>
-                  <span class="lka-grid-cell air"></span>
-                </div>
+          {# Main Real Photo Card #}
+          <div class="lka-hero-photo-showcase">
+            <div class="lka-hero-photo-frame">
+              <img src="{% static 'img/showcase/room4p_3421.jpg' %}" alt="ห้องพักปรับอากาศ บรรยากาศโปร่งสบาย" width="640" height="480" loading="lazy" decoding="async" class="lka-hero-main-img">
+              <div class="lka-hero-photo-tag">
+                <span class="lka-hphoto-badge">📷 ภาพถ่ายสถานที่จริง</span>
               </div>
-              {# Isometric Level 4 #}
-              <div class="lka-iso-floor-plate lka-iso-floor-4">
-                <div class="lka-plate-badge">ชั้น 4 · 57 ห้อง (114 เตียง)</div>
-                <div class="lka-plate-grid">
-                  <span class="lka-grid-cell air"></span>
-                  <span class="lka-grid-cell fan"></span>
-                  <span class="lka-grid-cell fan"></span>
-                  <span class="lka-grid-cell fan"></span>
-                  <span class="lka-grid-cell air"></span>
-                  <span class="lka-grid-cell air"></span>
-                </div>
-              </div>
-              {# Ground Base #}
-              <div class="lka-iso-floor-plate lka-iso-ground">
-                <div class="lka-plate-badge lka-badge-dim">สิ่งอำนวยความสะดวกและพื้นที่บริการ</div>
+              <div class="lka-hero-photo-caption">
+                <strong>ห้องพักปรับอากาศ</strong> · กว้างขวาง สะอาด พร้อมเข้าพัก
               </div>
             </div>
-            <p class="lka-mockup-disclaimer">
-              * ภาพจำลองเชิงสัญลักษณ์เพื่อความเข้าใจเบื้องต้น · ไม่ใช่แบบสถาปัตยกรรม BIM หรือระบุขนาดจริง
-            </p>
+
+            {# Floating hospitality badge #}
+            <div class="lka-hero-floating-card">
+              <div class="lka-hfloat-icon">🛏️</div>
+              <div class="lka-hfloat-text">
+                <span class="lka-hfloat-title">เตียงเดี่ยวแยกสัดส่วน</span>
+                <span class="lka-hfloat-sub">87 ห้อง · 234 เตียง (ชั้น 4 และ 5)</span>
+              </div>
+            </div>
+          </div>
+
+          {# Supportive 3D Mini-Preview #}
+          <div class="lka-hero-support-3d">
+            <div class="lka-iso-dorm-mockup">
+              <div class="lka-mockup-header">
+                <span class="lka-mockup-title">3D FLOOR MAP PREVIEW</span>
+                <span class="lka-mockup-status">LIVE PREVIEW</span>
+              </div>
+              <div class="lka-mockup-layers">
+                {# Isometric Level 5 #}
+                <div class="lka-iso-floor-plate lka-iso-floor-5">
+                  <div class="lka-plate-badge">ชั้น 5 · แอร์ 30 ห้อง (120 เตียง)</div>
+                  <div class="lka-plate-grid">
+                    <span class="lka-grid-cell air"></span>
+                    <span class="lka-grid-cell air"></span>
+                    <span class="lka-grid-cell air"></span>
+                    <span class="lka-grid-cell air"></span>
+                    <span class="lka-grid-cell air"></span>
+                    <span class="lka-grid-cell air"></span>
+                  </div>
+                </div>
+                {# Isometric Level 4 #}
+                <div class="lka-iso-floor-plate lka-iso-floor-4">
+                  <div class="lka-plate-badge">ชั้น 4 · 57 ห้อง (114 เตียง)</div>
+                  <div class="lka-plate-grid">
+                    <span class="lka-grid-cell air"></span>
+                    <span class="lka-grid-cell fan"></span>
+                    <span class="lka-grid-cell fan"></span>
+                    <span class="lka-grid-cell fan"></span>
+                    <span class="lka-grid-cell air"></span>
+                    <span class="lka-grid-cell air"></span>
+                  </div>
+                </div>
+                {# Ground Base #}
+                <div class="lka-iso-floor-plate lka-iso-ground">
+                  <div class="lka-plate-badge lka-badge-dim">สิ่งอำนวยความสะดวกและพื้นที่บริการ</div>
+                </div>
+              </div>
+              <p class="lka-mockup-disclaimer">
+                * ภาพจำลองเชิงสัญลักษณ์เพื่อความเข้าใจเบื้องต้น · ไม่ใช่แบบสถาปัตยกรรม BIM หรือระบุขนาดจริง
+              </p>
+            </div>
           </div>
         </div>
       </div>
