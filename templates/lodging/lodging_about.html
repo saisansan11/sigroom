@@ -1,0 +1,252 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}อาคารที่พักนักเรียน · รู้จักที่พัก · SIGROOM{% endblock %}
+
+{% block head %}
+<link rel="stylesheet" href="{% static 'css/lodging_about.css' %}">
+{% endblock %}
+
+{% block content %}
+{# ===== HERO ===== #}
+<section class="lka-hero" aria-labelledby="lka-hero-heading">
+  <div class="lka-hero-inner">
+    <p class="eyebrow">อาคารที่พักหลักสูตร · โรงเรียนทหารสื่อสาร</p>
+    <h1 id="lka-hero-heading">อาคารที่พักนักเรียน<br><span class="lka-accent">โรงเรียนทหารสื่อสาร</span></h1>
+    <p class="lka-hero-sub">ที่พักมาตรฐาน รองรับ <strong>87 ห้อง · 234 เตียง</strong> บนชั้น 4 และชั้น 5<br>
+      พร้อมสิ่งอำนวยความสะดวกครบครัน เหมาะสำหรับนักเรียนและบุคลากรทุกสังกัด</p>
+    <div class="lka-hero-cta">
+      <a role="button" href="#lka-explorer" class="btn-primary">สำรวจแผนผังชั้น <span aria-hidden="true">↓</span></a>
+      <a role="button" href="{% url 'bookings:lodging_index' %}" class="secondary">ดูรอบที่เปิดรับจอง <span aria-hidden="true">→</span></a>
+    </div>
+  </div>
+</section>
+
+{# ===== KEY FACTS ===== #}
+<section class="lka-section lka-facts" aria-label="ข้อมูลสรุปอาคารที่พัก">
+  <div class="lka-facts-grid">
+    <div class="lka-fact-card">
+      <span class="lka-fact-num">87</span>
+      <span class="lka-fact-label">ห้องพักทั้งหมด</span>
+    </div>
+    <div class="lka-fact-card">
+      <span class="lka-fact-num">234</span>
+      <span class="lka-fact-label">เตียงทั้งหมด</span>
+    </div>
+    <div class="lka-fact-card lka-fact-floor">
+      <span class="lka-fact-floor-label">ชั้น 4</span>
+      <span class="lka-fact-detail">57 ห้อง · 114 เตียง</span>
+      <span class="lka-fact-sub">ห้องละ 2 คน</span>
+    </div>
+    <div class="lka-fact-card lka-fact-floor">
+      <span class="lka-fact-floor-label">ชั้น 5</span>
+      <span class="lka-fact-detail">30 ห้อง · 120 เตียง</span>
+      <span class="lka-fact-sub">ห้องละ 4 คน · ปรับอากาศทุกห้อง</span>
+    </div>
+  </div>
+</section>
+
+{# ===== INTERACTIVE FLOOR EXPLORER ===== #}
+<section class="lka-section" id="lka-explorer" aria-labelledby="lka-explorer-heading">
+  <div class="lka-section-header">
+    <h2 id="lka-explorer-heading">สำรวจแผนผังอาคาร</h2>
+    <p class="lka-section-sub">แผนผังเชิงโต้ตอบ — คลิกห้องเพื่อดูข้อมูล · <em>แผนผังนี้เป็นแบบแสดงประกอบเท่านั้น ไม่ใช่แบบสถาปัตยกรรม BIM หรือระบุขนาดจริง</em></p>
+  </div>
+
+  {# Floor toggle #}
+  <div class="lka-floor-toggle" role="group" aria-label="เลือกชั้น">
+    <button class="lka-ftoggle active" id="lka-btn-f4" data-floor="4" aria-pressed="true">ชั้น 4</button>
+    <button class="lka-ftoggle" id="lka-btn-f5" data-floor="5" aria-pressed="false">ชั้น 5</button>
+  </div>
+
+  {# Filter row #}
+  <div class="lka-filter-row" role="group" aria-label="กรองประเภทห้อง">
+    <button class="lka-filter active" data-filter="all" aria-pressed="true">ทั้งหมด</button>
+    <button class="lka-filter" data-filter="air" aria-pressed="false">ปรับอากาศ</button>
+    <button class="lka-filter" data-filter="fan" aria-pressed="false">พัดลม</button>
+    <button class="lka-filter" data-filter="facility" aria-pressed="false">สิ่งอำนวยความสะดวก</button>
+  </div>
+
+  {# Explorer wrapper — clips horizontal overflow #}
+  <div class="lka-explorer-wrap">
+    {# Drag hint #}
+    <p class="lka-drag-hint" aria-hidden="true">ลากเพื่อหมุน · ใช้ +/- หรือปุ่มซูม · ← → ↑ ↓ หมุน · R รีเซ็ต</p>
+
+    {# Explorer canvas #}
+    <div class="lka-explorer-canvas" id="lka-explorer-canvas" tabindex="0"
+         role="img" aria-label="แผนผังชั้น 4 อาคารที่พักนักเรียน โรงเรียนทหารสื่อสาร"
+         aria-describedby="lka-explorer-fallback">
+      <div class="lka-iso-scene" id="lka-iso-scene">
+        {# SVG floor plans are rendered via JS from data below #}
+      </div>
+    </div>
+
+    {# Controls row #}
+    <div class="lka-controls" aria-label="ตัวควบคุมมุมมอง">
+      <button class="lka-ctrl-btn" id="lka-zoom-in" aria-label="ขยาย">+</button>
+      <button class="lka-ctrl-btn" id="lka-zoom-out" aria-label="ย่อ">−</button>
+      <button class="lka-ctrl-btn" id="lka-reset" aria-label="รีเซ็ตมุมมอง">↺ รีเซ็ต</button>
+    </div>
+
+    {# 2D / text fallback (shown when JS absent or reduced-motion-only) #}
+    <details class="lka-fallback" id="lka-explorer-fallback">
+      <summary>ดูแผนผังแบบข้อความ (สำรอง)</summary>
+      <div class="lka-fallback-body">
+        <h3>ชั้น 4 — ผังห้องพักแบบข้อความ</h3>
+        <p><strong>ห้องปรับอากาศ (25 ห้อง):</strong> 401–407, 411–416, 449–460</p>
+        <p><strong>ห้องพัดลม (32 ห้อง):</strong> 417–448</p>
+        <p><em>หมายเหตุ: ห้อง 408, 409, 410 ไม่ใช่ห้องพักสำหรับนักเรียน</em></p>
+        <h3>ชั้น 5 — ผังห้องพักแบบข้อความ</h3>
+        <p><strong>ห้องปรับอากาศ (30 ห้อง):</strong> 501–530 ทุกห้อง</p>
+      </div>
+    </details>
+  </div>
+
+  {# Room detail panel #}
+  <div class="lka-room-panel" id="lka-room-panel" aria-live="polite" aria-atomic="true" hidden>
+    <button class="lka-panel-close" id="lka-panel-close" aria-label="ปิดข้อมูลห้อง">✕</button>
+    <p class="lka-panel-number" id="lka-panel-number"></p>
+    <dl class="lka-panel-dl">
+      <dt>ชั้น</dt><dd id="lka-panel-floor"></dd>
+      <dt>ระบบทำความเย็น</dt><dd id="lka-panel-cooling"></dd>
+      <dt>ความจุ</dt><dd id="lka-panel-capacity"></dd>
+    </dl>
+    <p class="lka-panel-note">ข้อมูลแสดงประกอบเท่านั้น · ไม่แสดงสถานะการจองจริง</p>
+  </div>
+</section>
+
+{# ===== FLOOR OVERVIEW CARDS ===== #}
+<section class="lka-section" aria-labelledby="lka-floors-heading">
+  <h2 id="lka-floors-heading">ภาพรวมแต่ละชั้น</h2>
+  <div class="lka-floor-cards">
+    <article class="lka-floor-card">
+      <div class="lka-floor-card-head">
+        <span class="lka-floor-badge">ชั้น 4</span>
+        <h3>ห้องพักชั้น 4</h3>
+      </div>
+      <img src="{% static 'img/showcase/floor4.png' %}" alt="ผังห้องพักชั้น 4" class="lka-floor-img" loading="lazy" width="640" height="480" decoding="async">
+      <ul class="lka-floor-meta">
+        <li><strong>57 ห้อง</strong> · 114 เตียง · ห้องละ 2 คน</li>
+        <li>ปรับอากาศ 25 ห้อง: 401–407, 411–416, 449–460</li>
+        <li>พัดลม 32 ห้อง: 417–448</li>
+      </ul>
+    </article>
+    <article class="lka-floor-card">
+      <div class="lka-floor-card-head">
+        <span class="lka-floor-badge lka-floor-badge--5">ชั้น 5</span>
+        <h3>ห้องพักชั้น 5</h3>
+      </div>
+      <img src="{% static 'img/showcase/floor5.png' %}" alt="ผังห้องพักชั้น 5" class="lka-floor-img" loading="lazy" width="640" height="480" decoding="async">
+      <ul class="lka-floor-meta">
+        <li><strong>30 ห้อง</strong> · 120 เตียง · ห้องละ 4 คน</li>
+        <li>ปรับอากาศทุกห้อง: 501–530</li>
+      </ul>
+    </article>
+  </div>
+</section>
+
+{# ===== ROOM PHOTOS ===== #}
+<section class="lka-section" aria-labelledby="lka-rooms-heading">
+  <h2 id="lka-rooms-heading">ภายในห้องพัก</h2>
+  <p class="lka-section-sub">ภาพถ่ายสถานที่จริง</p>
+  <div class="lka-gallery-grid">
+    <figure class="lka-gallery-fig lka-gallery-fig--feature">
+      <img src="{% static 'img/showcase/room2p_444.jpg' %}" alt="ห้องพักสำหรับ 2 คน มุมมองภายใน" width="640" height="480" loading="lazy" decoding="async" class="lka-gallery-img">
+      <figcaption>ห้องพัก 2 คน — เตียง เฟอร์นิเจอร์ และหน้าต่าง</figcaption>
+    </figure>
+    <figure class="lka-gallery-fig">
+      <img src="{% static 'img/showcase/room2p_222.jpg' %}" alt="ห้องพักสำหรับ 2 คน อีกมุม" width="640" height="480" loading="lazy" decoding="async" class="lka-gallery-img">
+      <figcaption>ห้องพัก 2 คน (ชั้น 4)</figcaption>
+    </figure>
+    <figure class="lka-gallery-fig lka-gallery-fig--feature">
+      <img src="{% static 'img/showcase/room4p_3421.jpg' %}" alt="ห้องพักสำหรับ 4 คน มุมมองภายใน" width="640" height="480" loading="lazy" decoding="async" class="lka-gallery-img">
+      <figcaption>ห้องพัก 4 คน — จัดเตียง 4 ที่นอน</figcaption>
+    </figure>
+    <figure class="lka-gallery-fig">
+      <img src="{% static 'img/showcase/room4p_4444.jpg' %}" alt="ห้องพักสำหรับ 4 คน มุมอื่น" width="640" height="480" loading="lazy" decoding="async" class="lka-gallery-img">
+      <figcaption>ห้องพัก 4 คน (ชั้น 5)</figcaption>
+    </figure>
+  </div>
+</section>
+
+{# ===== FACILITIES ===== #}
+<section class="lka-section" aria-labelledby="lka-facilities-heading">
+  <h2 id="lka-facilities-heading">สิ่งอำนวยความสะดวกส่วนกลาง</h2>
+  <div class="lka-facilities-wrap">
+    <div class="lka-facilities-info">
+      <h3>ห้องน้ำและห้องอาบน้ำ</h3>
+      <ul>
+        <li>ห้องน้ำชั้น 4 และ 5 มี 2 ฝั่ง: โถปัสสาวะ 10, ห้องสุขา 10</li>
+        <li>ห้องอาบน้ำชั้น 4 และ 5: ฝั่งละ 20 ห้อง</li>
+      </ul>
+    </div>
+    <div class="lka-bath-gallery">
+      <img src="{% static 'img/showcase/bath1.jpg' %}" alt="ห้องน้ำส่วนกลาง" width="640" height="480" loading="lazy" decoding="async" class="lka-bath-img">
+      <img src="{% static 'img/showcase/bath2.jpg' %}" alt="ห้องอาบน้ำ" width="640" height="480" loading="lazy" decoding="async" class="lka-bath-img">
+      <img src="{% static 'img/showcase/bath3.jpg' %}" alt="ห้องน้ำและสุขาภิบาล" width="640" height="480" loading="lazy" decoding="async" class="lka-bath-img">
+    </div>
+  </div>
+</section>
+
+{# ===== RATES ===== #}
+<section class="lka-section" id="lka-rates" aria-labelledby="lka-rates-heading">
+  <h2 id="lka-rates-heading">อัตราค่าที่พัก</h2>
+  <p class="lka-section-sub">ตามประกาศอัตราค่าที่พัก · พักตั้งแต่ 20 วันขึ้นไปนับเป็น 1 เดือน</p>
+
+  <div class="lka-rates-wrap">
+    <div class="lka-rates-table-wrap" role="region" aria-label="ตารางอัตราค่าที่พัก" tabindex="0">
+      <table class="lka-rates-table">
+        <caption class="lka-sr-only">อัตราค่าที่พักรายวันและรายเดือน แยกตามสังกัดและประเภทห้อง</caption>
+        <thead>
+          <tr>
+            <th scope="col">สังกัด / ประเภทผู้พัก</th>
+            <th scope="col">ปรับอากาศ<br><small>รายวัน</small></th>
+            <th scope="col">ปรับอากาศ<br><small>รายเดือน</small></th>
+            <th scope="col">พัดลม<br><small>รายวัน</small></th>
+            <th scope="col">พัดลม<br><small>รายเดือน</small></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for rate in rates %}
+          <tr{% if forloop.first %} class="lka-rate-highlight"{% endif %}>
+            <td>{{ rate.category }}</td>
+            <td class="lka-rate-num">{{ rate.air_day }} บาท</td>
+            <td class="lka-rate-num">{{ rate.air_month }} บาท</td>
+            <td class="lka-rate-num">{{ rate.fan_day }} บาท</td>
+            <td class="lka-rate-num">{{ rate.fan_month }} บาท</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <div class="lka-rates-notes">
+      <h3>หมายเหตุค่าไฟฟ้า</h3>
+      <ul>
+        <li>ห้องปรับอากาศ: คิดตามมิเตอร์ หน่วยละ <strong>5 บาท</strong></li>
+        <li>ห้องพัดลม: เหมาจ่าย <strong>200 บาท/เดือน</strong></li>
+        <li>พัก 20 วันขึ้นไป นับเป็น 1 เดือน</li>
+      </ul>
+    </div>
+
+    <div class="lka-rates-img-wrap">
+      <img src="{% static 'img/showcase/rates.png' %}" alt="ประกาศอัตราค่าที่พักอาคารนักเรียน" width="736" height="781" loading="lazy" decoding="async" class="lka-rates-img">
+      <p class="lka-img-caption">ประกาศอัตราค่าที่พักอย่างเป็นทางการ</p>
+    </div>
+  </div>
+</section>
+
+{# ===== CTA ===== #}
+<section class="lka-section lka-cta" aria-labelledby="lka-cta-heading">
+  <h2 id="lka-cta-heading">พร้อมจองที่พัก?</h2>
+  <p>เลือกรอบหลักสูตรที่เปิดรับจองและเลือกห้องพักด้วยตนเองผ่านระบบ SIGROOM</p>
+  <a role="button" href="{% url 'bookings:lodging_index' %}" class="btn-primary lka-cta-btn">
+    ดูรอบที่พักที่เปิดรับจอง <span aria-hidden="true">→</span>
+  </a>
+</section>
+
+{% endblock %}
+
+{% block scripts %}
+<script src="{% static 'js/lodging_about_explorer.js' %}" defer></script>
+{% endblock %}
