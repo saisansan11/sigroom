@@ -26,6 +26,7 @@ urlpatterns = [
     path("preemptions/<uuid:id>/acknowledge/", views.preemption_acknowledge, name="preemption_acknowledge"),
     # ที่พักหลักสูตร
     path("lodging/", lodging_views.lodging_index, name="lodging_index"),
+    path("lodging/about/", lodging_views.lodging_about, name="lodging_about"),  # UX-17 public showcase
     path("lodging/manage/", lodging_views.lodging_manage, name="lodging_manage"),
     path("lodging/cohorts/<slug:slug>/", lodging_views.lodging_cohort_detail, name="lodging_cohort_detail"),
     path("lodging/cohorts/<slug:slug>/edit/", lodging_views.lodging_cohort_edit, name="lodging_cohort_edit"),
