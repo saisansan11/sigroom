@@ -12,6 +12,7 @@ from django.views.decorators.http import require_POST
 
 from audit.services import audit
 from resources.models import Resource
+from .lodging_about_data import RATES
 from .lodging_models import CourseLodgingCohort, CourseStudentLodging
 from .lodging_services import (
     can_access_lodging_management,
@@ -24,6 +25,17 @@ from .lodging_services import (
     normalize_phone,
     update_cohort_allocation,
 )
+
+
+# UX-17: Public dormitory showcase — no login required.
+def lodging_about(request):
+    """Public information page about the dormitory building.
+
+    Presents static factual content (rooms, rates, floor plans, photos).
+    Requires no authentication. Contains no student PII.
+    No dependency on active cohort records.
+    """
+    return render(request, "lodging/lodging_about.html", {"rates": RATES})
 
 
 def _masked_name(full_name: str) -> str:

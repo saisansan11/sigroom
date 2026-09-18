@@ -1,0 +1,502 @@
+/* UX-17 Dormitory Showcase — lodging_about.css
+   Scoped under .lka-* prefix. Reuses CSS custom properties from app.css.
+   No external fonts, no CDN, no animation libraries.
+*/
+
+/* ── Section shell ── */
+.lka-section {
+  width: min(100% - 2rem, var(--content-max));
+  margin-inline: auto;
+  padding-block: var(--space-2xl);
+}
+.lka-section-header { margin-bottom: var(--space-lg); }
+.lka-section-sub {
+  color: var(--muted);
+  font-size: var(--text-sm);
+  margin-top: var(--space-xs);
+}
+.lka-section h2 { margin-bottom: var(--space-sm); }
+
+/* ── Hero ── */
+.lka-hero {
+  padding-block: clamp(3rem, 8vw, 6rem);
+  background: linear-gradient(135deg,
+    oklch(.12 .018 248) 0%,
+    oklch(.16 .022 243) 55%,
+    oklch(.18 .03 225) 100%);
+  border-bottom: 1px solid var(--line);
+}
+.lka-hero-inner {
+  width: min(100% - 2rem, var(--content-max));
+  margin-inline: auto;
+}
+.eyebrow {
+  font-size: var(--text-sm);
+  font-weight: 700;
+  color: var(--cyan);
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  margin-bottom: var(--space-sm);
+}
+.lka-accent { color: var(--cyan); }
+.lka-hero h1 { margin-bottom: var(--space-md); }
+.lka-hero-sub {
+  font-size: var(--text-lg);
+  color: var(--muted);
+  max-width: 55ch;
+  line-height: 1.65;
+  margin-bottom: var(--space-xl);
+}
+.lka-hero-cta { display: flex; flex-wrap: wrap; gap: var(--space-sm); }
+
+/* ── Key facts ── */
+.lka-facts { padding-block: var(--space-2xl); }
+.lka-facts-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 14rem), 1fr));
+  gap: var(--space-md);
+}
+.lka-fact-card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  padding: var(--space-xl) var(--space-lg);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: var(--space-xs);
+  transition: border-color var(--motion-base) ease;
+}
+.lka-fact-card:hover { border-color: var(--cyan); }
+.lka-fact-num {
+  font-family: var(--font-mono);
+  font-size: clamp(2.4rem, 5vw, 3.5rem);
+  font-weight: 800;
+  color: var(--cyan);
+  line-height: 1;
+}
+.lka-fact-label { font-weight: 600; color: var(--muted); font-size: var(--text-sm); }
+.lka-fact-floor-label {
+  font-family: var(--font-mono);
+  font-size: clamp(1.5rem, 3vw, 2.2rem);
+  font-weight: 800;
+  color: var(--amber);
+  line-height: 1;
+}
+.lka-fact-detail { font-weight: 700; }
+.lka-fact-sub { font-size: var(--text-sm); color: var(--muted); }
+
+/* ── Floor toggle ── */
+.lka-floor-toggle {
+  display: flex;
+  gap: var(--space-xs);
+  margin-bottom: var(--space-md);
+  flex-wrap: wrap;
+}
+.lka-ftoggle {
+  padding: var(--space-xs) var(--space-lg);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--muted);
+  font-weight: 700;
+  cursor: pointer;
+  transition: background var(--motion-fast) ease, color var(--motion-fast) ease, border-color var(--motion-fast) ease;
+}
+.lka-ftoggle.active, .lka-ftoggle[aria-pressed="true"] {
+  background: var(--cyan);
+  color: var(--canvas-deep);
+  border-color: var(--cyan);
+}
+.lka-ftoggle:hover:not(.active) { background: var(--surface-raised); color: var(--ink); }
+
+/* ── Filter row ── */
+.lka-filter-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-xs);
+  margin-bottom: var(--space-lg);
+}
+.lka-filter {
+  padding: var(--space-2xs) var(--space-md);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--muted);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  cursor: pointer;
+  transition: background var(--motion-fast) ease, color var(--motion-fast) ease, border-color var(--motion-fast) ease;
+  min-height: 2.2rem;
+}
+.lka-filter.active, .lka-filter[aria-pressed="true"] {
+  background: var(--surface-raised);
+  color: var(--ink);
+  border-color: var(--cyan);
+}
+.lka-filter:hover:not(.active) { background: var(--surface); color: var(--ink); }
+
+/* ── Explorer wrapper ── */
+.lka-explorer-wrap {
+  overflow: hidden; /* prevent horizontal overflow at 360px */
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  background: var(--canvas-deep);
+}
+.lka-drag-hint {
+  text-align: center;
+  font-size: var(--text-xs);
+  color: var(--dim);
+  padding: var(--space-xs) var(--space-md);
+  border-bottom: 1px solid var(--line);
+  margin: 0;
+  user-select: none;
+}
+
+/* Explorer canvas */
+.lka-explorer-canvas {
+  width: 100%;
+  height: clamp(280px, 48vw, 520px);
+  overflow: hidden;
+  cursor: grab;
+  outline: none;
+  position: relative;
+  touch-action: none;
+}
+.lka-explorer-canvas:focus-visible { outline: .18rem solid var(--cyan); }
+.lka-explorer-canvas:active { cursor: grabbing; }
+
+/* Iso scene — the transforms are applied here */
+.lka-iso-scene {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transform-origin: center center;
+  transition: transform var(--motion-fast) var(--ease-product);
+  will-change: transform;
+}
+
+/* Room block inside SVG-based or CSS-based floor maps */
+.lka-room-block {
+  fill: var(--surface-raised);
+  stroke: var(--line-strong);
+  stroke-width: 1;
+  cursor: pointer;
+  transition: fill var(--motion-fast) ease;
+}
+.lka-room-block.air { fill: oklch(.22 .04 200); stroke: var(--cyan); }
+.lka-room-block.fan { fill: oklch(.22 .035 83); stroke: var(--amber); }
+.lka-room-block.facility { fill: oklch(.22 .04 300); stroke: var(--violet); }
+.lka-room-block:hover, .lka-room-block:focus { fill: var(--surface-soft); }
+.lka-room-block.hidden-filter { opacity: .18; pointer-events: none; }
+.lka-room-block.hidden-filter + .lka-room-label { opacity: .18; }
+.lka-room-block.selected { stroke: var(--ink); stroke-width: 2; }
+
+/* Room label inside SVG */
+.lka-room-label {
+  fill: var(--ink);
+  font-family: var(--font-mono);
+  font-size: 9px;
+  pointer-events: none;
+  user-select: none;
+  dominant-baseline: middle;
+  text-anchor: middle;
+}
+
+/* Controls */
+.lka-controls {
+  display: flex;
+  gap: var(--space-xs);
+  padding: var(--space-xs) var(--space-md);
+  border-top: 1px solid var(--line);
+  background: var(--canvas-deep);
+  justify-content: center;
+}
+.lka-ctrl-btn {
+  padding: var(--space-2xs) var(--space-md);
+  background: var(--surface);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-sm);
+  color: var(--ink);
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  font-weight: 700;
+  min-height: 2.5rem;
+  cursor: pointer;
+  transition: background var(--motion-fast) ease;
+}
+.lka-ctrl-btn:hover { background: var(--surface-raised); }
+.lka-ctrl-btn:active { background: var(--surface-soft); transform: scale(.97); }
+
+/* Fallback */
+.lka-fallback {
+  border-top: 1px solid var(--line);
+  padding: var(--space-xs) var(--space-md);
+}
+.lka-fallback summary {
+  font-size: var(--text-sm);
+  color: var(--muted);
+  cursor: pointer;
+  min-height: 2.2rem;
+  display: flex;
+  align-items: center;
+}
+.lka-fallback-body {
+  padding: var(--space-md) 0;
+  font-size: var(--text-sm);
+  color: var(--muted);
+}
+.lka-fallback-body h3 { font-size: var(--text-md); margin-bottom: var(--space-xs); }
+.lka-fallback-body p { margin-bottom: var(--space-xs); }
+
+/* Room detail panel */
+.lka-room-panel {
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  padding: var(--space-lg);
+  margin-top: var(--space-md);
+  position: relative;
+}
+.lka-panel-close {
+  position: absolute;
+  top: var(--space-sm);
+  right: var(--space-sm);
+  background: transparent;
+  border: none;
+  color: var(--muted);
+  font-size: 1.1rem;
+  cursor: pointer;
+  min-height: 2.2rem;
+  min-width: 2.2rem;
+  padding: 0;
+}
+.lka-panel-number {
+  font-family: var(--font-mono);
+  font-size: clamp(1.4rem, 4vw, 2rem);
+  font-weight: 800;
+  color: var(--cyan);
+  margin: 0 0 var(--space-sm);
+}
+.lka-panel-dl {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  column-gap: var(--space-md);
+  row-gap: var(--space-2xs);
+  font-size: var(--text-sm);
+  margin: 0 0 var(--space-sm);
+}
+.lka-panel-dl dt { font-weight: 700; color: var(--muted); }
+.lka-panel-dl dd { margin: 0; }
+.lka-panel-note { font-size: var(--text-xs); color: var(--dim); margin: 0; }
+
+/* ── Floor overview cards ── */
+.lka-floor-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 18rem), 1fr));
+  gap: var(--space-lg);
+}
+.lka-floor-card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+.lka-floor-card-head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: var(--space-md) var(--space-lg);
+  border-bottom: 1px solid var(--line);
+}
+.lka-floor-card-head h3 { margin: 0; font-size: var(--text-lg); }
+.lka-floor-badge {
+  display: inline-block;
+  padding: .15em .55em;
+  border-radius: var(--radius-sm);
+  background: var(--cyan);
+  color: var(--canvas-deep);
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  font-weight: 800;
+  white-space: nowrap;
+}
+.lka-floor-badge--5 { background: var(--amber); }
+.lka-floor-img {
+  width: 100%;
+  height: 14rem;
+  object-fit: contain;
+  background: var(--canvas-deep);
+  display: block;
+}
+.lka-floor-meta {
+  padding: var(--space-md) var(--space-lg);
+  font-size: var(--text-sm);
+  color: var(--muted);
+  margin: 0;
+}
+.lka-floor-meta li { margin-bottom: var(--space-2xs); }
+
+/* ── Photo gallery ── */
+.lka-gallery-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 16rem), 1fr));
+  gap: var(--space-md);
+}
+.lka-gallery-fig {
+  margin: 0;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  background: var(--canvas-deep);
+  border: 1px solid var(--line);
+}
+.lka-gallery-fig--feature { grid-column: span 1; }
+@media (min-width: 48rem) {
+  .lka-gallery-fig--feature { grid-column: span 2; }
+  .lka-gallery-grid { grid-template-columns: repeat(4, 1fr); }
+}
+.lka-gallery-img {
+  width: 100%;
+  height: 13rem;
+  object-fit: cover;
+  display: block;
+}
+.lka-gallery-fig figcaption {
+  padding: var(--space-xs) var(--space-sm);
+  font-size: var(--text-xs);
+  color: var(--muted);
+}
+
+/* ── Facilities ── */
+.lka-facilities-wrap {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--space-lg);
+}
+@media (min-width: 48rem) {
+  .lka-facilities-wrap {
+    grid-template-columns: 1fr 2fr;
+    align-items: start;
+  }
+}
+.lka-facilities-info h3 { margin-bottom: var(--space-xs); }
+.lka-facilities-info ul { padding-left: var(--space-lg); color: var(--muted); }
+.lka-facilities-info li { margin-bottom: var(--space-2xs); }
+.lka-bath-gallery {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-xs);
+  grid-column: 1 / -1;
+}
+@media (min-width: 48rem) {
+  .lka-bath-gallery { grid-column: auto; }
+}
+.lka-bath-img {
+  width: 100%;
+  height: 10rem;
+  object-fit: cover;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--line);
+  display: block;
+}
+
+/* ── Rates ── */
+.lka-rates-wrap {
+  display: grid;
+  gap: var(--space-xl);
+}
+.lka-rates-table-wrap {
+  overflow-x: auto;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  max-width: 100%;
+}
+.lka-rates-table {
+  width: 100%;
+  min-width: 36rem;
+  border-collapse: collapse;
+  font-size: var(--text-sm);
+}
+.lka-rates-table th,
+.lka-rates-table td {
+  padding: var(--space-sm) var(--space-md);
+  border-bottom: 1px solid var(--line);
+  text-align: left;
+}
+.lka-rates-table thead th {
+  background: var(--surface-raised);
+  font-weight: 700;
+  color: var(--ink);
+  font-size: var(--text-xs);
+}
+.lka-rates-table tbody tr:last-child td { border-bottom: none; }
+.lka-rate-num {
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  text-align: right;
+  white-space: nowrap;
+}
+.lka-rate-highlight td { background: var(--surface); }
+.lka-rates-notes h3 { font-size: var(--text-md); margin-bottom: var(--space-xs); }
+.lka-rates-notes ul { padding-left: var(--space-lg); color: var(--muted); font-size: var(--text-sm); }
+.lka-rates-notes li { margin-bottom: var(--space-2xs); }
+.lka-rates-img-wrap { display: flex; flex-direction: column; gap: var(--space-xs); }
+.lka-rates-img {
+  width: 100%;
+  max-width: 36rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  display: block;
+}
+.lka-img-caption { font-size: var(--text-xs); color: var(--dim); margin: 0; }
+
+/* ── CTA ── */
+.lka-cta {
+  text-align: center;
+  border-top: 1px solid var(--line);
+  padding-block: var(--space-3xl);
+}
+.lka-cta h2 { margin-bottom: var(--space-sm); }
+.lka-cta p { color: var(--muted); max-width: 48ch; margin-inline: auto; margin-bottom: var(--space-xl); }
+.lka-cta-btn { font-size: var(--text-lg); padding: var(--space-md) var(--space-2xl); }
+
+/* ── Utility ── */
+.lka-sr-only {
+  position: absolute;
+  width: 1px; height: 1px;
+  padding: 0; margin: -1px;
+  overflow: hidden; clip: rect(0,0,0,0);
+  white-space: nowrap; border: 0;
+}
+
+/* ── Legend (injected by JS) ── */
+.lka-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-md);
+  padding: var(--space-sm) var(--space-md);
+  font-size: var(--text-xs);
+  color: var(--muted);
+  border-top: 1px solid var(--line);
+}
+.lka-legend-item { display: flex; align-items: center; gap: var(--space-xs); }
+.lka-legend-swatch {
+  width: 1rem; height: 1rem;
+  border-radius: 2px;
+  border: 1px solid var(--line-strong);
+  flex: 0 0 auto;
+}
+.lka-legend-swatch--air { background: oklch(.22 .04 200); border-color: var(--cyan); }
+.lka-legend-swatch--fan { background: oklch(.22 .035 83); border-color: var(--amber); }
+.lka-legend-swatch--facility { background: oklch(.22 .04 300); border-color: var(--violet); }
+.lka-legend-swatch--excluded { background: var(--canvas-deep); border-color: var(--line); }
+
+/* ── Reduced motion ── */
+@media (prefers-reduced-motion: reduce) {
+  .lka-iso-scene { transition: none; }
+  .lka-fact-card { transition: none; }
+  .lka-room-block { transition: none; }
+}
