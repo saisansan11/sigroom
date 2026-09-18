@@ -5063,3 +5063,100 @@ details.operational-calendar-section[open] .disclosure-arrow {
     box-sizing: border-box;
   }
 }
+
+/* ===== UX-18 Student Lodging Portal Mobile Clarity ===== */
+@media (max-width: 47.99rem) {
+  .student-lodging-portal .lodging-portal-hero {
+    padding: var(--space-md);
+    margin-bottom: var(--space-lg);
+  }
+
+  .student-lodging-portal .lodging-cohort-top {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .student-lodging-portal .lodging-portal-share-btn {
+    display: inline-flex;
+    justify-content: center;
+    width: 100%;
+    min-height: max(44px, 2.75rem);
+  }
+
+  .student-lodging-portal .lodging-stats-strip {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-xs);
+  }
+
+  .student-lodging-portal .lodging-stat-pill {
+    min-width: 0;
+    padding: var(--space-xs);
+  }
+
+  .student-lodging-portal .rooms-grid {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-md);
+    padding-bottom: 4.75rem;
+  }
+
+  .student-lodging-portal .room-card-head {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: var(--space-xs);
+  }
+
+  .student-lodging-portal .bed-row {
+    align-items: stretch;
+    flex-direction: column;
+    gap: var(--space-xs);
+  }
+
+  .student-lodging-portal .bed-status-group,
+  .student-lodging-portal .bed-action-group {
+    min-width: 0;
+    width: 100%;
+  }
+
+  .student-lodging-portal .bed-select-btn {
+    width: 100%;
+    min-height: max(44px, 2.75rem);
+  }
+
+  .student-lodging-portal .modal-form-actions {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .student-lodging-portal .modal-form-actions > :is(button, a) {
+    width: 100%;
+    min-height: max(44px, 2.75rem);
+  }
+
+  .student-lodging-portal .booking-dialog-article,
+  .student-lodging-portal .gallery-dialog-article {
+    width: min(100%, 38rem);
+    max-height: calc(100dvh - 2rem);
+    overflow-y: auto;
+  }
+
+  .student-lodging-portal .sticky-jump-container {
+    left: var(--space-sm);
+    right: var(--space-sm);
+    bottom: max(var(--space-md), env(safe-area-inset-bottom));
+    transform: none;
+  }
+
+  .student-lodging-portal .btn-jump-next-bed {
+    display: block;
+    width: min(100%, 28rem);
+    margin-inline: auto;
+    white-space: normal;
+  }
+}
+
+@media (max-width: 24rem) {
+  .student-lodging-portal .lodging-stats-strip {
+    grid-template-columns: 1fr;
+  }
+}
