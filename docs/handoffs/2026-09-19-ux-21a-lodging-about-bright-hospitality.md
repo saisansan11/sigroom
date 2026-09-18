@@ -1,9 +1,9 @@
 # UX-21A Lodging About Bright Hospitality Re-direction — Handoff
 
-**Date:** 2026-09-19  
-**Session:** Antigravity Implementation  
-**Branch:** `feat/ux-21a-lodging-about-bright-hospitality`  
-**Base:** `feat/lodging-v5-2` (commit `d8cdf11`, incorporating PR #43)  
+**Date:** 2026-09-19
+**Session:** Antigravity Implementation
+**Branch:** `feat/ux-21a-lodging-about-bright-hospitality`
+**Base:** `feat/lodging-v5-2` (commit `d8cdf11`, incorporating PR #43)
 
 > **Status: IMPLEMENTATION & BROWSER QA COMPLETE — Ready for PR & Review**
 

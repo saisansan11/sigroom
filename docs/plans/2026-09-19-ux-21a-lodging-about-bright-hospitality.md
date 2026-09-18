@@ -1,10 +1,10 @@
 # UX-21A Lodging About Bright Hospitality Re-direction — Implementation Plan
 
-**Date:** 2026-09-19  
-**Feature:** Redesign `/lodging/about/` from dark tech/AI template to a bright, welcoming hospitality showcase  
-**Phase:** UX-21A  
-**Base Branch:** `feat/lodging-v5-2` (commit `d8cdf11`, incorporating PR #43)  
-**Branch:** `feat/ux-21a-lodging-about-bright-hospitality`  
+**Date:** 2026-09-19
+**Feature:** Redesign `/lodging/about/` from dark tech/AI template to a bright, welcoming hospitality showcase
+**Phase:** UX-21A
+**Base Branch:** `feat/lodging-v5-2` (commit `d8cdf11`, incorporating PR #43)
+**Branch:** `feat/ux-21a-lodging-about-bright-hospitality`
 
 ---
 
