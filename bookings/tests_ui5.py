@@ -144,7 +144,7 @@ def test_app_css_reduced_motion_and_focus_visible():
 
 
 def test_image_performance_attributes_in_templates():
-    """Verify images include width, height, loading='lazy', and decoding='async' to prevent layout shift."""
+    """Verify images include width, height, loading='lazy' (or explicit LCP hero eager), and decoding='async' to prevent layout shift."""
     templates_dir = Path(settings.BASE_DIR) / "templates"
     checked_images = 0
 
@@ -153,14 +153,27 @@ def test_image_performance_attributes_in_templates():
         # Find all img tags
         img_tags = re.findall(r"<img\s+[^>]+>", content)
         for img in img_tags:
-            # Skip dynamically replaced src if any, but ensure loading and decoding attributes
-            assert 'loading="lazy"' in img, f"Missing loading='lazy' in {html_file.name}: {img}"
+            # Narrowly designated LCP hero exception:
+            # Only the primary above-the-fold hero image ('lka-hero-main-img') is permitted
+            # to be eager, and MUST have BOTH loading="eager" and fetchpriority="high".
+            is_lcp_hero = "lka-hero-main-img" in img
+            if is_lcp_hero:
+                assert 'loading="eager"' in img, f"LCP hero must have loading='eager' in {html_file.name}: {img}"
+                assert 'fetchpriority="high"' in img, f"LCP hero must have fetchpriority='high' in {html_file.name}: {img}"
+                assert 'loading="lazy"' not in img, f"LCP hero must not have loading='lazy' in {html_file.name}: {img}"
+            else:
+                # All other images across templates MUST remain loading="lazy" and NOT eager
+                assert 'loading="lazy"' in img, f"Missing loading='lazy' in {html_file.name}: {img}"
+                assert 'loading="eager"' not in img, f"Non-hero image must not have loading='eager' in {html_file.name}: {img}"
+                assert 'fetchpriority="high"' not in img, f"Non-hero image must not have fetchpriority='high' in {html_file.name}: {img}"
+
             assert 'decoding="async"' in img, f"Missing decoding='async' in {html_file.name}: {img}"
             assert 'width="' in img, f"Missing width attribute in {html_file.name}: {img}"
             assert 'height="' in img, f"Missing height attribute in {html_file.name}: {img}"
             checked_images += 1
 
     assert checked_images >= 5, f"Expected at least 5 images with performance attributes, found {checked_images}"
+
 
 
 def test_student_portal_modal_a11y_and_reduced_motion(client, ui5_setup):
