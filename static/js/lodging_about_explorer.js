@@ -112,8 +112,8 @@
     hallway.setAttribute('width', String(svgW - 2 * GAP));
     hallway.setAttribute('height', String(HALLWAY_H));
     hallway.setAttribute('rx', '3');
-    hallway.setAttribute('fill', 'oklch(.18 .018 243)');
-    hallway.setAttribute('stroke', 'oklch(.31 .02 235)');
+    hallway.setAttribute('fill', '#e2e8f0');
+    hallway.setAttribute('stroke', '#cbd5e1');
     hallway.setAttribute('stroke-width', '1');
     svg.appendChild(hallway);
 
@@ -123,9 +123,10 @@
     hlabel.setAttribute('y', String(hallwayY + HALLWAY_H / 2));
     hlabel.setAttribute('dominant-baseline', 'middle');
     hlabel.setAttribute('text-anchor', 'middle');
-    hlabel.setAttribute('fill', 'oklch(.59 .022 229)');
+    hlabel.setAttribute('fill', '#64748b');
     hlabel.setAttribute('font-size', '9');
     hlabel.setAttribute('font-family', 'monospace');
+    hlabel.setAttribute('font-weight', '600');
     hlabel.setAttribute('pointer-events', 'none');
     hlabel.textContent = 'ทางเดิน / Corridor';
     svg.appendChild(hlabel);
