@@ -356,6 +356,11 @@
   background: var(--lka-canvas-alt);
 }
 
+/* UX-22 Semantic picture element wrapper */
+.lka-picture {
+  display: contents;
+}
+
 .lka-hero-main-img {
   width: 100%;
   height: 100%;
