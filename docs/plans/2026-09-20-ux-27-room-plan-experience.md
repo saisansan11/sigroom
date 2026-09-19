@@ -15,3 +15,6 @@ No booking, allocation, privacy, schema, authentication, deployment or merge cha
 
 ## Gates
 Review room ordering, service/stair gaps and orientation against supplied plans. Add executable layout tests and interaction tests. Run targeted Django tests, system/migration checks, full regression, accessibility and real browser checks at 360/390/430/768/1280/1440. Review final diff, commit scoped files, push stacked PR, inspect CI, write handoff.
+
+## Review follow-up
+User reported selected room 460 being occluded by a service block, mismatched stair proportions, and an empty backdrop. Render selected rooms in a dedicated last-painted layer. Normalize the two internal stair symbols on each floor, reallocating schematic room widths near 453 without changing room order. Add a lightweight, explicitly schematic pool/landscape/courtyard context behind the building. Verify occlusion with real browser screenshots and automated stacking checks, plus stair dimensions and room/service non-overlap. Public push remains pending explicit user approval from the previous auto-review rejection.

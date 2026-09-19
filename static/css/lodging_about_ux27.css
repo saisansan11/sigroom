@@ -1,11 +1,28 @@
 /* UX-27: a readable architectural plan and a room key-card inspector. */
 .lka-explorer-layout { grid-template-columns: minmax(0, 1fr) 19rem; align-items: start; }
-.lka-explorer-section .lka-explorer-canvas { height: 650px; overflow: auto; background: #f3f4f0; touch-action: pan-x pan-y; cursor: default; }
+.lka-explorer-section .lka-explorer-canvas {
+  height: 650px;
+  overflow: auto;
+  background: radial-gradient(ellipse at 48% 32%, #fcfcf5 0%, #edf1e6 64%, #e0e8dd 100%);
+  touch-action: pan-x pan-y;
+  cursor: default;
+}
 .lka-explorer-section .lka-explorer-canvas::before,
 .lka-explorer-section .lka-explorer-canvas::after { display: none; }
 .lka-explorer-section .lka-iso-scene { min-width: 800px; transform-origin: left top; }
 .lka-explorer-section .lka-iso-svg { width: 100%; height: 100%; filter: none; }
 .lka-model-ambient, .lka-model-ground-shadow { display: none; }
+.lka-site-context { pointer-events: none; }
+.lka-site-ground { fill: #e5ebdc; stroke: #d5dfd0; stroke-width: 1; }
+.lka-pool-deck { fill: #fcfaf0; stroke: #bcc9bd; stroke-width: 1; }
+.lka-pool-water { fill: #80c6cc; stroke: #4c9da5; stroke-width: 1.5; }
+.lka-pool-lane { stroke: #e6f7f5; stroke-width: 2; }
+.lka-site-promenade { fill: #d4cebe; stroke: #bdbba9; stroke-width: 1; }
+.lka-paving-joint { stroke: #eeeadd; stroke-width: 1.5; }
+.lka-tree-shadow { fill: #56705a; opacity: .14; }
+.lka-tree-crown { fill: #93ad80; stroke: #789567; stroke-width: 1; }
+.lka-tree-light { fill: #aec49b; opacity: .8; }
+.lka-selection-layer { isolation: isolate; }
 .lka-explorer-section .lka-base-top { fill: #fffefa; stroke: #adb9b6; }
 .lka-explorer-section .lka-wall-top { fill: #d5dbd6; stroke: #a4afaa; }
 .lka-explorer-section .lka-spine-top { fill: #e8ebe4; stroke: none; }

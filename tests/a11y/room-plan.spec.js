@@ -70,3 +70,36 @@ test('selected inspector is accessible and page has no horizontal overflow', asy
   expect(results.violations).toEqual([]);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
 });
+
+test('raised room paints above service blocks in every camera view', async ({ page }) => {
+  await page.locator('#lka-room-picker').selectOption('460');
+  for (let quarter = 0; quarter < 4; quarter++) {
+    await expect(page.locator('.lka-selection-layer > .lka-room-model.selected')).toHaveAttribute('data-num', '460');
+    const selectionPaintsLast = await page.locator('.lka-selection-layer').evaluate(layer =>
+      [...layer.parentElement.querySelectorAll('.lka-facility-model')].every(service =>
+        Boolean(service.compareDocumentPosition(layer) & Node.DOCUMENT_POSITION_FOLLOWING)));
+    expect(selectionPaintsLast).toBe(true);
+    await page.locator('#lka-view-right').click();
+  }
+});
+
+test('internal stair pairs have equal readable footprints without intersecting rooms', async ({ page }) => {
+  for (const floor of [4, 5]) {
+    await page.locator(`#lka-btn-f${floor}`).click();
+    await expect(page.locator('.lka-room-model')).toHaveCount(floor === 4 ? 57 : 30);
+    const stairs = await page.locator('.lka-core-model').evaluateAll(nodes => nodes
+      .map(node => ({x: +node.dataset.x, y: +node.dataset.y, w: +node.dataset.w, d: +node.dataset.d}))
+      .filter(stair => stair.x > 100 && stair.x < 800));
+    expect(stairs).toHaveLength(2);
+    expect(stairs[0].w).toBe(stairs[1].w);
+    expect(stairs[0].d).toBe(stairs[1].d);
+    expect(stairs[0].w).toBeGreaterThanOrEqual(44);
+    const data = await rooms(page);
+    for (const stair of stairs) {
+      for (const room of data) {
+        expect(stair.x < room.x + room.w && stair.x + stair.w > room.x && stair.y < room.y + room.d && stair.y + stair.d > room.y,
+          `stair intersects room ${room.num}`).toBe(false);
+      }
+    }
+  }
+});

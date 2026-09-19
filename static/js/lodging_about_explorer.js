@@ -19,7 +19,7 @@
   const CORRIDOR_H = 2;
   const WALL_H = 8;
   const WALL_T = 3;
-  const MODEL_MARGIN = 64;
+  const MODEL_MARGIN = 96;
 
   function buildFloor4Rooms() {
     const rooms = [];
@@ -222,7 +222,7 @@
       row(sequence(441, 448), 528, 302, 'inner', 38);
       row(sequence(460, 457), 106, 474, 'front');
       row([456, 455], 331, 474, 'front', 67);
-      row([454, 453], 528, 474, 'front', 57);
+      row([454, 453], 528, 474, 'front', 39);
       row([452, 451, 450, 449], 656, 474, 'front');
       spaces = [
         service('ห้องส้วม', 2, 22, 32, 280),
@@ -237,7 +237,7 @@
         service('ห้องเก็บของ', 38, 474, 66, 110),
         service('ห้องพยาบาล', 832, 474, 76, 110),
         service('บันได', 282, 474, 47, 110, 'stairs'),
-        service('บันได', 644, 474, 10, 110, 'stairs'),
+        service('บันได', 607, 474, 47, 110, 'stairs'),
         service('บันได', 2, 498, 32, 86, 'stairs'),
         service('บันได', 912, 498, 46, 86, 'stairs'),
       ];
@@ -255,8 +255,8 @@
         service('ห้องส้วม', 900, 60, 58, 120),
         service('ห้องนอนทหาร', 2, 294, 84, 116),
         service('ห้องนอนทหาร', 826, 294, 72, 116),
-        service('บันได', 250, 328, 76, 82, 'stairs'),
-        service('บันได', 614, 328, 49, 82, 'stairs'),
+        service('บันได', 266, 328, 47, 82, 'stairs'),
+        service('บันได', 615, 328, 47, 82, 'stairs'),
       ];
       corridors = [[54, 210, 796, 54], [450, 60, 40, 350]];
     }
@@ -334,6 +334,43 @@
     }));
   }
 
+  function appendSiteContext(svg, project, worldW, worldD) {
+    // Illustrative landscape to explain building sides; not surveyed planting.
+    const context = svgEl('g', { class: 'lka-site-context', 'aria-hidden': 'true' });
+    const plane = (x, y, w, d, className) => {
+      context.appendChild(svgEl('polygon', {
+        points: points([[x, y], [x + w, y], [x + w, y + d], [x, y + d]].map(([a, b]) => project(a, b, 0))),
+        class: className,
+      }));
+    };
+    plane(-42, -90, worldW + 84, worldD + 174, 'lka-site-ground');
+    plane(285, -87, 390, 55, 'lka-pool-deck');
+    plane(300, -80, 360, 40, 'lka-pool-water');
+    for (let i = 1; i < 7; i++) {
+      const a = project(300 + i * 51, -77, 0);
+      const b = project(300 + i * 51, -43, 0);
+      context.appendChild(svgEl('line', { x1: a.x, y1: a.y, x2: b.x, y2: b.y, class: 'lka-pool-lane' }));
+    }
+    plane(110, worldD + 12, 730, 38, 'lka-site-promenade');
+    for (let i = 0; i < 12; i++) {
+      const a = project(130 + i * 60, worldD + 12, 0);
+      const b = project(130 + i * 60, worldD + 50, 0);
+      context.appendChild(svgEl('line', { x1: a.x, y1: a.y, x2: b.x, y2: b.y, class: 'lka-paving-joint' }));
+    }
+    [[75, -62], [150, -62], [225, -62], [735, -62], [810, -62], [885, -62],
+      [-24, 95], [-24, worldD / 2], [-24, worldD - 75],
+      [worldW + 24, 95], [worldW + 24, worldD / 2], [worldW + 24, worldD - 75],
+      [65, worldD + 32], [890, worldD + 32]].forEach(([x, y], index) => {
+      const p = project(x, y, 0);
+      const tree = svgEl('g', { class: 'lka-site-tree' });
+      tree.appendChild(svgEl('ellipse', { cx: p.x + 6, cy: p.y + 5, rx: 19, ry: 12, class: 'lka-tree-shadow' }));
+      tree.appendChild(svgEl('circle', { cx: p.x, cy: p.y, r: 16 + index % 3, class: 'lka-tree-crown' }));
+      tree.appendChild(svgEl('circle', { cx: p.x - 4, cy: p.y - 5, r: 9, class: 'lka-tree-light' }));
+      context.appendChild(tree);
+    });
+    svg.appendChild(context);
+  }
+
   function makeSVG(floor) {
     const data = FLOOR_DATA[floor];
     const layout = roomLayout(data);
@@ -350,6 +387,7 @@
     });
 
     appendModelDefs(svg);
+    appendSiteContext(svg, project, worldW, worldD);
 
     const ambient = svgEl('ellipse', {
       cx: projector.width / 2,
@@ -378,9 +416,9 @@
 
     const corridor = svgEl('g', { class: 'lka-corridor-model' });
     svg.appendChild(corridor);
-    appendCirculationSpine(svg, project, layout);
+    appendCirculationSpine(corridor, project, layout);
 
-    [['ด้านหลัง · สระว่ายน้ำ', -24], ['ด้านหน้า · หน้าอาคาร / พื้นที่โรงเรียน', worldD + 34]].forEach(([text, y]) => {
+    [['ด้านหลัง · สระว่ายน้ำ', -13], ['ด้านหน้า · หน้าอาคาร / พื้นที่โรงเรียน', worldD + 72]].forEach(([text, y]) => {
       const p = project(worldW / 2, y, 0);
       const label = svgEl('text', { x: p.x, y: p.y, class: 'lka-site-label' });
       label.textContent = text;
@@ -476,6 +514,10 @@
         class: `lka-facility-model facility${facility.type === 'stairs' ? ' lka-core-model' : ''}`,
         'data-cooling': 'facility',
         'aria-label': facility.label,
+        'data-x': facility.x,
+        'data-y': facility.y,
+        'data-w': facility.w,
+        'data-d': facility.d,
       });
       const faces = cuboidFaces(project, facility.x, facility.y, facility.w, facility.d, BASE_H + CORRIDOR_H, 2);
       appendCuboid(group, faces, 'lka-facility');
@@ -496,6 +538,13 @@
       }
       svg.appendChild(group);
     });
+
+    // SVG paints in DOM order. Selection must sit above ALL service geometry,
+    // not only above the other rooms (room 460 used to hide behind storage).
+    const selectionLayer = svgEl('g', { class: 'lka-selection-layer' });
+    const selectedModel = svg.querySelector('.lka-room-model.selected');
+    if (selectedModel) selectionLayer.appendChild(selectedModel);
+    svg.appendChild(selectionLayer);
 
     const badge = svgEl('g', { class: 'lka-svg-floor-badge', 'aria-hidden': 'true' });
     const badgeRect = svgEl('rect', { x: 18, y: 18, width: 118, height: 28, rx: 14 });
