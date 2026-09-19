@@ -4,7 +4,9 @@
 **Flow:** 2 (Codex direct implementation explicitly requested)
 **Base:** `origin/feat/lodging-v5-2` @ `8ebd9b13c9f63bafdc0e3bff956d78e1b5151743`
 **Branch:** `feat/ux-24-3d-visual-polish`
-**Release state:** Ready for PR review; not merged or deployed.
+**Feature commit:** `398df9c0ceb8d7b0aa6484fc5e13555b52fa45d2`
+**PR:** [#48 — UX-24: Polish lodging isometric explorer](https://github.com/saisansan11/sigroom/pull/48)
+**Release state:** PR open for review; not merged or deployed.
 
 ## Outcome
 
