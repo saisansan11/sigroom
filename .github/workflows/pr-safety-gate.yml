@@ -230,6 +230,77 @@ jobs:
           --disable-pip
           --progress-spinner off
 
+  accessibility-audit:
+    name: Accessibility audit
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: sigroom_ci
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d sigroom_ci"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@bec219d24cd3e171d82865faccec33120bb574f4 # v10.1.0
+        with:
+          version: ${{ env.UV_VERSION }}
+          enable-cache: true
+          cache-dependency-glob: uv.lock
+
+      - name: Install Python dependencies
+        run: uv sync --frozen --group dev
+
+      - name: Verify Node runtime
+        run: node --version && npm --version
+
+      - name: Install accessibility test dependencies
+        run: npm ci
+
+      - name: Install Chromium for Playwright
+        run: npx playwright install --with-deps chromium
+
+      - name: Prepare database
+        run: uv run manage.py migrate --noinput
+
+      - name: Start SIGROOM test server
+        shell: bash
+        run: |
+          set -euo pipefail
+          uv run manage.py runserver 127.0.0.1:8000 --noreload >"$RUNNER_TEMP/sigroom-a11y-server.log" 2>&1 &
+          echo $! >"$RUNNER_TEMP/sigroom-a11y-server.pid"
+          for attempt in {1..30}; do
+            if curl --fail --silent http://127.0.0.1:8000/accounts/login/ >/dev/null; then
+              exit 0
+            fi
+            sleep 1
+          done
+          cat "$RUNNER_TEMP/sigroom-a11y-server.log"
+          exit 1
+
+      - name: Run Playwright axe accessibility gate
+        run: npm run test:a11y
+
+      - name: Print server log on failure
+        if: failure()
+        run: cat "$RUNNER_TEMP/sigroom-a11y-server.log" || true
+
   pr-safety-gate:
     name: PR Safety Gate
     if: always()
@@ -238,6 +309,7 @@ jobs:
       - critical-regression
       - full-regression
       - security-audit
+      - accessibility-audit
     runs-on: ubuntu-24.04
     timeout-minutes: 2
     steps:
@@ -248,13 +320,16 @@ jobs:
           CRITICAL_REGRESSION: ${{ needs.critical-regression.result }}
           FULL_REGRESSION: ${{ needs.full-regression.result }}
           SECURITY_AUDIT: ${{ needs.security-audit.result }}
+          ACCESSIBILITY_AUDIT: ${{ needs.accessibility-audit.result }}
         run: |
           set -euo pipefail
           printf 'Repository checks: %s\n' "$REPOSITORY_CHECKS"
           printf 'Critical regression: %s\n' "$CRITICAL_REGRESSION"
           printf 'Full regression: %s\n' "$FULL_REGRESSION"
           printf 'Security audit: %s\n' "$SECURITY_AUDIT"
+          printf 'Accessibility audit: %s\n' "$ACCESSIBILITY_AUDIT"
           [[ "$REPOSITORY_CHECKS" == "success" ]]
           [[ "$CRITICAL_REGRESSION" == "success" ]]
           [[ "$FULL_REGRESSION" == "success" ]]
           [[ "$SECURITY_AUDIT" == "success" ]]
+          [[ "$ACCESSIBILITY_AUDIT" == "success" ]]

@@ -505,9 +505,12 @@ def test_template_aria_pressed_on_buttons():
 
 
 def test_template_aria_live_panel():
-    """Room detail panel must have aria-live='polite'."""
+    """Room detail announcements must use a scoped polite live region."""
     tmpl = _template()
-    assert 'aria-live="polite"' in tmpl, "Room panel must have aria-live='polite'"
+    assert 'id="lka-panel-status"' in tmpl
+    assert 'id="lka-panel-status" aria-live="polite" aria-atomic="true"' in tmpl
+    panel_open = tmpl.split('<aside class="lka-room-panel"', 1)[1].split('>', 1)[0]
+    assert 'aria-live=' not in panel_open
 
 
 def test_template_diagram_not_exact_note():

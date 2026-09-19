@@ -10,3 +10,6 @@ __pycache__/
 /imported-users-*.csv
 docs/room-booking-srs.standalone.html
 .firebase/
+node_modules/
+playwright-report/
+test-results/
