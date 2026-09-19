@@ -1,11 +1,9 @@
 /**
- * UX-26 Lodging Isometric Explorer — architectural depth and contextual inspection.
+ * UX-27 Lodging Explorer — plan-derived positions and selected-room elevation.
  * Self-hosted vanilla JS. No WebGL, no external CDN, no continuous animation loop.
  *
- * The old explorer rendered one flat SVG sheet and CSS-rotated the whole sheet.
- * UX-23 instead re-projects every room as an isometric cuboid with real top/front/
- * side faces. Camera changes rebuild the projection, so the result reads as an
- * architectural model rather than a spinning card.
+ * Starts overhead, with an optional isometric camera. Room coordinates follow
+ * the supplied floor plans; inventory membership does not determine placement.
  */
 
 (function () {
@@ -16,17 +14,11 @@
   const ISO_X = 0.8660254;
   const ISO_Y = 0.48;
 
-  const ROOM_W = 46;
-  const ROOM_D = 32;
-  const ROOM_H = 22;
-  const GAP = 6;
+  const ROOM_H = 3;
   const BASE_H = 9;
   const CORRIDOR_H = 2;
   const WALL_H = 8;
   const WALL_T = 3;
-  const FACILITY_W = 66;
-  const FACILITY_D = 32;
-  const FACILITY_H = 18;
   const MODEL_MARGIN = 64;
 
   function buildFloor4Rooms() {
@@ -45,19 +37,14 @@
   }
 
   const FLOOR_DATA = {
-    4: { rooms: buildFloor4Rooms(), label: 'ชั้น 4', cols: 14 },
-    5: { rooms: buildFloor5Rooms(), label: 'ชั้น 5', cols: 10 },
+    4: { rooms: buildFloor4Rooms(), label: 'ชั้น 4' },
+    5: { rooms: buildFloor5Rooms(), label: 'ชั้น 5' },
   };
-
-  const FACILITIES = [
-    { label: 'ห้องน้ำ ฝั่ง A', type: 'facility' },
-    { label: 'ห้องน้ำ ฝั่ง B', type: 'facility' },
-    { label: 'ห้องอาบน้ำ', type: 'facility' },
-  ];
 
   let currentFloor = 4;
   let currentFilter = 'all';
   let viewQuarter = 0;
+  let perspective = false;
   let scale = 1;
   let selectedRoomNumber = null;
   let renderScheduled = false;
@@ -143,6 +130,7 @@
 
   function rawProject(x, y, z, worldW, worldD) {
     const [rx, ry] = orientPoint(x, y, worldW, worldD);
+    if (!perspective) return { x: rx - z * 0.38, y: ry - z * 0.72 };
     return {
       x: (rx - ry) * ISO_X,
       y: (rx + ry) * ISO_Y - z,
@@ -186,10 +174,14 @@
     const t10 = project(x + w, y, z + h);
     const t11 = project(x + w, y + d, z + h);
     const t01 = project(x, y + d, z + h);
+    const sides = [
+      [b10, b11, t11, t10], [b01, b11, t11, t01],
+      [b00, b01, t01, t00], [b00, b10, t10, t00],
+    ];
     return {
       top: [t00, t10, t11, t01],
-      sideX: [b10, b11, t11, t10],
-      sideY: [b01, b11, t11, t01],
+      sideX: sides[viewQuarter],
+      sideY: sides[(viewQuarter + 1) % 4],
       center: project(x + w / 2, y + d / 2, z + h + 0.5),
     };
   }
@@ -210,33 +202,67 @@
   }
 
   function roomLayout(data) {
-    const rooms = data.rooms;
-    const rows = Math.ceil(rooms.length / data.cols);
-    const hallwayRow = Math.floor(rows / 2);
-    const stepX = ROOM_W + GAP;
-    const stepY = ROOM_D + GAP;
-    const roomItems = rooms.map((room, index) => {
-      const col = index % data.cols;
-      const row = Math.floor(index / data.cols);
-      const adjustedRow = row >= hallwayRow ? row + 1 : row;
-      return {
-        room,
-        x: GAP + col * stepX,
-        y: GAP + adjustedRow * stepY,
-      };
+    // Coordinates follow the supplied plans, not sequential inventory packing.
+    // Deliberately schematic: topology and room order, not measured dimensions.
+    const positions = new Map();
+    const row = (numbers, x, y, side, step = 44, d = 110) => numbers.forEach((num, i) => {
+      positions.set(num, { x: x + i * step, y, w: step - 2, d, side });
     });
-    const worldW = GAP * 2 + data.cols * stepX - GAP;
-    const facilityY = GAP + (rows + 1) * stepY + GAP;
-    const facilitiesWidth = FACILITIES.length * (FACILITY_W + GAP) - GAP;
-    const worldD = facilityY + FACILITY_D + GAP;
+    const sequence = (start, end) => Array.from({ length: Math.abs(end - start) + 1 }, (_, i) => start + i * Math.sign(end - start));
+    const service = (label, x, y, w, d, type = 'service') => ({ label, x, y, w, d, type });
+    let spaces;
+    let corridors;
+    const fourth = data.rooms[0].floor === 4;
+    if (fourth) {
+      row(sequence(401, 407), 106, 22, 'rear');
+      row(sequence(411, 416), 604, 22, 'rear', 38);
+      row(sequence(432, 425), 106, 190, 'inner');
+      row(sequence(424, 417), 528, 190, 'inner', 38);
+      row(sequence(433, 440), 106, 302, 'inner');
+      row(sequence(441, 448), 528, 302, 'inner', 38);
+      row(sequence(460, 457), 106, 474, 'front');
+      row([456, 455], 331, 474, 'front', 67);
+      row([454, 453], 528, 474, 'front', 57);
+      row([452, 451, 450, 449], 656, 474, 'front');
+      spaces = [
+        service('ห้องส้วม', 2, 22, 32, 280),
+        service('ห้องอาบน้ำ', 38, 22, 32, 390),
+        service('ที่ซักล้าง', 2, 306, 32, 160),
+        service('ห้องอาบน้ำ', 868, 22, 40, 390),
+        service('ห้องส้วม', 914, 22, 44, 280),
+        service('ที่ซักล้าง', 914, 306, 44, 160),
+        service('ห้องพัก / บริการ', 414, 22, 112, 110),
+        service('409 · พื้นที่บริการ', 528, 22, 36, 110),
+        service('410 · พื้นที่บริการ', 566, 22, 36, 110),
+        service('ห้องเก็บของ', 38, 474, 66, 110),
+        service('ห้องพยาบาล', 832, 474, 76, 110),
+        service('บันได', 282, 474, 47, 110, 'stairs'),
+        service('บันได', 644, 474, 10, 110, 'stairs'),
+        service('บันได', 2, 498, 32, 86, 'stairs'),
+        service('บันได', 912, 498, 46, 86, 'stairs'),
+      ];
+      corridors = [[72, 138, 790, 46], [72, 418, 790, 50], [72, 184, 28, 234], [832, 184, 30, 234], [466, 184, 60, 234]];
+    } else {
+      row(sequence(501, 508), 88, 60, 'rear', 45, 148);
+      row(sequence(509, 516), 492, 60, 'rear', 41.5, 148);
+      row(sequence(530, 527), 88, 266, 'front', 40, 144);
+      row([526, 525, 524], 328, 266, 'front', 40, 144);
+      row([523, 522, 521], 492, 266, 'front', 40, 144);
+      row([520, 519, 518, 517], 665, 266, 'front', 40, 144);
+      spaces = [
+        service('ห้องอาบน้ำ', 2, 60, 50, 204),
+        service('ห้องอาบน้ำ', 852, 60, 46, 204),
+        service('ห้องส้วม', 900, 60, 58, 120),
+        service('ห้องนอนทหาร', 2, 294, 84, 116),
+        service('ห้องนอนทหาร', 826, 294, 72, 116),
+        service('บันได', 250, 328, 76, 82, 'stairs'),
+        service('บันได', 614, 328, 49, 82, 'stairs'),
+      ];
+      corridors = [[54, 210, 796, 54], [450, 60, 40, 350]];
+    }
     return {
-      roomItems,
-      rows,
-      hallwayRow,
-      hallwayY: GAP + hallwayRow * stepY,
-      worldW: Math.max(worldW, facilitiesWidth + GAP * 2),
-      worldD,
-      facilityY,
+      roomItems: data.rooms.map(room => ({ room: { ...room, side: positions.get(room.num).side }, ...positions.get(room.num) })),
+      spaces, corridors, worldW: 960, worldD: fourth ? 590 : 420,
     };
   }
 
@@ -256,45 +282,23 @@
 
   function appendCirculationSpine(svg, project, layout) {
     const group = svgEl('g', { class: 'lka-circulation-spine', 'aria-hidden': 'true' });
-    const y = layout.hallwayY + ROOM_D * 0.2;
-    appendCuboid(
-      group,
-      cuboidFaces(
-        project,
-        GAP * 2,
-        y,
-        layout.worldW - GAP * 4,
-        ROOM_D * 0.6,
-        BASE_H + CORRIDOR_H,
-        1.4,
-      ),
-      'lka-spine',
-    );
-
-    const coreW = Math.min(82, layout.worldW * 0.16);
-    const coreX = layout.worldW / 2 - coreW / 2;
-    const core = svgEl('g', { class: 'lka-core-model' });
-    appendCuboid(
-      core,
-      cuboidFaces(
-        project,
-        coreX,
-        layout.hallwayY + 3,
-        coreW,
-        ROOM_D - 6,
-        BASE_H + CORRIDOR_H,
-        7,
-      ),
-      'lka-core',
-    );
-    group.appendChild(core);
+    layout.corridors.forEach(([x, y, w, d]) => {
+      appendCuboid(group, cuboidFaces(project, x, y, w, d, BASE_H, 1), 'lka-spine');
+      if (w > 200) {
+        const point = project(x + w / 2, y + d / 2, BASE_H + 2);
+        const label = svgEl('text', { x: point.x, y: point.y, class: 'lka-context-label' });
+        label.textContent = 'ทางเดิน';
+        group.appendChild(label);
+      }
+    });
     svg.appendChild(group);
   }
 
-  function appendRoomArchitecture(group, project, x, y, room) {
+  function appendRoomArchitecture(group, project, x, y, room, w, d) {
     const facadeZ = BASE_H + CORRIDOR_H + 5;
-    const windowA = project(x + ROOM_W, y + ROOM_D * 0.26, facadeZ + 7);
-    const windowB = project(x + ROOM_W, y + ROOM_D * 0.7, facadeZ + 7);
+    const windowY = room.side === 'rear' ? y : y + d;
+    const windowA = project(x + w * 0.2, windowY, facadeZ + 24);
+    const windowB = project(x + w * 0.8, windowY, facadeZ + 24);
     group.appendChild(svgEl('line', {
       x1: windowA.x,
       y1: windowA.y,
@@ -304,8 +308,9 @@
       'aria-hidden': 'true',
     }));
 
-    const doorA = project(x + ROOM_W * 0.28, y + ROOM_D, facadeZ - 1);
-    const doorB = project(x + ROOM_W * 0.52, y + ROOM_D, facadeZ + 6);
+    const doorY = room.side === 'rear' ? y + d : y;
+    const doorA = project(x + w * 0.4, doorY, facadeZ - 1);
+    const doorB = project(x + w * 0.4, doorY, facadeZ + 14);
     group.appendChild(svgEl('line', {
       x1: doorA.x,
       y1: doorA.y,
@@ -316,9 +321,9 @@
     }));
 
     const sill = project(
-      x + ROOM_W * 0.82,
-      y + ROOM_D * 0.72,
-      BASE_H + CORRIDOR_H + ROOM_H + 1,
+      x + w * 0.82,
+      y + d * 0.72,
+      BASE_H + CORRIDOR_H + 43,
     );
     group.appendChild(svgEl('circle', {
       cx: sill.x,
@@ -332,8 +337,8 @@
   function makeSVG(floor) {
     const data = FLOOR_DATA[floor];
     const layout = roomLayout(data);
-    const { roomItems, hallwayY, worldW, worldD, facilityY } = layout;
-    const projector = createProjector(worldW, worldD, BASE_H + ROOM_H + WALL_H + 8);
+    const { roomItems, worldW, worldD } = layout;
+    const projector = createProjector(worldW, worldD, BASE_H + 60);
     const project = projector.project;
 
     const svg = svgEl('svg', {
@@ -372,24 +377,21 @@
     appendPerimeterWalls(svg, project, worldW, worldD);
 
     const corridor = svgEl('g', { class: 'lka-corridor-model' });
-    const corridorFaces = cuboidFaces(
-      project,
-      GAP,
-      hallwayY,
-      worldW - GAP * 2,
-      ROOM_D,
-      BASE_H,
-      CORRIDOR_H,
-    );
-    appendCuboid(corridor, corridorFaces, 'lka-corridor');
     svg.appendChild(corridor);
     appendCirculationSpine(svg, project, layout);
 
-    const orderedRooms = roomItems
-      .map(item => ({ ...item, depth: modelDepth(item.x, item.y, ROOM_W, ROOM_D, worldW, worldD) }))
-      .sort((a, b) => a.depth - b.depth);
+    [['ด้านหลัง · สระว่ายน้ำ', -24], ['ด้านหน้า · หน้าอาคาร / พื้นที่โรงเรียน', worldD + 34]].forEach(([text, y]) => {
+      const p = project(worldW / 2, y, 0);
+      const label = svgEl('text', { x: p.x, y: p.y, class: 'lka-site-label' });
+      label.textContent = text;
+      svg.appendChild(label);
+    });
 
-    orderedRooms.forEach(({ room, x, y }) => {
+    const orderedRooms = roomItems
+      .map(item => ({ ...item, depth: modelDepth(item.x, item.y, item.w, item.d, worldW, worldD) }))
+      .sort((a, b) => (a.room.num === selectedRoomNumber ? 1 : b.room.num === selectedRoomNumber ? -1 : a.depth - b.depth));
+
+    orderedRooms.forEach(({ room, x, y, w, d }) => {
       const isSelected = selectedRoomNumber === room.num;
       const group = svgEl('g', {
         class: `lka-room-model ${room.cooling}${isSelected ? ' selected' : ''}`,
@@ -400,8 +402,13 @@
       group.dataset.floor = room.floor;
       group.dataset.cooling = room.cooling;
       group.dataset.capacity = room.capacity;
+      group.dataset.side = room.side;
+      group.dataset.x = x;
+      group.dataset.y = y;
+      group.dataset.w = w;
+      group.dataset.d = d;
 
-      const faces = cuboidFaces(project, x, y, ROOM_W, ROOM_D, BASE_H + CORRIDOR_H, ROOM_H);
+      const faces = cuboidFaces(project, x, y, w, d, BASE_H + CORRIDOR_H, isSelected ? 42 : ROOM_H);
       const sideY = svgEl('polygon', { points: points(faces.sideY), class: 'lka-room-face lka-room-face--y' });
       const sideX = svgEl('polygon', { points: points(faces.sideX), class: 'lka-room-face lka-room-face--x' });
       const top = svgEl('polygon', {
@@ -444,6 +451,7 @@
         top.setAttribute('aria-pressed', 'true');
         scene.classList.add('has-selection');
         showPanel(room);
+        scheduleRender();
       }
 
       top.addEventListener('click', selectRoom);
@@ -457,20 +465,19 @@
       group.appendChild(sideY);
       group.appendChild(sideX);
       group.appendChild(top);
-      appendRoomArchitecture(group, project, x, y, room);
+      if (isSelected) appendRoomArchitecture(group, project, x, y, room, w, d);
       group.appendChild(accent);
       group.appendChild(label);
       svg.appendChild(group);
     });
 
-    FACILITIES.forEach((facility, index) => {
-      const x = GAP + index * (FACILITY_W + GAP);
+    layout.spaces.forEach(facility => {
       const group = svgEl('g', {
-        class: 'lka-facility-model facility',
+        class: `lka-facility-model facility${facility.type === 'stairs' ? ' lka-core-model' : ''}`,
         'data-cooling': 'facility',
         'aria-label': facility.label,
       });
-      const faces = cuboidFaces(project, x, facilityY, FACILITY_W, FACILITY_D, BASE_H + CORRIDOR_H, FACILITY_H);
+      const faces = cuboidFaces(project, facility.x, facility.y, facility.w, facility.d, BASE_H + CORRIDOR_H, 2);
       appendCuboid(group, faces, 'lka-facility');
       const label = svgEl('text', {
         x: faces.center.x,
@@ -478,7 +485,15 @@
         class: 'lka-facility-label',
       });
       label.textContent = facility.label;
+      if (facility.d > facility.w * 1.5) label.setAttribute('transform', `rotate(-90 ${faces.center.x} ${faces.center.y})`);
       group.appendChild(label);
+      if (facility.type === 'stairs') {
+        for (let i = 1; i < 6; i++) {
+          const a = project(facility.x + 4, facility.y + facility.d * i / 7, BASE_H + 3);
+          const b = project(facility.x + facility.w - 4, facility.y + facility.d * i / 7, BASE_H + 3);
+          group.insertBefore(svgEl('line', { x1: a.x, y1: a.y, x2: b.x, y2: b.y, class: 'lka-stair-tread' }), label);
+        }
+      }
       svg.appendChild(group);
     });
 
@@ -509,7 +524,7 @@
 
   function updateViewStatus() {
     if (modelFloor) modelFloor.textContent = `ชั้น ${currentFloor}`;
-    if (modelView) modelView.textContent = `มุมมอง ${viewQuarter + 1}/4`;
+    if (modelView) modelView.textContent = perspective ? `มุมมอง ${viewQuarter + 1}/4` : 'ผังจากด้านบน';
   }
 
   function renderFloor() {
@@ -524,6 +539,7 @@
     updateAriaLabel();
     updateViewStatus();
     applyTransform();
+    populateRoomPicker();
 
     if (focusedRoomNumber) {
       const replacement = scene.querySelector(`.lka-room-block[data-num="${focusedRoomNumber}"]`);
@@ -597,10 +613,16 @@
     panelFloor.textContent = `ชั้น ${room.floor}`;
     panelCooling.textContent = room.cooling === 'air' ? 'ปรับอากาศ' : 'พัดลม';
     panelCapacity.textContent = `${room.capacity} คน`;
+    const side = room.side || roomLayout(FLOOR_DATA[room.floor]).roomItems.find(item => item.room.num === room.num).side;
+    panel.dataset.side = side;
+    document.getElementById('lka-panel-facing').textContent = side === 'rear' ? 'ด้านสระว่ายน้ำ' : side === 'front' ? 'ด้านหน้าอาคาร' : 'โซนกลางอาคาร';
+    document.getElementById('lka-panel-context').textContent = side === 'rear'
+      ? 'อยู่แถวหลังของอาคาร ฝั่งสระว่ายน้ำกรมการทหารสื่อสาร'
+      : side === 'front' ? 'อยู่แถวหน้าอาคาร ฝั่งพื้นที่โรงเรียนทหารสื่อสาร' : 'อยู่ในกลุ่มห้องกลางผัง ดูตำแหน่งทางเดินและห้องข้างเคียงได้จากแผนผัง';
     panel.dataset.state = 'selected';
     panel.classList.add('has-selection');
     if (panelStatus) {
-      panelStatus.textContent = [panelNumber.textContent, panelFloor.textContent, panelCooling.textContent, panelCapacity.textContent].join(', ');
+      panelStatus.textContent = [panelNumber.textContent, panelFloor.textContent, panelCooling.textContent, panelCapacity.textContent, document.getElementById('lka-panel-facing').textContent].join(', ');
     }
     if (modelSelection) {
       modelSelection.textContent = `เลือกห้อง ${room.num}`;
@@ -634,9 +656,36 @@
         canvas.focus({ preventScroll: true });
       }
     }
+    scheduleRender();
   }
 
+  const picker = document.getElementById('lka-room-picker');
+  function populateRoomPicker() {
+    if (!picker) return;
+    picker.replaceChildren(new Option('เลือกหมายเลขห้อง', ''));
+    FLOOR_DATA[currentFloor].rooms.filter(room => currentFilter === 'all' || currentFilter === room.cooling).forEach(room => {
+      picker.add(new Option(`${room.num} · ${room.cooling === 'air' ? 'ปรับอากาศ' : 'พัดลม'}`, room.num));
+    });
+    picker.value = selectedRoomNumber || '';
+  }
+  picker?.addEventListener('change', () => {
+    const room = FLOOR_DATA[currentFloor].rooms.find(item => item.num === Number(picker.value));
+    if (!room) { closePanel(); return; }
+    selectedRoomNumber = room.num;
+    showPanel(room);
+    scheduleRender();
+  });
+  document.getElementById('lka-perspective')?.addEventListener('click', event => {
+    perspective = !perspective;
+    viewQuarter = 0;
+    scale = 1;
+    event.currentTarget.setAttribute('aria-pressed', String(perspective));
+    event.currentTarget.textContent = perspective ? 'กลับสู่ผังแบน' : 'ดูมุมอาคาร';
+    scheduleRender();
+  });
+
   panelClose.addEventListener('click', () => closePanel({ restoreFocus: true }));
+  panel.querySelector('.lka-room-next')?.addEventListener('click', () => closePanel());
   canvas.addEventListener('click', event => {
     if (event.target === canvas || event.target === scene) closePanel();
   });
@@ -673,6 +722,7 @@
       button.classList.add('active');
       button.setAttribute('aria-pressed', 'true');
       applyFilter(button.dataset.filter);
+      populateRoomPicker();
     });
   });
 
@@ -681,6 +731,10 @@
   }
 
   function rotateView(delta) {
+    perspective = true;
+    const toggle = document.getElementById('lka-perspective');
+    toggle.setAttribute('aria-pressed', 'true');
+    toggle.textContent = 'กลับสู่ผังแบน';
     viewQuarter = (viewQuarter + delta + 4) % 4;
     scheduleRender();
   }
@@ -698,6 +752,7 @@
   }
 
   canvas.addEventListener('mousedown', event => {
+    if (!perspective) return;
     isDragging = true;
     dragCommitted = false;
     dragStartX = event.clientX;
@@ -720,6 +775,7 @@
   });
 
   canvas.addEventListener('touchstart', event => {
+    if (!perspective) return;
     if (event.touches.length !== 1) return;
     lastTouchX = event.touches[0].clientX;
     lastTouchY = event.touches[0].clientY;
@@ -727,6 +783,7 @@
   }, { passive: true });
 
   canvas.addEventListener('touchmove', event => {
+    if (!perspective) return;
     if (event.touches.length !== 1 || touchCommitted) return;
     const dx = event.touches[0].clientX - lastTouchX;
     const dy = event.touches[0].clientY - lastTouchY;

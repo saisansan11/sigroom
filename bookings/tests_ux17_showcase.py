@@ -575,12 +575,12 @@ def test_js_facilities_always_rendered_unconditionally():
     switching filters after changing floors always has facility nodes in the DOM.
     """
     js = _js()
-    assert "FACILITIES.forEach" in js
-    # Confirm FACILITIES.forEach is NOT enclosed in an if (currentFilter === ...) block
-    idx = js.find("FACILITIES.forEach")
+    # UX-27 has floor-specific service/stair positions instead of three generic blocks.
+    assert "layout.spaces.forEach" in js
+    idx = js.find("layout.spaces.forEach")
     preceding_code = js[max(0, idx - 120):idx]
     assert "if (currentFilter" not in preceding_code, (
-        "FACILITIES.forEach must not be guarded by currentFilter; facilities must render every time"
+        "layout.spaces.forEach must not be guarded by currentFilter; facilities must render every time"
     )
 
 
