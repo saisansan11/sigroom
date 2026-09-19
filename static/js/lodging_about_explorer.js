@@ -1,5 +1,5 @@
 /**
- * UX-23 Lodging Isometric Explorer
+ * UX-24 Lodging Isometric Explorer — visual polish and contextual inspection.
  * Self-hosted vanilla JS. No WebGL, no external CDN, no continuous animation loop.
  *
  * The old explorer rendered one flat SVG sheet and CSS-rotated the whole sheet.
@@ -57,6 +57,7 @@
   let currentFilter = 'all';
   let viewQuarter = 0;
   let scale = 1;
+  let selectedRoomNumber = null;
   let renderScheduled = false;
   let isDragging = false;
   let dragStartX = 0;
@@ -81,6 +82,7 @@
   const viewRight = document.getElementById('lka-view-right');
   const modelFloor = document.getElementById('lka-model-floor');
   const modelView = document.getElementById('lka-model-view');
+  const modelSelection = document.getElementById('lka-model-selection');
 
   if (!canvas || !scene || !panel || !panelClose) return;
 
@@ -88,6 +90,40 @@
     const el = document.createElementNS(SVG_NS, tag);
     Object.entries(attrs).forEach(([key, value]) => el.setAttribute(key, String(value)));
     return el;
+  }
+
+  function appendLinearGradient(defs, id, colors, direction = 'diagonal') {
+    const directions = {
+      diagonal: ['0%', '0%', '100%', '100%'],
+      vertical: ['0%', '0%', '0%', '100%'],
+      reverse: ['100%', '0%', '0%', '100%'],
+    };
+    const [x1, y1, x2, y2] = directions[direction];
+    const gradient = svgEl('linearGradient', { id, x1, y1, x2, y2 });
+    colors.forEach(([offset, color]) => {
+      gradient.appendChild(svgEl('stop', { offset, 'stop-color': color }));
+    });
+    defs.appendChild(gradient);
+  }
+
+  function appendModelDefs(svg) {
+    const defs = svgEl('defs');
+    [
+      ['lka-air-top', [['0%', '#f4fcff'], ['58%', '#d8f3ff'], ['100%', '#b7e4f8']], 'diagonal'],
+      ['lka-air-x', [['0%', '#7cc8e8'], ['100%', '#318fba']], 'vertical'],
+      ['lka-air-y', [['0%', '#b9e7f8'], ['100%', '#67b8d9']], 'reverse'],
+      ['lka-fan-top', [['0%', '#fffaf0'], ['58%', '#ffedb7'], ['100%', '#f5cf6c']], 'diagonal'],
+      ['lka-fan-x', [['0%', '#e1b249'], ['100%', '#b97912']], 'vertical'],
+      ['lka-fan-y', [['0%', '#f5d787'], ['100%', '#d79f2b']], 'reverse'],
+      ['lka-facility-top', [['0%', '#effdf9'], ['100%', '#b7eee3']], 'diagonal'],
+      ['lka-facility-x', [['0%', '#68cbbb'], ['100%', '#258e83']], 'vertical'],
+      ['lka-facility-y', [['0%', '#a8e8dc'], ['100%', '#54b7a8']], 'reverse'],
+      ['lka-base-top', [['0%', '#ffffff'], ['100%', '#e7eef3']], 'diagonal'],
+      ['lka-base-x', [['0%', '#cfdae3'], ['100%', '#9fb0be']], 'vertical'],
+      ['lka-base-y', [['0%', '#e5edf3'], ['100%', '#b9c8d3']], 'reverse'],
+      ['lka-corridor-top', [['0%', '#ffffff'], ['100%', '#eaf1f5']], 'diagonal'],
+    ].forEach(([id, colors, direction]) => appendLinearGradient(defs, id, colors, direction));
+    svg.appendChild(defs);
   }
 
   function orientPoint(x, y, worldW, worldD) {
@@ -213,6 +249,18 @@
       preserveAspectRatio: 'xMidYMid meet',
     });
 
+    appendModelDefs(svg);
+
+    const ambient = svgEl('ellipse', {
+      cx: projector.width / 2,
+      cy: projector.height - 30,
+      rx: Math.max(105, projector.width * 0.39),
+      ry: 22,
+      class: 'lka-model-ambient',
+      'aria-hidden': 'true',
+    });
+    svg.appendChild(ambient);
+
     const shadow = svgEl('ellipse', {
       cx: projector.width / 2,
       cy: projector.height - 24,
@@ -245,8 +293,9 @@
       .sort((a, b) => a.depth - b.depth);
 
     orderedRooms.forEach(({ room, x, y }) => {
+      const isSelected = selectedRoomNumber === room.num;
       const group = svgEl('g', {
-        class: `lka-room-model ${room.cooling}`,
+        class: `lka-room-model ${room.cooling}${isSelected ? ' selected' : ''}`,
         'data-room': room.num,
         'data-cooling': room.cooling,
       });
@@ -263,6 +312,7 @@
         class: `lka-room-block ${room.cooling}`,
         tabindex: '0',
         role: 'button',
+        'aria-pressed': isSelected ? 'true' : 'false',
         'aria-label': `ห้อง ${room.num} ${room.cooling === 'air' ? 'ปรับอากาศ' : 'พัดลม'} ชั้น ${room.floor} ${room.capacity} คน`,
       });
       top.dataset.num = room.num;
@@ -287,8 +337,15 @@
 
       function selectRoom(event) {
         event.stopPropagation();
-        scene.querySelectorAll('.lka-room-model.selected').forEach(el => el.classList.remove('selected'));
+        selectedRoomNumber = room.num;
+        scene.querySelectorAll('.lka-room-model.selected').forEach(el => {
+          el.classList.remove('selected');
+          const control = el.querySelector('.lka-room-block');
+          if (control) control.setAttribute('aria-pressed', 'false');
+        });
         group.classList.add('selected');
+        top.setAttribute('aria-pressed', 'true');
+        scene.classList.add('has-selection');
         showPanel(room);
       }
 
@@ -360,6 +417,7 @@
   function renderFloor() {
     scene.innerHTML = '';
     scene.appendChild(makeSVG(currentFloor));
+    scene.classList.toggle('has-selection', selectedRoomNumber !== null);
     applyFilter(currentFilter);
     injectLegend();
     updateAriaLabel();
@@ -430,12 +488,28 @@
     panelFloor.textContent = `ชั้น ${room.floor}`;
     panelCooling.textContent = room.cooling === 'air' ? 'ปรับอากาศ' : 'พัดลม';
     panelCapacity.textContent = `${room.capacity} คน`;
-    panel.hidden = false;
+    panel.dataset.state = 'selected';
+    panel.classList.add('has-selection');
+    if (modelSelection) {
+      modelSelection.textContent = `เลือกห้อง ${room.num}`;
+      modelSelection.hidden = false;
+    }
   }
 
   function closePanel() {
-    panel.hidden = true;
-    scene.querySelectorAll('.lka-room-model.selected').forEach(el => el.classList.remove('selected'));
+    selectedRoomNumber = null;
+    panel.dataset.state = 'empty';
+    panel.classList.remove('has-selection');
+    scene.classList.remove('has-selection');
+    scene.querySelectorAll('.lka-room-model.selected').forEach(el => {
+      el.classList.remove('selected');
+      const control = el.querySelector('.lka-room-block');
+      if (control) control.setAttribute('aria-pressed', 'false');
+    });
+    if (modelSelection) {
+      modelSelection.textContent = '';
+      modelSelection.hidden = true;
+    }
   }
 
   panelClose.addEventListener('click', closePanel);
@@ -484,7 +558,6 @@
 
   function rotateView(delta) {
     viewQuarter = (viewQuarter + delta + 4) % 4;
-    closePanel();
     scheduleRender();
   }
 
@@ -496,7 +569,6 @@
     resetBtn.addEventListener('click', () => {
       viewQuarter = 0;
       scale = 1;
-      closePanel();
       scheduleRender();
     });
   }
@@ -551,12 +623,13 @@
       case '-':
       case '_': scale = clampScale(scale - 0.12); applyTransform(); event.preventDefault(); break;
       case 'r':
-      case 'R': viewQuarter = 0; scale = 1; closePanel(); scheduleRender(); event.preventDefault(); break;
+      case 'R': viewQuarter = 0; scale = 1; scheduleRender(); event.preventDefault(); break;
       case 'Escape': closePanel(); break;
     }
   });
 
   canvas.addEventListener('wheel', event => {
+    if (!event.ctrlKey && !event.metaKey) return;
     event.preventDefault();
     scale = clampScale(scale - event.deltaY * 0.001);
     applyTransform();

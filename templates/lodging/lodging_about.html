@@ -6,6 +6,7 @@
 {% block head %}
 <link rel="stylesheet" href="{% static 'css/lodging_about.css' %}">
 <link rel="stylesheet" href="{% static 'css/lodging_about_ux23.css' %}">
+<link rel="stylesheet" href="{% static 'css/lodging_about_ux24.css' %}">
 {% endblock %}
 
 {% block content %}
@@ -317,20 +318,22 @@
       </div>
     </div>
 
+    <div class="lka-explorer-layout">
     <div class="lka-explorer-wrap">
       <div class="lka-drag-hint-bar">
-        <span class="lka-hint-icon" aria-hidden="true">🧊</span>
-        <p class="lka-drag-hint" aria-hidden="true">
-          ลากเพื่อหมุนโมเดลซ้าย/ขวา · แตะห้องเพื่อดูข้อมูล · ใช้ +/- ซูม · ← → เปลี่ยนมุม · R รีเซ็ต
+        <span class="lka-hint-icon" aria-hidden="true">↔</span>
+        <p class="lka-drag-hint" id="lka-explorer-help">
+          ลากเพื่อหมุนโมเดลซ้าย–ขวา หรือปัดเพื่อเปลี่ยนมุม · แตะห้องเพื่อดูข้อมูล หรือใช้แป้นพิมพ์เลือกห้อง · ใช้ปุ่ม +/− หรือ Ctrl + เลื่อนเพื่อซูม
         </p>
       </div>
 
       <div class="lka-explorer-canvas" id="lka-explorer-canvas" tabindex="0"
            role="region" aria-label="โมเดลจำลองสามมิติ ชั้น 4 อาคารที่พักนักเรียน โรงเรียนทหารสื่อสาร"
-           aria-describedby="lka-explorer-fallback">
+           aria-describedby="lka-explorer-help lka-explorer-fallback">
         <div class="lka-model-hud" aria-hidden="true">
           <span id="lka-model-floor">ชั้น 4</span>
           <span id="lka-model-view">มุมมอง 1/4</span>
+          <span class="lka-model-selection" id="lka-model-selection" hidden></span>
         </div>
         <div class="lka-iso-scene" id="lka-iso-scene">
           {# SVG isometric cuboids are rendered dynamically via JS #}
@@ -343,7 +346,7 @@
         <span class="lka-ctrl-separator" aria-hidden="true"></span>
         <button class="lka-ctrl-btn" id="lka-zoom-in" aria-label="ขยาย" title="ขยายมุมมอง">+</button>
         <button class="lka-ctrl-btn" id="lka-zoom-out" aria-label="ย่อ" title="ย่อมุมมอง">−</button>
-        <button class="lka-ctrl-btn lka-ctrl-reset" id="lka-reset" aria-label="รีเซ็ตมุมมอง">↺ รีเซ็ตมุมมอง</button>
+        <button class="lka-ctrl-btn lka-ctrl-reset" id="lka-reset" aria-label="รีเซ็ตมุมมอง"><span class="lka-ctrl-reset-icon" aria-hidden="true">↺</span><span class="lka-ctrl-reset-label">รีเซ็ตมุมมอง</span></button>
       </div>
 
       <details class="lka-fallback" id="lka-explorer-fallback">
@@ -359,19 +362,29 @@
       </details>
     </div>
 
-    {# Room detail floating card #}
-    <div class="lka-room-panel" id="lka-room-panel" aria-live="polite" aria-atomic="true" hidden>
-      <button class="lka-panel-close" id="lka-panel-close" aria-label="ปิดข้อมูลห้อง">✕</button>
-      <div class="lka-panel-header">
-        <span class="lka-panel-pill">ข้อมูลห้องพัก</span>
-        <h4 class="lka-panel-number" id="lka-panel-number"></h4>
+    {# Contextual room inspector #}
+    <aside class="lka-room-panel" id="lka-room-panel" data-state="empty"
+           aria-label="ข้อมูลห้องที่เลือก" aria-live="polite" aria-atomic="true">
+      <div class="lka-panel-empty">
+        <span class="lka-panel-kicker">ข้อมูลห้อง</span>
+        <span class="lka-panel-empty-mark" aria-hidden="true">401</span>
+        <h3>เลือกห้องจากโมเดล</h3>
+        <p>แตะหรือใช้แป้นพิมพ์เลือกหมายเลขห้อง เพื่อดูชั้น ระบบทำความเย็น และความจุในบริบทเดียวกัน</p>
       </div>
-      <dl class="lka-panel-dl">
-        <dt>ชั้น</dt><dd id="lka-panel-floor"></dd>
-        <dt>ระบบทำความเย็น</dt><dd id="lka-panel-cooling"></dd>
-        <dt>ความจุ</dt><dd id="lka-panel-capacity"></dd>
-      </dl>
-      <p class="lka-panel-note">ข้อมูลแสดงประกอบเท่านั้น · ไม่แสดงสถานะการจองจริง</p>
+      <div class="lka-panel-content">
+        <button class="lka-panel-close" id="lka-panel-close" aria-label="ปิดข้อมูลห้อง">✕</button>
+        <div class="lka-panel-header">
+          <span class="lka-panel-pill">ห้องที่เลือก</span>
+          <h4 class="lka-panel-number" id="lka-panel-number"></h4>
+        </div>
+        <dl class="lka-panel-dl">
+          <dt>ชั้น</dt><dd id="lka-panel-floor"></dd>
+          <dt>ระบบทำความเย็น</dt><dd id="lka-panel-cooling"></dd>
+          <dt>ความจุ</dt><dd id="lka-panel-capacity"></dd>
+        </dl>
+        <p class="lka-panel-note">ข้อมูลแสดงประกอบเท่านั้น · ไม่แสดงสถานะการจองจริง</p>
+      </div>
+    </aside>
     </div>
   </section>
 

@@ -1,0 +1,645 @@
+/* UX-24 — Premium visual polish for the isometric explorer.
+   A sunlit architectural light table: clearer hierarchy, coherent directional
+   lighting, contextual inspection and mobile-safe controls. */
+
+.lka-explorer-section {
+  scroll-margin-top: 6.5rem;
+  --ux24-ink: #102337;
+  --ux24-muted: #55697d;
+  --ux24-line: #d7e4ed;
+  --ux24-sky: #087ea9;
+  --ux24-sky-strong: #075f82;
+  --ux24-surface: #f6fafc;
+  --ux24-ease: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.lka-explorer-section .lka-explorer-toolbar {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 0.75rem 1rem;
+  padding: 0.55rem;
+  border: 1px solid var(--ux24-line);
+  border-radius: 1rem;
+  background: #f8fbfd;
+  box-shadow: 0 12px 34px -30px rgb(16 35 55 / 0.45);
+}
+
+.lka-explorer-section .lka-floor-toggle,
+.lka-explorer-section .lka-filter-row {
+  min-width: 0;
+}
+
+.lka-explorer-section .lka-floor-toggle {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.lka-explorer-section .lka-filter-row {
+  justify-content: flex-end;
+}
+
+.lka-explorer-section .lka-ftoggle,
+.lka-explorer-section .lka-filter {
+  width: auto;
+  min-height: 44px;
+  margin: 0;
+  white-space: nowrap;
+  box-shadow: none;
+}
+
+.lka-explorer-section .lka-ftoggle {
+  padding-inline: 1rem;
+}
+
+.lka-explorer-section .lka-filter {
+  padding-inline: 0.9rem;
+  border-color: transparent;
+  background: transparent;
+}
+
+.lka-explorer-section .lka-ftoggle[aria-pressed="true"] {
+  background: var(--ux24-sky);
+  border-color: var(--ux24-sky);
+  box-shadow: 0 8px 20px -14px rgb(8 126 169 / 0.78);
+}
+
+.lka-explorer-section .lka-filter[aria-pressed="true"] {
+  background: var(--ux24-ink);
+  border-color: var(--ux24-ink);
+}
+
+.lka-explorer-section .lka-ftoggle:focus-visible,
+.lka-explorer-section .lka-filter:focus-visible,
+.lka-explorer-section .lka-ctrl-btn:focus-visible,
+.lka-explorer-section .lka-panel-close:focus-visible {
+  outline: 3px solid #22b8e6;
+  outline-offset: 2px;
+}
+
+.lka-explorer-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(15rem, 18rem);
+  gap: 1rem;
+  align-items: stretch;
+}
+
+.lka-explorer-section .lka-explorer-wrap {
+  min-width: 0;
+  border-color: #cadbe7;
+  border-radius: 1.35rem;
+  background: #fbfdfe;
+  box-shadow:
+    0 30px 70px -46px rgb(16 35 55 / 0.62),
+    0 10px 26px -22px rgb(8 126 169 / 0.3);
+}
+
+.lka-explorer-section .lka-drag-hint-bar {
+  justify-content: flex-start;
+  min-height: 48px;
+  padding: 0.65rem 1rem;
+  border-bottom-color: #dbe7ee;
+  background: #fbfdfe;
+}
+
+.lka-explorer-section .lka-hint-icon {
+  display: grid;
+  width: 1.8rem;
+  height: 1.8rem;
+  place-items: center;
+  border: 1px solid #b9d9e8;
+  border-radius: 50%;
+  background: #eaf7fc;
+  color: var(--ux24-sky-strong);
+  font-size: 0.9rem;
+  font-weight: 900;
+  flex: 0 0 auto;
+}
+
+.lka-explorer-section .lka-drag-hint {
+  color: var(--ux24-muted);
+  line-height: 1.45;
+}
+
+.lka-explorer-section .lka-legend {
+  gap: 0.6rem 1.1rem;
+  padding: 0.7rem 1rem;
+  border-top: 0;
+  border-bottom: 1px solid #dbe7ee;
+  background: #fbfdfe;
+}
+
+.lka-explorer-section .lka-legend-item {
+  color: #3f566a;
+  font-weight: 650;
+}
+
+.lka-explorer-section .lka-legend-swatch {
+  border-radius: 0.3rem;
+  box-shadow: inset 0 1px rgb(255 255 255 / 0.7);
+}
+
+.lka-explorer-section .lka-explorer-canvas {
+  height: clamp(430px, 49vw, 575px);
+  background:
+    radial-gradient(ellipse at 76% 20%, rgb(184 237 226 / 0.52), transparent 28%),
+    radial-gradient(ellipse at 38% 32%, rgb(189 231 249 / 0.72), transparent 40%),
+    linear-gradient(180deg, #f8fcfe 0%, #edf6fa 64%, #e7f0f4 100%);
+  touch-action: pan-y pinch-zoom;
+}
+
+.lka-explorer-section .lka-explorer-canvas::before {
+  opacity: 1;
+  background:
+    radial-gradient(ellipse at 50% 78%, rgb(255 255 255 / 0.78), transparent 46%),
+    linear-gradient(110deg, transparent 0 54%, rgb(255 255 255 / 0.38) 54% 63%, transparent 63%);
+  mask-image: none;
+}
+
+.lka-explorer-section .lka-explorer-canvas::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  box-shadow: inset 0 -42px 70px -64px rgb(16 35 55 / 0.72);
+}
+
+.lka-explorer-section .lka-model-hud {
+  top: 0.8rem;
+  left: 0.8rem;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+  max-width: calc(100% - 1.6rem);
+}
+
+.lka-explorer-section .lka-model-hud span {
+  min-height: 2rem;
+  border-color: rgb(181 213 228 / 0.94);
+  background: rgb(249 253 254 / 0.94);
+  color: var(--ux24-ink);
+  box-shadow: 0 8px 22px -18px rgb(16 35 55 / 0.65);
+  backdrop-filter: none;
+}
+
+.lka-explorer-section .lka-model-selection {
+  border-color: #75c8e4;
+  background: #dff5fc;
+  color: #075f82;
+}
+
+.lka-explorer-section .lka-iso-scene {
+  transform-origin: 50% 56%;
+  transition: transform 220ms var(--ux24-ease), opacity 160ms ease;
+}
+
+.lka-explorer-section .lka-iso-svg {
+  width: min(99%, 1180px);
+  height: 95%;
+  filter:
+    drop-shadow(0 24px 24px rgb(16 35 55 / 0.1))
+    drop-shadow(0 4px 4px rgb(16 35 55 / 0.09));
+}
+
+.lka-model-ambient {
+  fill: rgb(255 255 255 / 0.72);
+}
+
+.lka-model-ground-shadow {
+  fill: rgb(28 55 75 / 0.2);
+  filter: blur(4px);
+}
+
+.lka-base-top { fill: url(#lka-base-top); stroke: #aebfcb; stroke-width: 1.15; }
+.lka-base-face--x { fill: url(#lka-base-x); stroke: #93a7b5; stroke-width: 1; }
+.lka-base-face--y { fill: url(#lka-base-y); stroke: #a8bac6; stroke-width: 1; }
+.lka-corridor-top { fill: url(#lka-corridor-top); stroke: #b4c5d0; stroke-width: 1; }
+.lka-corridor-face--x { fill: #c8d5de; stroke: #aabcc8; }
+.lka-corridor-face--y { fill: #dee8ee; stroke: #bac9d2; }
+
+.lka-room-model,
+.lka-facility-model {
+  transition:
+    transform 180ms var(--ux24-ease),
+    opacity 170ms ease;
+}
+
+.lka-room-model:hover,
+.lka-room-model:focus-within {
+  transform: translateY(-4px);
+  filter: none;
+}
+
+.lka-room-model.selected {
+  transform: translateY(-10px);
+  filter: drop-shadow(0 12px 7px rgb(3 105 161 / 0.3));
+}
+
+.lka-iso-scene.has-selection .lka-room-model:not(.selected) {
+  opacity: 0.58;
+}
+
+.lka-iso-scene.has-selection .lka-room-model:not(.selected):hover,
+.lka-iso-scene.has-selection .lka-room-model:not(.selected):focus-within {
+  opacity: 0.88;
+}
+
+.lka-room-model.air .lka-room-block { fill: url(#lka-air-top); stroke: #278db8; }
+.lka-room-model.air .lka-room-face--x { fill: url(#lka-air-x); stroke: #2e7fa1; }
+.lka-room-model.air .lka-room-face--y { fill: url(#lka-air-y); stroke: #3f91b2; }
+.lka-room-model.fan .lka-room-block { fill: url(#lka-fan-top); stroke: #c68b1c; }
+.lka-room-model.fan .lka-room-face--x { fill: url(#lka-fan-x); stroke: #a66b0d; }
+.lka-room-model.fan .lka-room-face--y { fill: url(#lka-fan-y); stroke: #b98216; }
+.lka-facility-top { fill: url(#lka-facility-top); stroke: #12897f; }
+.lka-facility-face--x { fill: url(#lka-facility-x); stroke: #247c74; }
+.lka-facility-face--y { fill: url(#lka-facility-y); stroke: #2d8b82; }
+
+.lka-room-model.selected .lka-room-block {
+  fill: #fafdff;
+  stroke: #075f82;
+  stroke-width: 3.2;
+}
+
+.lka-room-model.selected .lka-room-face--x {
+  fill: #46a8d0;
+  stroke: #075f82;
+  stroke-width: 1.9;
+}
+
+.lka-room-model.selected .lka-room-face--y {
+  fill: #8fd7ef;
+  stroke: #075f82;
+  stroke-width: 1.9;
+}
+
+.lka-room-block:focus-visible {
+  stroke: #102337;
+  stroke-width: 3;
+}
+
+.lka-room-model.selected .lka-room-label {
+  fill: #071b2d;
+  font-size: 9.5px;
+  stroke: rgb(255 255 255 / 0.96);
+  stroke-width: 2.4px;
+}
+
+.lka-room-label {
+  font-size: 8.6px;
+  letter-spacing: -0.015em;
+  stroke: rgb(255 255 255 / 0.84);
+  stroke-width: 2px;
+}
+
+.lka-room-accent {
+  stroke: rgb(255 255 255 / 0.72);
+  stroke-width: 1.25;
+}
+
+.lka-room-model.hidden-filter,
+.lka-facility-model.hidden-filter {
+  opacity: 0.045;
+  filter: grayscale(0.4);
+}
+
+.lka-svg-floor-badge {
+  display: none;
+}
+
+.lka-explorer-section .lka-controls {
+  min-height: 60px;
+  gap: 0.45rem;
+  padding: 0.5rem 0.75rem;
+  border-top-color: #d4e2eb;
+  background: #f7fafc;
+}
+
+.lka-explorer-section .lka-ctrl-btn {
+  width: auto;
+  min-width: 44px;
+  min-height: 44px;
+  margin: 0;
+  padding: 0.45rem 0.8rem;
+  border-color: #cbdbe5;
+  background: #ffffff;
+  color: var(--ux24-ink);
+  box-shadow: 0 8px 18px -16px rgb(16 35 55 / 0.75);
+}
+
+.lka-explorer-section .lka-ctrl-btn:hover {
+  border-color: #79bdd8;
+  background: #eef8fb;
+}
+
+.lka-explorer-section .lka-ctrl-btn:active {
+  transform: scale(0.96);
+}
+
+.lka-explorer-section .lka-fallback {
+  border-top-color: #dbe7ee;
+  background: #fbfdfe;
+}
+
+.lka-explorer-section .lka-room-panel {
+  display: flex;
+  min-width: 0;
+  min-height: 100%;
+  margin: 0;
+  padding: 1.25rem;
+  flex-direction: column;
+  justify-content: center;
+  border: 1px solid #c9dce7;
+  border-radius: 1.35rem;
+  background:
+    radial-gradient(circle at 100% 0%, rgb(183 228 244 / 0.46), transparent 38%),
+    #f8fbfd;
+  box-shadow: 0 24px 52px -42px rgb(16 35 55 / 0.65);
+  animation: none;
+}
+
+.lka-panel-empty {
+  display: grid;
+  gap: 0.65rem;
+  justify-items: start;
+}
+
+.lka-panel-kicker {
+  color: var(--ux24-sky-strong);
+  font-size: 0.72rem;
+  font-weight: 850;
+  letter-spacing: 0.08em;
+}
+
+.lka-panel-empty-mark {
+  display: grid;
+  width: 4.7rem;
+  aspect-ratio: 1.16;
+  place-items: center;
+  border: 1px solid #a9d3e5;
+  border-radius: 0.85rem;
+  background: #e9f7fc;
+  color: #176e90;
+  font-family: var(--font-mono);
+  font-size: 1.05rem;
+  font-weight: 800;
+  transform: skewY(-8deg);
+  box-shadow: 8px 10px 0 -4px #cde7f1;
+}
+
+.lka-panel-empty h3 {
+  margin: 0.4rem 0 0;
+  color: var(--ux24-ink);
+  font-size: 1.15rem;
+}
+
+.lka-panel-empty p {
+  margin: 0;
+  color: var(--ux24-muted);
+  font-size: 0.88rem;
+  line-height: 1.7;
+}
+
+.lka-panel-content {
+  display: none;
+}
+
+.lka-room-panel.has-selection {
+  justify-content: flex-start;
+  border-color: #8bc9df;
+  background:
+    radial-gradient(circle at 100% 0%, rgb(141 215 239 / 0.52), transparent 42%),
+    #f9fcfd;
+  box-shadow: 0 24px 52px -38px rgb(7 95 130 / 0.56);
+}
+
+.lka-room-panel.has-selection .lka-panel-empty {
+  display: none;
+}
+
+.lka-room-panel.has-selection .lka-panel-content {
+  display: block;
+}
+
+.lka-explorer-section .lka-panel-close {
+  width: 44px;
+  height: 44px;
+  margin: 0;
+  color: #4b6477;
+}
+
+.lka-explorer-section .lka-panel-header {
+  display: grid;
+  gap: 0.65rem;
+  align-items: start;
+  margin-bottom: 1.25rem;
+  padding-right: 2.75rem;
+}
+
+.lka-explorer-section .lka-panel-pill {
+  width: max-content;
+  border-radius: 999px;
+  background: #dff4fb;
+  color: var(--ux24-sky-strong);
+}
+
+.lka-explorer-section .lka-panel-number {
+  color: var(--ux24-ink);
+  font-size: clamp(1.8rem, 3vw, 2.35rem);
+}
+
+.lka-explorer-section .lka-panel-dl {
+  grid-template-columns: 1fr;
+  gap: 0.2rem;
+  margin-bottom: 1.25rem;
+}
+
+.lka-explorer-section .lka-panel-dl dt {
+  margin-top: 0.65rem;
+  color: #64788a;
+  font-size: 0.74rem;
+  letter-spacing: 0.02em;
+}
+
+.lka-explorer-section .lka-panel-dl dd {
+  padding-bottom: 0.65rem;
+  border-bottom: 1px solid #d9e6ed;
+  color: var(--ux24-ink);
+  font-size: 1rem;
+}
+
+.lka-explorer-section .lka-panel-note {
+  color: #65798a;
+  line-height: 1.55;
+}
+
+@media (max-width: 1024px) {
+  .lka-explorer-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .lka-explorer-section .lka-room-panel {
+    display: none;
+    min-height: 0;
+  }
+
+  .lka-explorer-section .lka-room-panel.has-selection {
+    position: fixed;
+    z-index: 50;
+    right: 1rem;
+    bottom: 1rem;
+    display: block;
+    width: min(calc(100vw - 2rem), 28rem);
+    max-height: min(52vh, 24rem);
+    overflow: auto;
+    padding: 1rem;
+    border-radius: 1.1rem;
+    box-shadow: 0 26px 70px -24px rgb(16 35 55 / 0.72);
+    animation: lkaUx24PanelIn 220ms var(--ux24-ease);
+  }
+
+  .lka-explorer-section .lka-panel-header {
+    margin-bottom: 0.65rem;
+  }
+
+  .lka-explorer-section .lka-panel-dl {
+    grid-template-columns: auto 1fr;
+    gap: 0.4rem 0.75rem;
+    margin-bottom: 0.65rem;
+  }
+
+  .lka-explorer-section .lka-panel-dl dt {
+    margin-top: 0;
+  }
+
+  .lka-explorer-section .lka-panel-dl dd {
+    padding-bottom: 0.35rem;
+  }
+}
+
+@media (max-width: 720px) {
+  .lka-explorer-section {
+    scroll-margin-top: 10rem;
+  }
+
+  .lka-explorer-section .lka-explorer-toolbar {
+    grid-template-columns: 1fr;
+    padding: 0.45rem;
+  }
+
+  .lka-explorer-section .lka-floor-toggle {
+    width: 100%;
+  }
+
+  .lka-explorer-section .lka-ftoggle {
+    flex: 1 1 0;
+    justify-content: center;
+    min-width: 0;
+    padding-inline: 0.6rem;
+  }
+
+  .lka-explorer-section .lka-filter-row {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.35rem;
+  }
+
+  .lka-explorer-section .lka-filter {
+    width: 100%;
+    justify-content: center;
+    padding-inline: 0.45rem;
+  }
+
+  .lka-explorer-section .lka-drag-hint-bar {
+    align-items: flex-start;
+    min-height: 58px;
+    padding: 0.65rem 0.75rem;
+  }
+
+  .lka-explorer-section .lka-drag-hint {
+    font-size: 0.875rem;
+  }
+
+  .lka-explorer-section .lka-explorer-canvas {
+    height: clamp(390px, 116vw, 510px);
+  }
+
+  .lka-explorer-section .lka-iso-svg {
+    width: 126%;
+    height: 94%;
+  }
+
+  .lka-explorer-section .lka-model-hud span {
+    font-size: 0.68rem;
+  }
+
+  .lka-explorer-section .lka-controls {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(44px, auto));
+    justify-content: center;
+    overflow-x: auto;
+  }
+
+  .lka-explorer-section .lka-ctrl-separator {
+    display: none;
+  }
+
+  .lka-explorer-section .lka-ctrl-reset {
+    gap: 0;
+    padding-inline: 0;
+    font-size: 1rem;
+  }
+
+  .lka-explorer-section .lka-ctrl-reset-label {
+    display: none;
+  }
+
+  .lka-explorer-section .lka-room-panel.has-selection {
+    right: 0.75rem;
+    bottom: 0.75rem;
+    left: 0.75rem;
+    width: auto;
+    max-height: min(46vh, 22rem);
+  }
+
+  .lka-explorer-section .lka-panel-header {
+    margin-bottom: 0.65rem;
+  }
+
+  .lka-explorer-section .lka-panel-dl {
+    grid-template-columns: auto 1fr;
+    gap: 0.4rem 0.75rem;
+    margin-bottom: 0.65rem;
+  }
+
+  .lka-explorer-section .lka-panel-dl dt {
+    margin-top: 0;
+  }
+
+  .lka-explorer-section .lka-panel-dl dd {
+    padding-bottom: 0.35rem;
+  }
+}
+
+@keyframes lkaUx24PanelIn {
+  from { opacity: 0; transform: translateY(1rem); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lka-explorer-section .lka-iso-scene,
+  .lka-explorer-section .lka-room-model,
+  .lka-explorer-section .lka-facility-model,
+  .lka-explorer-section .lka-room-panel {
+    transition: none !important;
+    animation: none !important;
+  }
+
+  .lka-room-model:hover,
+  .lka-room-model:focus-within,
+  .lka-room-model.selected,
+  .lka-panel-empty-mark {
+    transform: none !important;
+  }
+}
