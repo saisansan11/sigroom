@@ -219,6 +219,20 @@
 .lka-corridor-face--x { fill: #c8d5de; stroke: #aabcc8; }
 .lka-corridor-face--y { fill: #dee8ee; stroke: #bac9d2; }
 
+/* UX-26 building-scale cues */
+.lka-building-perimeter { opacity: 0.94; pointer-events: none; }
+.lka-wall-top { fill: url(#lka-wall-top); stroke: #8299a9; stroke-width: 1; }
+.lka-wall-face--x { fill: url(#lka-wall-x); stroke: #718898; stroke-width: 0.9; }
+.lka-wall-face--y { fill: url(#lka-wall-y); stroke: #879dab; stroke-width: 0.9; }
+.lka-circulation-spine { pointer-events: none; }
+.lka-spine-top { fill: #d7e7ee; stroke: #8da9b8; stroke-width: 0.8; }
+.lka-spine-face--x,
+.lka-spine-face--y { fill: #9fb7c3; stroke: #7893a2; stroke-width: 0.7; }
+.lka-core-model { filter: drop-shadow(0 4px 3px rgb(16 35 55 / 0.18)); }
+.lka-core-top { fill: #f8fbfc; stroke: #688493; stroke-width: 1.2; }
+.lka-core-face--x { fill: #91aab6; stroke: #607b89; }
+.lka-core-face--y { fill: #c1d1d8; stroke: #78909d; }
+
 .lka-room-model,
 .lka-facility-model {
   transition:
@@ -255,6 +269,29 @@
 .lka-facility-top { fill: url(#lka-facility-top); stroke: #12897f; }
 .lka-facility-face--x { fill: url(#lka-facility-x); stroke: #247c74; }
 .lka-facility-face--y { fill: url(#lka-facility-y); stroke: #2d8b82; }
+
+.lka-room-window {
+  stroke: #eafaff;
+  stroke-width: 3.2;
+  stroke-linecap: round;
+  opacity: 0.95;
+  pointer-events: none;
+  filter: drop-shadow(0 1px 1px rgb(7 95 130 / 0.3));
+}
+.lka-room-door {
+  stroke: #38596b;
+  stroke-width: 2.4;
+  stroke-linecap: round;
+  opacity: 0.78;
+  pointer-events: none;
+}
+.lka-room-service-dot {
+  stroke: #ffffff;
+  stroke-width: 1;
+  pointer-events: none;
+}
+.lka-room-service-dot.air { fill: #087ea9; }
+.lka-room-service-dot.fan { fill: #a86708; }
 
 .lka-room-model.selected .lka-room-block {
   fill: #fafdff;

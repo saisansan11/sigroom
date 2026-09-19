@@ -1,5 +1,5 @@
 /**
- * UX-24 Lodging Isometric Explorer — visual polish and contextual inspection.
+ * UX-26 Lodging Isometric Explorer — architectural depth and contextual inspection.
  * Self-hosted vanilla JS. No WebGL, no external CDN, no continuous animation loop.
  *
  * The old explorer rendered one flat SVG sheet and CSS-rotated the whole sheet.
@@ -18,14 +18,16 @@
 
   const ROOM_W = 46;
   const ROOM_D = 32;
-  const ROOM_H = 18;
+  const ROOM_H = 22;
   const GAP = 6;
-  const BASE_H = 8;
+  const BASE_H = 9;
   const CORRIDOR_H = 2;
+  const WALL_H = 8;
+  const WALL_T = 3;
   const FACILITY_W = 66;
   const FACILITY_D = 32;
-  const FACILITY_H = 14;
-  const MODEL_MARGIN = 58;
+  const FACILITY_H = 18;
+  const MODEL_MARGIN = 64;
 
   function buildFloor4Rooms() {
     const rooms = [];
@@ -123,6 +125,9 @@
       ['lka-base-x', [['0%', '#cfdae3'], ['100%', '#9fb0be']], 'vertical'],
       ['lka-base-y', [['0%', '#e5edf3'], ['100%', '#b9c8d3']], 'reverse'],
       ['lka-corridor-top', [['0%', '#ffffff'], ['100%', '#eaf1f5']], 'diagonal'],
+      ['lka-wall-top', [['0%', '#f8fbfd'], ['100%', '#dce8ef']], 'diagonal'],
+      ['lka-wall-x', [['0%', '#bdccd7'], ['100%', '#91a6b5']], 'vertical'],
+      ['lka-wall-y', [['0%', '#dce6ec'], ['100%', '#b1c2ce']], 'reverse'],
     ].forEach(([id, colors, direction]) => appendLinearGradient(defs, id, colors, direction));
     svg.appendChild(defs);
   }
@@ -235,11 +240,100 @@
     };
   }
 
+  function appendPerimeterWalls(svg, project, worldW, worldD) {
+    const group = svgEl('g', { class: 'lka-building-perimeter', 'aria-hidden': 'true' });
+    const z = BASE_H;
+    [
+      [0, 0, worldW, WALL_T],
+      [0, worldD - WALL_T, worldW, WALL_T],
+      [0, WALL_T, WALL_T, worldD - WALL_T * 2],
+      [worldW - WALL_T, WALL_T, WALL_T, worldD - WALL_T * 2],
+    ].forEach(([x, y, w, d]) => {
+      appendCuboid(group, cuboidFaces(project, x, y, w, d, z, WALL_H), 'lka-wall');
+    });
+    svg.appendChild(group);
+  }
+
+  function appendCirculationSpine(svg, project, layout) {
+    const group = svgEl('g', { class: 'lka-circulation-spine', 'aria-hidden': 'true' });
+    const y = layout.hallwayY + ROOM_D * 0.2;
+    appendCuboid(
+      group,
+      cuboidFaces(
+        project,
+        GAP * 2,
+        y,
+        layout.worldW - GAP * 4,
+        ROOM_D * 0.6,
+        BASE_H + CORRIDOR_H,
+        1.4,
+      ),
+      'lka-spine',
+    );
+
+    const coreW = Math.min(82, layout.worldW * 0.16);
+    const coreX = layout.worldW / 2 - coreW / 2;
+    const core = svgEl('g', { class: 'lka-core-model' });
+    appendCuboid(
+      core,
+      cuboidFaces(
+        project,
+        coreX,
+        layout.hallwayY + 3,
+        coreW,
+        ROOM_D - 6,
+        BASE_H + CORRIDOR_H,
+        7,
+      ),
+      'lka-core',
+    );
+    group.appendChild(core);
+    svg.appendChild(group);
+  }
+
+  function appendRoomArchitecture(group, project, x, y, room) {
+    const facadeZ = BASE_H + CORRIDOR_H + 5;
+    const windowA = project(x + ROOM_W, y + ROOM_D * 0.26, facadeZ + 7);
+    const windowB = project(x + ROOM_W, y + ROOM_D * 0.7, facadeZ + 7);
+    group.appendChild(svgEl('line', {
+      x1: windowA.x,
+      y1: windowA.y,
+      x2: windowB.x,
+      y2: windowB.y,
+      class: 'lka-room-window',
+      'aria-hidden': 'true',
+    }));
+
+    const doorA = project(x + ROOM_W * 0.28, y + ROOM_D, facadeZ - 1);
+    const doorB = project(x + ROOM_W * 0.52, y + ROOM_D, facadeZ + 6);
+    group.appendChild(svgEl('line', {
+      x1: doorA.x,
+      y1: doorA.y,
+      x2: doorB.x,
+      y2: doorB.y,
+      class: 'lka-room-door',
+      'aria-hidden': 'true',
+    }));
+
+    const sill = project(
+      x + ROOM_W * 0.82,
+      y + ROOM_D * 0.72,
+      BASE_H + CORRIDOR_H + ROOM_H + 1,
+    );
+    group.appendChild(svgEl('circle', {
+      cx: sill.x,
+      cy: sill.y,
+      r: room.cooling === 'air' ? 1.8 : 1.25,
+      class: `lka-room-service-dot ${room.cooling}`,
+      'aria-hidden': 'true',
+    }));
+  }
+
   function makeSVG(floor) {
     const data = FLOOR_DATA[floor];
     const layout = roomLayout(data);
     const { roomItems, hallwayY, worldW, worldD, facilityY } = layout;
-    const projector = createProjector(worldW, worldD, BASE_H + ROOM_H + 6);
+    const projector = createProjector(worldW, worldD, BASE_H + ROOM_H + WALL_H + 8);
     const project = projector.project;
 
     const svg = svgEl('svg', {
@@ -275,6 +369,7 @@
     const baseFaces = cuboidFaces(project, 0, 0, worldW, worldD, 0, BASE_H);
     appendCuboid(baseGroup, baseFaces, 'lka-base');
     svg.appendChild(baseGroup);
+    appendPerimeterWalls(svg, project, worldW, worldD);
 
     const corridor = svgEl('g', { class: 'lka-corridor-model' });
     const corridorFaces = cuboidFaces(
@@ -288,6 +383,7 @@
     );
     appendCuboid(corridor, corridorFaces, 'lka-corridor');
     svg.appendChild(corridor);
+    appendCirculationSpine(svg, project, layout);
 
     const orderedRooms = roomItems
       .map(item => ({ ...item, depth: modelDepth(item.x, item.y, ROOM_W, ROOM_D, worldW, worldD) }))
@@ -361,6 +457,7 @@
       group.appendChild(sideY);
       group.appendChild(sideX);
       group.appendChild(top);
+      appendRoomArchitecture(group, project, x, y, room);
       group.appendChild(accent);
       group.appendChild(label);
       svg.appendChild(group);
