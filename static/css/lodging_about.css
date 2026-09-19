@@ -10,6 +10,7 @@
   width: 100%;
   overflow-x: clip;
   position: relative;
+  color-scheme: light;
 
   /* Bright Hospitality Design Tokens */
   --lka-canvas: #f8fafc;
@@ -34,20 +35,27 @@
   --lka-slate-400: #94a3b8;
 
   /* Hospitality Accents */
-  --lka-sky: #0284c7;
-  --lka-sky-hover: #0369a1;
+  --lka-sky: #0369a1;
+  --lka-sky-hover: #075985;
   --lka-sky-light: #e0f2fe;
   --lka-sky-soft: #f0f9ff;
 
-  --lka-mint: #0d9488;
-  --lka-mint-hover: #0f766e;
+  --lka-mint: #0f766e;
+  --lka-mint-hover: #115e59;
   --lka-mint-light: #ccfbf1;
   --lka-mint-soft: #f0fdf4;
 
-  --lka-amber: #d97706;
-  --lka-amber-hover: #b45309;
+  --lka-amber: #b45309;
+  --lka-amber-hover: #92400e;
   --lka-amber-light: #fef3c7;
   --lka-amber-soft: #fffbeb;
+
+  /* This page is an intentionally light surface inside SIGROOM's dark shell. */
+  --pico-background-color: var(--lka-surface);
+  --pico-color: var(--lka-navy-700);
+  --pico-muted-color: var(--lka-slate-600);
+  --pico-table-border-color: var(--lka-border);
+  --pico-table-row-stripped-background-color: var(--lka-surface-soft);
 
   /* Natural Hospitality Shadows */
   --lka-shadow-sm: 0 1px 3px 0 rgb(15 23 42 / 0.05);
@@ -688,7 +696,7 @@
   flex-wrap: wrap;
 }
 
-.lka-badge-floor {
+.lka-page-wrap .lka-badge-floor {
   background: var(--lka-sky);
   color: #ffffff;
   font-family: var(--font-mono);
@@ -699,7 +707,7 @@
   box-shadow: 0 2px 6px rgb(2 132 199 / 0.3);
 }
 
-.lka-badge-floor--5 {
+.lka-page-wrap .lka-badge-floor--5 {
   background: var(--lka-amber);
   box-shadow: 0 2px 6px rgb(217 119 6 / 0.3);
 }
@@ -842,7 +850,7 @@
   color: var(--lka-navy-900);
 }
 
-.lka-floor-badge {
+.lka-page-wrap .lka-floor-badge {
   display: inline-block;
   padding: 0.2rem 0.6rem;
   border-radius: var(--radius-sm);
@@ -854,7 +862,7 @@
   white-space: nowrap;
 }
 
-.lka-floor-badge--5 {
+.lka-page-wrap .lka-floor-badge--5 {
   background: var(--lka-amber);
 }
 
@@ -1141,7 +1149,7 @@
   background: #ffffff;
 }
 
-.lka-fallback summary {
+.lka-page-wrap .lka-fallback summary {
   font-size: var(--text-sm);
   color: var(--lka-slate-600);
   cursor: pointer;

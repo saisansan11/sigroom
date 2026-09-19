@@ -1,0 +1,11 @@
+{
+  "name": "sigroom-accessibility-tests",
+  "private": true,
+  "scripts": {
+    "test:a11y": "playwright test --config=playwright.a11y.config.js"
+  },
+  "devDependencies": {
+    "@axe-core/playwright": "4.13.0",
+    "@playwright/test": "1.63.0"
+  }
+}

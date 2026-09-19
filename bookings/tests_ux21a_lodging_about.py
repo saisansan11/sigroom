@@ -71,9 +71,9 @@ def test_ux21a_bright_hospitality_tokens_in_css():
     # Required bright tokens
     assert "--lka-canvas: #f8fafc" in css, "Missing bright canvas token"
     assert "--lka-surface: #ffffff" in css, "Missing white surface token"
-    assert "--lka-sky: #0284c7" in css, "Missing sky blue accent"
-    assert "--lka-mint: #0d9488" in css, "Missing mint accent"
-    assert "--lka-amber: #d97706" in css, "Missing warm amber accent"
+    assert "--lka-sky: #0369a1" in css, "Missing accessible sky blue accent"
+    assert "--lka-mint: #0f766e" in css, "Missing accessible mint accent"
+    assert "--lka-amber: #b45309" in css, "Missing accessible warm amber accent"
     assert "--lka-navy-900: #0f172a" in css, "Missing deep navy heading token"
 
     # Dark cyber grid must be removed

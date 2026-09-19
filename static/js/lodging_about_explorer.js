@@ -75,6 +75,7 @@
   const panelFloor = document.getElementById('lka-panel-floor');
   const panelCooling = document.getElementById('lka-panel-cooling');
   const panelCapacity = document.getElementById('lka-panel-capacity');
+  const panelStatus = document.getElementById('lka-panel-status');
   const zoomIn = document.getElementById('lka-zoom-in');
   const zoomOut = document.getElementById('lka-zoom-out');
   const resetBtn = document.getElementById('lka-reset');
@@ -243,7 +244,7 @@
 
     const svg = svgEl('svg', {
       viewBox: `0 0 ${projector.width.toFixed(1)} ${projector.height.toFixed(1)}`,
-      role: 'img',
+      role: 'group',
       'aria-label': `โมเดลจำลองสามมิติ ${data.label}`,
       class: 'lka-iso-svg',
       preserveAspectRatio: 'xMidYMid meet',
@@ -415,6 +416,9 @@
   }
 
   function renderFloor() {
+    const activeRoomControl = document.activeElement?.closest?.('.lka-room-block');
+    const focusedRoomNumber = activeRoomControl?.dataset?.num || null;
+
     scene.innerHTML = '';
     scene.appendChild(makeSVG(currentFloor));
     scene.classList.toggle('has-selection', selectedRoomNumber !== null);
@@ -423,6 +427,14 @@
     updateAriaLabel();
     updateViewStatus();
     applyTransform();
+
+    if (focusedRoomNumber) {
+      const replacement = scene.querySelector(`.lka-room-block[data-num="${focusedRoomNumber}"]`);
+      if (replacement && replacement.getAttribute('tabindex') !== '-1') {
+        replacement.focus({ preventScroll: true });
+      }
+    }
+
     renderScheduled = false;
   }
 
@@ -490,13 +502,17 @@
     panelCapacity.textContent = `${room.capacity} คน`;
     panel.dataset.state = 'selected';
     panel.classList.add('has-selection');
+    if (panelStatus) {
+      panelStatus.textContent = [panelNumber.textContent, panelFloor.textContent, panelCooling.textContent, panelCapacity.textContent].join(', ');
+    }
     if (modelSelection) {
       modelSelection.textContent = `เลือกห้อง ${room.num}`;
       modelSelection.hidden = false;
     }
   }
 
-  function closePanel() {
+  function closePanel({ restoreFocus = false } = {}) {
+    const roomToRestore = selectedRoomNumber;
     selectedRoomNumber = null;
     panel.dataset.state = 'empty';
     panel.classList.remove('has-selection');
@@ -506,13 +522,24 @@
       const control = el.querySelector('.lka-room-block');
       if (control) control.setAttribute('aria-pressed', 'false');
     });
+    if (panelStatus) panelStatus.textContent = '';
     if (modelSelection) {
       modelSelection.textContent = '';
       modelSelection.hidden = true;
     }
+    if (restoreFocus) {
+      const control = roomToRestore === null
+        ? null
+        : scene.querySelector(`.lka-room-block[data-num="${roomToRestore}"]`);
+      if (control && control.getAttribute('tabindex') !== '-1') {
+        control.focus({ preventScroll: true });
+      } else {
+        canvas.focus({ preventScroll: true });
+      }
+    }
   }
 
-  panelClose.addEventListener('click', closePanel);
+  panelClose.addEventListener('click', () => closePanel({ restoreFocus: true }));
   canvas.addEventListener('click', event => {
     if (event.target === canvas || event.target === scene) closePanel();
   });
@@ -624,8 +651,14 @@
       case '_': scale = clampScale(scale - 0.12); applyTransform(); event.preventDefault(); break;
       case 'r':
       case 'R': viewQuarter = 0; scale = 1; scheduleRender(); event.preventDefault(); break;
-      case 'Escape': closePanel(); break;
+      case 'Escape': closePanel({ restoreFocus: true }); event.preventDefault(); break;
     }
+  });
+
+  document.addEventListener('keydown', event => {
+    if (event.key !== 'Escape' || selectedRoomNumber === null) return;
+    event.preventDefault();
+    closePanel({ restoreFocus: true });
   });
 
   canvas.addEventListener('wheel', event => {
