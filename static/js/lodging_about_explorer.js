@@ -1,35 +1,37 @@
 /**
- * UX-17 Dormitory Showcase — Floor Explorer
- * Self-hosted, vanilla JS. No React, no external CDN, no WebGL.
- * Generates an SVG isometric-style floor plan inside #lka-iso-scene.
+ * UX-23 Lodging Isometric Explorer
+ * Self-hosted vanilla JS. No WebGL, no external CDN, no continuous animation loop.
  *
- * Behaviour:
- *  - Floor 4 / Floor 5 toggle
- *  - Drag / touch rotation
- *  - Arrow key rotation, +/- zoom
- *  - Filter: All / Air / Fan / Facilities
- *  - Room click → detail panel
- *  - Reduced-motion: no auto-rotate; manual controls still work
- *  - No continuous idle loop when not interacting
+ * The old explorer rendered one flat SVG sheet and CSS-rotated the whole sheet.
+ * UX-23 instead re-projects every room as an isometric cuboid with real top/front/
+ * side faces. Camera changes rebuild the projection, so the result reads as an
+ * architectural model rather than a spinning card.
  */
 
 (function () {
   'use strict';
 
-  /* ─── Constants ─────────────────────────────────────────────── */
   const REDUCED_MOTION = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const SVG_NS = 'http://www.w3.org/2000/svg';
+  const ISO_X = 0.8660254;
+  const ISO_Y = 0.48;
 
-  // Floor 4 room data
+  const ROOM_W = 46;
+  const ROOM_D = 32;
+  const ROOM_H = 18;
+  const GAP = 6;
+  const BASE_H = 8;
+  const CORRIDOR_H = 2;
+  const FACILITY_W = 66;
+  const FACILITY_D = 32;
+  const FACILITY_H = 14;
+  const MODEL_MARGIN = 58;
+
   function buildFloor4Rooms() {
     const rooms = [];
-    // Air: 401-407
     for (let n = 401; n <= 407; n++) rooms.push({ num: n, floor: 4, cooling: 'air', capacity: 2 });
-    // Non-lodging 408,409,410 — excluded from inventory, not rendered as bookable
-    // Air: 411-416
     for (let n = 411; n <= 416; n++) rooms.push({ num: n, floor: 4, cooling: 'air', capacity: 2 });
-    // Fan: 417-448
     for (let n = 417; n <= 448; n++) rooms.push({ num: n, floor: 4, cooling: 'fan', capacity: 2 });
-    // Air: 449-460
     for (let n = 449; n <= 460; n++) rooms.push({ num: n, floor: 4, cooling: 'air', capacity: 2 });
     return rooms;
   }
@@ -45,25 +47,25 @@
     5: { rooms: buildFloor5Rooms(), label: 'ชั้น 5', cols: 10 },
   };
 
-  // Facilities (not room numbers, just markers on the plan)
   const FACILITIES = [
     { label: 'ห้องน้ำ ฝั่ง A', type: 'facility' },
     { label: 'ห้องน้ำ ฝั่ง B', type: 'facility' },
     { label: 'ห้องอาบน้ำ', type: 'facility' },
   ];
 
-  /* ─── State ──────────────────────────────────────────────────── */
   let currentFloor = 4;
   let currentFilter = 'all';
-  let rotateX = 50;  // degrees for isometric tilt
-  let rotateZ = 20;  // degrees for rotation
+  let viewQuarter = 0;
   let scale = 1;
-  let isDragging = false;
-  let lastX = 0;
-  let lastY = 0;
   let renderScheduled = false;
+  let isDragging = false;
+  let dragStartX = 0;
+  let dragStartY = 0;
+  let dragCommitted = false;
+  let lastTouchX = 0;
+  let lastTouchY = 0;
+  let touchCommitted = false;
 
-  /* ─── DOM refs ───────────────────────────────────────────────── */
   const canvas = document.getElementById('lka-explorer-canvas');
   const scene = document.getElementById('lka-iso-scene');
   const panel = document.getElementById('lka-room-panel');
@@ -75,139 +77,270 @@
   const zoomIn = document.getElementById('lka-zoom-in');
   const zoomOut = document.getElementById('lka-zoom-out');
   const resetBtn = document.getElementById('lka-reset');
+  const viewLeft = document.getElementById('lka-view-left');
+  const viewRight = document.getElementById('lka-view-right');
+  const modelFloor = document.getElementById('lka-model-floor');
+  const modelView = document.getElementById('lka-model-view');
 
-  if (!canvas || !scene) return; // Guard: exit if elements not found
+  if (!canvas || !scene || !panel || !panelClose) return;
 
-  /* ─── SVG floor plan generator ──────────────────────────────── */
-  const SVG_NS = 'http://www.w3.org/2000/svg';
-  const ROOM_W = 38;
-  const ROOM_H = 28;
-  const GAP = 2;
-  const HALLWAY_H = 24;
+  function svgEl(tag, attrs = {}) {
+    const el = document.createElementNS(SVG_NS, tag);
+    Object.entries(attrs).forEach(([key, value]) => el.setAttribute(key, String(value)));
+    return el;
+  }
+
+  function orientPoint(x, y, worldW, worldD) {
+    switch (viewQuarter) {
+      case 1: return [y, worldW - x];
+      case 2: return [worldW - x, worldD - y];
+      case 3: return [worldD - y, x];
+      default: return [x, y];
+    }
+  }
+
+  function rawProject(x, y, z, worldW, worldD) {
+    const [rx, ry] = orientPoint(x, y, worldW, worldD);
+    return {
+      x: (rx - ry) * ISO_X,
+      y: (rx + ry) * ISO_Y - z,
+    };
+  }
+
+  function createProjector(worldW, worldD, maxZ) {
+    const samples = [];
+    [[0, 0], [worldW, 0], [worldW, worldD], [0, worldD]].forEach(([x, y]) => {
+      samples.push(rawProject(x, y, 0, worldW, worldD));
+      samples.push(rawProject(x, y, maxZ, worldW, worldD));
+    });
+    const xs = samples.map(p => p.x);
+    const ys = samples.map(p => p.y);
+    const minX = Math.min(...xs);
+    const maxX = Math.max(...xs);
+    const minY = Math.min(...ys);
+    const maxY = Math.max(...ys);
+    const width = maxX - minX + MODEL_MARGIN * 2;
+    const height = maxY - minY + MODEL_MARGIN * 2;
+    return {
+      width,
+      height,
+      project(x, y, z) {
+        const p = rawProject(x, y, z, worldW, worldD);
+        return { x: p.x - minX + MODEL_MARGIN, y: p.y - minY + MODEL_MARGIN };
+      },
+    };
+  }
+
+  function points(pointsList) {
+    return pointsList.map(p => `${p.x.toFixed(2)},${p.y.toFixed(2)}`).join(' ');
+  }
+
+  function cuboidFaces(project, x, y, w, d, z, h) {
+    const b00 = project(x, y, z);
+    const b10 = project(x + w, y, z);
+    const b11 = project(x + w, y + d, z);
+    const b01 = project(x, y + d, z);
+    const t00 = project(x, y, z + h);
+    const t10 = project(x + w, y, z + h);
+    const t11 = project(x + w, y + d, z + h);
+    const t01 = project(x, y + d, z + h);
+    return {
+      top: [t00, t10, t11, t01],
+      sideX: [b10, b11, t11, t10],
+      sideY: [b01, b11, t11, t01],
+      center: project(x + w / 2, y + d / 2, z + h + 0.5),
+    };
+  }
+
+  function modelDepth(x, y, w, d, worldW, worldD) {
+    const [rx, ry] = orientPoint(x + w / 2, y + d / 2, worldW, worldD);
+    return rx + ry;
+  }
+
+  function appendCuboid(parent, faces, className) {
+    const sideY = svgEl('polygon', { points: points(faces.sideY), class: `${className}-face ${className}-face--y` });
+    const sideX = svgEl('polygon', { points: points(faces.sideX), class: `${className}-face ${className}-face--x` });
+    const top = svgEl('polygon', { points: points(faces.top), class: `${className}-top` });
+    parent.appendChild(sideY);
+    parent.appendChild(sideX);
+    parent.appendChild(top);
+    return top;
+  }
+
+  function roomLayout(data) {
+    const rooms = data.rooms;
+    const rows = Math.ceil(rooms.length / data.cols);
+    const hallwayRow = Math.floor(rows / 2);
+    const stepX = ROOM_W + GAP;
+    const stepY = ROOM_D + GAP;
+    const roomItems = rooms.map((room, index) => {
+      const col = index % data.cols;
+      const row = Math.floor(index / data.cols);
+      const adjustedRow = row >= hallwayRow ? row + 1 : row;
+      return {
+        room,
+        x: GAP + col * stepX,
+        y: GAP + adjustedRow * stepY,
+      };
+    });
+    const worldW = GAP * 2 + data.cols * stepX - GAP;
+    const facilityY = GAP + (rows + 1) * stepY + GAP;
+    const facilitiesWidth = FACILITIES.length * (FACILITY_W + GAP) - GAP;
+    const worldD = facilityY + FACILITY_D + GAP;
+    return {
+      roomItems,
+      rows,
+      hallwayRow,
+      hallwayY: GAP + hallwayRow * stepY,
+      worldW: Math.max(worldW, facilitiesWidth + GAP * 2),
+      worldD,
+      facilityY,
+    };
+  }
 
   function makeSVG(floor) {
     const data = FLOOR_DATA[floor];
-    const rooms = data.rooms;
-    const COLS = data.cols;
+    const layout = roomLayout(data);
+    const { roomItems, hallwayY, worldW, worldD, facilityY } = layout;
+    const projector = createProjector(worldW, worldD, BASE_H + ROOM_H + 6);
+    const project = projector.project;
 
-    // Layout: rooms above and below a central hallway
-    const rows = Math.ceil(rooms.length / COLS);
-    const svgW = COLS * (ROOM_W + GAP) + GAP;
-    const svgH = rows * (ROOM_H + GAP) + HALLWAY_H + 2 * GAP + 30;
+    const svg = svgEl('svg', {
+      viewBox: `0 0 ${projector.width.toFixed(1)} ${projector.height.toFixed(1)}`,
+      role: 'img',
+      'aria-label': `โมเดลจำลองสามมิติ ${data.label}`,
+      class: 'lka-iso-svg',
+      preserveAspectRatio: 'xMidYMid meet',
+    });
 
-    const svg = document.createElementNS(SVG_NS, 'svg');
-    svg.setAttribute('viewBox', `0 0 ${svgW} ${svgH}`);
-    svg.setAttribute('width', svgW);
-    svg.setAttribute('height', svgH);
-    svg.setAttribute('role', 'img');
-    svg.setAttribute('aria-label', `แผนผัง${data.label}`);
-    svg.style.maxWidth = '100%';
-    svg.style.height = 'auto';
+    const shadow = svgEl('ellipse', {
+      cx: projector.width / 2,
+      cy: projector.height - 24,
+      rx: Math.max(90, projector.width * 0.34),
+      ry: 16,
+      class: 'lka-model-ground-shadow',
+    });
+    svg.appendChild(shadow);
 
-    // Hallway
-    const hallway = document.createElementNS(SVG_NS, 'rect');
-    const hallwayY = Math.floor(rows / 2) * (ROOM_H + GAP) + GAP;
-    hallway.setAttribute('x', String(GAP));
-    hallway.setAttribute('y', String(hallwayY));
-    hallway.setAttribute('width', String(svgW - 2 * GAP));
-    hallway.setAttribute('height', String(HALLWAY_H));
-    hallway.setAttribute('rx', '3');
-    hallway.setAttribute('fill', '#e2e8f0');
-    hallway.setAttribute('stroke', '#cbd5e1');
-    hallway.setAttribute('stroke-width', '1');
-    svg.appendChild(hallway);
+    const baseGroup = svgEl('g', { class: 'lka-building-base' });
+    const baseFaces = cuboidFaces(project, 0, 0, worldW, worldD, 0, BASE_H);
+    appendCuboid(baseGroup, baseFaces, 'lka-base');
+    svg.appendChild(baseGroup);
 
-    // Hallway label
-    const hlabel = document.createElementNS(SVG_NS, 'text');
-    hlabel.setAttribute('x', String(svgW / 2));
-    hlabel.setAttribute('y', String(hallwayY + HALLWAY_H / 2));
-    hlabel.setAttribute('dominant-baseline', 'middle');
-    hlabel.setAttribute('text-anchor', 'middle');
-    hlabel.setAttribute('fill', '#64748b');
-    hlabel.setAttribute('font-size', '9');
-    hlabel.setAttribute('font-family', 'monospace');
-    hlabel.setAttribute('font-weight', '600');
-    hlabel.setAttribute('pointer-events', 'none');
-    hlabel.textContent = 'ทางเดิน / Corridor';
-    svg.appendChild(hlabel);
+    const corridor = svgEl('g', { class: 'lka-corridor-model' });
+    const corridorFaces = cuboidFaces(
+      project,
+      GAP,
+      hallwayY,
+      worldW - GAP * 2,
+      ROOM_D,
+      BASE_H,
+      CORRIDOR_H,
+    );
+    appendCuboid(corridor, corridorFaces, 'lka-corridor');
+    svg.appendChild(corridor);
 
-    // Rooms
-    rooms.forEach((room, i) => {
-      const col = i % COLS;
-      const row = Math.floor(i / COLS);
-      const adjustedRow = row >= Math.floor(rows / 2) ? row + 1 : row;
-      const x = col * (ROOM_W + GAP) + GAP;
-      const y = adjustedRow * (ROOM_H + GAP) + GAP;
+    const orderedRooms = roomItems
+      .map(item => ({ ...item, depth: modelDepth(item.x, item.y, ROOM_W, ROOM_D, worldW, worldD) }))
+      .sort((a, b) => a.depth - b.depth);
 
-      const rect = document.createElementNS(SVG_NS, 'rect');
-      rect.setAttribute('x', String(x));
-      rect.setAttribute('y', String(y));
-      rect.setAttribute('width', String(ROOM_W));
-      rect.setAttribute('height', String(ROOM_H));
-      rect.setAttribute('rx', '2');
-      rect.setAttribute('class', `lka-room-block ${room.cooling}`);
-      rect.setAttribute('tabindex', '0');
-      rect.setAttribute('role', 'button');
-      rect.setAttribute('aria-label', `ห้อง ${room.num} ${room.cooling === 'air' ? 'ปรับอากาศ' : 'พัดลม'} ชั้น ${room.floor} ${room.capacity} คน`);
-      rect.dataset.num = room.num;
-      rect.dataset.floor = room.floor;
-      rect.dataset.cooling = room.cooling;
-      rect.dataset.capacity = room.capacity;
+    orderedRooms.forEach(({ room, x, y }) => {
+      const group = svgEl('g', {
+        class: `lka-room-model ${room.cooling}`,
+        'data-room': room.num,
+        'data-cooling': room.cooling,
+      });
+      group.dataset.num = room.num;
+      group.dataset.floor = room.floor;
+      group.dataset.cooling = room.cooling;
+      group.dataset.capacity = room.capacity;
 
-      const label = document.createElementNS(SVG_NS, 'text');
-      label.setAttribute('x', String(x + ROOM_W / 2));
-      label.setAttribute('y', String(y + ROOM_H / 2));
-      label.setAttribute('class', 'lka-room-label');
+      const faces = cuboidFaces(project, x, y, ROOM_W, ROOM_D, BASE_H + CORRIDOR_H, ROOM_H);
+      const sideY = svgEl('polygon', { points: points(faces.sideY), class: 'lka-room-face lka-room-face--y' });
+      const sideX = svgEl('polygon', { points: points(faces.sideX), class: 'lka-room-face lka-room-face--x' });
+      const top = svgEl('polygon', {
+        points: points(faces.top),
+        class: `lka-room-block ${room.cooling}`,
+        tabindex: '0',
+        role: 'button',
+        'aria-label': `ห้อง ${room.num} ${room.cooling === 'air' ? 'ปรับอากาศ' : 'พัดลม'} ชั้น ${room.floor} ${room.capacity} คน`,
+      });
+      top.dataset.num = room.num;
+      top.dataset.floor = room.floor;
+      top.dataset.cooling = room.cooling;
+      top.dataset.capacity = room.capacity;
+
+      const label = svgEl('text', {
+        x: faces.center.x,
+        y: faces.center.y,
+        class: 'lka-room-label',
+      });
       label.textContent = String(room.num);
 
-      // Events
-      function selectRoom(e) {
-        e.stopPropagation();
-        document.querySelectorAll('.lka-room-block.selected').forEach(el => el.classList.remove('selected'));
-        rect.classList.add('selected');
-        showPanel(room);
-      }
-      rect.addEventListener('click', selectRoom);
-      rect.addEventListener('keydown', e => {
-        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); selectRoom(e); }
+      const accent = svgEl('line', {
+        x1: faces.top[0].x + (faces.top[1].x - faces.top[0].x) * 0.18,
+        y1: faces.top[0].y + (faces.top[1].y - faces.top[0].y) * 0.18,
+        x2: faces.top[0].x + (faces.top[1].x - faces.top[0].x) * 0.58,
+        y2: faces.top[0].y + (faces.top[1].y - faces.top[0].y) * 0.58,
+        class: 'lka-room-accent',
       });
 
-      svg.appendChild(rect);
-      svg.appendChild(label);
+      function selectRoom(event) {
+        event.stopPropagation();
+        scene.querySelectorAll('.lka-room-model.selected').forEach(el => el.classList.remove('selected'));
+        group.classList.add('selected');
+        showPanel(room);
+      }
+
+      top.addEventListener('click', selectRoom);
+      top.addEventListener('keydown', event => {
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault();
+          selectRoom(event);
+        }
+      });
+
+      group.appendChild(sideY);
+      group.appendChild(sideX);
+      group.appendChild(top);
+      group.appendChild(accent);
+      group.appendChild(label);
+      svg.appendChild(group);
     });
 
-    // Facilities (placed at the end of the plan) — rendered every time, filtered via applyFilter()
-    FACILITIES.forEach((fac, fi) => {
-      const x = fi * (ROOM_W + GAP) + GAP;
-      const y = svgH - 28;
-      const fr = document.createElementNS(SVG_NS, 'rect');
-      fr.setAttribute('x', String(x));
-      fr.setAttribute('y', String(y));
-      fr.setAttribute('width', String(ROOM_W));
-      fr.setAttribute('height', '22');
-      fr.setAttribute('rx', '2');
-      fr.setAttribute('class', 'lka-room-block facility');
-      fr.setAttribute('aria-label', fac.label);
-      fr.setAttribute('role', 'img');
-      svg.appendChild(fr);
-
-      const fl = document.createElementNS(SVG_NS, 'text');
-      fl.setAttribute('x', String(x + ROOM_W / 2));
-      fl.setAttribute('y', String(y + 11));
-      fl.setAttribute('class', 'lka-room-label');
-      fl.setAttribute('font-size', '7');
-      fl.textContent = fac.label.slice(0, 5);
-      svg.appendChild(fl);
+    FACILITIES.forEach((facility, index) => {
+      const x = GAP + index * (FACILITY_W + GAP);
+      const group = svgEl('g', {
+        class: 'lka-facility-model facility',
+        'data-cooling': 'facility',
+        'aria-label': facility.label,
+      });
+      const faces = cuboidFaces(project, x, facilityY, FACILITY_W, FACILITY_D, BASE_H + CORRIDOR_H, FACILITY_H);
+      appendCuboid(group, faces, 'lka-facility');
+      const label = svgEl('text', {
+        x: faces.center.x,
+        y: faces.center.y,
+        class: 'lka-facility-label',
+      });
+      label.textContent = facility.label;
+      group.appendChild(label);
+      svg.appendChild(group);
     });
 
-    // Non-lodging rooms note (floor 4 only)
+    const badge = svgEl('g', { class: 'lka-svg-floor-badge', 'aria-hidden': 'true' });
+    const badgeRect = svgEl('rect', { x: 18, y: 18, width: 118, height: 28, rx: 14 });
+    const badgeText = svgEl('text', { x: 77, y: 36, 'text-anchor': 'middle' });
+    badgeText.textContent = `${data.label} · ISOMETRIC`;
+    badge.appendChild(badgeRect);
+    badge.appendChild(badgeText);
+    svg.appendChild(badge);
+
     if (floor === 4) {
-      const note = document.createElementNS(SVG_NS, 'text');
-      note.setAttribute('x', String(GAP));
-      note.setAttribute('y', String(svgH - 4));
-      note.setAttribute('fill', 'oklch(.59 .022 229)');
-      note.setAttribute('font-size', '7');
-      note.setAttribute('font-family', 'monospace');
+      const note = svgEl('text', {
+        x: 20,
+        y: projector.height - 14,
+        class: 'lka-svg-note',
+      });
       note.textContent = '* 408, 409, 410 ไม่ใช่ห้องพักนักเรียน';
       svg.appendChild(note);
     }
@@ -215,65 +348,66 @@
     return svg;
   }
 
-  /* ─── Render ─────────────────────────────────────────────────── */
   function applyTransform() {
-    scene.style.transform = `rotateX(${rotateX}deg) rotateZ(${rotateZ}deg) scale(${scale})`;
+    scene.style.transform = `scale(${scale})`;
+  }
+
+  function updateViewStatus() {
+    if (modelFloor) modelFloor.textContent = `ชั้น ${currentFloor}`;
+    if (modelView) modelView.textContent = `มุมมอง ${viewQuarter + 1}/4`;
   }
 
   function renderFloor() {
     scene.innerHTML = '';
-    const svg = makeSVG(currentFloor);
-    scene.appendChild(svg);
+    scene.appendChild(makeSVG(currentFloor));
     applyFilter(currentFilter);
     injectLegend();
     updateAriaLabel();
+    updateViewStatus();
+    applyTransform();
     renderScheduled = false;
   }
 
   function scheduleRender() {
-    if (!renderScheduled) {
-      renderScheduled = true;
+    if (renderScheduled) return;
+    renderScheduled = true;
+    if (REDUCED_MOTION) {
+      renderFloor();
+    } else {
       requestAnimationFrame(renderFloor);
     }
   }
 
   function applyFilter(filter) {
     currentFilter = filter;
-    const blocks = scene.querySelectorAll('.lka-room-block');
-    blocks.forEach(b => {
-      const isFacility = b.classList.contains('facility');
-      const cooling = b.dataset.cooling;
-      let isHidden = false;
+    scene.querySelectorAll('.lka-room-model, .lka-facility-model').forEach(model => {
+      const isFacility = model.classList.contains('lka-facility-model');
+      const cooling = model.dataset.cooling;
+      let hidden = false;
+      if (filter === 'facility') hidden = !isFacility;
+      else if (filter !== 'all') hidden = isFacility || cooling !== filter;
 
-      if (filter === 'all') {
-        isHidden = false;
-      } else if (filter === 'facility') {
-        isHidden = !isFacility;
-      } else {
-        isHidden = isFacility || (cooling !== filter);
-      }
-
-      b.classList.toggle('hidden-filter', isHidden);
-
-      if (isHidden) {
-        b.setAttribute('tabindex', '-1');
-        b.setAttribute('aria-hidden', 'true');
-        if (b.classList.contains('selected')) {
-          b.classList.remove('selected');
-          closePanel();
-        }
-      } else {
-        b.removeAttribute('aria-hidden');
-        if (b.getAttribute('role') === 'button') {
+      model.classList.toggle('hidden-filter', hidden);
+      model.setAttribute('aria-hidden', hidden ? 'true' : 'false');
+      const b = model.querySelector('.lka-room-block');
+      if (b) {
+        if (hidden) {
+          b.setAttribute('tabindex', '-1');
+          b.setAttribute('aria-hidden', 'true');
+        } else {
           b.setAttribute('tabindex', '0');
+          b.removeAttribute('aria-hidden');
         }
       }
+      if (hidden && model.classList.contains('selected')) closePanel();
     });
   }
 
   function updateAriaLabel() {
-    const data = FLOOR_DATA[currentFloor];
-    canvas.setAttribute('aria-label', `แผนผัง${data.label} อาคารที่พักนักเรียน โรงเรียนทหารสื่อสาร`);
+    canvas.setAttribute(
+      'aria-label',
+      `โมเดลจำลองสามมิติ ${FLOOR_DATA[currentFloor].label} อาคารที่พักนักเรียน โรงเรียนทหารสื่อสาร`,
+    );
   }
 
   function injectLegend() {
@@ -291,7 +425,6 @@
     `;
   }
 
-  /* ─── Room detail panel ──────────────────────────────────────── */
   function showPanel(room) {
     panelNumber.textContent = `ห้อง ${room.num}`;
     panelFloor.textContent = `ชั้น ${room.floor}`;
@@ -302,135 +435,133 @@
 
   function closePanel() {
     panel.hidden = true;
-    document.querySelectorAll('.lka-room-block.selected').forEach(el => el.classList.remove('selected'));
+    scene.querySelectorAll('.lka-room-model.selected').forEach(el => el.classList.remove('selected'));
   }
 
   panelClose.addEventListener('click', closePanel);
-
-  // Close panel on canvas background click
-  canvas.addEventListener('click', e => {
-    if (e.target === canvas || e.target === scene) closePanel();
+  canvas.addEventListener('click', event => {
+    if (event.target === canvas || event.target === scene) closePanel();
   });
 
-  /* ─── Floor toggle ───────────────────────────────────────────── */
   function switchFloor(floorNum) {
     currentFloor = parseInt(floorNum, 10);
-    document.querySelectorAll('.lka-ftoggle').forEach(b => {
-      const match = parseInt(b.dataset.floor, 10) === currentFloor;
-      b.classList.toggle('active', match);
-      b.setAttribute('aria-pressed', match ? 'true' : 'false');
+    document.querySelectorAll('.lka-ftoggle').forEach(button => {
+      const active = parseInt(button.dataset.floor, 10) === currentFloor;
+      button.classList.toggle('active', active);
+      button.setAttribute('aria-pressed', active ? 'true' : 'false');
     });
     closePanel();
     scheduleRender();
   }
   window.lkaSwitchFloor = switchFloor;
 
-  document.querySelectorAll('.lka-ftoggle').forEach(btn => {
-    btn.addEventListener('click', () => {
-      switchFloor(btn.dataset.floor);
+  document.querySelectorAll('.lka-ftoggle').forEach(button => {
+    button.addEventListener('click', () => switchFloor(button.dataset.floor));
+  });
+
+  document.querySelectorAll('[data-explorer-floor]').forEach(button => {
+    button.addEventListener('click', () => {
+      const targetFloor = button.dataset.explorerFloor;
+      if (targetFloor) switchFloor(targetFloor);
     });
   });
 
-  // Room Experience cards / external floor switches
-  document.querySelectorAll('[data-explorer-floor]').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const targetFloor = btn.dataset.explorerFloor;
-      if (targetFloor) {
-        switchFloor(targetFloor);
-      }
-    });
-  });
-
-  /* ─── Filter buttons ─────────────────────────────────────────── */
-  document.querySelectorAll('.lka-filter').forEach(btn => {
-    btn.addEventListener('click', () => {
-      document.querySelectorAll('.lka-filter').forEach(b => {
-        b.classList.remove('active');
-        b.setAttribute('aria-pressed', 'false');
+  document.querySelectorAll('.lka-filter').forEach(button => {
+    button.addEventListener('click', () => {
+      document.querySelectorAll('.lka-filter').forEach(candidate => {
+        candidate.classList.remove('active');
+        candidate.setAttribute('aria-pressed', 'false');
       });
-      btn.classList.add('active');
-      btn.setAttribute('aria-pressed', 'true');
-      applyFilter(btn.dataset.filter);
+      button.classList.add('active');
+      button.setAttribute('aria-pressed', 'true');
+      applyFilter(button.dataset.filter);
     });
   });
 
-  /* ─── Zoom controls ──────────────────────────────────────────── */
-  function clampScale(v) { return Math.min(3, Math.max(0.4, v)); }
+  function clampScale(value) {
+    return Math.min(1.7, Math.max(0.7, value));
+  }
 
-  zoomIn.addEventListener('click', () => { scale = clampScale(scale + 0.15); applyTransform(); });
-  zoomOut.addEventListener('click', () => { scale = clampScale(scale - 0.15); applyTransform(); });
-  resetBtn.addEventListener('click', () => {
-    rotateX = 50; rotateZ = 20; scale = 1;
-    applyTransform();
+  function rotateView(delta) {
+    viewQuarter = (viewQuarter + delta + 4) % 4;
     closePanel();
-  });
+    scheduleRender();
+  }
 
-  /* ─── Drag rotation ──────────────────────────────────────────── */
-  canvas.addEventListener('mousedown', e => {
+  if (viewLeft) viewLeft.addEventListener('click', () => rotateView(-1));
+  if (viewRight) viewRight.addEventListener('click', () => rotateView(1));
+  if (zoomIn) zoomIn.addEventListener('click', () => { scale = clampScale(scale + 0.12); applyTransform(); });
+  if (zoomOut) zoomOut.addEventListener('click', () => { scale = clampScale(scale - 0.12); applyTransform(); });
+  if (resetBtn) {
+    resetBtn.addEventListener('click', () => {
+      viewQuarter = 0;
+      scale = 1;
+      closePanel();
+      scheduleRender();
+    });
+  }
+
+  canvas.addEventListener('mousedown', event => {
     isDragging = true;
-    lastX = e.clientX;
-    lastY = e.clientY;
-    e.preventDefault();
+    dragCommitted = false;
+    dragStartX = event.clientX;
+    dragStartY = event.clientY;
   });
-  window.addEventListener('mousemove', e => {
-    if (!isDragging) return;
-    const dx = e.clientX - lastX;
-    const dy = e.clientY - lastY;
-    rotateZ = (rotateZ + dx * 0.4) % 360;
-    rotateX = Math.min(85, Math.max(5, rotateX - dy * 0.3));
-    lastX = e.clientX;
-    lastY = e.clientY;
-    applyTransform();
-  });
-  window.addEventListener('mouseup', () => { isDragging = false; });
 
-  /* ─── Touch rotation ─────────────────────────────────────────── */
-  let lastTouchX = 0;
-  let lastTouchY = 0;
-  canvas.addEventListener('touchstart', e => {
-    if (e.touches.length === 1) {
-      lastTouchX = e.touches[0].clientX;
-      lastTouchY = e.touches[0].clientY;
+  window.addEventListener('mousemove', event => {
+    if (!isDragging || dragCommitted) return;
+    const dx = event.clientX - dragStartX;
+    const dy = event.clientY - dragStartY;
+    if (Math.abs(dx) >= 68 && Math.abs(dx) > Math.abs(dy) * 1.15) {
+      rotateView(dx > 0 ? 1 : -1);
+      dragCommitted = true;
     }
-  }, { passive: true });
-  canvas.addEventListener('touchmove', e => {
-    if (e.touches.length === 1) {
-      const dx = e.touches[0].clientX - lastTouchX;
-      const dy = e.touches[0].clientY - lastTouchY;
-      rotateZ = (rotateZ + dx * 0.5) % 360;
-      rotateX = Math.min(85, Math.max(5, rotateX - dy * 0.35));
-      lastTouchX = e.touches[0].clientX;
-      lastTouchY = e.touches[0].clientY;
-      applyTransform();
-    }
+  });
+
+  window.addEventListener('mouseup', () => {
+    isDragging = false;
+    dragCommitted = false;
+  });
+
+  canvas.addEventListener('touchstart', event => {
+    if (event.touches.length !== 1) return;
+    lastTouchX = event.touches[0].clientX;
+    lastTouchY = event.touches[0].clientY;
+    touchCommitted = false;
   }, { passive: true });
 
-  /* ─── Keyboard controls ──────────────────────────────────────── */
-  canvas.addEventListener('keydown', e => {
-    switch (e.key) {
-      case 'ArrowLeft':  rotateZ = (rotateZ - 8) % 360; applyTransform(); e.preventDefault(); break;
-      case 'ArrowRight': rotateZ = (rotateZ + 8) % 360; applyTransform(); e.preventDefault(); break;
-      case 'ArrowUp':    rotateX = Math.min(85, rotateX + 8); applyTransform(); e.preventDefault(); break;
-      case 'ArrowDown':  rotateX = Math.max(5, rotateX - 8); applyTransform(); e.preventDefault(); break;
+  canvas.addEventListener('touchmove', event => {
+    if (event.touches.length !== 1 || touchCommitted) return;
+    const dx = event.touches[0].clientX - lastTouchX;
+    const dy = event.touches[0].clientY - lastTouchY;
+    if (Math.abs(dx) >= 52 && Math.abs(dx) > Math.abs(dy) * 1.2) {
+      rotateView(dx > 0 ? 1 : -1);
+      touchCommitted = true;
+    }
+  }, { passive: true });
+
+  canvas.addEventListener('keydown', event => {
+    switch (event.key) {
+      case 'ArrowLeft': rotateView(-1); event.preventDefault(); break;
+      case 'ArrowRight': rotateView(1); event.preventDefault(); break;
+      case 'ArrowUp': scale = clampScale(scale + 0.12); applyTransform(); event.preventDefault(); break;
+      case 'ArrowDown': scale = clampScale(scale - 0.12); applyTransform(); event.preventDefault(); break;
       case '+':
-      case '=':          scale = clampScale(scale + 0.15); applyTransform(); e.preventDefault(); break;
+      case '=': scale = clampScale(scale + 0.12); applyTransform(); event.preventDefault(); break;
       case '-':
-      case '_':          scale = clampScale(scale - 0.15); applyTransform(); e.preventDefault(); break;
+      case '_': scale = clampScale(scale - 0.12); applyTransform(); event.preventDefault(); break;
       case 'r':
-      case 'R':          rotateX = 50; rotateZ = 20; scale = 1; applyTransform(); e.preventDefault(); break;
-      case 'Escape':     closePanel(); break;
+      case 'R': viewQuarter = 0; scale = 1; closePanel(); scheduleRender(); event.preventDefault(); break;
+      case 'Escape': closePanel(); break;
     }
   });
 
-  /* ─── Wheel zoom ─────────────────────────────────────────────── */
-  canvas.addEventListener('wheel', e => {
-    e.preventDefault();
-    scale = clampScale(scale - e.deltaY * 0.001);
+  canvas.addEventListener('wheel', event => {
+    event.preventDefault();
+    scale = clampScale(scale - event.deltaY * 0.001);
     applyTransform();
   }, { passive: false });
 
-  /* ─── Initial render ─────────────────────────────────────────── */
   applyTransform();
   renderFloor();
-
 })();

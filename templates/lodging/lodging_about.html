@@ -5,6 +5,7 @@
 
 {% block head %}
 <link rel="stylesheet" href="{% static 'css/lodging_about.css' %}">
+<link rel="stylesheet" href="{% static 'css/lodging_about_ux23.css' %}">
 {% endblock %}
 
 {% block content %}
@@ -291,16 +292,14 @@
   {# ===== 4. INTERACTIVE FLOOR EXPLORER ===== #}
   <section class="lka-section lka-explorer-section" id="lka-explorer" aria-labelledby="lka-explorer-heading">
     <div class="lka-section-header">
-      <p class="eyebrow">ระบบแผนผังเชิงโต้ตอบ</p>
-      <h2 id="lka-explorer-heading">สำรวจแผนผังอาคารแบบ 3D Isometric</h2>
+      <p class="eyebrow">โมเดลอาคารเชิงโต้ตอบ</p>
+      <h2 id="lka-explorer-heading">สำรวจอาคารแบบ Isometric 3D</h2>
       <p class="lka-section-sub">
-        คลิกเลือกห้องพักเพื่อดูข้อมูลรายละเอียด · <em>แผนผังนี้เป็นแบบแสดงประกอบเท่านั้น ไม่ใช่แบบสถาปัตยกรรม BIM หรือระบุขนาดจริง</em>
+        แต่ละห้องเป็นโมเดลมีมิติ แยกด้านบนและด้านข้างให้เห็นโครงอาคารชัดขึ้น · <em>เป็นโมเดลจำลองเพื่อช่วยทำความเข้าใจ ไม่ใช่แบบสถาปัตยกรรม BIM หรือระบุขนาดจริง</em>
       </p>
     </div>
 
-    {# Controls Bar #}
     <div class="lka-explorer-toolbar">
-      {# Floor toggle #}
       <div class="lka-floor-toggle" role="group" aria-label="เลือกชั้น">
         <button class="lka-ftoggle active" id="lka-btn-f4" data-floor="4" aria-pressed="true">
           <span class="lka-ftoggle-indicator"></span> ชั้น 4 (57 ห้อง)
@@ -310,7 +309,6 @@
         </button>
       </div>
 
-      {# Filter row #}
       <div class="lka-filter-row" role="group" aria-label="กรองประเภทห้อง">
         <button class="lka-filter active" data-filter="all" aria-pressed="true">ทั้งหมด</button>
         <button class="lka-filter" data-filter="air" aria-pressed="false">ปรับอากาศ</button>
@@ -319,33 +317,35 @@
       </div>
     </div>
 
-    {# Explorer wrapper #}
     <div class="lka-explorer-wrap">
-      {# Drag & Keyboard hint #}
       <div class="lka-drag-hint-bar">
-        <span class="lka-hint-icon" aria-hidden="true">🕹️</span>
+        <span class="lka-hint-icon" aria-hidden="true">🧊</span>
         <p class="lka-drag-hint" aria-hidden="true">
-          ลากเพื่อหมุน · ใช้ +/- หรือปุ่มซูม · ← → ↑ ↓ หมุน · R รีเซ็ต
+          ลากเพื่อหมุนโมเดลซ้าย/ขวา · แตะห้องเพื่อดูข้อมูล · ใช้ +/- ซูม · ← → เปลี่ยนมุม · R รีเซ็ต
         </p>
       </div>
 
-      {# Explorer canvas #}
       <div class="lka-explorer-canvas" id="lka-explorer-canvas" tabindex="0"
-           role="img" aria-label="แผนผังชั้น 4 อาคารที่พักนักเรียน โรงเรียนทหารสื่อสาร"
+           role="region" aria-label="โมเดลจำลองสามมิติ ชั้น 4 อาคารที่พักนักเรียน โรงเรียนทหารสื่อสาร"
            aria-describedby="lka-explorer-fallback">
+        <div class="lka-model-hud" aria-hidden="true">
+          <span id="lka-model-floor">ชั้น 4</span>
+          <span id="lka-model-view">มุมมอง 1/4</span>
+        </div>
         <div class="lka-iso-scene" id="lka-iso-scene">
-          {# SVG floor plans are rendered dynamically via JS #}
+          {# SVG isometric cuboids are rendered dynamically via JS #}
         </div>
       </div>
 
-      {# Zoom and View Controls #}
       <div class="lka-controls" aria-label="ตัวควบคุมมุมมอง">
+        <button class="lka-ctrl-btn lka-ctrl-view" id="lka-view-left" aria-label="หมุนโมเดลไปทางซ้าย" title="หมุนโมเดลไปทางซ้าย">↶</button>
+        <button class="lka-ctrl-btn lka-ctrl-view" id="lka-view-right" aria-label="หมุนโมเดลไปทางขวา" title="หมุนโมเดลไปทางขวา">↷</button>
+        <span class="lka-ctrl-separator" aria-hidden="true"></span>
         <button class="lka-ctrl-btn" id="lka-zoom-in" aria-label="ขยาย" title="ขยายมุมมอง">+</button>
         <button class="lka-ctrl-btn" id="lka-zoom-out" aria-label="ย่อ" title="ย่อมุมมอง">−</button>
         <button class="lka-ctrl-btn lka-ctrl-reset" id="lka-reset" aria-label="รีเซ็ตมุมมอง">↺ รีเซ็ตมุมมอง</button>
       </div>
 
-      {# 2D / text fallback #}
       <details class="lka-fallback" id="lka-explorer-fallback">
         <summary>ดูแผนผังแบบข้อความ (สำรอง)</summary>
         <div class="lka-fallback-body">

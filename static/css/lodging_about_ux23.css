@@ -1,0 +1,371 @@
+/* UX-23 — Architectural Isometric Explorer
+   Loaded after lodging_about.css so the model can evolve without destabilising
+   the rest of the hospitality page. No WebGL; all depth is SVG geometry. */
+
+.lka-explorer-section {
+  position: relative;
+}
+
+.lka-explorer-wrap {
+  overflow: hidden;
+  border: 1px solid #dbe7f1;
+  border-radius: clamp(1rem, 2vw, 1.6rem);
+  background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+  box-shadow: 0 24px 70px -42px rgb(15 23 42 / 0.5), 0 12px 30px -24px rgb(14 116 144 / 0.28);
+}
+
+.lka-drag-hint-bar {
+  background: linear-gradient(90deg, #f8fbff, #eef8ff, #f8fbff);
+}
+
+.lka-explorer-canvas {
+  position: relative;
+  width: 100%;
+  height: clamp(360px, 56vw, 620px);
+  overflow: hidden;
+  cursor: grab;
+  outline: none;
+  touch-action: pan-y pinch-zoom;
+  background:
+    radial-gradient(circle at 50% 34%, rgb(186 230 253 / 0.46), transparent 32%),
+    radial-gradient(circle at 78% 18%, rgb(167 243 208 / 0.28), transparent 26%),
+    linear-gradient(180deg, #f8fcff 0%, #edf7fb 56%, #f8fafc 100%);
+  isolation: isolate;
+}
+
+.lka-explorer-canvas::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.35;
+  background-image:
+    linear-gradient(30deg, rgb(14 116 144 / 0.08) 1px, transparent 1px),
+    linear-gradient(150deg, rgb(14 116 144 / 0.06) 1px, transparent 1px);
+  background-size: 34px 20px;
+  mask-image: linear-gradient(to bottom, transparent, #000 20%, #000 82%, transparent);
+}
+
+.lka-explorer-canvas:active {
+  cursor: grabbing;
+}
+
+.lka-explorer-canvas:focus-visible {
+  outline: 0.18rem solid var(--lka-sky);
+  outline-offset: -0.18rem;
+}
+
+.lka-model-hud {
+  position: absolute;
+  z-index: 3;
+  top: clamp(0.75rem, 2vw, 1rem);
+  left: clamp(0.75rem, 2vw, 1rem);
+  display: inline-flex;
+  gap: 0.35rem;
+  align-items: center;
+  pointer-events: none;
+}
+
+.lka-model-hud span {
+  display: inline-flex;
+  align-items: center;
+  min-height: 1.9rem;
+  padding: 0.28rem 0.65rem;
+  border: 1px solid rgb(186 230 253 / 0.95);
+  border-radius: 999px;
+  background: rgb(255 255 255 / 0.9);
+  color: #0f172a;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  box-shadow: 0 8px 20px -14px rgb(15 23 42 / 0.5);
+  backdrop-filter: blur(10px);
+}
+
+#lka-model-view {
+  color: #0369a1;
+}
+
+.lka-iso-scene {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transform-origin: 50% 54%;
+  transition: transform 180ms var(--ease-product), opacity 160ms ease;
+  will-change: transform;
+}
+
+.lka-iso-svg {
+  width: min(96%, 1120px);
+  height: 96%;
+  overflow: visible;
+  filter: drop-shadow(0 18px 24px rgb(15 23 42 / 0.08));
+}
+
+.lka-model-ground-shadow {
+  fill: rgb(15 23 42 / 0.12);
+  filter: blur(5px);
+}
+
+.lka-base-top {
+  fill: #f8fafc;
+  stroke: #cbd5e1;
+  stroke-width: 1.1;
+}
+
+.lka-base-face--x {
+  fill: #d9e5ee;
+  stroke: #c3d2df;
+  stroke-width: 1;
+}
+
+.lka-base-face--y {
+  fill: #e8f0f5;
+  stroke: #cbd5e1;
+  stroke-width: 1;
+}
+
+.lka-corridor-top {
+  fill: #ffffff;
+  stroke: #cbd5e1;
+  stroke-width: 1;
+}
+
+.lka-corridor-face--x {
+  fill: #dce7ef;
+  stroke: #cbd5e1;
+  stroke-width: 0.8;
+}
+
+.lka-corridor-face--y {
+  fill: #edf3f7;
+  stroke: #cbd5e1;
+  stroke-width: 0.8;
+}
+
+.lka-room-model,
+.lka-facility-model {
+  transform-box: fill-box;
+  transform-origin: center bottom;
+  transition: transform 150ms var(--ease-product), opacity 140ms ease, filter 150ms ease;
+}
+
+.lka-room-model:hover,
+.lka-room-model:focus-within {
+  transform: translateY(-3px);
+  filter: drop-shadow(0 7px 5px rgb(15 23 42 / 0.15));
+}
+
+.lka-room-model.selected {
+  transform: translateY(-8px);
+  filter: drop-shadow(0 12px 8px rgb(2 132 199 / 0.24));
+}
+
+.lka-room-block {
+  cursor: pointer;
+  stroke-width: 1.15;
+  transition: fill 140ms ease, stroke 140ms ease, stroke-width 140ms ease;
+}
+
+.lka-room-face,
+.lka-room-accent,
+.lka-room-label,
+.lka-facility-top,
+.lka-facility-face,
+.lka-facility-label {
+  pointer-events: none;
+}
+
+.lka-room-model.air .lka-room-block {
+  fill: #dff4ff;
+  stroke: #38a8d8;
+}
+
+.lka-room-model.air .lka-room-face--x {
+  fill: #91d3ef;
+  stroke: #3698c1;
+}
+
+.lka-room-model.air .lka-room-face--y {
+  fill: #b9e6f8;
+  stroke: #4aa9cf;
+}
+
+.lka-room-model.fan .lka-room-block {
+  fill: #fff1c7;
+  stroke: #dfa32a;
+}
+
+.lka-room-model.fan .lka-room-face--x {
+  fill: #eac35f;
+  stroke: #c58f1e;
+}
+
+.lka-room-model.fan .lka-room-face--y {
+  fill: #f6daa0;
+  stroke: #d6a63a;
+}
+
+.lka-room-model.selected .lka-room-block {
+  fill: #ffffff;
+  stroke: #0369a1;
+  stroke-width: 2.4;
+}
+
+.lka-room-model.selected .lka-room-face--x {
+  fill: #7dd3fc;
+}
+
+.lka-room-model.selected .lka-room-face--y {
+  fill: #bae6fd;
+}
+
+.lka-room-block:focus-visible {
+  stroke: #0f172a;
+  stroke-width: 2.6;
+  outline: none;
+}
+
+.lka-room-label {
+  fill: #0f172a;
+  font-family: var(--font-mono);
+  font-size: 8px;
+  font-weight: 800;
+  dominant-baseline: middle;
+  text-anchor: middle;
+  paint-order: stroke;
+  stroke: rgb(255 255 255 / 0.72);
+  stroke-width: 1.8px;
+  user-select: none;
+}
+
+.lka-room-accent {
+  stroke: rgb(255 255 255 / 0.86);
+  stroke-width: 1.5;
+  stroke-linecap: round;
+}
+
+.lka-facility-top {
+  fill: #d9fbf4;
+  stroke: #0d9488;
+  stroke-width: 1.1;
+}
+
+.lka-facility-face--x {
+  fill: #82d8ca;
+  stroke: #0f887e;
+}
+
+.lka-facility-face--y {
+  fill: #aee9de;
+  stroke: #249d91;
+}
+
+.lka-facility-label {
+  fill: #0f544f;
+  font-size: 7.4px;
+  font-weight: 800;
+  text-anchor: middle;
+  dominant-baseline: middle;
+  paint-order: stroke;
+  stroke: rgb(255 255 255 / 0.78);
+  stroke-width: 1.8px;
+}
+
+.lka-room-model.hidden-filter,
+.lka-facility-model.hidden-filter {
+  opacity: 0.09;
+  pointer-events: none;
+  filter: grayscale(0.7);
+}
+
+.lka-svg-floor-badge rect {
+  fill: rgb(255 255 255 / 0.9);
+  stroke: #bae6fd;
+  stroke-width: 1;
+}
+
+.lka-svg-floor-badge text {
+  fill: #075985;
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: 0.05em;
+}
+
+.lka-svg-note {
+  fill: #64748b;
+  font-size: 7.5px;
+  font-weight: 600;
+}
+
+.lka-controls {
+  flex-wrap: wrap;
+  align-items: center;
+  padding: 0.7rem 0.9rem;
+  background: linear-gradient(180deg, #fbfdff, #f5f9fc);
+}
+
+.lka-ctrl-view {
+  min-width: 2.8rem;
+  font-size: 1rem;
+  color: #075985;
+}
+
+.lka-ctrl-separator {
+  width: 1px;
+  height: 1.65rem;
+  background: #d7e3ec;
+  margin-inline: 0.15rem;
+}
+
+.lka-room-panel {
+  border-color: #bae6fd;
+  background: linear-gradient(145deg, #ffffff, #f8fcff);
+  box-shadow: 0 22px 48px -28px rgb(2 132 199 / 0.4);
+}
+
+@media (max-width: 640px) {
+  .lka-explorer-canvas {
+    height: clamp(390px, 118vw, 510px);
+  }
+
+  .lka-iso-svg {
+    width: 118%;
+    height: 96%;
+  }
+
+  .lka-model-hud span {
+    font-size: 0.66rem;
+  }
+
+  .lka-controls {
+    gap: 0.35rem;
+  }
+
+  .lka-ctrl-btn {
+    padding-inline: 0.72rem;
+  }
+
+  .lka-ctrl-separator {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lka-iso-scene,
+  .lka-room-model,
+  .lka-facility-model {
+    transition: none !important;
+    animation: none !important;
+  }
+
+  .lka-room-model:hover,
+  .lka-room-model:focus-within,
+  .lka-room-model.selected {
+    transform: none !important;
+  }
+}
