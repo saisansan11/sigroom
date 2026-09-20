@@ -7,6 +7,7 @@
 <link rel="stylesheet" href="{% static 'css/lodging_about.css' %}">
 <link rel="stylesheet" href="{% static 'css/lodging_about_ux23.css' %}">
 <link rel="stylesheet" href="{% static 'css/lodging_about_ux24.css' %}">
+<link rel="stylesheet" href="{% static 'css/lodging_about_ux27.css' %}">
 {% endblock %}
 
 {% block content %}
@@ -254,13 +255,14 @@
     </div>
 
     {# Floor Overview Cards (Retaining visual floor diagrams) #}
-    <div class="lka-floor-overview-wrap">
-      <h3 class="lka-subhead">ผังภาพรวมและข้อมูลสถิติแต่ละชั้น</h3>
+    <details class="lka-floor-overview-wrap lka-original-plans">
+      <summary><span>เทียบผังต้นฉบับ</span><small>ชั้น 4 และ 5 · เปิดดูรายละเอียดพื้นที่บริการ</small></summary>
       <div class="lka-floor-cards">
         <article class="lka-floor-card">
           <div class="lka-floor-card-head">
             <span class="lka-floor-badge">ชั้น 4</span>
             <h4>ผังห้องพักชั้น 4</h4>
+            <a href="{% static 'img/showcase/floor4.png' %}" target="_blank" rel="noopener">เปิดขนาดเต็ม ↗</a>
           </div>
           <picture class="lka-picture">
             <source type="image/webp" srcset="{% static 'img/showcase/generated/floor4.webp' %}">
@@ -276,6 +278,7 @@
           <div class="lka-floor-card-head">
             <span class="lka-floor-badge lka-floor-badge--5">ชั้น 5</span>
             <h4>ผังห้องพักชั้น 5</h4>
+            <a href="{% static 'img/showcase/floor5.png' %}" target="_blank" rel="noopener">เปิดขนาดเต็ม ↗</a>
           </div>
           <picture class="lka-picture">
             <source type="image/webp" srcset="{% static 'img/showcase/generated/floor5.webp' %}">
@@ -287,16 +290,16 @@
           </ul>
         </article>
       </div>
-    </div>
+    </details>
   </section>
 
   {# ===== 4. INTERACTIVE FLOOR EXPLORER ===== #}
   <section class="lka-section lka-explorer-section" id="lka-explorer" aria-labelledby="lka-explorer-heading">
     <div class="lka-section-header">
-      <p class="eyebrow">โมเดลอาคารเชิงโต้ตอบ</p>
-      <h2 id="lka-explorer-heading">สำรวจอาคารแบบ Isometric 3D</h2>
+      <p class="eyebrow">เลือกมุมพักของคุณ</p>
+      <h2 id="lka-explorer-heading">ห้องของคุณ อยู่มุมไหนของอาคาร</h2>
       <p class="lka-section-sub">
-        แต่ละห้องเป็นโมเดลมีมิติ แยกด้านบนและด้านข้างให้เห็นโครงอาคารชัดขึ้น · <em>เป็นโมเดลจำลองเพื่อช่วยทำความเข้าใจ ไม่ใช่แบบสถาปัตยกรรม BIM หรือระบุขนาดจริง</em>
+        เริ่มจากผังที่อ่านง่าย แตะหมายเลขแล้วห้องจะยกขึ้นให้สำรวจ · ตำแหน่งอ้างอิงผังชั้น 4 และ 5 ฉากรอบอาคารเป็นภาพประกอบ ไม่ใช่แบบวัดขนาดจริง
       </p>
     </div>
 
@@ -323,10 +326,15 @@
       <div class="lka-drag-hint-bar">
         <span class="lka-hint-icon" aria-hidden="true">↔</span>
         <p class="lka-drag-hint" id="lka-explorer-help">
-          ลากเพื่อหมุนโมเดลซ้าย–ขวา หรือปัดเพื่อเปลี่ยนมุม · แตะห้องเพื่อดูข้อมูล หรือใช้แป้นพิมพ์เลือกห้อง · ใช้ปุ่ม +/− หรือ Ctrl + เลื่อนเพื่อซูม
+          แตะห้องเพื่อยกขึ้นดูข้อมูล · มือถือเลื่อนผังซ้าย–ขวาได้ หรือเลือกหมายเลขด้านล่าง · ใช้ปุ่มมุมอาคารเพื่อดูมิติ
         </p>
       </div>
 
+      <div class="lka-plan-actions">
+        <label for="lka-room-picker">ไปที่ห้อง</label>
+        <select id="lka-room-picker"><option value="">เลือกหมายเลขห้อง</option></select>
+        <button type="button" id="lka-perspective" aria-pressed="false">ดูมุมอาคาร</button>
+      </div>
       <div class="lka-explorer-canvas" id="lka-explorer-canvas" tabindex="0"
            role="region" aria-label="โมเดลจำลองสามมิติ ชั้น 4 อาคารที่พักนักเรียน โรงเรียนทหารสื่อสาร"
            aria-describedby="lka-explorer-help lka-explorer-fallback">
@@ -352,6 +360,7 @@
       <details class="lka-fallback" id="lka-explorer-fallback">
         <summary>ดูแผนผังแบบข้อความ (สำรอง)</summary>
         <div class="lka-fallback-body">
+          <p>มุมอาคาร: ลากเพื่อหมุนโมเดล หรือใช้ ← → · +/− เพื่อซูม · Escape เพื่อปิดข้อมูลห้อง</p>
           <h3>ชั้น 4 — ผังห้องพักแบบข้อความ</h3>
           <p><strong>ห้องปรับอากาศ (25 ห้อง):</strong> 401–407, 411–416, 449–460</p>
           <p><strong>ห้องพัดลม (32 ห้อง):</strong> 417–448</p>
@@ -369,8 +378,9 @@
       <div class="lka-panel-empty">
         <span class="lka-panel-kicker">ข้อมูลห้อง</span>
         <span class="lka-panel-empty-mark" aria-hidden="true">401</span>
-        <h3>เลือกห้องจากโมเดล</h3>
-        <p>แตะหรือใช้แป้นพิมพ์เลือกหมายเลขห้อง เพื่อดูชั้น ระบบทำความเย็น และความจุในบริบทเดียวกัน</p>
+        <h3>ลองแตะห้องที่อยากรู้จัก</h3>
+        <p>ห้องจะยกขึ้นจากผัง พร้อมบอกประเภท ความจุ และด้านที่หันออกจากอาคาร</p>
+        <span class="lka-panel-empty-tip">ด้านหลังคือฝั่งสระว่ายน้ำ</span>
       </div>
       <div class="lka-panel-content">
         <button class="lka-panel-close" id="lka-panel-close" aria-label="ปิดข้อมูลห้อง">✕</button>
@@ -378,14 +388,26 @@
           <span class="lka-panel-pill">ห้องที่เลือก</span>
           <h4 class="lka-panel-number" id="lka-panel-number"></h4>
         </div>
+        <div class="lka-facing-card">
+          <span class="lka-facing-symbol" aria-hidden="true">↗</span>
+          <span>มองออกไปทาง</span>
+          <h3 id="lka-panel-facing"></h3>
+          <p id="lka-panel-context"></p>
+        </div>
         <dl class="lka-panel-dl">
           <dt>ชั้น</dt><dd id="lka-panel-floor"></dd>
           <dt>ระบบทำความเย็น</dt><dd id="lka-panel-cooling"></dd>
           <dt>ความจุ</dt><dd id="lka-panel-capacity"></dd>
         </dl>
-        <p class="lka-panel-note">ข้อมูลแสดงประกอบเท่านั้น · ไม่แสดงสถานะการจองจริง</p>
+        <a class="lka-room-next" href="#lka-gallery-heading">ดูบรรยากาศห้องพัก <span aria-hidden="true">↗</span></a>
+        <p class="lka-panel-note">แสดงด้านของอาคาร ไม่รับรองวิวจากหน้าต่างแต่ละห้อง · ตรวจห้องว่างในระบบจอง</p>
       </div>
     </aside>
+    </div>
+    <div class="lka-site-guide" aria-label="บริบทรอบอาคาร">
+      <div><span class="lka-site-index">01 / ด้านหลัง</span><h3>ฝั่งสระว่ายน้ำ</h3><p>401–416 และ 501–516 อยู่ฝั่งหลังอาคาร ติดกับสระว่ายน้ำกรมการทหารสื่อสาร</p></div>
+      <div><span class="lka-site-index">02 / ด้านหน้า</span><h3>ฝั่งโรงเรียน</h3><p>449–460 และ 517–530 อยู่แถวหน้าอาคาร หันสู่พื้นที่โรงเรียนทหารสื่อสาร</p></div>
+      <div><span class="lka-site-index">03 / รอบอาคาร</span><h3>คลองและถนนพระรามที่ 5</h3><p>อยู่ด้านปลายอาคารตามภาพสถานที่จริง ตำแหน่งนี้ใช้ประกอบการเข้าใจพื้นที่ ไม่ใช่วิวของทุกห้อง</p></div>
     </div>
   </section>
 

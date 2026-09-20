@@ -32,10 +32,12 @@ def test_explorer_uses_architectural_view_controls():
     assert 'role="region"' in html
 
 
-def test_explorer_hint_describes_model_rotation_not_flat_sheet():
+def test_explorer_hint_describes_plan_selection_and_optional_perspective():
     html = _read(TEMPLATE)
-    assert "ลากเพื่อหมุนโมเดล" in html
-    assert "แตะห้องเพื่อดูข้อมูล" in html
+    # UX-27 intentionally starts overhead; touch scrolling must not rotate it.
+    assert "แตะห้องเพื่อยกขึ้นดูข้อมูล" in html
+    assert "มือถือเลื่อนผังซ้าย–ขวาได้" in html
+    assert 'id="lka-perspective" aria-pressed="false"' in html
 
 
 def test_js_builds_real_isometric_cuboid_faces():
