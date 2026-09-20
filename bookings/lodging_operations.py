@@ -5,6 +5,7 @@ from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.db import IntegrityError
 from django.shortcuts import get_object_or_404, redirect, render
+from django.utils import timezone
 
 from .lodging_models import CourseLodgingCohort
 from .lodging_services import (
@@ -49,6 +50,32 @@ class GeneralRequestForm(forms.Form):
             room_category=Resource.Category.LODGING, status=Resource.Status.ACTIVE).order_by("code")
 
 
+def _assignment_is_open(cohort):
+    return (
+        cohort.allocation_status == CourseLodgingCohort.AllocationStatus.ALLOCATED
+        and cohort.check_out_date >= timezone.localdate()
+    )
+
+
+def _assignment_selection(cohort, room_id, bed_number):
+    """Return a currently free cohort bed for presentation-only preselection."""
+    if not _assignment_is_open(cohort) or not room_id or not bed_number:
+        return None
+    try:
+        bed_number = int(bed_number)
+    except (TypeError, ValueError):
+        return None
+    if not 1 <= bed_number <= cohort.beds_per_room:
+        return None
+    try:
+        room = cohort.rooms.filter(pk=room_id, status=Resource.Status.ACTIVE).first()
+    except (TypeError, ValueError, ValidationError):
+        return None
+    if room is None or cohort.students.filter(room=room, bed_number=bed_number).exists():
+        return None
+    return {"room": room, "bed_number": bed_number}
+
+
 @login_required
 def general_request(request):
     form = GeneralRequestForm(request.POST if request.method == "POST" else None,
@@ -73,10 +100,11 @@ def lodging_workspace(request):
         cohorts = cohorts.filter(supervisor=request.user)
     slug = request.GET.get("cohort")
     cohort = get_object_or_404(cohorts, slug=slug) if slug else cohorts.first()
-    form, rooms, available_rooms = None, [], []
+    form, rooms, available_rooms, selected_assignment, assignment_open = None, [], [], None, False
     if cohort:
         if not can_manage_cohort(request.user, cohort):
             raise PermissionDenied
+        assignment_open = _assignment_is_open(cohort)
         allocating = request.method == "POST" and request.POST.get("action") == "allocation"
         if allocating:
             try:
@@ -91,7 +119,16 @@ def lodging_workspace(request):
             else:
                 messages.success(request, "บันทึกการจัดสรรห้องและสถานะรับจองแล้ว")
                 return redirect(request.get_full_path())
-        form = AssignmentForm(request.POST if request.method == "POST" and not allocating else None, cohort=cohort)
+        if request.method == "GET":
+            selected_assignment = _assignment_selection(cohort, request.GET.get("room"), request.GET.get("bed"))
+        initial = None
+        if selected_assignment:
+            initial = {
+                "room_id": str(selected_assignment["room"].pk),
+                "bed_number": str(selected_assignment["bed_number"]),
+            }
+        form = AssignmentForm(request.POST if request.method == "POST" and not allocating else None,
+                              cohort=cohort, initial=initial)
         if request.method == "POST" and not allocating and form.is_valid():
             try:
                 assign_lodging_bed(cohort=cohort, actor=request.user, **form.cleaned_data)
@@ -104,6 +141,7 @@ def lodging_workspace(request):
         for room in cohort.rooms.order_by("floor", "code"):
             occupants = {s.bed_number: s for s in students if s.room_id == room.pk}
             rooms.append({"room": room, "free": cohort.beds_per_room - len(occupants),
+                          "assignable": assignment_open and room.status == Resource.Status.ACTIVE,
                           "beds": [{"number": n, "student": occupants.get(n)} for n in range(1, cohort.beds_per_room + 1)]})
         selected = set(cohort.rooms.values_list("pk", flat=True))
         hold = cohort_hold_range(cohort.check_in_date, cohort.check_out_date)
@@ -115,6 +153,7 @@ def lodging_workspace(request):
             available_rooms.append({"room": room, "selected": room.pk in selected,
                                     "blocked": room.pk in blocked or room.status != Resource.Status.ACTIVE})
     response = render(request, "lodging/workspace.html", {"cohorts": cohorts, "cohort": cohort,
-                      "rooms": rooms, "form": form, "available_rooms": available_rooms})
+                      "rooms": rooms, "form": form, "available_rooms": available_rooms,
+                      "selected_assignment": selected_assignment, "assignment_open": assignment_open})
     response["Cache-Control"] = "private, no-store"
     return response
