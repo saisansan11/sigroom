@@ -45,7 +45,7 @@
       </p>
       <h2><a href="{% url 'bookings:booking_detail' booking.id %}">{{ booking.title }}</a></h2>
       <p><strong>{{ booking.room.code }} {{ booking.room.name }}</strong> · {{ booking.start_at|thai_datetime }}–{{ booking.end_at|date:"H:i" }} น.</p>
-      <p>{{ booking.unit.name }} · {{ booking.requester.display_name }}{% if booking.responsible_phone %} (โทร {{ booking.responsible_phone }}){% endif %}</p>
+      <p>{{ booking.unit.name }} · {{ booking.responsible_name }}{% if booking.responsible_phone %} (โทร {{ booking.responsible_phone }}){% endif %}</p>
       <p>ผู้เข้าร่วม {{ booking.attendees }} คน · อุปกรณ์: {% for item in booking.equipment.all %}{{ item.name }}{% if not forloop.last %}, {% endif %}{% empty %}—{% endfor %} · ส่งเมื่อ {{ booking.submitted_at|thai_datetime }}</p>
       <p class="expiry-text">หมดอายุใน {{ booking.expires_in_hours }} ชม.</p>
     </div>

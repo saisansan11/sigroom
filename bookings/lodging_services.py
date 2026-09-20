@@ -9,6 +9,7 @@ from typing import Sequence
 from urllib.parse import urlencode
 
 from django.conf import settings
+from django.contrib.auth import get_user_model
 from django.db.backends.postgresql.psycopg_any import DateTimeTZRange
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.db import transaction
@@ -17,7 +18,7 @@ from django.utils import timezone
 from audit.services import audit
 from resources.models import Resource
 
-from .lodging_models import CourseLodgingCohort, CourseStudentLodging
+from .lodging_models import CourseLodgingCohort, CourseStudentLodging, PublicLodgingAccess
 from .models import BookingResource
 from .phone_utils import normalize_phone  # noqa: F401 (re-exported for bookings.lodging_views)
 
@@ -82,6 +83,56 @@ def can_access_lodging_management(user) -> bool:
     return CourseLodgingCohort.objects.filter(supervisor_id=getattr(user, "pk", None)).exists()
 
 
+def cohort_self_booking_status(cohort: CourseLodgingCohort, now: datetime | None = None) -> tuple[str, str]:
+    """Return policy status for student self-booking. Legacy rows without a window stay compatible."""
+    now = now or timezone.now()
+    if cohort.allocation_status != CourseLodgingCohort.AllocationStatus.ALLOCATED:
+        return "unavailable", "หลักสูตรนี้ยังไม่ได้จัดสรรห้องพัก"
+    if cohort.check_out_date < timezone.localdate():
+        return "ended", "รอบเข้าพักนี้สิ้นสุดแล้ว"
+    if not cohort.is_active:
+        return "closed", "หลักสูตรนี้ปิดรับจองอยู่"
+    # Backward compatibility: cohorts created before booking-window support remain open
+    # while active. All new staff flows write both timestamps.
+    if cohort.booking_open_at and now < cohort.booking_open_at:
+        return "not_open", "ยังไม่ถึงเวลาเปิดรับจอง"
+    if cohort.booking_close_at and now > cohort.booking_close_at:
+        return "closed", "หมดเวลารับจองแล้ว"
+    return "open", "เปิดรับจอง"
+
+
+def _public_lodging_principal():
+    """Locked-down service principal used only to anchor anonymous lodging Bookings."""
+    from accounts.models import Unit
+
+    unit, _ = Unit.objects.get_or_create(
+        code="PUBLIC-LODGE",
+        defaults={"name": "บุคคลทั่วไป (คำขอที่พัก)"},
+    )
+    User = get_user_model()
+    domain = getattr(settings, "ALLOWED_EMAIL_DOMAIN", "signalschool.ac.th")
+    user, created = User.objects.get_or_create(
+        username="public-lodging",
+        defaults={
+            "email": f"public-lodging@{domain}",
+            "first_name": "บุคคลทั่วไป",
+            "unit": unit,
+            "phone": "SYSTEM",
+            "is_active": False,
+        },
+    )
+    if created:
+        user.set_unusable_password()
+        user.save(update_fields=["password"])
+    elif user.unit_id != unit.pk:
+        # Do not silently repurpose an existing named account.
+        raise ValidationError("บัญชีระบบสำหรับคำขอที่พักบุคคลทั่วไปมีการตั้งค่าไม่ถูกต้อง")
+    if not user.phone:
+        user.phone = "SYSTEM"
+        user.save(update_fields=["phone"])
+    return user
+
+
 @transaction.atomic
 def assign_lodging_bed(*, cohort, room_id, bed_number, rank, full_name,
                        origin_unit, phone, note="", actor=None):
@@ -91,9 +142,11 @@ def assign_lodging_bed(*, cohort, room_id, bed_number, rank, full_name,
         raise PermissionDenied("คุณไม่มีสิทธิ์จัดผู้พักในหลักสูตรนี้")
     if cohort.allocation_status != CourseLodgingCohort.AllocationStatus.ALLOCATED:
         raise ValidationError("ต้องจัดสรรห้องให้หลักสูตรก่อนจัดผู้พัก")
-    if actor is None and not cohort.is_active:
-        raise ValidationError("หลักสูตรนี้ปิดรับจองแล้ว")
-    if cohort.check_out_date < timezone.localdate():
+    if actor is None:
+        booking_state, booking_message = cohort_self_booking_status(cohort)
+        if booking_state != "open":
+            raise ValidationError(booking_message)
+    elif cohort.check_out_date < timezone.localdate():
         raise ValidationError("รอบเข้าพักนี้สิ้นสุดแล้ว")
     try:
         bed_number = int(bed_number)
@@ -122,25 +175,43 @@ def assign_lodging_bed(*, cohort, room_id, bed_number, rank, full_name,
 
 
 @transaction.atomic
-def request_general_lodging(*, actor, room, check_in, check_out, phone, note=""):
+def request_general_lodging(*, actor=None, room, check_in, check_out, phone, note="", guest_name=""):
+    """Create a general/public lodging request on Booking Core and return the pending Booking."""
     from .models import Booking
     from .services import submit_booking
-    if not getattr(actor, "is_authenticated", False) or not actor.unit_id:
-        raise ValidationError("กรุณาเข้าสู่ระบบด้วยบัญชีที่ระบุหน่วยงานก่อนส่งคำขอ")
+
+    authenticated = bool(getattr(actor, "is_authenticated", False))
+    if authenticated:
+        if not actor.unit_id:
+            raise ValidationError("บัญชีผู้ใช้ต้องระบุหน่วยงานก่อนส่งคำขอ")
+        requester = actor
+        responsible_name = actor.display_name
+    else:
+        responsible_name = (guest_name or "").strip()
+        if not responsible_name:
+            raise ValidationError("กรุณาระบุชื่อผู้เข้าพัก")
+        requester = _public_lodging_principal()
+    phone = normalize_phone(phone)
+    if not phone:
+        raise ValidationError("กรุณาระบุเบอร์โทรศัพท์ที่ถูกต้อง")
     if room.room_category != Resource.Category.LODGING:
         raise ValidationError("เลือกได้เฉพาะห้องพัก")
     if check_out <= check_in:
         raise ValidationError("วันออกต้องอยู่หลังวันเข้า")
     zone = timezone.get_current_timezone()
-    booking = Booking(room=room, requester=actor, unit=actor.unit,
+    booking = Booking(
+        room=room, requester=requester, unit=requester.unit,
         title="คำขอเข้าพักทั่วไป", purpose=Booking.Purpose.OTHER,
-        responsible_name=actor.display_name, responsible_phone=normalize_phone(phone),
+        responsible_name=responsible_name, responsible_phone=phone,
         start_at=timezone.make_aware(datetime.combine(check_in, time(14)), zone),
         end_at=timezone.make_aware(datetime.combine(check_out, time(12)), zone),
-        visibility=Booking.Visibility.RESTRICTED, note=note)
+        visibility=Booking.Visibility.RESTRICTED, note=note,
+    )
     booking.full_clean()
     booking.save()
-    return submit_booking(booking)
+    booking = submit_booking(booking)
+    PublicLodgingAccess.objects.create(booking=booking)
+    return booking
 
 
 def generate_cohort_qr_svg(url: str) -> bytes:
@@ -182,6 +253,8 @@ def update_cohort_allocation(
     allocation_status: str,
     is_active: bool,
     beds_per_room: int,
+    booking_open_at: datetime | None = None,
+    booking_close_at: datetime | None = None,
     supervisor=None,
     title: str | None = None,
     note: str | None = None,
@@ -197,6 +270,9 @@ def update_cohort_allocation(
     else:
         locked_cohort = CourseLodgingCohort.objects.select_for_update().get(pk=cohort.pk)
         current_room_pks = set(locked_cohort.rooms.values_list("pk", flat=True))
+        if booking_open_at is None and booking_close_at is None:
+            booking_open_at = locked_cohort.booking_open_at
+            booking_close_at = locked_cohort.booking_close_at
 
     if actor is not None:
         allowed = can_create_cohort(actor) if creating else can_manage_cohort(actor, locked_cohort)
@@ -244,6 +320,10 @@ def update_cohort_allocation(
         raise ValidationError({"beds_per_room": "จำนวนเตียงต่อห้องต้องอย่างน้อย 1"})
     if allocation_status == CourseLodgingCohort.AllocationStatus.RELEASED and is_active:
         raise ValidationError("รอบที่ปลดการสงวนห้องแล้วต้องไม่เปิดรับจอง")
+    if booking_open_at and booking_close_at and booking_close_at < booking_open_at:
+        raise ValidationError({"booking_close_at": "เวลาปิดรับจองต้องไม่ก่อนเวลาเปิดรับจอง"})
+    if is_active and (booking_open_at is None) != (booking_close_at is None):
+        raise ValidationError("กรุณากำหนดทั้งเวลาเปิดและปิดรับจอง")
     if allocation_status == CourseLodgingCohort.AllocationStatus.ALLOCATED and not target_resources:
         raise ValidationError("สถานะจัดสรรห้องพักต้องมีห้องอย่างน้อย 1 ห้อง")
     if any(
@@ -294,12 +374,16 @@ def update_cohort_allocation(
         "is_active": getattr(locked_cohort, "is_active", None),
         "check_in_date": getattr(locked_cohort, "check_in_date", None),
         "check_out_date": getattr(locked_cohort, "check_out_date", None),
+        "booking_open_at": getattr(locked_cohort, "booking_open_at", None),
+        "booking_close_at": getattr(locked_cohort, "booking_close_at", None),
         "rooms": sorted(current_room_pks),
     }
     locked_cohort.check_in_date = check_in_date
     locked_cohort.check_out_date = check_out_date
     locked_cohort.allocation_status = allocation_status
     locked_cohort.is_active = is_active
+    locked_cohort.booking_open_at = booking_open_at
+    locked_cohort.booking_close_at = booking_close_at
     locked_cohort.beds_per_room = beds_per_room
     if supervisor is not None:
         locked_cohort.supervisor = supervisor
@@ -322,6 +406,8 @@ def update_cohort_allocation(
         "is_active": is_active,
         "check_in_date": check_in_date,
         "check_out_date": check_out_date,
+        "booking_open_at": booking_open_at,
+        "booking_close_at": booking_close_at,
         "rooms": sorted(target_room_pks),
     }
     if force_release:

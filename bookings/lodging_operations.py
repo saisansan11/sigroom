@@ -1,4 +1,6 @@
 """Staff workspace presentation; allocation rules remain in lodging_services."""
+from datetime import datetime, time
+
 from django import forms
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
@@ -37,6 +39,7 @@ class AssignmentForm(forms.Form):
 
 
 class GeneralRequestForm(forms.Form):
+    guest_name = forms.CharField(label="ชื่อผู้เข้าพัก / ผู้ติดต่อ", max_length=200)
     room = forms.ModelChoiceField(label="ห้องพัก", queryset=Resource.objects.none())
     check_in = forms.DateField(label="วันเข้าพัก (14:00 น.)", widget=forms.DateInput(attrs={"type": "date"}))
     check_out = forms.DateField(label="วันออก (12:00 น.)", widget=forms.DateInput(attrs={"type": "date"}))
@@ -48,6 +51,19 @@ class GeneralRequestForm(forms.Form):
         super().__init__(*args, **kwargs)
         self.fields["room"].queryset = Resource.objects.filter(resource_type=Resource.Type.ROOM,
             room_category=Resource.Category.LODGING, status=Resource.Status.ACTIVE).order_by("code")
+
+
+def _parse_local_datetime(value, label):
+    value = (value or "").strip()
+    if not value:
+        return None
+    try:
+        parsed = datetime.fromisoformat(value)
+    except ValueError as exc:
+        raise ValidationError(f"{label}ไม่ถูกต้อง") from exc
+    if timezone.is_naive(parsed):
+        parsed = timezone.make_aware(parsed, timezone.get_current_timezone())
+    return parsed
 
 
 def _assignment_is_open(cohort):
@@ -84,19 +100,28 @@ def _arrival_filter(value):
     return value if value in {"all", "pending", "checked_in"} else "all"
 
 
-@login_required
 def general_request(request):
-    form = GeneralRequestForm(request.POST if request.method == "POST" else None,
-                              initial={"phone": request.user.phone})
+    initial = {}
+    if getattr(request.user, "is_authenticated", False):
+        initial = {
+            "guest_name": request.user.display_name,
+            "phone": getattr(request.user, "phone", ""),
+        }
+    form = GeneralRequestForm(request.POST if request.method == "POST" else None, initial=initial)
     if request.method == "POST" and form.is_valid():
         try:
-            booking = request_general_lodging(actor=request.user, **form.cleaned_data)
+            booking = request_general_lodging(
+                actor=request.user if getattr(request.user, "is_authenticated", False) else None,
+                **form.cleaned_data,
+            )
         except (ValidationError, BookingConflict) as exc:
             form.add_error(None, " · ".join(exc.messages) if isinstance(exc, ValidationError) else str(exc))
         else:
-            messages.success(request, "ส่งคำขอแล้ว กรุณารอเจ้าหน้าที่อนุมัติก่อนเข้าพัก")
-            return redirect("bookings:booking_detail", id=booking.pk)
-    return render(request, "lodging/general_request.html", {"form": form})
+            messages.success(request, "ส่งคำขอแล้ว กรุณาเก็บลิงก์นี้ไว้เพื่อตรวจสถานะ")
+            return redirect("bookings:lodging_general_request_status", token=booking.public_lodging_access.pk)
+    response = render(request, "lodging/general_request.html", {"form": form})
+    response["Cache-Control"] = "no-store"
+    return response
 
 
 @login_required
@@ -128,11 +153,25 @@ def lodging_workspace(request):
         allocating = request.method == "POST" and request.POST.get("action") == "allocation"
         if allocating:
             try:
+                is_active = request.POST.get("is_active") == "on"
+                booking_open_at = _parse_local_datetime(request.POST.get("booking_open_at"), "เวลาเปิดรับจอง")
+                booking_close_at = _parse_local_datetime(request.POST.get("booking_close_at"), "เวลาปิดรับจอง")
+                if is_active and not booking_open_at and not booking_close_at:
+                    # Legacy workspace/API callers before Phase B had only an on/off switch.
+                    # Preserve that path safely: open now and close at the end of check-in day.
+                    booking_open_at = timezone.now()
+                    booking_close_at = timezone.make_aware(
+                        datetime.combine(cohort.check_in_date, time(23, 59)),
+                        timezone.get_current_timezone(),
+                    )
+                elif is_active and (not booking_open_at or not booking_close_at):
+                    raise ValidationError("กรุณากำหนดทั้งเวลาเปิดและปิดรับจอง")
                 update_cohort_allocation(cohort=cohort,
                     rooms=Resource.objects.filter(pk__in=request.POST.getlist("rooms")),
                     check_in_date=cohort.check_in_date, check_out_date=cohort.check_out_date,
                     allocation_status=CourseLodgingCohort.AllocationStatus.ALLOCATED,
-                    is_active=request.POST.get("is_active") == "on", beds_per_room=cohort.beds_per_room,
+                    is_active=is_active, beds_per_room=cohort.beds_per_room,
+                    booking_open_at=booking_open_at, booking_close_at=booking_close_at,
                     actor=request.user)
             except (ValidationError, ValueError, IntegrityError) as exc:
                 messages.error(request, " · ".join(exc.messages) if isinstance(exc, ValidationError) else "กรุณาตรวจห้องที่เลือกอีกครั้ง")

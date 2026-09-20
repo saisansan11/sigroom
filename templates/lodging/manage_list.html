@@ -38,8 +38,10 @@
               {% else %}
                 <span class="room-badge-full">ปลดการสงวน</span>
               {% endif %}
-              {% if c.is_active %}
+              {% if c.booking_state == 'open' %}
                 <span class="room-badge-free">เปิดรับจอง</span>
+              {% elif c.booking_state == 'not_open' %}
+                <span class="count-badge">ตั้งเวลาเปิดแล้ว</span>
               {% else %}
                 <span class="room-badge-full">ปิดรับจอง</span>
               {% endif %}
@@ -48,7 +50,8 @@
           <div class="lodging-manage-card-meta">
             <p>
               เข้าพัก: <strong>{{ c.check_in_date|thai_date }}</strong> – <strong>{{ c.check_out_date|thai_date }}</strong><br>
-              ผู้เข้าพักแล้ว: <strong>{{ c.booked_count }}</strong> / {{ c.total_capacity }} คน (ห้องละ {{ c.beds_per_room }} คน)
+              ผู้เข้าพักแล้ว: <strong>{{ c.booked_count }}</strong> / {{ c.total_capacity }} คน (ห้องละ {{ c.beds_per_room }} คน)<br>
+              {% if c.booking_open_at and c.booking_close_at %}ช่วงรับจอง: <strong>{{ c.booking_open_at|thai_datetime }}</strong> – <strong>{{ c.booking_close_at|thai_datetime }}</strong>{% else %}ช่วงรับจอง: <strong>Legacy / ยังไม่ได้กำหนดเวลา</strong>{% endif %}
             </p>
           </div>
           <div class="lodging-manage-card-actions">
@@ -109,6 +112,19 @@
               <input type="date" id="id_check_out_date" name="check_out_date" required>
             </label>
           </div>
+
+          <fieldset>
+            <legend>ช่วงเปิดรับจอง</legend>
+            <div class="grid-dates">
+              <label for="id_booking_open_at">เปิดรับจองเมื่อ
+                <input type="datetime-local" id="id_booking_open_at" name="booking_open_at">
+              </label>
+              <label for="id_booking_close_at">ปิดรับจองเมื่อ
+                <input type="datetime-local" id="id_booking_close_at" name="booking_close_at">
+              </label>
+            </div>
+            <small>หากเลือก “เปิดให้ผู้เรียนเลือกเตียง” ต้องกำหนดทั้งเวลาเปิดและเวลาปิด</small>
+          </fieldset>
 
           <label for="id_beds_per_room">จำนวนคน/เตียงต่อห้อง
             <input type="number" id="id_beds_per_room" name="beds_per_room" value="4" min="1" max="12" required>

@@ -20,8 +20,9 @@
 <details class="detail-card"><summary>จัดสรรห้องและเปิดรับจอง — ช่วงวันที่ของหลักสูตรนี้</summary>
 <form method="post">{% csrf_token %}<input type="hidden" name="action" value="allocation">
 <fieldset><legend>เลือกห้องว่างที่จะสงวนให้หลักสูตร</legend><div class="lodging-allocation-grid">{% for item in available_rooms %}<label><input type="checkbox" name="rooms" value="{{ item.room.pk }}" {% if item.selected %}checked{% endif %} {% if item.blocked %}disabled{% endif %}><span><strong>{{ item.room.code }}</strong><br>{% if item.blocked %}ไม่ว่าง / งดใช้{% elif item.selected %}สงวนให้หลักสูตรนี้{% else %}ว่างสำหรับจัดสรร{% endif %}</span></label>{% endfor %}</div></fieldset>
-<label><input type="checkbox" name="is_active" {% if cohort.is_active %}checked{% endif %}>เปิดให้ผู้เรียนจองด้วยตนเอง (ปิดไว้ยังจัดเตียงโดยเจ้าหน้าที่ได้)</label>
-<button type="submit">บันทึกการจัดสรรและการเปิดจอง</button></form></details>
+<div class="grid-dates"><label>เปิดรับจองเมื่อ<input type="datetime-local" name="booking_open_at" value="{% if cohort.booking_open_at %}{{ cohort.booking_open_at|date:'Y-m-d\TH:i' }}{% endif %}"></label><label>ปิดรับจองเมื่อ<input type="datetime-local" name="booking_close_at" value="{% if cohort.booking_close_at %}{{ cohort.booking_close_at|date:'Y-m-d\TH:i' }}{% endif %}"></label></div>
+<label><input type="checkbox" name="is_active" {% if cohort.is_active %}checked{% endif %}>เปิดใช้การจองด้วยตนเองตามช่วงเวลาที่กำหนด (ปิดไว้ยังจัดเตียงโดยเจ้าหน้าที่ได้)</label>
+<button type="submit">บันทึกการจัดสรรและช่วงเปิดจอง</button></form></details>
 {% if occupancy.rooms_total %}<nav class="lodging-room-filters" aria-label="กรองห้องตามสถานะ">
 <a href="{% url 'bookings:lodging_workspace' %}?cohort={{ cohort.slug|urlencode }}&amp;room_filter=all{% if arrival_filter != 'all' %}&amp;arrival_filter={{ arrival_filter }}{% endif %}#room-board" {% if room_filter == 'all' %}aria-current="page"{% endif %}>ทุกห้อง <span>{{ occupancy.rooms_total }}</span></a>
 <a href="{% url 'bookings:lodging_workspace' %}?cohort={{ cohort.slug|urlencode }}&amp;room_filter=free{% if arrival_filter != 'all' %}&amp;arrival_filter={{ arrival_filter }}{% endif %}#room-board" {% if room_filter == 'free' %}aria-current="page"{% endif %}>มีเตียงว่าง <span>{{ occupancy.rooms_free }}</span></a>

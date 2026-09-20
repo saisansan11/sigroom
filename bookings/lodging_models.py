@@ -46,7 +46,9 @@ class CourseLodgingCohort(models.Model):
         choices=AllocationStatus.choices,
         default=AllocationStatus.RELEASED,
     )
-    is_active = models.BooleanField("เปิดรับการจอง", default=False)
+    is_active = models.BooleanField("เปิดใช้การจองด้วยตนเอง", default=False)
+    booking_open_at = models.DateTimeField("เปิดรับจองเมื่อ", null=True, blank=True)
+    booking_close_at = models.DateTimeField("ปิดรับจองเมื่อ", null=True, blank=True)
     note = models.TextField("คำชี้แจง/ข้อปฏิบัติในการเข้าพัก", blank=True)
     created_at = models.DateTimeField("สร้างเมื่อ", auto_now_add=True)
 
@@ -62,6 +64,14 @@ class CourseLodgingCohort(models.Model):
             models.CheckConstraint(
                 condition=models.Q(check_out_date__gte=models.F("check_in_date")),
                 name="check_cohort_checkout_after_checkin",
+            ),
+            models.CheckConstraint(
+                condition=(
+                    models.Q(booking_open_at__isnull=True)
+                    | models.Q(booking_close_at__isnull=True)
+                    | models.Q(booking_close_at__gte=models.F("booking_open_at"))
+                ),
+                name="check_cohort_booking_window_order",
             ),
         ]
 
@@ -89,6 +99,8 @@ class CourseLodgingCohort(models.Model):
             errors["beds_per_room"] = "จำนวนเตียงต่อห้องต้องอย่างน้อย 1"
         if self.allocation_status == self.AllocationStatus.RELEASED and self.is_active:
             errors["is_active"] = "รอบที่ปลดการสงวนห้องแล้วต้องไม่เปิดรับจอง"
+        if self.booking_open_at and self.booking_close_at and self.booking_close_at < self.booking_open_at:
+            errors["booking_close_at"] = "เวลาปิดรับจองต้องไม่ก่อนเวลาเปิดรับจอง"
         if errors:
             raise ValidationError(errors)
 
@@ -175,3 +187,23 @@ class CourseStudentLodging(models.Model):
 
     def __str__(self):
         return f"{self.rank} {self.full_name} ({self.room.code} เตียง {self.bed_number})"
+
+
+class PublicLodgingAccess(models.Model):
+    """Opaque public status link for a general lodging request backed by Booking Core."""
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    booking = models.OneToOneField(
+        "bookings.Booking",
+        verbose_name="คำขอจองที่พัก",
+        on_delete=models.CASCADE,
+        related_name="public_lodging_access",
+    )
+    created_at = models.DateTimeField("สร้างเมื่อ", auto_now_add=True)
+
+    class Meta:
+        verbose_name = "ลิงก์ติดตามคำขอที่พักบุคคลทั่วไป"
+        verbose_name_plural = "ลิงก์ติดตามคำขอที่พักบุคคลทั่วไป"
+
+    def __str__(self):
+        return f"{self.booking_id} / {self.pk}"

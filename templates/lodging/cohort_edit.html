@@ -28,6 +28,19 @@
       </label>
     </div>
 
+    <fieldset>
+      <legend>ช่วงเปิดรับจอง</legend>
+      <div class="grid-dates">
+        <label for="id_booking_open_at">เปิดรับจองเมื่อ
+          <input type="datetime-local" id="id_booking_open_at" name="booking_open_at" value="{% if cohort.booking_open_at %}{{ cohort.booking_open_at|date:'Y-m-d\TH:i' }}{% endif %}">
+        </label>
+        <label for="id_booking_close_at">ปิดรับจองเมื่อ
+          <input type="datetime-local" id="id_booking_close_at" name="booking_close_at" value="{% if cohort.booking_close_at %}{{ cohort.booking_close_at|date:'Y-m-d\TH:i' }}{% endif %}">
+        </label>
+      </div>
+      <small>เมื่อเปิดให้นักเรียนจองผ่านลิงก์ ต้องกำหนดทั้งสองเวลา</small>
+    </fieldset>
+
     <label for="id_allocation_status">สถานะการจัดสรรห้องพัก
       <select id="id_allocation_status" name="allocation_status">
         {% for value, label in status_choices %}

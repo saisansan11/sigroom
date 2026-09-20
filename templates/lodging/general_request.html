@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% block title %}ส่งคำขอจองที่พักทั่วไป · SIGROOM{% endblock %}
 {% block content %}
-<div class="page-heading"><div><p class="eyebrow">สำหรับบุคคลทั่วไป</p><h1>ส่งคำขอจองที่พัก</h1><p>เจ้าหน้าที่จะตรวจสอบและอนุมัติคำขอ ยังไม่ใช่การยืนยันเข้าพักทันที</p></div></div>
+<div class="page-heading"><div><p class="eyebrow">สำหรับบุคคลทั่วไป</p><h1>ส่งคำขอจองที่พัก</h1><p>ไม่ต้องมีบัญชี SIGROOM · เจ้าหน้าที่จะตรวจสอบก่อนอนุมัติ และระบบจะให้ลิงก์สำหรับติดตามสถานะ</p></div></div>
 <form method="post" class="detail-card">{% csrf_token %}{{ form.as_p }}<p>ระบบตรวจห้องว่างและช่วงที่สงวนให้หลักสูตรอีกครั้งตอนส่งคำขอ</p><button type="submit">ส่งคำขอให้เจ้าหน้าที่พิจารณา</button></form>
 <p><a href="{% url 'bookings:lodging_index' %}">เป็นผู้เรียน? จองตามหลักสูตร →</a></p>
 {% endblock %}

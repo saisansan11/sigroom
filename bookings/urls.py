@@ -31,6 +31,7 @@ urlpatterns = [
     path("lodging/manage/", lodging_views.lodging_manage, name="lodging_manage"),
     path("lodging/workspace/", lodging_workspace, name="lodging_workspace"),
     path("lodging/request/", general_request, name="lodging_general_request"),
+    path("lodging/request/status/<uuid:token>/", lodging_views.lodging_general_request_status, name="lodging_general_request_status"),
     path("lodging/cohorts/<slug:slug>/", lodging_views.lodging_cohort_detail, name="lodging_cohort_detail"),
     path("lodging/cohorts/<slug:slug>/edit/", lodging_views.lodging_cohort_edit, name="lodging_cohort_edit"),
     path("lodging/cohorts/<slug:slug>/export/", lodging_views.lodging_cohort_export_csv, name="lodging_cohort_export_csv"),
