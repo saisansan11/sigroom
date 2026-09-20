@@ -76,6 +76,10 @@ def _assignment_selection(cohort, room_id, bed_number):
     return {"room": room, "bed_number": bed_number}
 
 
+def _room_filter(value):
+    return value if value in {"all", "free", "full"} else "all"
+
+
 @login_required
 def general_request(request):
     form = GeneralRequestForm(request.POST if request.method == "POST" else None,
@@ -100,7 +104,17 @@ def lodging_workspace(request):
         cohorts = cohorts.filter(supervisor=request.user)
     slug = request.GET.get("cohort")
     cohort = get_object_or_404(cohorts, slug=slug) if slug else cohorts.first()
+    room_filter = _room_filter(request.GET.get("room_filter"))
     form, rooms, available_rooms, selected_assignment, assignment_open = None, [], [], None, False
+    occupancy = {
+        "capacity": 0,
+        "assigned": 0,
+        "free_beds": 0,
+        "checked_in": 0,
+        "rooms_total": 0,
+        "rooms_free": 0,
+        "rooms_full": 0,
+    }
     if cohort:
         if not can_manage_cohort(request.user, cohort):
             raise PermissionDenied
@@ -138,11 +152,28 @@ def lodging_workspace(request):
                 messages.success(request, "จัดผู้เข้าพักเรียบร้อยแล้ว")
                 return redirect(request.get_full_path())
         students = list(cohort.students.select_related("room").order_by("bed_number"))
+        all_rooms = []
         for room in cohort.rooms.order_by("floor", "code"):
             occupants = {s.bed_number: s for s in students if s.room_id == room.pk}
-            rooms.append({"room": room, "free": cohort.beds_per_room - len(occupants),
-                          "assignable": assignment_open and room.status == Resource.Status.ACTIVE,
-                          "beds": [{"number": n, "student": occupants.get(n)} for n in range(1, cohort.beds_per_room + 1)]})
+            free = cohort.beds_per_room - len(occupants)
+            all_rooms.append({"room": room, "free": free,
+                              "assignable": assignment_open and room.status == Resource.Status.ACTIVE,
+                              "beds": [{"number": n, "student": occupants.get(n)} for n in range(1, cohort.beds_per_room + 1)]})
+        occupancy = {
+            "capacity": len(all_rooms) * cohort.beds_per_room,
+            "assigned": len(students),
+            "free_beds": max(0, len(all_rooms) * cohort.beds_per_room - len(students)),
+            "checked_in": sum(1 for student in students if student.checked_in_at),
+            "rooms_total": len(all_rooms),
+            "rooms_free": sum(1 for item in all_rooms if item["free"] > 0),
+            "rooms_full": sum(1 for item in all_rooms if item["free"] == 0),
+        }
+        if room_filter == "free":
+            rooms = [item for item in all_rooms if item["free"] > 0]
+        elif room_filter == "full":
+            rooms = [item for item in all_rooms if item["free"] == 0]
+        else:
+            rooms = all_rooms
         selected = set(cohort.rooms.values_list("pk", flat=True))
         hold = cohort_hold_range(cohort.check_in_date, cohort.check_out_date)
         blocked = set(BookingResource.objects.filter(released_at__isnull=True, hold__overlap=hold).values_list("resource_id", flat=True))
@@ -154,6 +185,7 @@ def lodging_workspace(request):
                                     "blocked": room.pk in blocked or room.status != Resource.Status.ACTIVE})
     response = render(request, "lodging/workspace.html", {"cohorts": cohorts, "cohort": cohort,
                       "rooms": rooms, "form": form, "available_rooms": available_rooms,
-                      "selected_assignment": selected_assignment, "assignment_open": assignment_open})
+                      "selected_assignment": selected_assignment, "assignment_open": assignment_open,
+                      "occupancy": occupancy, "room_filter": room_filter})
     response["Cache-Control"] = "private, no-store"
     return response
