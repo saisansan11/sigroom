@@ -102,3 +102,13 @@ def test_public_entry_routes(client):
     response = client.get(reverse("bookings:lodging_about"))
     assert reverse("bookings:lodging_general_request") in response.content.decode()
     assert reverse("bookings:lodging_index") in response.content.decode()
+
+def test_operations_nav_uses_workspace_on_desktop_and_mobile(client, data):
+    staff, _, _ = data
+    staff.is_superuser = True
+    staff.save(update_fields=["is_superuser"])
+    client.force_login(staff)
+    response = client.get(reverse("bookings:calendar"))
+    assert response.status_code == 200
+    workspace_url = reverse("bookings:lodging_workspace")
+    assert response.content.decode().count(f'href="{workspace_url}"') == 2

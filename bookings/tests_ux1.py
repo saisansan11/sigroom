@@ -189,7 +189,7 @@ def test_lodging_manager_navigation_groups_lodging_management(client, ux1_data):
 
     assert "งานปฏิบัติการ" in header
     assert "จัดการที่พักหลักสูตร" in header
-    assert reverse("bookings:lodging_manage") in header
+    assert reverse("bookings:lodging_workspace") in header
 
 
 def test_reports_link_is_secondary_in_operational_group(client, ux1_data):
