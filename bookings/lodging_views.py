@@ -1,6 +1,6 @@
 import csv
 import uuid
-from datetime import datetime
+from datetime import datetime, time
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied, ValidationError
@@ -19,19 +19,33 @@ from .lodging_about_data import (
     MONTHLY_THRESHOLD_DAYS,
     RATES,
 )
-from .lodging_models import CourseLodgingCohort, CourseStudentLodging
+from .lodging_models import CourseLodgingCohort, CourseStudentLodging, PublicLodgingAccess
 from .lodging_services import (
     assign_lodging_bed,
     can_access_lodging_management,
     can_create_cohort,
     can_manage_cohort,
     check_in_student,
+    cohort_self_booking_status,
     generate_cohort_qr_svg,
     generate_line_share_url,
     get_canonical_public_url,
     normalize_phone,
     update_cohort_allocation,
 )
+
+
+def _parse_local_datetime(value: str, label: str):
+    value = (value or "").strip()
+    if not value:
+        return None
+    try:
+        parsed = datetime.fromisoformat(value)
+    except ValueError as exc:
+        raise ValidationError(f"{label}ไม่ถูกต้อง") from exc
+    if timezone.is_naive(parsed):
+        parsed = timezone.make_aware(parsed, timezone.get_current_timezone())
+    return parsed
 
 
 # UX-17: Public dormitory showcase — no login required.
@@ -49,6 +63,25 @@ def lodging_about(request):
         "monthly_threshold_days": MONTHLY_THRESHOLD_DAYS,
     }
     return render(request, "lodging/lodging_about.html", context)
+
+
+def lodging_general_request_status(request, token):
+    """Public, opaque-token status page for a general lodging request."""
+    access = get_object_or_404(
+        PublicLodgingAccess.objects.select_related("booking", "booking__room"),
+        pk=token,
+    )
+    booking = access.booking
+    response = render(
+        request,
+        "lodging/general_request_status.html",
+        {"access": access, "booking": booking},
+    )
+    response["Cache-Control"] = "private, no-store, must-revalidate"
+    response["X-Robots-Tag"] = "noindex, nofollow"
+    response["X-Content-Type-Options"] = "nosniff"
+    response["Referrer-Policy"] = "no-referrer"
+    return response
 
 
 def _masked_name(full_name: str) -> str:
@@ -115,13 +148,22 @@ def _build_portal_context(cohort):
 
 
 def lodging_portal(request, slug):
-    """หน้าจอเลือกห้องพักสำหรับนักเรียนหลักสูตร (ไม่ต้องเข้าสู่ระบบ สะดวกบนมือถือ)"""
+    """หน้าจอเลือกห้องพักสำหรับนักเรียนหลักสูตร (ลิงก์รุ่น; policy ตรวจที่ service ซ้ำตอนจอง)."""
     cohort = get_object_or_404(
         CourseLodgingCohort.objects.prefetch_related("rooms"),
         slug=slug,
         allocation_status=CourseLodgingCohort.AllocationStatus.ALLOCATED,
-        is_active=True,
     )
+    booking_state, booking_message = cohort_self_booking_status(cohort)
+    if booking_state != "open":
+        response = render(
+            request,
+            "lodging/student_portal_closed.html",
+            {"cohort": cohort, "booking_state": booking_state, "booking_message": booking_message},
+        )
+        response["Cache-Control"] = "no-store"
+        response["X-Robots-Tag"] = "noindex, nofollow"
+        return response
     context = _build_portal_context(cohort)
     portal_path = reverse("bookings:lodging_portal", args=[cohort.slug])
     share_url = get_canonical_public_url(request, portal_path)
@@ -140,7 +182,6 @@ def lodging_book_bed(request, slug):
         CourseLodgingCohort,
         slug=slug,
         allocation_status=CourseLodgingCohort.AllocationStatus.ALLOCATED,
-        is_active=True,
     )
     room_id = request.POST.get("room_id")
     bed_number_raw = request.POST.get("bed_number")
@@ -228,11 +269,12 @@ def lodging_pass(request, slug, student_id):
 
 
 def lodging_index(request):
-    """หน้ารวมลิงก์รอบที่พักที่กำลังเปิดรับจองสำหรับนักเรียน"""
-    cohorts = CourseLodgingCohort.objects.filter(
+    """หน้ารวมลิงก์รอบที่พักที่เปิดอยู่ตาม booking window จริง."""
+    candidates = CourseLodgingCohort.objects.filter(
         allocation_status=CourseLodgingCohort.AllocationStatus.ALLOCATED,
         is_active=True,
     ).prefetch_related("rooms").order_by("check_in_date", "title")
+    cohorts = [cohort for cohort in candidates if cohort_self_booking_status(cohort)[0] == "open"]
     return render(request, "lodging/lodging_index.html", {"cohorts": cohorts})
 
 
@@ -245,6 +287,8 @@ def lodging_manage(request):
     cohorts = CourseLodgingCohort.objects.all().prefetch_related("rooms", "students")
     if not (request.user.is_superuser or request.user.has_perm("bookings.change_courselodgingcohort")):
         cohorts = cohorts.filter(supervisor=request.user)
+    for item in cohorts:
+        item.booking_state, item.booking_state_label = cohort_self_booking_status(item)
     lodging_rooms = Resource.objects.filter(
         resource_type=Resource.Type.ROOM,
         room_category=Resource.Category.LODGING,
@@ -258,6 +302,8 @@ def lodging_manage(request):
         slug = request.POST.get("slug", "").strip().lower() or f"course-{uuid.uuid4().hex[:12]}"
         check_in_raw = request.POST.get("check_in_date")
         check_out_raw = request.POST.get("check_out_date")
+        booking_open_raw = request.POST.get("booking_open_at")
+        booking_close_raw = request.POST.get("booking_close_at")
         beds_per_room_raw = request.POST.get("beds_per_room", "4")
         room_ids = request.POST.getlist("rooms")
         note = request.POST.get("note", "").strip()
@@ -269,6 +315,17 @@ def lodging_manage(request):
                 beds_per_room = int(beds_per_room_raw)
                 check_in_date = datetime.strptime(check_in_raw, "%Y-%m-%d").date()
                 check_out_date = datetime.strptime(check_out_raw, "%Y-%m-%d").date()
+                booking_open_at = _parse_local_datetime(booking_open_raw, "เวลาเปิดรับจอง")
+                booking_close_at = _parse_local_datetime(booking_close_raw, "เวลาปิดรับจอง")
+                publication_open = request.POST.get("publication", "open") == "open"
+                if publication_open and not booking_open_at and not booking_close_at:
+                    booking_open_at = timezone.now()
+                    booking_close_at = timezone.make_aware(
+                        datetime.combine(check_in_date, time(23, 59)),
+                        timezone.get_current_timezone(),
+                    )
+                elif publication_open and (not booking_open_at or not booking_close_at):
+                    raise ValidationError("กรุณากำหนดทั้งเวลาเปิดและปิดรับจอง")
                 if CourseLodgingCohort.objects.filter(slug=slug).exists():
                     messages.error(request, f"รหัสลิงก์ '{slug}' มีอยู่ในระบบแล้ว กรุณาตั้งรหัสอื่น")
                 else:
@@ -293,8 +350,10 @@ def lodging_manage(request):
                         check_in_date=check_in_date,
                         check_out_date=check_out_date,
                         allocation_status=CourseLodgingCohort.AllocationStatus.ALLOCATED,
-                        is_active=request.POST.get("publication", "open") == "open",
+                        is_active=publication_open,
                         beds_per_room=beds_per_room,
+                        booking_open_at=booking_open_at,
+                        booking_close_at=booking_close_at,
                         supervisor=request.user,
                         title=title,
                         note=note,
@@ -375,6 +434,8 @@ def lodging_cohort_edit(request, slug):
         check_in_raw = request.POST.get("check_in_date", "")
         check_out_raw = request.POST.get("check_out_date", "")
         beds_per_room_raw = request.POST.get("beds_per_room", "")
+        booking_open_raw = request.POST.get("booking_open_at")
+        booking_close_raw = request.POST.get("booking_close_at")
         room_ids = request.POST.getlist("rooms")
         allocation_status = request.POST.get(
             "allocation_status", CourseLodgingCohort.AllocationStatus.RELEASED
@@ -387,6 +448,16 @@ def lodging_cohort_edit(request, slug):
             check_in_date = datetime.strptime(check_in_raw, "%Y-%m-%d").date()
             check_out_date = datetime.strptime(check_out_raw, "%Y-%m-%d").date()
             beds_per_room = int(beds_per_room_raw)
+            booking_open_at = _parse_local_datetime(booking_open_raw, "เวลาเปิดรับจอง")
+            booking_close_at = _parse_local_datetime(booking_close_raw, "เวลาปิดรับจอง")
+            if is_active and not booking_open_at and not booking_close_at:
+                booking_open_at = cohort.booking_open_at or timezone.now()
+                booking_close_at = cohort.booking_close_at or timezone.make_aware(
+                    datetime.combine(check_in_date, time(23, 59)),
+                    timezone.get_current_timezone(),
+                )
+            elif is_active and (not booking_open_at or not booking_close_at):
+                raise ValidationError("กรุณากำหนดทั้งเวลาเปิดและปิดรับจอง")
             updated = update_cohort_allocation(
                 cohort=cohort,
                 rooms=lodging_rooms.filter(pk__in=room_ids),
@@ -395,6 +466,8 @@ def lodging_cohort_edit(request, slug):
                 allocation_status=allocation_status,
                 is_active=is_active,
                 beds_per_room=beds_per_room,
+                booking_open_at=booking_open_at,
+                booking_close_at=booking_close_at,
                 supervisor=cohort.supervisor,
                 title=title,
                 note=note,

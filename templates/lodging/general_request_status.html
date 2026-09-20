@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% load thaidate %}
+{% block title %}สถานะคำขอที่พัก · SIGROOM{% endblock %}
+{% block content %}
+<div class="page-heading">
+  <div>
+    <p class="eyebrow">ติดตามคำขอที่พัก</p>
+    <h1>สถานะคำขอของคุณ</h1>
+    <p>เก็บลิงก์หน้านี้ไว้เพื่อตรวจผลการพิจารณา โดยไม่ต้องเข้าสู่ระบบ</p>
+  </div>
+</div>
+<article class="detail-card">
+  <p><strong>สถานะ:</strong> {{ booking.get_request_status_display }}</p>
+  <p><strong>ผู้ติดต่อ:</strong> {{ booking.responsible_name }}</p>
+  <p><strong>ห้อง:</strong> {{ booking.room.code }} {{ booking.room.name }}</p>
+  <p><strong>เข้าพัก:</strong> {{ booking.start_at|thai_datetime }} – {{ booking.end_at|thai_datetime }}</p>
+  {% if booking.request_status == 'pending' %}
+    <div class="notice info">คำขอถูกส่งแล้วและกำลังรอเจ้าหน้าที่พิจารณา ยังไม่ถือว่าได้รับสิทธิ์เข้าพัก</div>
+  {% elif booking.request_status == 'approved' %}
+    <div class="notice success">คำขอได้รับการอนุมัติแล้ว กรุณาใช้ข้อมูลหน้านี้ประกอบการเข้าพัก</div>
+  {% elif booking.request_status == 'rejected' %}
+    <div class="notice warning">คำขอไม่ได้รับการอนุมัติ{% if booking.decision_reason %}: {{ booking.decision_reason }}{% endif %}</div>
+  {% elif booking.request_status == 'cancelled' or booking.request_status == 'expired' %}
+    <div class="notice warning">คำขอนี้ไม่อยู่ในสถานะใช้งานแล้ว</div>
+  {% endif %}
+  <p><small>เลขอ้างอิง: {{ booking.id|stringformat:"s"|slice:":8"|upper }}</small></p>
+</article>
+<p><a href="{% url 'bookings:lodging_about' %}">← กลับหน้าแนะนำที่พัก</a></p>
+{% endblock %}

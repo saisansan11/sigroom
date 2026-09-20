@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% load thaidate %}
+{% block title %}{{ cohort.title }} · ที่พัก SIGROOM{% endblock %}
+{% block content %}
+<div class="page-heading">
+  <div>
+    <p class="eyebrow">ที่พักหลักสูตร</p>
+    <h1>{{ cohort.title }}</h1>
+    <p>เข้าพัก {{ cohort.check_in_date|thai_date }} – {{ cohort.check_out_date|thai_date }}</p>
+  </div>
+</div>
+<article class="detail-card">
+  {% if booking_state == 'not_open' %}
+    <h2>ยังไม่เปิดรับจอง</h2>
+  {% elif booking_state == 'ended' %}
+    <h2>รอบเข้าพักนี้สิ้นสุดแล้ว</h2>
+  {% else %}
+    <h2>ขณะนี้ปิดรับจอง</h2>
+  {% endif %}
+  <p>{{ booking_message }}</p>
+  {% if cohort.booking_open_at and cohort.booking_close_at %}
+    <p><strong>ช่วงรับจอง:</strong> {{ cohort.booking_open_at|thai_datetime }} – {{ cohort.booking_close_at|thai_datetime }}</p>
+  {% endif %}
+  <p>เมื่ออยู่ในช่วงที่เปิดรับจอง หน้านี้จะแสดงห้องและเตียงที่จัดสรรให้หลักสูตรโดยอัตโนมัติ</p>
+</article>
+<p><a href="{% url 'bookings:lodging_about' %}">← กลับหน้าแนะนำที่พัก</a></p>
+{% endblock %}
