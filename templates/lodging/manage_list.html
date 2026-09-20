@@ -13,6 +13,7 @@
   </div>
 </div>
 
+<p><a role="button" href="{% url 'bookings:lodging_workspace' %}">ผังจัดผู้เข้าพัก →</a></p>
 <div class="lodging-manage-grid">
   <!-- รายการรอบจองที่เปิดอยู่ -->
   <section aria-labelledby="heading-cohorts-list">
@@ -91,11 +92,12 @@
         <form method="post">
           {% csrf_token %}
           <label for="id_title">ชื่อหลักสูตร / รุ่น
-            <input type="text" id="id_title" name="title" placeholder="เช่น หลักสูตรชั้นนายร้อย เหล่า ส. รุ่นที่ 70" required>
+            <input type="text" id="id_title" name="title" list="course-titles" placeholder="เลือกชื่อเดิม หรือพิมพ์หลักสูตรใหม่" required>
+            <datalist id="course-titles">{% for c in cohorts %}<option value="{{ c.title }}">{% endfor %}</datalist>
           </label>
 
           <label for="id_slug">รหัสลิงก์ (ภาษาอังกฤษ/ตัวเลข ไม่มีเว้นวรรค)
-            <input type="text" id="id_slug" name="slug" placeholder="เช่น nr-70 หรือ comm-officer-69" pattern="[a-zA-Z0-9_-]+" required>
+            <input type="text" id="id_slug" name="slug" placeholder="เว้นว่าง ระบบสร้างรหัสให้" pattern="[a-zA-Z0-9_-]+">
             <small>นักเรียนจะเข้าผ่านลิงก์ <code>.../lodging/c/&lt;รหัส&gt;/</code></small>
           </label>
 
@@ -139,8 +141,9 @@
             <textarea id="id_note" name="note" rows="3" placeholder="เช่น รายงานตัวก่อน 18:00 น., เตรียมผ้าปูที่นอนมาเอง"></textarea>
           </label>
 
+          <label for="publication">หลังจัดสรรห้อง<select id="publication" name="publication"><option value="closed">สงวนห้องก่อน ยังไม่เปิดรับจองเอง</option><option value="open">เปิดให้ผู้เรียนเลือกเตียงได้ทันที</option></select></label>
           <button type="submit" class="btn-primary btn-submit-full">
-            สร้างรอบจองและออกลิงก์ทันที
+            สร้างรอบและสงวนห้องที่เลือก
           </button>
         </form>
       </article>

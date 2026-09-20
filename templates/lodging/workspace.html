@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% load static thaidate %}
+{% block title %}ผังจัดผู้เข้าพัก · SIGROOM{% endblock %}
+{% block head %}<link rel="stylesheet" href="{% static 'css/lodging_operations.css' %}">{% endblock %}
+{% block content %}
+<div class="lodging-workspace-shell">
+<div class="page-heading"><div><p class="eyebrow">สำหรับเจ้าหน้าที่</p><h1>ผังจัดผู้เข้าพัก</h1><p>ดูห้องและเพื่อนร่วมห้อง พร้อมจัดเตียงให้ผู้เรียนในหน้านี้</p></div></div>
+<form method="get" class="lodging-workspace-toolbar"><label for="workspace-cohort">เลือกหลักสูตร / รุ่น<select id="workspace-cohort" name="cohort">{% for c in cohorts %}<option value="{{ c.slug }}" {% if c.pk == cohort.pk %}selected{% endif %}>{{ c.title }}</option>{% endfor %}</select></label><button type="submit">แสดงผัง</button></form>
+<p><a href="{% url 'bookings:lodging_manage' %}">จัดสรรห้อง / สร้างหลักสูตร</a></p>
+{% if cohort %}
+<h2>{{ cohort.title }}</h2><div class="lodging-workspace-status"><span>{{ cohort.check_in_date|thai_date }} – {{ cohort.check_out_date|thai_date }}</span><span class="room-badge-free">{{ cohort.get_allocation_status_display }}</span>{% if cohort.is_active %}<span class="room-badge-free">เปิดรับจองเอง</span>{% else %}<span class="room-badge-full">เจ้าหน้าที่จัดให้เท่านั้น</span>{% endif %}</div>
+<p><a href="{% url 'bookings:lodging_cohort_edit' cohort.slug %}">ปรับห้องและการเปิดรับจอง</a> · <a href="{% url 'bookings:lodging_cohort_export_csv' cohort.slug %}">ส่งออกรายชื่อ</a></p>
+<details class="detail-card"><summary>จัดสรรห้องและเปิดรับจอง — ช่วงวันที่ของหลักสูตรนี้</summary>
+<form method="post">{% csrf_token %}<input type="hidden" name="action" value="allocation">
+<fieldset><legend>เลือกห้องว่างที่จะสงวนให้หลักสูตร</legend><div class="lodging-allocation-grid">{% for item in available_rooms %}<label><input type="checkbox" name="rooms" value="{{ item.room.pk }}" {% if item.selected %}checked{% endif %} {% if item.blocked %}disabled{% endif %}><span><strong>{{ item.room.code }}</strong><br>{% if item.blocked %}ไม่ว่าง / งดใช้{% elif item.selected %}สงวนให้หลักสูตรนี้{% else %}ว่างสำหรับจัดสรร{% endif %}</span></label>{% endfor %}</div></fieldset>
+<label><input type="checkbox" name="is_active" {% if cohort.is_active %}checked{% endif %}>เปิดให้ผู้เรียนจองด้วยตนเอง (ปิดไว้ยังจัดเตียงโดยเจ้าหน้าที่ได้)</label>
+<button type="submit">บันทึกการจัดสรรและการเปิดจอง</button></form></details>
+<div class="lodging-workspace-main">
+<section aria-label="ห้องและเตียง"><div class="lodging-room-board">{% for item in rooms %}<details class="detail-card"><summary><strong>{{ item.room.code }}</strong> · {% if item.free %}ว่าง {{ item.free }} เตียง{% else %}เต็ม{% endif %}</summary><ul class="lodging-bed-list">{% for bed in item.beds %}<li class="{% if not bed.student %}is-free{% endif %}">เตียง {{ bed.number }} — {% if bed.student %}<strong>{{ bed.student.rank }} {{ bed.student.full_name }}</strong><br>{{ bed.student.origin_unit }} · {{ bed.student.phone }}{% if bed.student.checked_in_at %} · รายงานตัวแล้ว{% endif %}{% else %}ว่าง{% endif %}</li>{% endfor %}</ul></details>{% empty %}<p>ยังไม่ได้จัดสรรห้องให้หลักสูตรนี้</p>{% endfor %}</div></section>
+<section class="detail-card lodging-assignment-panel" aria-labelledby="assign-heading"><h2 id="assign-heading">จัดเตียงให้ผู้เรียน</h2><p>ใช้เมื่อเจ้าหน้าที่จัดให้ ตรวจเตียงว่างอีกครั้งก่อนบันทึก</p><form method="post">{% csrf_token %}{{ form.as_p }}<datalist id="staff-ranks"><option value="ร.ต."><option value="ร.ท."><option value="ร.อ."><option value="ส.ต."><option value="ส.ท."><option value="ส.อ."></datalist><datalist id="staff-units"><option value="โรงเรียนทหารสื่อสาร"></datalist><button type="submit">ยืนยันจัดเตียง</button></form></section>
+</div>{% else %}<p>ยังไม่มีหลักสูตรที่คุณดูแล เริ่มจากจัดสรรห้องให้หลักสูตรก่อน</p>{% endif %}
+</div>
+{% endblock %}

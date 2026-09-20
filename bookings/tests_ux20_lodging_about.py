@@ -78,7 +78,7 @@ def test_ux20_hero_section_elements(client):
     assert "lka-hero-chips" in html, "Missing floating hero chips container"
     assert "lka-hero-card-3d" in html, "Missing 3D visual card in hero"
     assert "สำรวจห้องพัก" in html, "Missing primary CTA text"
-    assert "ดูห้องว่าง" in html, "Missing secondary CTA text"
+    assert "จองสำหรับบุคคลทั่วไป" in html, "Missing general lodging request CTA"
 
 
 def test_ux20_hero_3d_disclaimer(client):

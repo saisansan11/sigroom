@@ -169,6 +169,8 @@ def release_holds(booking: Booking) -> int:
 
 def approval_policy_for_values(room: Resource, has_external_attendees: bool) -> str:
     """แกนประเมินนโยบายที่ใช้ร่วมกันระหว่างการจองปกติและ amendment"""
+    if room.room_category == Resource.Category.LODGING:
+        return ResourceRule.ApprovalPolicy.REQUIRED
     rule = getattr(room, "rule", None)
     if rule and rule.approval_policy == ResourceRule.ApprovalPolicy.REQUIRED:
         return ResourceRule.ApprovalPolicy.REQUIRED
@@ -218,10 +220,13 @@ def validate_booking_window(
         return errors
 
     duration_min = int((end - start).total_seconds() // 60)
-    if duration_min < rule.min_duration_min:
-        errors.append(f"ต้องจองอย่างน้อย {rule.min_duration_min} นาที")
-    if duration_min > rule.max_duration_min:
-        errors.append(f"จองต่อครั้งได้ไม่เกิน {rule.max_duration_min} นาที")
+    # ห้องพักคิดเป็นช่วงเข้าพักข้ามวัน จึงไม่ใช้เพดานนาทีของห้องประชุม
+    # แต่ยังตรวจวันล่วงหน้า การชน การงดใช้ และการสงวนหลักสูตรตามปกติ
+    if resource.room_category != Resource.Category.LODGING:
+        if duration_min < rule.min_duration_min:
+            errors.append(f"ต้องจองอย่างน้อย {rule.min_duration_min} นาที")
+        if duration_min > rule.max_duration_min:
+            errors.append(f"จองต่อครั้งได้ไม่เกิน {rule.max_duration_min} นาที")
     if start > now + timedelta(days=rule.max_advance_days):
         errors.append(f"จองล่วงหน้าได้ไม่เกิน {rule.max_advance_days} วัน")
 
@@ -229,7 +234,7 @@ def validate_booking_window(
     local_end = timezone.localtime(end)
     service_start = time.fromisoformat(rule.service_start) if isinstance(rule.service_start, str) else rule.service_start
     service_end = time.fromisoformat(rule.service_end) if isinstance(rule.service_end, str) else rule.service_end
-    if local_start.date() != local_end.date() or local_start.time() < service_start or local_end.time() > service_end:
+    if resource.room_category != Resource.Category.LODGING and (local_start.date() != local_end.date() or local_start.time() < service_start or local_end.time() > service_end):
         errors.append(
             f"ห้องนี้ให้บริการ {service_start.strftime('%H:%M')}–{service_end.strftime('%H:%M')}"
         )

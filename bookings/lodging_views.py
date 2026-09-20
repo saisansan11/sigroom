@@ -1,9 +1,10 @@
 import csv
+import uuid
 from datetime import datetime
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied, ValidationError
-from django.db import IntegrityError, transaction
+from django.db import IntegrityError
 from django.http import Http404, HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
@@ -20,6 +21,7 @@ from .lodging_about_data import (
 )
 from .lodging_models import CourseLodgingCohort, CourseStudentLodging
 from .lodging_services import (
+    assign_lodging_bed,
     can_access_lodging_management,
     can_create_cohort,
     can_manage_cohort,
@@ -182,33 +184,12 @@ def lodging_book_bed(request, slug):
         return _respond_modal_error("หมายเลขเตียงไม่ถูกต้อง")
 
     try:
-        with transaction.atomic():
-            cohort = CourseLodgingCohort.objects.select_for_update().get(pk=cohort.pk)
-            room = get_object_or_404(cohort.rooms.all(), pk=room_id)
-            Resource.objects.select_for_update().get(pk=room.pk)
-            # ตรวจสอบว่าเตียงนี้ในห้องนี้มีผู้จองแล้วหรือไม่
-            existing_bed = CourseStudentLodging.objects.filter(
-                cohort=cohort, room=room, bed_number=bed_number
-            ).exists()
-            if existing_bed:
-                return _respond_modal_error(f"ขออภัย ห้อง {room.code} เตียง {bed_number} มีเพื่อนร่วมรุ่นเพิ่งจองไปแล้ว กรุณาเลือกเตียงอื่น")
-
-            # ตรวจสอบซ้ำโดยไม่เปิดเผยห้อง/เตียงเดิมต่อผู้ส่งคำขอ
-            if CourseStudentLodging.objects.filter(cohort=cohort, phone=phone).exists():
-                return _respond_modal_error("เบอร์โทรศัพท์นี้ลงทะเบียนในรอบนี้แล้ว กรุณาตรวจสอบข้อมูลเดิมหรือติดต่อผู้กำกับหลักสูตร")
-
-            student = CourseStudentLodging.objects.create(
-                cohort=cohort,
-                room=room,
-                bed_number=bed_number,
-                rank=rank,
-                full_name=full_name,
-                origin_unit=origin_unit,
-                phone=phone,
-                note=note,
-            )
-    except (IntegrityError, ValidationError):
-        return _respond_modal_error("เกิดข้อผิดพลาดในการบันทึก หรือเตียงนี้มีผู้จองแล้ว กรุณาลองใหม่อีกครั้ง")
+        student = assign_lodging_bed(cohort=cohort, room_id=room_id, bed_number=bed_number,
+            rank=rank, full_name=full_name, origin_unit=origin_unit, phone=phone, note=note)
+        room = student.room
+    except (IntegrityError, ValidationError) as exc:
+        return _respond_modal_error(" · ".join(exc.messages) if isinstance(exc, ValidationError)
+            else "เกิดข้อผิดพลาดในการบันทึก หรือเตียงนี้มีผู้จองแล้ว กรุณาลองใหม่อีกครั้ง")
 
     messages.success(request, f"ลงทะเบียนจองห้อง {room.code} เตียง {bed_number} สำเร็จ!")
     return redirect("bookings:lodging_pass", slug=slug, student_id=student.id)
@@ -274,7 +255,7 @@ def lodging_manage(request):
         if not can_create:
             raise PermissionDenied("คุณไม่มีสิทธิ์สร้างรอบที่พัก")
         title = request.POST.get("title", "").strip()
-        slug = request.POST.get("slug", "").strip().lower()
+        slug = request.POST.get("slug", "").strip().lower() or f"course-{uuid.uuid4().hex[:12]}"
         check_in_raw = request.POST.get("check_in_date")
         check_out_raw = request.POST.get("check_out_date")
         beds_per_room_raw = request.POST.get("beds_per_room", "4")
@@ -312,14 +293,14 @@ def lodging_manage(request):
                         check_in_date=check_in_date,
                         check_out_date=check_out_date,
                         allocation_status=CourseLodgingCohort.AllocationStatus.ALLOCATED,
-                        is_active=True,
+                        is_active=request.POST.get("publication", "open") == "open",
                         beds_per_room=beds_per_room,
                         supervisor=request.user,
                         title=title,
                         note=note,
                         actor=request.user,
                     )
-                    messages.success(request, f"สร้างรอบจอง '{title}' เรียบร้อยแล้ว สามารถคัดลอกลิงก์ส่งให้นักเรียนได้ทันที")
+                    messages.success(request, f"สร้างรอบจอง '{title}' เรียบร้อยแล้ว กรุณาตรวจสถานะเปิดรับจองก่อนส่งลิงก์")
                     return redirect("bookings:lodging_cohort_detail", slug=cohort.slug)
             except (ValueError, ValidationError, IntegrityError, PermissionDenied) as e:
                 messages.error(request, f"เกิดข้อผิดพลาด: {e}")
