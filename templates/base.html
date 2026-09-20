@@ -44,7 +44,7 @@
                         <li><a {% if request.resolver_match.namespace == 'usage' %}aria-current="page"{% endif %} href="{% url 'usage:list' %}">การใช้งานห้อง</a></li>
                       {% endif %}
                       {% if nav_can_manage_lodging %}
-                        <li><a {% if 'lodging' in request.path and request.resolver_match.url_name != 'lodging_index' %}aria-current="page"{% endif %} href="{% url 'bookings:lodging_manage' %}">จัดการที่พักหลักสูตร</a></li>
+                        <li><a {% if 'lodging' in request.path and request.resolver_match.url_name != 'lodging_index' %}aria-current="page"{% endif %} href="{% url 'bookings:lodging_workspace' %}">จัดการที่พักหลักสูตร</a></li>
                       {% endif %}
                       {% if nav_can_access_reports %}
                         <li class="ops-divider" role="separator"></li>
@@ -90,7 +90,7 @@
                         <li><a {% if request.resolver_match.namespace == 'usage' %}aria-current="page"{% endif %} href="{% url 'usage:list' %}">การใช้งานห้อง</a></li>
                       {% endif %}
                       {% if nav_can_manage_lodging %}
-                        <li><a {% if 'lodging' in request.path and request.resolver_match.url_name != 'lodging_index' %}aria-current="page"{% endif %} href="{% url 'bookings:lodging_manage' %}">จัดการที่พักหลักสูตร</a></li>
+                        <li><a {% if 'lodging' in request.path and request.resolver_match.url_name != 'lodging_index' %}aria-current="page"{% endif %} href="{% url 'bookings:lodging_workspace' %}">จัดการที่พักหลักสูตร</a></li>
                       {% endif %}
                       {% if nav_can_access_reports %}
                         <li class="mobile-ops-secondary"><a class="nav-secondary-link" {% if request.resolver_match.namespace == 'reports' %}aria-current="page"{% endif %} href="{% url 'reports:dashboard' %}">รายงาน</a></li>

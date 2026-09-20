@@ -7,7 +7,7 @@
 <link rel="stylesheet" href="{% static 'css/lodging_about.css' %}">
 <link rel="stylesheet" href="{% static 'css/lodging_about_ux23.css' %}">
 <link rel="stylesheet" href="{% static 'css/lodging_about_ux24.css' %}">
-<link rel="stylesheet" href="{% static 'css/lodging_about_ux27.css' %}">
+<link rel="stylesheet" href="{% static 'css/lodging_about_ux27.css' %}?v=28">
 {% endblock %}
 
 {% block content %}
@@ -55,7 +55,7 @@
         {# Hero CTA buttons #}
         <div class="lka-hero-cta">
           <a role="button" href="#lka-explorer" class="btn-primary lka-btn-glow">สำรวจห้องพัก <span aria-hidden="true">↓</span></a>
-          <a role="button" href="{% url 'bookings:lodging_index' %}" class="secondary lka-btn-soft">ดูห้องว่าง <span aria-hidden="true">→</span></a>
+          <a role="button" href="{% url 'bookings:lodging_general_request' %}" class="secondary lka-btn-soft">จองสำหรับบุคคลทั่วไป <span aria-hidden="true">→</span></a>
         </div>
       </div>
 
@@ -594,17 +594,19 @@
             <li>พัก {{ monthly_threshold_days }} วันขึ้นไป นับเป็น 1 เดือน</li>
           </ul>
         </div>
-        <div class="lka-rates-img-wrap">
+        <details class="lka-rates-img-wrap">
+          <summary>ดูประกาศอัตราค่าที่พักฉบับต้นฉบับ</summary>
           <picture class="lka-picture">
             <source type="image/webp" srcset="{% static 'img/showcase/generated/rates.webp' %}">
             <img src="{% static 'img/showcase/rates.png' %}" alt="ประกาศอัตราค่าที่พักอาคารนักเรียน" width="736" height="781" loading="lazy" decoding="async" class="lka-rates-img">
           </picture>
           <p class="lka-img-caption">ประกาศอัตราค่าที่พักอย่างเป็นทางการ</p>
-        </div>
+        </details>
       </div>
     </div>
   </section>
 
+  {% include "lodging/partials/site_map.html" %}
   {# ===== 8. FINAL CTA ===== #}
   <section class="lka-section lka-cta" aria-labelledby="lka-cta-heading">
     <div class="lka-cta-card">
@@ -613,7 +615,7 @@
       <p>เลือกรอบหลักสูตรที่เปิดรับจองและเลือกห้องพักด้วยตนเองผ่านระบบ SIGROOM ได้ทันที</p>
       <div class="lka-cta-actions">
         <a role="button" href="{% url 'bookings:lodging_index' %}" class="btn-primary lka-cta-btn">
-          ดูรอบที่พักที่เปิดรับจอง <span aria-hidden="true">→</span>
+          จองตามหลักสูตร <span aria-hidden="true">→</span>
         </a>
         <a role="button" href="#lka-explorer" class="secondary lka-cta-btn-sub">
           สำรวจแผนผังอีกครั้ง <span aria-hidden="true">↑</span>

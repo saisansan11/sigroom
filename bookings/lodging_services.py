@@ -82,6 +82,67 @@ def can_access_lodging_management(user) -> bool:
     return CourseLodgingCohort.objects.filter(supervisor_id=getattr(user, "pk", None)).exists()
 
 
+@transaction.atomic
+def assign_lodging_bed(*, cohort, room_id, bed_number, rank, full_name,
+                       origin_unit, phone, note="", actor=None):
+    """Shared public/staff assignment; revalidate state after acquiring locks."""
+    cohort = CourseLodgingCohort.objects.select_for_update().get(pk=cohort.pk)
+    if actor is not None and not can_manage_cohort(actor, cohort):
+        raise PermissionDenied("คุณไม่มีสิทธิ์จัดผู้พักในหลักสูตรนี้")
+    if cohort.allocation_status != CourseLodgingCohort.AllocationStatus.ALLOCATED:
+        raise ValidationError("ต้องจัดสรรห้องให้หลักสูตรก่อนจัดผู้พัก")
+    if actor is None and not cohort.is_active:
+        raise ValidationError("หลักสูตรนี้ปิดรับจองแล้ว")
+    if cohort.check_out_date < timezone.localdate():
+        raise ValidationError("รอบเข้าพักนี้สิ้นสุดแล้ว")
+    try:
+        bed_number = int(bed_number)
+        room = Resource.objects.select_for_update().get(pk=room_id)
+    except (TypeError, ValueError, Resource.DoesNotExist):
+        raise ValidationError("กรุณาเลือกห้องและเตียงให้ถูกต้อง")
+    if not cohort.rooms.filter(pk=room.pk).exists() or room.status != Resource.Status.ACTIVE:
+        raise ValidationError("ห้องนี้ไม่พร้อมให้จัดผู้พักในหลักสูตรนี้")
+    if not 1 <= bed_number <= cohort.beds_per_room:
+        raise ValidationError("หมายเลขเตียงไม่ถูกต้อง")
+    phone = normalize_phone(phone)
+    values = {key: (value or "").strip() for key, value in
+              dict(rank=rank, full_name=full_name, origin_unit=origin_unit, phone=phone).items()}
+    if not all(values.values()):
+        raise ValidationError("กรุณากรอกยศ ชื่อ-สกุล สังกัด และเบอร์โทรให้ครบ")
+    if cohort.students.filter(room=room, bed_number=bed_number).exists():
+        raise ValidationError("เตียงนี้มีเพื่อนร่วมรุ่นเพิ่งจองไปแล้ว กรุณาเลือกเตียงอื่น")
+    if cohort.students.filter(phone=phone).exists():
+        raise ValidationError("เบอร์โทรศัพท์นี้ลงทะเบียนในรอบนี้แล้ว")
+    student = CourseStudentLodging.objects.create(
+        cohort=cohort, room=room, bed_number=bed_number, note=note, **values)
+    audit(actor, "bookings.coursestudentlodging", student.pk,
+          "lodging_bed_assigned", after={"cohort": str(cohort.pk), "room": room.code,
+                                        "bed_number": bed_number, "by_staff": actor is not None})
+    return student
+
+
+@transaction.atomic
+def request_general_lodging(*, actor, room, check_in, check_out, phone, note=""):
+    from .models import Booking
+    from .services import submit_booking
+    if not getattr(actor, "is_authenticated", False) or not actor.unit_id:
+        raise ValidationError("กรุณาเข้าสู่ระบบด้วยบัญชีที่ระบุหน่วยงานก่อนส่งคำขอ")
+    if room.room_category != Resource.Category.LODGING:
+        raise ValidationError("เลือกได้เฉพาะห้องพัก")
+    if check_out <= check_in:
+        raise ValidationError("วันออกต้องอยู่หลังวันเข้า")
+    zone = timezone.get_current_timezone()
+    booking = Booking(room=room, requester=actor, unit=actor.unit,
+        title="คำขอเข้าพักทั่วไป", purpose=Booking.Purpose.OTHER,
+        responsible_name=actor.display_name, responsible_phone=normalize_phone(phone),
+        start_at=timezone.make_aware(datetime.combine(check_in, time(14)), zone),
+        end_at=timezone.make_aware(datetime.combine(check_out, time(12)), zone),
+        visibility=Booking.Visibility.RESTRICTED, note=note)
+    booking.full_clean()
+    booking.save()
+    return submit_booking(booking)
+
+
 def generate_cohort_qr_svg(url: str) -> bytes:
     """สร้าง QR SVG จาก URL โดยคืน bytes พร้อมส่งเป็น HTTP response ได้ทันที"""
     import qrcode

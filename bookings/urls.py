@@ -1,6 +1,7 @@
 from django.urls import path
 
 from . import lodging_views, views
+from .lodging_operations import lodging_workspace, general_request
 
 app_name = "bookings"
 
@@ -28,6 +29,8 @@ urlpatterns = [
     path("lodging/", lodging_views.lodging_index, name="lodging_index"),
     path("lodging/about/", lodging_views.lodging_about, name="lodging_about"),  # UX-17 public showcase
     path("lodging/manage/", lodging_views.lodging_manage, name="lodging_manage"),
+    path("lodging/workspace/", lodging_workspace, name="lodging_workspace"),
+    path("lodging/request/", general_request, name="lodging_general_request"),
     path("lodging/cohorts/<slug:slug>/", lodging_views.lodging_cohort_detail, name="lodging_cohort_detail"),
     path("lodging/cohorts/<slug:slug>/edit/", lodging_views.lodging_cohort_edit, name="lodging_cohort_edit"),
     path("lodging/cohorts/<slug:slug>/export/", lodging_views.lodging_cohort_export_csv, name="lodging_cohort_export_csv"),

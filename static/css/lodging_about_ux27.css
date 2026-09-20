@@ -1,4 +1,6 @@
 /* UX-27: a readable architectural plan and a room key-card inspector. */
+.lka-site-map { width: 100%; max-height: 500px; }
+.lka-page-wrap .lka-rates-side details.lka-rates-img-wrap > summary { color: #263a3c; min-height: 44px; cursor: pointer; padding: 12px; }
 .lka-explorer-layout { grid-template-columns: minmax(0, 1fr) 19rem; align-items: start; }
 .lka-explorer-section .lka-explorer-canvas {
   height: 650px;
