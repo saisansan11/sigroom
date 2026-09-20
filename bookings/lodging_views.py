@@ -479,6 +479,8 @@ def lodging_checkin(request, student_id):
     cohort = student.cohort
     has_permission = can_manage_cohort(request.user, cohort)
 
+    from_workspace = request.GET.get("from_workspace") == "1" and has_permission
+
     if request.method == "POST":
         # ตรวจสิทธิ์อยู่ใน check_in_student() เอง (services.py) — ถ้าไม่มีสิทธิ์จะ raise
         # PermissionDenied ซึ่ง Django แปลงเป็น HTTP 403 จริงให้อัตโนมัติ ไม่ใช่แค่ซ่อนปุ่ม
@@ -487,13 +489,23 @@ def lodging_checkin(request, student_id):
             messages.success(request, f"ยืนยันรายงานตัว {student.rank} {student.full_name} เรียบร้อยแล้ว")
         except ValidationError as exc:
             messages.error(request, "; ".join(exc.messages) if hasattr(exc, "messages") else str(exc))
-        return redirect("bookings:lodging_checkin", student_id=student.id)
+        target = reverse("bookings:lodging_checkin", args=[student.id])
+        if from_workspace:
+            target += "?from_workspace=1"
+        return redirect(target)
 
+    workspace_return_url = None
+    if from_workspace:
+        workspace_return_url = (
+            reverse("bookings:lodging_workspace")
+            + f"?cohort={cohort.slug}&arrival_filter=pending#room-board"
+        )
     context = {
         "student": student,
         "cohort": cohort,
         "has_permission": has_permission,
         "masked_label": _masked_student_label(student),
+        "workspace_return_url": workspace_return_url,
     }
     return render(request, "lodging/checkin.html", context)
 
