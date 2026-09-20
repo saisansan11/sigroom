@@ -100,6 +100,11 @@
   {% endif %}
 
   <div class="checkin-footer-nav">
+    {% if workspace_return_url %}
+      <a role="button" class="secondary checkin-footer-btn" href="{{ workspace_return_url }}">
+        ← กลับผังและดูผู้รอรายงานตัว
+      </a>
+    {% endif %}
     <a role="button" class="secondary checkin-footer-btn" href="{% url 'bookings:lodging_pass' cohort.slug student.id %}">
       ← กลับไปที่บัตรดิจิทัล
     </a>

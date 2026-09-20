@@ -80,6 +80,10 @@ def _room_filter(value):
     return value if value in {"all", "free", "full"} else "all"
 
 
+def _arrival_filter(value):
+    return value if value in {"all", "pending", "checked_in"} else "all"
+
+
 @login_required
 def general_request(request):
     form = GeneralRequestForm(request.POST if request.method == "POST" else None,
@@ -105,6 +109,7 @@ def lodging_workspace(request):
     slug = request.GET.get("cohort")
     cohort = get_object_or_404(cohorts, slug=slug) if slug else cohorts.first()
     room_filter = _room_filter(request.GET.get("room_filter"))
+    arrival_filter = _arrival_filter(request.GET.get("arrival_filter"))
     form, rooms, available_rooms, selected_assignment, assignment_open = None, [], [], None, False
     occupancy = {
         "capacity": 0,
@@ -115,6 +120,7 @@ def lodging_workspace(request):
         "rooms_free": 0,
         "rooms_full": 0,
     }
+    arrival = {"pending": 0, "checked_in": 0}
     if cohort:
         if not can_manage_cohort(request.user, cohort):
             raise PermissionDenied
@@ -156,8 +162,12 @@ def lodging_workspace(request):
         for room in cohort.rooms.order_by("floor", "code"):
             occupants = {s.bed_number: s for s in students if s.room_id == room.pk}
             free = cohort.beds_per_room - len(occupants)
+            pending_arrivals = sum(1 for student in occupants.values() if not student.checked_in_at)
+            checked_arrivals = sum(1 for student in occupants.values() if student.checked_in_at)
             all_rooms.append({"room": room, "free": free,
                               "assignable": assignment_open and room.status == Resource.Status.ACTIVE,
+                              "pending_arrivals": pending_arrivals,
+                              "checked_arrivals": checked_arrivals,
                               "beds": [{"number": n, "student": occupants.get(n)} for n in range(1, cohort.beds_per_room + 1)]})
         occupancy = {
             "capacity": len(all_rooms) * cohort.beds_per_room,
@@ -168,12 +178,20 @@ def lodging_workspace(request):
             "rooms_free": sum(1 for item in all_rooms if item["free"] > 0),
             "rooms_full": sum(1 for item in all_rooms if item["free"] == 0),
         }
+        arrival = {
+            "pending": sum(1 for student in students if not student.checked_in_at),
+            "checked_in": sum(1 for student in students if student.checked_in_at),
+        }
         if room_filter == "free":
             rooms = [item for item in all_rooms if item["free"] > 0]
         elif room_filter == "full":
             rooms = [item for item in all_rooms if item["free"] == 0]
         else:
             rooms = all_rooms
+        if arrival_filter == "pending":
+            rooms = [item for item in rooms if item["pending_arrivals"] > 0]
+        elif arrival_filter == "checked_in":
+            rooms = [item for item in rooms if item["checked_arrivals"] > 0]
         selected = set(cohort.rooms.values_list("pk", flat=True))
         hold = cohort_hold_range(cohort.check_in_date, cohort.check_out_date)
         blocked = set(BookingResource.objects.filter(released_at__isnull=True, hold__overlap=hold).values_list("resource_id", flat=True))
@@ -186,6 +204,7 @@ def lodging_workspace(request):
     response = render(request, "lodging/workspace.html", {"cohorts": cohorts, "cohort": cohort,
                       "rooms": rooms, "form": form, "available_rooms": available_rooms,
                       "selected_assignment": selected_assignment, "assignment_open": assignment_open,
-                      "occupancy": occupancy, "room_filter": room_filter})
+                      "occupancy": occupancy, "room_filter": room_filter,
+                      "arrival": arrival, "arrival_filter": arrival_filter})
     response["Cache-Control"] = "private, no-store"
     return response

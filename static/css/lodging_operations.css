@@ -2,14 +2,15 @@
 .lodging-workspace-toolbar { display: grid; grid-template-columns: minmax(240px, 1fr) auto; gap: 12px; align-items: end; }
 .lodging-workspace-toolbar label { margin: 0; }
 .lodging-workspace-status { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
-.lodging-occupancy-summary { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+.lodging-occupancy-summary { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 12px; }
 .lodging-occupancy-stat { display: grid; gap: 4px; padding: 16px; border: 1px solid var(--line); border-radius: 14px; background: var(--surface-soft, rgba(127, 127, 127, .08)); }
 .lodging-occupancy-stat strong { font-size: clamp(1.6rem, 4vw, 2.2rem); line-height: 1; }
 .lodging-occupancy-stat span { color: var(--muted); }
-.lodging-room-filters { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
-.lodging-room-filters a { min-height: 44px; display: inline-flex; align-items: center; gap: 8px; padding: 8px 12px; border: 1px solid var(--line); border-radius: 999px; text-decoration: none; }
-.lodging-room-filters a[aria-current="page"] { border-color: var(--cyan); background: color-mix(in srgb, var(--cyan) 12%, transparent); }
-.lodging-room-filters a span { min-width: 1.7em; text-align: center; font-variant-numeric: tabular-nums; }
+.lodging-room-filters, .lodging-arrival-filters { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.lodging-arrival-filters { margin-top: -4px; }
+.lodging-room-filters a, .lodging-arrival-filters a { min-height: 44px; display: inline-flex; align-items: center; gap: 8px; padding: 8px 12px; border: 1px solid var(--line); border-radius: 999px; text-decoration: none; }
+.lodging-room-filters a[aria-current="page"], .lodging-arrival-filters a[aria-current="page"] { border-color: var(--cyan); background: color-mix(in srgb, var(--cyan) 12%, transparent); }
+.lodging-room-filters a span, .lodging-arrival-filters a span { min-width: 1.7em; text-align: center; font-variant-numeric: tabular-nums; }
 .lodging-workspace-main { display: grid; grid-template-columns: minmax(0, 1fr) minmax(290px, 360px); gap: 24px; align-items: start; }
 .lodging-room-board { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; }
 .lodging-room-board details { margin: 0; padding: 16px; }
@@ -21,8 +22,11 @@
 .lodging-bed-list li { display: grid; gap: 10px; padding: 10px 12px; border-radius: 10px; background: var(--surface-soft, rgba(127, 127, 127, .08)); }
 .lodging-bed-list .is-free { color: var(--green); }
 .lodging-bed-copy { display: grid; gap: 2px; }
-.bed-assign-link { justify-self: start; min-height: 44px; display: inline-flex; align-items: center; padding: 8px 12px; border: 1px solid currentColor; border-radius: 10px; font-weight: 600; text-decoration: none; }
-.bed-assign-link:focus-visible { outline: 3px solid var(--cyan); outline-offset: 2px; }
+.bed-assign-link, .bed-checkin-link { justify-self: start; min-height: 44px; display: inline-flex; align-items: center; padding: 8px 12px; border: 1px solid currentColor; border-radius: 10px; font-weight: 600; text-decoration: none; }
+.bed-assign-link:focus-visible, .bed-checkin-link:focus-visible { outline: 3px solid var(--cyan); outline-offset: 2px; }
+.lodging-arrival-status { justify-self: start; display: inline-flex; align-items: center; min-height: 28px; padding: 3px 8px; border-radius: 999px; font-size: .9rem; font-weight: 600; }
+.lodging-arrival-status.is-pending { border: 1px solid var(--line); color: var(--muted); }
+.lodging-arrival-status.is-checked { color: var(--green); background: color-mix(in srgb, var(--green) 10%, transparent); }
 .lodging-assignment-panel { position: sticky; top: 88px; }
 .lodging-assignment-selection { display: grid; gap: 4px; margin-bottom: 16px; padding: 12px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface-soft, rgba(127, 127, 127, .08)); }
 .lodging-assignment-selection > span { font-size: .9rem; color: var(--muted); }
@@ -32,8 +36,8 @@
 @media (max-width: 800px) {
   .lodging-workspace-toolbar, .lodging-workspace-main { grid-template-columns: 1fr; }
   .lodging-occupancy-summary { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .lodging-room-filters { display: grid; grid-template-columns: 1fr; }
-  .lodging-room-filters a { width: 100%; justify-content: space-between; }
+  .lodging-room-filters, .lodging-arrival-filters { display: grid; grid-template-columns: 1fr; }
+  .lodging-room-filters a, .lodging-arrival-filters a { width: 100%; justify-content: space-between; }
   .lodging-assignment-panel { position: static; }
-  .bed-assign-link { width: 100%; justify-content: center; }
+  .bed-assign-link, .bed-checkin-link { width: 100%; justify-content: center; }
 }
