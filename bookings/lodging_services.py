@@ -71,7 +71,7 @@ def can_manage_cohort(user, cohort: CourseLodgingCohort) -> bool:
 
 
 def can_access_lodging_management(user) -> bool:
-    """เข้าหน้าจัดการได้เมื่อมีสิทธิ์สร้าง/แก้ทั้งหมด หรือเป็นผู้กำกับอย่างน้อยหนึ่งรุ่น."""
+    """Allow course operators and lodging approvers into the shared operations workspace."""
     if not getattr(user, "is_authenticated", False):
         return False
     if (
@@ -80,7 +80,29 @@ def can_access_lodging_management(user) -> bool:
         or user.has_perm("bookings.change_courselodgingcohort")
     ):
         return True
-    return CourseLodgingCohort.objects.filter(supervisor_id=getattr(user, "pk", None)).exists()
+    if CourseLodgingCohort.objects.filter(supervisor_id=getattr(user, "pk", None)).exists():
+        return True
+
+    from approvals.models import ApproverDelegation
+    from resources.models import ResourceApprover
+
+    if ResourceApprover.objects.filter(
+        user=user,
+        resource__resource_type=Resource.Type.ROOM,
+        resource__room_category=Resource.Category.LODGING,
+    ).exists():
+        return True
+    delegator_ids = ApproverDelegation.objects.filter(
+        delegate=user,
+        start_date__lte=timezone.localdate(),
+        end_date__gte=timezone.localdate(),
+    ).values_list("delegator_id", flat=True)
+    return ResourceApprover.objects.filter(
+        user_id__in=delegator_ids,
+        is_primary=True,
+        resource__resource_type=Resource.Type.ROOM,
+        resource__room_category=Resource.Category.LODGING,
+    ).exists()
 
 
 def cohort_self_booking_status(cohort: CourseLodgingCohort, now: datetime | None = None) -> tuple[str, str]:
@@ -172,6 +194,94 @@ def assign_lodging_bed(*, cohort, room_id, bed_number, rank, full_name,
           "lodging_bed_assigned", after={"cohort": str(cohort.pk), "room": room.code,
                                         "bed_number": bed_number, "by_staff": actor is not None})
     return student
+
+
+@transaction.atomic
+def move_lodging_bed(*, student: CourseStudentLodging, room_id, bed_number, actor) -> CourseStudentLodging:
+    """Move a course guest to another allocated bed with row/resource locking and audit."""
+    locked_student = (
+        CourseStudentLodging.objects.select_related("cohort", "room")
+        .select_for_update()
+        .get(pk=student.pk)
+    )
+    cohort = CourseLodgingCohort.objects.select_for_update().get(pk=locked_student.cohort_id)
+    if not can_manage_cohort(actor, cohort):
+        raise PermissionDenied("คุณไม่มีสิทธิ์ย้ายผู้เข้าพักของหลักสูตรนี้")
+    if cohort.allocation_status != CourseLodgingCohort.AllocationStatus.ALLOCATED:
+        raise ValidationError("หลักสูตรนี้ยังไม่ได้จัดสรรห้องพัก")
+    if cohort.check_out_date < timezone.localdate():
+        raise ValidationError("รอบเข้าพักนี้สิ้นสุดแล้ว")
+    try:
+        bed_number = int(bed_number)
+        room = Resource.objects.select_for_update().get(pk=room_id)
+    except (TypeError, ValueError, Resource.DoesNotExist):
+        raise ValidationError("กรุณาเลือกห้องและเตียงปลายทางให้ถูกต้อง")
+    if not cohort.rooms.filter(pk=room.pk).exists() or room.status != Resource.Status.ACTIVE:
+        raise ValidationError("ห้องปลายทางไม่ได้อยู่ในรายการห้องพักที่พร้อมใช้งานของหลักสูตรนี้")
+    if not 1 <= bed_number <= cohort.beds_per_room:
+        raise ValidationError("หมายเลขเตียงปลายทางไม่ถูกต้อง")
+    if locked_student.room_id == room.pk and locked_student.bed_number == bed_number:
+        raise ValidationError("ผู้เข้าพักอยู่ที่เตียงนี้อยู่แล้ว")
+    if CourseStudentLodging.objects.filter(
+        cohort=cohort, room=room, bed_number=bed_number
+    ).exclude(pk=locked_student.pk).exists():
+        raise ValidationError("เตียงปลายทางมีผู้เข้าพักแล้ว กรุณาเลือกเตียงอื่น")
+
+    before = {"room": locked_student.room.code, "bed_number": locked_student.bed_number}
+    locked_student.room = room
+    locked_student.bed_number = bed_number
+    locked_student.save(update_fields=["room", "bed_number"])
+    audit(
+        actor,
+        "bookings.coursestudentlodging",
+        locked_student.pk,
+        "lodging_bed_moved",
+        before=before,
+        after={"room": room.code, "bed_number": bed_number},
+    )
+    return locked_student
+
+
+@transaction.atomic
+def set_cohort_self_booking(*, cohort: CourseLodgingCohort, actor, enabled: bool) -> CourseLodgingCohort:
+    """Quick open/close action for staff; preserves allocation and uses the shared allocation service."""
+    locked = CourseLodgingCohort.objects.select_for_update().get(pk=cohort.pk)
+    if not can_manage_cohort(actor, locked):
+        raise PermissionDenied("คุณไม่มีสิทธิ์เปิดหรือปิดรับจองของหลักสูตรนี้")
+    if locked.allocation_status != CourseLodgingCohort.AllocationStatus.ALLOCATED:
+        raise ValidationError("ต้องจัดสรรห้องให้หลักสูตรก่อนเปิดรับจอง")
+    today = timezone.localdate()
+    if locked.check_out_date < today:
+        raise ValidationError("รอบเข้าพักนี้สิ้นสุดแล้ว")
+
+    booking_open_at = locked.booking_open_at
+    booking_close_at = locked.booking_close_at
+    if enabled:
+        now = timezone.now()
+        if locked.check_in_date < today:
+            raise ValidationError("ไม่สามารถเปิดรับจองใหม่หลังวันเริ่มเข้าพักแล้ว")
+        if booking_open_at is None or booking_open_at > now:
+            booking_open_at = now
+        if booking_close_at is None or booking_close_at <= now:
+            booking_close_at = timezone.make_aware(
+                datetime.combine(locked.check_in_date, time(23, 59)),
+                timezone.get_current_timezone(),
+            )
+        if booking_close_at <= now:
+            raise ValidationError("ช่วงเวลารับจองสิ้นสุดแล้ว กรุณาปรับช่วงเวลาใหม่")
+
+    return update_cohort_allocation(
+        cohort=locked,
+        rooms=list(locked.rooms.all()),
+        check_in_date=locked.check_in_date,
+        check_out_date=locked.check_out_date,
+        allocation_status=locked.allocation_status,
+        is_active=enabled,
+        beds_per_room=locked.beds_per_room,
+        booking_open_at=booking_open_at,
+        booking_close_at=booking_close_at,
+        actor=actor,
+    )
 
 
 @transaction.atomic

@@ -4,38 +4,205 @@
 {% block head %}<link rel="stylesheet" href="{% static 'css/lodging_operations.css' %}">{% endblock %}
 {% block content %}
 <div class="lodging-workspace-shell">
-<div class="page-heading"><div><p class="eyebrow">สำหรับเจ้าหน้าที่</p><h1>ผังจัดผู้เข้าพัก</h1><p>ดูห้องและเพื่อนร่วมห้อง พร้อมจัดเตียงให้ผู้เรียนในหน้านี้</p></div></div>
-<form method="get" class="lodging-workspace-toolbar"><label for="workspace-cohort">เลือกหลักสูตร / รุ่น<select id="workspace-cohort" name="cohort">{% for c in cohorts %}<option value="{{ c.slug }}" {% if c.pk == cohort.pk %}selected{% endif %}>{{ c.title }}</option>{% endfor %}</select></label><button type="submit">แสดงผัง</button></form>
-<p><a href="{% url 'bookings:lodging_manage' %}">จัดสรรห้อง / สร้างหลักสูตร</a></p>
-{% if cohort %}
-<h2>{{ cohort.title }}</h2><div class="lodging-workspace-status"><span>{{ cohort.check_in_date|thai_date }} – {{ cohort.check_out_date|thai_date }}</span><span class="room-badge-free">{{ cohort.get_allocation_status_display }}</span>{% if cohort.is_active %}<span class="room-badge-free">เปิดรับจองเอง</span>{% else %}<span class="room-badge-full">เจ้าหน้าที่จัดให้เท่านั้น</span>{% endif %}</div>
-<section class="lodging-occupancy-summary" aria-label="ภาพรวมการจัดผู้เข้าพัก">
-<div class="lodging-occupancy-stat"><strong>{{ occupancy.assigned }}</strong><span>จัดแล้ว / {{ occupancy.capacity }} เตียง</span></div>
-<div class="lodging-occupancy-stat"><strong>{{ occupancy.free_beds }}</strong><span>เตียงว่าง</span></div>
-<div class="lodging-occupancy-stat"><strong>{{ arrival.pending }}</strong><span>รอรายงานตัว</span></div>
-<div class="lodging-occupancy-stat"><strong>{{ occupancy.checked_in }}</strong><span>รายงานตัวแล้ว</span></div>
-<div class="lodging-occupancy-stat"><strong>{{ occupancy.rooms_total }}</strong><span>ห้องที่จัดสรร</span></div>
-</section>
-<p><a href="{% url 'bookings:lodging_cohort_edit' cohort.slug %}">ปรับห้องและการเปิดรับจอง</a> · <a href="{% url 'bookings:lodging_cohort_export_csv' cohort.slug %}">ส่งออกรายชื่อ</a></p>
-<details class="detail-card"><summary>จัดสรรห้องและเปิดรับจอง — ช่วงวันที่ของหลักสูตรนี้</summary>
-<form method="post">{% csrf_token %}<input type="hidden" name="action" value="allocation">
-<fieldset><legend>เลือกห้องว่างที่จะสงวนให้หลักสูตร</legend><div class="lodging-allocation-grid">{% for item in available_rooms %}<label><input type="checkbox" name="rooms" value="{{ item.room.pk }}" {% if item.selected %}checked{% endif %} {% if item.blocked %}disabled{% endif %}><span><strong>{{ item.room.code }}</strong><br>{% if item.blocked %}ไม่ว่าง / งดใช้{% elif item.selected %}สงวนให้หลักสูตรนี้{% else %}ว่างสำหรับจัดสรร{% endif %}</span></label>{% endfor %}</div></fieldset>
-<div class="grid-dates"><label>เปิดรับจองเมื่อ<input type="datetime-local" name="booking_open_at" value="{% if cohort.booking_open_at %}{{ cohort.booking_open_at|date:'Y-m-d\TH:i' }}{% endif %}"></label><label>ปิดรับจองเมื่อ<input type="datetime-local" name="booking_close_at" value="{% if cohort.booking_close_at %}{{ cohort.booking_close_at|date:'Y-m-d\TH:i' }}{% endif %}"></label></div>
-<label><input type="checkbox" name="is_active" {% if cohort.is_active %}checked{% endif %}>เปิดใช้การจองด้วยตนเองตามช่วงเวลาที่กำหนด (ปิดไว้ยังจัดเตียงโดยเจ้าหน้าที่ได้)</label>
-<button type="submit">บันทึกการจัดสรรและช่วงเปิดจอง</button></form></details>
-{% if occupancy.rooms_total %}<nav class="lodging-room-filters" aria-label="กรองห้องตามสถานะ">
-<a href="{% url 'bookings:lodging_workspace' %}?cohort={{ cohort.slug|urlencode }}&amp;room_filter=all{% if arrival_filter != 'all' %}&amp;arrival_filter={{ arrival_filter }}{% endif %}#room-board" {% if room_filter == 'all' %}aria-current="page"{% endif %}>ทุกห้อง <span>{{ occupancy.rooms_total }}</span></a>
-<a href="{% url 'bookings:lodging_workspace' %}?cohort={{ cohort.slug|urlencode }}&amp;room_filter=free{% if arrival_filter != 'all' %}&amp;arrival_filter={{ arrival_filter }}{% endif %}#room-board" {% if room_filter == 'free' %}aria-current="page"{% endif %}>มีเตียงว่าง <span>{{ occupancy.rooms_free }}</span></a>
-<a href="{% url 'bookings:lodging_workspace' %}?cohort={{ cohort.slug|urlencode }}&amp;room_filter=full{% if arrival_filter != 'all' %}&amp;arrival_filter={{ arrival_filter }}{% endif %}#room-board" {% if room_filter == 'full' %}aria-current="page"{% endif %}>เต็ม <span>{{ occupancy.rooms_full }}</span></a>
-</nav>
-<nav class="lodging-arrival-filters" aria-label="กรองห้องตามสถานะรายงานตัว">
-<a href="{% url 'bookings:lodging_workspace' %}?cohort={{ cohort.slug|urlencode }}&amp;room_filter={{ room_filter }}&amp;arrival_filter=all#room-board" {% if arrival_filter == 'all' %}aria-current="page"{% endif %}>ทุกสถานะ <span>{{ occupancy.assigned }}</span></a>
-<a href="{% url 'bookings:lodging_workspace' %}?cohort={{ cohort.slug|urlencode }}&amp;room_filter={{ room_filter }}&amp;arrival_filter=pending#room-board" {% if arrival_filter == 'pending' %}aria-current="page"{% endif %}>รอรายงานตัว <span>{{ arrival.pending }}</span></a>
-<a href="{% url 'bookings:lodging_workspace' %}?cohort={{ cohort.slug|urlencode }}&amp;room_filter={{ room_filter }}&amp;arrival_filter=checked_in#room-board" {% if arrival_filter == 'checked_in' %}aria-current="page"{% endif %}>รายงานตัวแล้ว <span>{{ arrival.checked_in }}</span></a>
-</nav>{% endif %}
-<div class="lodging-workspace-main">
-<section id="room-board" aria-label="ห้องและเตียง"><div class="lodging-room-board">{% if rooms %}{% for item in rooms %}<details class="detail-card"><summary><strong>{{ item.room.code }}</strong> · {% if item.free %}ว่าง {{ item.free }} เตียง{% else %}เต็ม{% endif %}</summary><ul class="lodging-bed-list">{% for bed in item.beds %}<li class="{% if not bed.student %}is-free{% elif bed.student.checked_in_at %}is-checked-in{% else %}is-pending-arrival{% endif %}"><div class="lodging-bed-copy"><span>เตียง {{ bed.number }}</span>{% if bed.student %}<strong>{{ bed.student.rank }} {{ bed.student.full_name }}</strong><span>{{ bed.student.origin_unit }} · {{ bed.student.phone }}</span>{% if bed.student.checked_in_at %}<span class="lodging-arrival-status is-checked">✓ รายงานตัวแล้ว</span>{% else %}<span class="lodging-arrival-status is-pending">รอรายงานตัว</span><a class="bed-checkin-link" href="{% url 'bookings:lodging_checkin' bed.student.id %}?from_workspace=1">ตรวจรับรายงานตัว</a>{% endif %}{% else %}<strong>ว่าง</strong>{% endif %}</div>{% if not bed.student and item.assignable %}<a class="bed-assign-link" href="{% url 'bookings:lodging_workspace' %}?cohort={{ cohort.slug|urlencode }}&amp;room_filter={{ room_filter }}{% if arrival_filter != 'all' %}&amp;arrival_filter={{ arrival_filter }}{% endif %}&amp;room={{ item.room.pk }}&amp;bed={{ bed.number }}#assign-heading">จัดคนลงเตียงนี้</a>{% endif %}</li>{% endfor %}</ul></details>{% endfor %}{% elif occupancy.rooms_total %}<div class="lodging-room-empty"><strong>ไม่มีห้องในตัวกรองนี้</strong><span>ลองดูสถานะห้องทั้งหมดอีกครั้ง</span><a href="{% url 'bookings:lodging_workspace' %}?cohort={{ cohort.slug|urlencode }}&amp;room_filter=all&amp;arrival_filter=all#room-board">ดูทุกห้อง</a></div>{% else %}<div class="lodging-room-empty"><strong>ยังไม่ได้จัดสรรห้องให้หลักสูตรนี้</strong><span>เลือกห้องในส่วนจัดสรรด้านบนก่อนเริ่มจัดผู้เข้าพัก</span></div>{% endif %}</div></section>
-<section class="detail-card lodging-assignment-panel" aria-labelledby="assign-heading"><h2 id="assign-heading" tabindex="-1">จัดเตียงให้ผู้เรียน</h2>{% if selected_assignment %}<div class="lodging-assignment-selection" role="status"><span>เตียงที่เลือก</span><strong>ห้อง {{ selected_assignment.room.code }} · เตียง {{ selected_assignment.bed_number }}</strong><a href="{% url 'bookings:lodging_workspace' %}?cohort={{ cohort.slug|urlencode }}&amp;room_filter={{ room_filter }}{% if arrival_filter != 'all' %}&amp;arrival_filter={{ arrival_filter }}{% endif %}#assign-heading">เปลี่ยนเอง</a></div>{% else %}<p>เลือกเตียงว่างจากผังด้านซ้าย หรือเลือกห้องและเตียงเองด้านล่าง</p>{% endif %}<form method="post">{% csrf_token %}{{ form.as_p }}<datalist id="staff-ranks"><option value="ร.ต."><option value="ร.ท."><option value="ร.อ."><option value="ส.ต."><option value="ส.ท."><option value="ส.อ."></datalist><datalist id="staff-units"><option value="โรงเรียนทหารสื่อสาร"></datalist><button type="submit">ยืนยันจัดเตียง</button></form></section>
-</div>{% else %}<p>ยังไม่มีหลักสูตรที่คุณดูแล เริ่มจากจัดสรรห้องให้หลักสูตรก่อน</p>{% endif %}
+  <div class="page-heading">
+    <div>
+      <p class="eyebrow">ศูนย์ปฏิบัติการที่พัก</p>
+      <h1>ผังจัดผู้เข้าพัก</h1>
+      <p>เริ่มจากงานที่ต้องจัดการ แล้วลงรายละเอียดหลักสูตร ห้อง เตียง และการรายงานตัวได้จากหน้าเดียว</p>
+    </div>
+  </div>
+
+  <section class="lodging-operations-summary" aria-label="ภาพรวมงานที่พักทั้งหมด">
+    <a href="#public-requests" class="lodging-operations-stat{% if operations_summary.public_pending %} needs-attention{% endif %}">
+      <strong>{{ operations_summary.public_pending }}</strong><span>คำขอทั่วไปที่รออนุมัติ</span>
+    </a>
+    <a href="#course-operations" class="lodging-operations-stat">
+      <strong>{{ operations_summary.open_courses }}</strong><span>หลักสูตรที่กำลังเปิดจอง</span>
+    </a>
+    <div class="lodging-operations-stat"><strong>{{ operations_summary.assigned }}</strong><span>ผู้เข้าพักที่จัดแล้ว</span></div>
+    <div class="lodging-operations-stat"><strong>{{ operations_summary.free_beds }}</strong><span>เตียงว่างในรอบปัจจุบัน/อนาคต</span></div>
+    <div class="lodging-operations-stat{% if operations_summary.pending_arrivals %} needs-attention{% endif %}"><strong>{{ operations_summary.pending_arrivals }}</strong><span>รอรายงานตัว</span></div>
+  </section>
+
+  <section id="public-requests" class="lodging-operations-section" aria-labelledby="public-requests-heading">
+    <div class="section-title">
+      <div><p class="eyebrow">บุคคลทั่วไป</p><h2 id="public-requests-heading">คำขอที่รอการพิจารณา</h2></div>
+      <span class="count-badge">{{ public_pending_requests|length }} รายการ</span>
+    </div>
+    <div class="lodging-public-request-list">
+      {% for booking in public_pending_requests %}
+        <article class="detail-card lodging-public-request-card">
+          <div class="lodging-public-request-main">
+            <span class="room-badge-full">รออนุมัติ</span>
+            <h3>{{ booking.responsible_name }}</h3>
+            <p><strong>{{ booking.room.code }} {{ booking.room.name }}</strong></p>
+            <p>{{ booking.start_at|thai_datetime }} – {{ booking.end_at|thai_datetime }}</p>
+            {% if booking.responsible_phone %}<p>โทร {{ booking.responsible_phone }}</p>{% endif %}
+            <small>เหลือเวลาพิจารณาประมาณ {{ booking.expires_in_hours }} ชม.</small>
+          </div>
+          <div class="lodging-public-request-actions">
+            <form method="post" action="{% url 'approvals:approve' booking.id %}">
+              {% csrf_token %}<input type="hidden" name="next" value="{{ request.get_full_path }}">
+              <button type="submit">อนุมัติ</button>
+            </form>
+            <details>
+              <summary role="button" class="outline danger">ปฏิเสธ</summary>
+              <form method="post" action="{% url 'approvals:reject' booking.id %}">
+                {% csrf_token %}<input type="hidden" name="next" value="{{ request.get_full_path }}">
+                <label>เหตุผล<input name="reason" required maxlength="500" placeholder="ระบุเหตุผลสั้น ๆ"></label>
+                <button type="submit" class="danger">ยืนยันปฏิเสธ</button>
+              </form>
+            </details>
+          </div>
+        </article>
+      {% empty %}
+        <div class="lodging-room-empty"><strong>ไม่มีคำขอทั่วไปที่รออนุมัติ</strong><span>รายการใหม่ที่คุณมีสิทธิ์พิจารณาจะขึ้นตรงนี้</span></div>
+      {% endfor %}
+    </div>
+  </section>
+
+  <section id="course-operations" class="lodging-operations-section" aria-labelledby="course-operations-heading">
+    <div class="section-title">
+      <div><p class="eyebrow">หลักสูตร</p><h2 id="course-operations-heading">สถานะรอบที่พัก</h2></div>
+      {% if can_manage_course_operations %}<a href="{% url 'bookings:lodging_manage' %}">จัดสรรห้อง / สร้างหลักสูตร →</a>{% endif %}
+    </div>
+    <div class="lodging-course-ops-grid">
+      {% for item in cohort_cards %}
+        <article class="detail-card lodging-course-ops-card{% if item.cohort.pk == cohort.pk %} is-selected{% endif %}">
+          <div class="lodging-course-ops-head">
+            <h3>{{ item.cohort.title }}</h3>
+            {% if item.booking_status == 'open' %}<span class="room-badge-free">เปิดรับจอง</span>
+            {% elif item.booking_status == 'not_open' %}<span class="count-badge">รอเวลาเปิด</span>
+            {% elif item.booking_status == 'ended' %}<span class="count-badge">สิ้นสุดแล้ว</span>
+            {% else %}<span class="room-badge-full">ปิดรับจอง</span>{% endif %}
+          </div>
+          <p>{{ item.cohort.check_in_date|thai_date }} – {{ item.cohort.check_out_date|thai_date }}</p>
+          <div class="lodging-course-mini-stats">
+            <span><strong>{{ item.assigned }}</strong>/{{ item.capacity }} จัดแล้ว</span>
+            <span><strong>{{ item.free_beds }}</strong> เตียงว่าง</span>
+            <span><strong>{{ item.pending_arrivals }}</strong> รอรายงานตัว</span>
+          </div>
+          <p class="lodging-course-policy-copy">{{ item.booking_status_message }}</p>
+          <div class="lodging-course-ops-actions">
+            <a role="button" class="secondary" href="{% url 'bookings:lodging_workspace' %}?cohort={{ item.cohort.slug|urlencode }}">เปิดผัง</a>
+            {% if item.can_toggle_booking %}
+              <form method="post" action="{% url 'bookings:lodging_workspace' %}?cohort={{ item.cohort.slug|urlencode }}">
+                {% csrf_token %}<input type="hidden" name="action" value="booking_toggle">
+                {% if item.booking_status == 'open' %}
+                  <input type="hidden" name="booking_state" value="closed"><button type="submit" class="secondary">ปิดรับจอง</button>
+                {% else %}
+                  <input type="hidden" name="booking_state" value="open"><button type="submit">เปิดรับจอง</button>
+                {% endif %}
+              </form>
+            {% endif %}
+          </div>
+        </article>
+      {% empty %}
+        <div class="lodging-room-empty"><strong>ยังไม่มีหลักสูตรที่คุณดูแล</strong><span>เริ่มจากสร้างหรือจัดสรรรอบที่พักก่อน</span></div>
+      {% endfor %}
+    </div>
+  </section>
+
+  <form method="get" class="lodging-workspace-toolbar">
+    <label for="workspace-cohort">เลือกหลักสูตร / รุ่น
+      <select id="workspace-cohort" name="cohort">{% for c in cohorts %}<option value="{{ c.slug }}" {% if c.pk == cohort.pk %}selected{% endif %}>{{ c.title }}</option>{% endfor %}</select>
+    </label>
+    <button type="submit">แสดงผัง</button>
+  </form>
+
+  {% if cohort %}
+    <section class="lodging-selected-cohort" aria-labelledby="selected-cohort-heading">
+      <div class="section-title"><div><p class="eyebrow">ผังที่กำลังดู</p><h2 id="selected-cohort-heading">{{ cohort.title }}</h2></div></div>
+      <div class="lodging-workspace-status">
+        <span>{{ cohort.check_in_date|thai_date }} – {{ cohort.check_out_date|thai_date }}</span>
+        <span class="room-badge-free">{{ cohort.get_allocation_status_display }}</span>
+        {% if cohort_booking_state == 'open' %}<span class="room-badge-free">เปิดรับจองเอง</span>{% else %}<span class="room-badge-full">{{ cohort_booking_message }}</span>{% endif %}
+      </div>
+    </section>
+
+    <section class="lodging-occupancy-summary" aria-label="ภาพรวมการจัดผู้เข้าพัก">
+      <div class="lodging-occupancy-stat"><strong>{{ occupancy.assigned }}</strong><span>จัดแล้ว / {{ occupancy.capacity }} เตียง</span></div>
+      <div class="lodging-occupancy-stat"><strong>{{ occupancy.free_beds }}</strong><span>เตียงว่าง</span></div>
+      <div class="lodging-occupancy-stat"><strong>{{ arrival.pending }}</strong><span>รอรายงานตัว</span></div>
+      <div class="lodging-occupancy-stat"><strong>{{ occupancy.checked_in }}</strong><span>รายงานตัวแล้ว</span></div>
+      <div class="lodging-occupancy-stat"><strong>{{ occupancy.rooms_total }}</strong><span>ห้องที่จัดสรร</span></div>
+    </section>
+
+    <p><a href="{% url 'bookings:lodging_cohort_edit' cohort.slug %}">ปรับห้องและการเปิดรับจอง</a> · <a href="{% url 'bookings:lodging_cohort_export_csv' cohort.slug %}">ส่งออกรายชื่อ</a></p>
+
+    <details class="detail-card"><summary>จัดสรรห้องและเปิดรับจอง — ช่วงวันที่ของหลักสูตรนี้</summary>
+      <form method="post">{% csrf_token %}<input type="hidden" name="action" value="allocation">
+        <fieldset><legend>เลือกห้องว่างที่จะสงวนให้หลักสูตร</legend><div class="lodging-allocation-grid">{% for item in available_rooms %}<label><input type="checkbox" name="rooms" value="{{ item.room.pk }}" {% if item.selected %}checked{% endif %} {% if item.blocked %}disabled{% endif %}><span><strong>{{ item.room.code }}</strong><br>{% if item.blocked %}ไม่ว่าง / งดใช้{% elif item.selected %}สงวนให้หลักสูตรนี้{% else %}ว่างสำหรับจัดสรร{% endif %}</span></label>{% endfor %}</div></fieldset>
+        <div class="grid-dates"><label>เปิดรับจองเมื่อ<input type="datetime-local" name="booking_open_at" value="{% if cohort.booking_open_at %}{{ cohort.booking_open_at|date:'Y-m-d\TH:i' }}{% endif %}"></label><label>ปิดรับจองเมื่อ<input type="datetime-local" name="booking_close_at" value="{% if cohort.booking_close_at %}{{ cohort.booking_close_at|date:'Y-m-d\TH:i' }}{% endif %}"></label></div>
+        <label><input type="checkbox" name="is_active" {% if cohort.is_active %}checked{% endif %}>เปิดใช้การจองด้วยตนเองตามช่วงเวลาที่กำหนด (ปิดไว้ยังจัดเตียงโดยเจ้าหน้าที่ได้)</label>
+        <button type="submit">บันทึกการจัดสรรและช่วงเปิดจอง</button>
+      </form>
+    </details>
+
+    {% if occupancy.rooms_total %}
+      <nav class="lodging-room-filters" aria-label="กรองห้องตามสถานะ">
+        <a href="{% url 'bookings:lodging_workspace' %}?cohort={{ cohort.slug|urlencode }}&amp;room_filter=all{% if arrival_filter != 'all' %}&amp;arrival_filter={{ arrival_filter }}{% endif %}#room-board" {% if room_filter == 'all' %}aria-current="page"{% endif %}>ทุกห้อง <span>{{ occupancy.rooms_total }}</span></a>
+        <a href="{% url 'bookings:lodging_workspace' %}?cohort={{ cohort.slug|urlencode }}&amp;room_filter=free{% if arrival_filter != 'all' %}&amp;arrival_filter={{ arrival_filter }}{% endif %}#room-board" {% if room_filter == 'free' %}aria-current="page"{% endif %}>มีเตียงว่าง <span>{{ occupancy.rooms_free }}</span></a>
+        <a href="{% url 'bookings:lodging_workspace' %}?cohort={{ cohort.slug|urlencode }}&amp;room_filter=full{% if arrival_filter != 'all' %}&amp;arrival_filter={{ arrival_filter }}{% endif %}#room-board" {% if room_filter == 'full' %}aria-current="page"{% endif %}>เต็ม <span>{{ occupancy.rooms_full }}</span></a>
+      </nav>
+      <nav class="lodging-arrival-filters" aria-label="กรองห้องตามสถานะรายงานตัว">
+        <a href="{% url 'bookings:lodging_workspace' %}?cohort={{ cohort.slug|urlencode }}&amp;room_filter={{ room_filter }}&amp;arrival_filter=all#room-board" {% if arrival_filter == 'all' %}aria-current="page"{% endif %}>ทุกสถานะ <span>{{ occupancy.assigned }}</span></a>
+        <a href="{% url 'bookings:lodging_workspace' %}?cohort={{ cohort.slug|urlencode }}&amp;room_filter={{ room_filter }}&amp;arrival_filter=pending#room-board" {% if arrival_filter == 'pending' %}aria-current="page"{% endif %}>รอรายงานตัว <span>{{ arrival.pending }}</span></a>
+        <a href="{% url 'bookings:lodging_workspace' %}?cohort={{ cohort.slug|urlencode }}&amp;room_filter={{ room_filter }}&amp;arrival_filter=checked_in#room-board" {% if arrival_filter == 'checked_in' %}aria-current="page"{% endif %}>รายงานตัวแล้ว <span>{{ arrival.checked_in }}</span></a>
+      </nav>
+    {% endif %}
+
+    <div class="lodging-workspace-main">
+      <section id="room-board" aria-label="ห้องและเตียง">
+        <div class="lodging-room-board">
+          {% if rooms %}
+            {% for item in rooms %}
+              <details class="detail-card"><summary><strong>{{ item.room.code }}</strong> · {% if item.free %}ว่าง {{ item.free }} เตียง{% else %}เต็ม{% endif %}</summary>
+                <ul class="lodging-bed-list">
+                  {% for bed in item.beds %}
+                    <li class="{% if not bed.student %}is-free{% elif bed.student.checked_in_at %}is-checked-in{% else %}is-pending-arrival{% endif %}">
+                      <div class="lodging-bed-copy"><span>เตียง {{ bed.number }}</span>
+                        {% if bed.student %}
+                          <strong>{{ bed.student.rank }} {{ bed.student.full_name }}</strong><span>{{ bed.student.origin_unit }} · {{ bed.student.phone }}</span>
+                          {% if bed.student.checked_in_at %}<span class="lodging-arrival-status is-checked">✓ รายงานตัวแล้ว</span>{% else %}<span class="lodging-arrival-status is-pending">รอรายงานตัว</span><a class="bed-checkin-link" href="{% url 'bookings:lodging_checkin' bed.student.id %}?from_workspace=1">ตรวจรับรายงานตัว</a>{% endif %}
+                          <a class="bed-move-link" href="{% url 'bookings:lodging_workspace' %}?cohort={{ cohort.slug|urlencode }}&amp;room_filter={{ room_filter }}{% if arrival_filter != 'all' %}&amp;arrival_filter={{ arrival_filter }}{% endif %}&amp;move={{ bed.student.id }}#move-heading">ย้ายเตียง</a>
+                        {% else %}<strong>ว่าง</strong>{% endif %}
+                      </div>
+                      {% if not bed.student and item.assignable %}<a class="bed-assign-link" href="{% url 'bookings:lodging_workspace' %}?cohort={{ cohort.slug|urlencode }}&amp;room_filter={{ room_filter }}{% if arrival_filter != 'all' %}&amp;arrival_filter={{ arrival_filter }}{% endif %}&amp;room={{ item.room.pk }}&amp;bed={{ bed.number }}#assign-heading">จัดคนลงเตียงนี้</a>{% endif %}
+                    </li>
+                  {% endfor %}
+                </ul>
+              </details>
+            {% endfor %}
+          {% elif occupancy.rooms_total %}
+            <div class="lodging-room-empty"><strong>ไม่มีห้องในตัวกรองนี้</strong><span>ลองดูสถานะห้องทั้งหมดอีกครั้ง</span><a href="{% url 'bookings:lodging_workspace' %}?cohort={{ cohort.slug|urlencode }}&amp;room_filter=all&amp;arrival_filter=all#room-board">ดูทุกห้อง</a></div>
+          {% else %}
+            <div class="lodging-room-empty"><strong>ยังไม่ได้จัดสรรห้องให้หลักสูตรนี้</strong><span>เลือกห้องในส่วนจัดสรรด้านบนก่อนเริ่มจัดผู้เข้าพัก</span></div>
+          {% endif %}
+        </div>
+      </section>
+
+      <div class="lodging-workspace-side">
+        {% if move_student %}
+          <section class="detail-card lodging-move-panel" aria-labelledby="move-heading">
+            <h2 id="move-heading" tabindex="-1">ย้ายเตียง</h2>
+            <p><strong>{{ move_student.rank }} {{ move_student.full_name }}</strong><br>ปัจจุบัน: {{ move_student.room.code }} · เตียง {{ move_student.bed_number }}</p>
+            {% if move_form.fields.target.choices %}
+              <form method="post">{% csrf_token %}<input type="hidden" name="action" value="move_bed"><input type="hidden" name="student_id" value="{{ move_student.id }}">{{ move_form.as_p }}<button type="submit">ยืนยันย้ายเตียง</button></form>
+            {% else %}<div class="notice info">ไม่มีเตียงว่างอื่นในหลักสูตรนี้</div>{% endif %}
+            <a href="{% url 'bookings:lodging_workspace' %}?cohort={{ cohort.slug|urlencode }}#room-board">ยกเลิก</a>
+          </section>
+        {% endif %}
+
+        <section class="detail-card lodging-assignment-panel" aria-labelledby="assign-heading">
+          <h2 id="assign-heading" tabindex="-1">จัดเตียงให้ผู้เรียน</h2>
+          {% if selected_assignment %}<div class="lodging-assignment-selection" role="status"><span>เตียงที่เลือก</span><strong>ห้อง {{ selected_assignment.room.code }} · เตียง {{ selected_assignment.bed_number }}</strong><a href="{% url 'bookings:lodging_workspace' %}?cohort={{ cohort.slug|urlencode }}&amp;room_filter={{ room_filter }}{% if arrival_filter != 'all' %}&amp;arrival_filter={{ arrival_filter }}{% endif %}#assign-heading">เปลี่ยนเอง</a></div>{% else %}<p>เลือกเตียงว่างจากผังด้านซ้าย หรือเลือกห้องและเตียงเองด้านล่าง</p>{% endif %}
+          <form method="post">{% csrf_token %}<input type="hidden" name="action" value="assign">{{ form.as_p }}<datalist id="staff-ranks"><option value="ร.ต."><option value="ร.ท."><option value="ร.อ."><option value="ส.ต."><option value="ส.ท."><option value="ส.อ."></datalist><datalist id="staff-units"><option value="โรงเรียนทหารสื่อสาร"></datalist><button type="submit">ยืนยันจัดเตียง</button></form>
+        </section>
+      </div>
+    </div>
+  {% else %}
+    <p>ยังไม่มีหลักสูตรที่คุณดูแล เริ่มจากจัดสรรห้องให้หลักสูตรก่อน</p>
+  {% endif %}
 </div>
 {% endblock %}
