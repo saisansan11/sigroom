@@ -97,7 +97,7 @@
 
         <form method="post">
           {% csrf_token %}
-          <label for="id_course_run">หลักสูตร / รุ่น
+          <label for="id_course_run">หลักสูตรและรุ่น
             <select id="id_course_run" name="course_run" required>
               <option value="">เลือกหลักสูตรและรุ่น</option>
               {% for run in course_runs %}
@@ -238,8 +238,8 @@ document.addEventListener('DOMContentLoaded', function () {
       if (!selected || !selected.value) return;
       var start = document.getElementById('id_check_in_date');
       var end = document.getElementById('id_check_out_date');
-      if (start && !start.value) start.value = selected.getAttribute('data-start') || '';
-      if (end && !end.value) end.value = selected.getAttribute('data-end') || '';
+      if (start) start.value = selected.getAttribute('data-start') || '';
+      if (end) end.value = selected.getAttribute('data-end') || '';
     });
   }
 

@@ -6,9 +6,9 @@
 <div class="online-teaching-shell">
   <div class="page-heading online-teaching-heading">
     <div>
-      <p class="eyebrow">Teacher Self-Service</p>
+      <p class="eyebrow">สำหรับครูผู้สอน</p>
       <h1>ห้องสอนออนไลน์</h1>
-      <p>เลือกจาก 3 ห้องของ รร.ส.สส. ดูอุปกรณ์และช่วงว่างก่อนจอง ระบบยืนยันอัตโนมัติเมื่อช่วงเวลาว่างและผ่านนโยบายห้อง</p>
+      <p>เลือกจาก 3 ห้องของ รร.ส.สส. ดูอุปกรณ์และช่วงว่างก่อนจอง ระบบยืนยันให้ทันทีเมื่อห้องว่างและช่วงเวลาจองได้</p>
     </div>
     <a role="button" class="secondary" href="{% url 'bookings:my_bookings' %}">การจองของฉัน</a>
   </div>
@@ -55,6 +55,6 @@
     {% endfor %}
   </section>
 
-  <p class="muted-text online-next-window">สถานะ “ช่วงถัดไป” ตรวจช่วง {{ next_start|thai_datetime }} – {{ next_end|thai_datetime }} โดยใช้ Booking Core เดียวกับปฏิทินหลัก</p>
+  <p class="muted-text online-next-window">สถานะ “ช่วงถัดไป” ตรวจช่วง {{ next_start|thai_datetime }} – {{ next_end|thai_datetime }} โดยตรวจจากตารางการจองเดียวกับปฏิทินหลัก</p>
 </div>
 {% endblock %}

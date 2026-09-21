@@ -115,7 +115,7 @@ class OnlineTeachingBookingForm(forms.Form):
         input_formats=["%H:%M"],
     )
     course_run = CourseRunChoiceField(
-        label="หลักสูตร / รุ่น",
+        label="หลักสูตรและรุ่น",
         queryset=CourseRun.objects.none(),
         empty_label=None,
         error_messages={"invalid_choice": "หลักสูตร/รุ่นนี้ไม่ได้อยู่ในรายการที่เปิดใช้"},
