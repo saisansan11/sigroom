@@ -22,6 +22,7 @@
     <div class="lodging-operations-stat"><strong>{{ operations_summary.assigned }}</strong><span>ผู้เข้าพักที่จัดแล้ว</span></div>
     <div class="lodging-operations-stat"><strong>{{ operations_summary.free_beds }}</strong><span>เตียงว่างในรอบปัจจุบัน/อนาคต</span></div>
     <div class="lodging-operations-stat{% if operations_summary.pending_arrivals %} needs-attention{% endif %}"><strong>{{ operations_summary.pending_arrivals }}</strong><span>รอรายงานตัว</span></div>
+    <div class="lodging-operations-stat"><strong>{{ operations_summary.no_show }}</strong><span>ไม่มารายงานตัวสะสม</span></div>
   </section>
 
   <section id="public-requests" class="lodging-operations-section" aria-labelledby="public-requests-heading">
@@ -81,6 +82,7 @@
             <span><strong>{{ item.assigned }}</strong>/{{ item.capacity }} จัดแล้ว</span>
             <span><strong>{{ item.free_beds }}</strong> เตียงว่าง</span>
             <span><strong>{{ item.pending_arrivals }}</strong> รอรายงานตัว</span>
+            <span><strong>{{ item.no_show }}</strong> ไม่มา</span>
           </div>
           <p class="lodging-course-policy-copy">{{ item.booking_status_message }}</p>
           <div class="lodging-course-ops-actions">
@@ -164,7 +166,24 @@
                       <div class="lodging-bed-copy"><span>เตียง {{ bed.number }}</span>
                         {% if bed.student %}
                           <strong>{{ bed.student.rank }} {{ bed.student.full_name }}</strong><span>{{ bed.student.origin_unit }} · {{ bed.student.phone }}</span>
-                          {% if bed.student.checked_in_at %}<span class="lodging-arrival-status is-checked">✓ รายงานตัวแล้ว</span>{% else %}<span class="lodging-arrival-status is-pending">รอรายงานตัว</span><a class="bed-checkin-link" href="{% url 'bookings:lodging_checkin' bed.student.id %}?from_workspace=1">ตรวจรับรายงานตัว</a>{% endif %}
+                          {% if bed.student.checked_in_at %}
+                            <span class="lodging-arrival-status is-checked">✓ รายงานตัวแล้ว</span>
+                          {% else %}
+                            <span class="lodging-arrival-status is-pending">รอรายงานตัว</span>
+                            <a class="bed-checkin-link" href="{% url 'bookings:lodging_checkin' bed.student.id %}?from_workspace=1">ตรวจรับรายงานตัว</a>
+                            <div class="lodging-bed-release-actions">
+                              <form method="post" onsubmit="return confirm('ยืนยันยกเลิกการจองและคืนเตียงนี้?');">
+                                {% csrf_token %}<input type="hidden" name="action" value="release_student"><input type="hidden" name="student_id" value="{{ bed.student.id }}"><input type="hidden" name="outcome" value="cancelled">
+                                <button type="submit" class="secondary">ยกเลิกการจอง</button>
+                              </form>
+                              {% if can_mark_no_show %}
+                                <form method="post" onsubmit="return confirm('ยืนยันบันทึกว่าไม่มารายงานตัวและคืนเตียงนี้?');">
+                                  {% csrf_token %}<input type="hidden" name="action" value="release_student"><input type="hidden" name="student_id" value="{{ bed.student.id }}"><input type="hidden" name="outcome" value="no_show">
+                                  <button type="submit" class="secondary">ไม่มารายงานตัว</button>
+                                </form>
+                              {% endif %}
+                            </div>
+                          {% endif %}
                           <a class="bed-move-link" href="{% url 'bookings:lodging_workspace' %}?cohort={{ cohort.slug|urlencode }}&amp;room_filter={{ room_filter }}{% if arrival_filter != 'all' %}&amp;arrival_filter={{ arrival_filter }}{% endif %}&amp;move={{ bed.student.id }}#move-heading">ย้ายเตียง</a>
                         {% else %}<strong>ว่าง</strong>{% endif %}
                       </div>

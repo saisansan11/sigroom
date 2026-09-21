@@ -114,6 +114,7 @@ def test_staff_workspace_starts_with_actionable_operations_summary(client, opera
         "assigned": 2,
         "free_beds": 2,
         "pending_arrivals": 1,
+        "no_show": 0,
     }
     assert [item.pk for item in response.context["public_pending_requests"]] == [
         operations_data["public_booking"].pk

@@ -143,12 +143,10 @@ class CourseStudentLodging(models.Model):
         verbose_name_plural = "การจองห้องพักนักเรียน"
         ordering = ["room__code", "bed_number"]
         constraints = [
-            # ห้ามเตียงเดียวกันในห้องเดียวกันถูกจองซ้ำในหลักสูตรเดียวกัน
             models.UniqueConstraint(
                 fields=["cohort", "room", "bed_number"],
                 name="unique_cohort_room_bed",
             ),
-            # ห้ามเบอร์โทรเดียวกันจองซ้ำในหลักสูตรเดียวกัน
             models.UniqueConstraint(
                 fields=["cohort", "phone"],
                 name="unique_cohort_student_phone",
@@ -189,6 +187,81 @@ class CourseStudentLodging(models.Model):
         return f"{self.rank} {self.full_name} ({self.room.code} เตียง {self.bed_number})"
 
 
+class CourseLodgingAccess(models.Model):
+    """Opaque self-service capability for managing one active course lodging reservation."""
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    student = models.OneToOneField(
+        CourseStudentLodging,
+        verbose_name="การจองที่พักนักเรียน",
+        on_delete=models.CASCADE,
+        related_name="self_service_access",
+    )
+    created_at = models.DateTimeField("สร้างเมื่อ", auto_now_add=True)
+
+    class Meta:
+        verbose_name = "ลิงก์จัดการการจองที่พักนักเรียน"
+        verbose_name_plural = "ลิงก์จัดการการจองที่พักนักเรียน"
+
+    def __str__(self):
+        return f"{self.student_id} / {self.pk}"
+
+
+class CourseLodgingRelease(models.Model):
+    """Immutable operational history for a reservation removed from active bed inventory."""
+
+    class Outcome(models.TextChoices):
+        CANCELLED = "cancelled", "ยกเลิก"
+        NO_SHOW = "no_show", "ไม่มารายงานตัว"
+
+    class Channel(models.TextChoices):
+        SELF_SERVICE = "self_service", "นักเรียนยกเลิกเอง"
+        STAFF = "staff", "เจ้าหน้าที่ดำเนินการ"
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    original_student_id = models.UUIDField("รหัสการจองเดิม", unique=True)
+    cohort = models.ForeignKey(
+        CourseLodgingCohort,
+        verbose_name="รอบหลักสูตร",
+        on_delete=models.PROTECT,
+        related_name="releases",
+    )
+    room = models.ForeignKey(
+        Resource,
+        verbose_name="ห้องพักเดิม",
+        on_delete=models.PROTECT,
+        related_name="course_lodging_releases",
+    )
+    bed_number = models.PositiveSmallIntegerField("เตียงเดิม")
+    rank = models.CharField("ยศ", max_length=50)
+    full_name = models.CharField("ชื่อ-นามสกุล", max_length=150)
+    origin_unit = models.CharField("หน่วยต้นสังกัด", max_length=150)
+    phone = models.CharField("เบอร์โทรศัพท์", max_length=30)
+    note = models.CharField("หมายเหตุเดิม", max_length=200, blank=True)
+    booked_at = models.DateTimeField("เวลาที่จองเดิม")
+    outcome = models.CharField("ผลการปล่อยเตียง", max_length=20, choices=Outcome.choices)
+    channel = models.CharField("ช่องทาง", max_length=20, choices=Channel.choices)
+    reason = models.CharField("เหตุผล", max_length=300, blank=True)
+    released_at = models.DateTimeField("ปล่อยเตียงเมื่อ", auto_now_add=True)
+    released_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        verbose_name="ผู้ดำเนินการ",
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="released_course_lodgings",
+    )
+
+    class Meta:
+        verbose_name = "ประวัติการปล่อยเตียงนักเรียน"
+        verbose_name_plural = "ประวัติการปล่อยเตียงนักเรียน"
+        ordering = ["-released_at"]
+        indexes = [models.Index(fields=["cohort", "outcome", "released_at"])]
+
+    def __str__(self):
+        return f"{self.get_outcome_display()} {self.full_name} / {self.room.code}-{self.bed_number}"
+
+
 class PublicLodgingAccess(models.Model):
     """Opaque public status link for a general lodging request backed by Booking Core."""
 
@@ -207,3 +280,30 @@ class PublicLodgingAccess(models.Model):
 
     def __str__(self):
         return f"{self.booking_id} / {self.pk}"
+
+
+class PublicLodgingThrottle(models.Model):
+    """Fixed-window counters for anonymous public lodging submissions; keys are HMAC hashes."""
+
+    class Scope(models.TextChoices):
+        PHONE = "phone", "เบอร์โทรศัพท์"
+        CLIENT = "client", "เบราว์เซอร์/เซสชัน"
+
+    scope = models.CharField("ขอบเขต", max_length=16, choices=Scope.choices)
+    key_hash = models.CharField("รหัสแฮช", max_length=64)
+    window_start = models.DateTimeField("เริ่มช่วงเวลา")
+    count = models.PositiveSmallIntegerField("จำนวนครั้ง", default=0)
+
+    class Meta:
+        verbose_name = "ตัวนับป้องกันคำขอที่พักซ้ำถี่"
+        verbose_name_plural = "ตัวนับป้องกันคำขอที่พักซ้ำถี่"
+        constraints = [
+            models.UniqueConstraint(
+                fields=["scope", "key_hash", "window_start"],
+                name="unique_public_lodging_throttle_window",
+            )
+        ]
+        indexes = [models.Index(fields=["window_start"])]
+
+    def __str__(self):
+        return f"{self.scope}:{self.window_start.isoformat()}={self.count}"

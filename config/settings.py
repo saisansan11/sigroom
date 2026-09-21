@@ -17,6 +17,9 @@ load_dotenv(BASE_DIR / ".env")
 SITE_NAME = "SIGROOM"
 SITE_NAME_TH = "ระบบจองห้อง รร.ส.สส."
 PUBLIC_BASE_URL = os.environ.get("PUBLIC_BASE_URL", "").strip().rstrip("/")
+PUBLIC_LODGING_RATE_WINDOW_SECONDS = int(os.environ.get("PUBLIC_LODGING_RATE_WINDOW_SECONDS", "900"))
+PUBLIC_LODGING_RATE_PHONE_LIMIT = int(os.environ.get("PUBLIC_LODGING_RATE_PHONE_LIMIT", "3"))
+PUBLIC_LODGING_RATE_CLIENT_LIMIT = int(os.environ.get("PUBLIC_LODGING_RATE_CLIENT_LIMIT", "8"))
 SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY", "dev-only-change-me")
 DEBUG = os.environ.get("DJANGO_DEBUG", "0") == "1"
 ALLOWED_HOSTS = [h for h in os.environ.get("DJANGO_ALLOWED_HOSTS", "127.0.0.1,localhost").split(",") if h]

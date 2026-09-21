@@ -56,6 +56,22 @@
   </div>
 </div>
 
+{% if is_management_view %}
+<section class="detail-card" aria-labelledby="reservation-manage-heading">
+  <p class="eyebrow">ลิงก์ส่วนตัวสำหรับเจ้าของการจอง</p>
+  <h2 id="reservation-manage-heading">จัดการการจองของฉัน</h2>
+  <p>ลิงก์หน้านี้ใช้สำหรับจัดการการจองและไม่ควรส่งต่อให้ผู้อื่น ปุ่มแชร์ด้านล่างจะแชร์เฉพาะบัตรรายงานตัวที่ไม่มีสิทธิ์ยกเลิก</p>
+  {% if can_cancel_self %}
+    <form method="post" action="{% url 'bookings:lodging_reservation_cancel' cohort.slug manage_token %}" onsubmit="return confirm('ยืนยันยกเลิกการจองและคืนเตียงนี้?');">
+      {% csrf_token %}
+      <button type="submit" class="secondary">ยกเลิกการจองและคืนเตียง</button>
+    </form>
+  {% else %}
+    <div class="notice info">ไม่สามารถยกเลิกด้วยตนเองได้ในขณะนี้ — {{ cancel_policy_message }}</div>
+  {% endif %}
+</section>
+{% endif %}
+
 <div class="keycard-actions-bar">
   <button type="button" class="btn-primary" id="copyPassBtn" onclick="copyPassLink()">
     📋 คัดลอกลิงก์บัตร
@@ -109,7 +125,7 @@
 })();
 
 function copyPassLink() {
-  var url = window.location.href;
+  var url = '{{ pass_url|escapejs }}';
   navigator.clipboard.writeText(url).then(function () {
     var btn = document.getElementById('copyPassBtn');
     var originalText = btn.textContent;

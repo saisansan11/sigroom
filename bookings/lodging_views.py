@@ -19,7 +19,13 @@ from .lodging_about_data import (
     MONTHLY_THRESHOLD_DAYS,
     RATES,
 )
-from .lodging_models import CourseLodgingCohort, CourseStudentLodging, PublicLodgingAccess
+from .lodging_models import (
+    CourseLodgingAccess,
+    CourseLodgingCohort,
+    CourseLodgingRelease,
+    CourseStudentLodging,
+    PublicLodgingAccess,
+)
 from .lodging_services import (
     assign_lodging_bed,
     can_access_lodging_management,
@@ -31,6 +37,7 @@ from .lodging_services import (
     generate_line_share_url,
     get_canonical_public_url,
     normalize_phone,
+    release_lodging_reservation,
     update_cohort_allocation,
 )
 
@@ -233,39 +240,86 @@ def lodging_book_bed(request, slug):
             else "เกิดข้อผิดพลาดในการบันทึก หรือเตียงนี้มีผู้จองแล้ว กรุณาลองใหม่อีกครั้ง")
 
     messages.success(request, f"ลงทะเบียนจองห้อง {room.code} เตียง {bed_number} สำเร็จ!")
-    return redirect("bookings:lodging_pass", slug=slug, student_id=student.id)
+    return redirect(
+        "bookings:lodging_reservation_manage",
+        slug=slug,
+        token=student.self_service_access.pk,
+    )
+
+
+def _student_pass_context(request, cohort, student):
+    roommates = CourseStudentLodging.objects.filter(
+        cohort=cohort, room=student.room
+    ).exclude(pk=student.pk).order_by("bed_number")
+    pass_path = reverse("bookings:lodging_pass", args=[cohort.slug, student.id])
+    pass_url = get_canonical_public_url(request, pass_path)
+    return {
+        "cohort": cohort,
+        "student": student,
+        "roommates": roommates,
+        "pass_url": pass_url,
+        "line_share_url": generate_line_share_url(
+            f"บัตรรายงานตัวเข้าที่พัก {student.room.code} (เตียง {student.bed_number}) - {cohort.title}",
+            pass_url,
+        ),
+    }
+
+
+def _student_pass_response(request, context):
+    response = render(request, "lodging/student_pass.html", context)
+    response["Cache-Control"] = "private, no-store, must-revalidate"
+    response["X-Content-Type-Options"] = "nosniff"
+    response["X-Robots-Tag"] = "noindex, nofollow"
+    response["Referrer-Policy"] = "no-referrer"
+    return response
+
+
+def lodging_reservation_manage(request, slug, token):
+    """Private capability URL for the owner to view/cancel an active self-booking."""
+    access = get_object_or_404(
+        CourseLodgingAccess.objects.select_related("student__room", "student__cohort"),
+        pk=token,
+        student__cohort__slug=slug,
+    )
+    student = access.student
+    cohort = student.cohort
+    context = _student_pass_context(request, cohort, student)
+    booking_state, booking_message = cohort_self_booking_status(cohort)
+    context.update({
+        "is_management_view": True,
+        "manage_token": access.pk,
+        "can_cancel_self": student.checked_in_at is None and booking_state == "open",
+        "cancel_policy_message": booking_message,
+    })
+    return _student_pass_response(request, context)
+
+
+@require_POST
+def lodging_reservation_cancel(request, slug, token):
+    access = get_object_or_404(
+        CourseLodgingAccess.objects.select_related("student__cohort"),
+        pk=token,
+        student__cohort__slug=slug,
+    )
+    cohort = access.student.cohort
+    try:
+        release_lodging_reservation(
+            student=access.student,
+            outcome=CourseLodgingRelease.Outcome.CANCELLED,
+            access_token=access.pk,
+        )
+    except ValidationError as exc:
+        messages.error(request, " · ".join(exc.messages))
+        return redirect("bookings:lodging_reservation_manage", slug=slug, token=token)
+    messages.success(request, "ยกเลิกการจองและคืนเตียงเรียบร้อยแล้ว สามารถเลือกเตียงใหม่ได้หากยังอยู่ในช่วงเปิดรับจอง")
+    return redirect("bookings:lodging_portal", slug=cohort.slug)
 
 
 def lodging_pass(request, slug, student_id):
     """บัตรยืนยันการเข้าพักสำหรับนักเรียนแคปหน้าจอไว้เป็นหลักฐาน"""
     cohort = get_object_or_404(CourseLodgingCohort, slug=slug)
     student = get_object_or_404(CourseStudentLodging.objects.select_related("room", "cohort"), pk=student_id, cohort=cohort)
-    roommates = CourseStudentLodging.objects.filter(
-        cohort=cohort, room=student.room
-    ).exclude(pk=student.pk).order_by("bed_number")
-
-    pass_path = reverse("bookings:lodging_pass", args=[cohort.slug, student.id])
-    pass_url = get_canonical_public_url(request, pass_path)
-    line_share_url = generate_line_share_url(
-        f"บัตรรายงานตัวเข้าที่พัก {student.room.code} (เตียง {student.bed_number}) - {cohort.title}",
-        pass_url,
-    )
-
-    response = render(
-        request,
-        "lodging/student_pass.html",
-        {
-            "cohort": cohort,
-            "student": student,
-            "roommates": roommates,
-            "pass_url": pass_url,
-            "line_share_url": line_share_url,
-        },
-    )
-    response["Cache-Control"] = "private, no-store, must-revalidate"
-    response["X-Content-Type-Options"] = "nosniff"
-    response["X-Robots-Tag"] = "noindex, nofollow"
-    return response
+    return _student_pass_response(request, _student_pass_context(request, cohort, student))
 
 
 def lodging_index(request):

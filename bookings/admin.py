@@ -14,6 +14,7 @@ from .models import (
     ReferenceValue,
     SeriesSkip,
 )
+from .lodging_models import CourseLodgingRelease
 from .lodging_services import update_cohort_allocation
 
 
@@ -114,7 +115,11 @@ class ReferenceValueAdmin(admin.ModelAdmin):
 class CourseStudentLodgingInline(admin.TabularInline):
     model = CourseStudentLodging
     extra = 0
-    readonly_fields = ("booked_at",)
+    readonly_fields = tuple(field.name for field in CourseStudentLodging._meta.fields)
+    can_delete = False
+
+    def has_add_permission(self, request, obj=None):
+        return False
 
 
 @admin.register(CourseLodgingCohort)
@@ -192,4 +197,30 @@ class CourseStudentLodgingAdmin(admin.ModelAdmin):
     list_display = ("rank", "full_name", "cohort", "room", "bed_number", "origin_unit", "phone", "booked_at")
     list_filter = ("cohort", "room", "rank")
     search_fields = ("full_name", "origin_unit", "phone", "room__code")
-    readonly_fields = ("booked_at",)
+    readonly_fields = tuple(field.name for field in CourseStudentLodging._meta.fields)
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+
+@admin.register(CourseLodgingRelease)
+class CourseLodgingReleaseAdmin(admin.ModelAdmin):
+    list_display = ("full_name", "cohort", "room", "bed_number", "outcome", "channel", "released_at", "released_by")
+    list_filter = ("outcome", "channel", "cohort", "released_at")
+    search_fields = ("full_name", "origin_unit", "phone", "room__code")
+    readonly_fields = tuple(field.name for field in CourseLodgingRelease._meta.fields)
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
