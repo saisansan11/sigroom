@@ -204,6 +204,11 @@ def validate_booking_window(
         errors.append("ทรัพยากรที่เลือกไม่ใช่ห้อง")
     if resource.status != Resource.Status.ACTIVE:
         errors.append("ห้องนี้งดให้บริการ")
+    if resource.room_category == Resource.Category.ONLINE:
+        from .online_teaching import can_book_online_teaching
+
+        if not can_book_online_teaching(user):
+            errors.append("เฉพาะครูที่ได้รับสิทธิ์จองห้องสอนออนไลน์")
     if end <= start:
         return [*errors, "เวลาสิ้นสุดต้องอยู่หลังเวลาเริ่ม"]
     if start < now:

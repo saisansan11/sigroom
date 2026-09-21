@@ -26,6 +26,8 @@
           <ul class="main-nav">
             <li><a {% if request.resolver_match.url_name == 'calendar' %}aria-current="page"{% endif %} href="{% url 'bookings:calendar' %}">หน้าแรก</a></li>
             <li><a {% if request.resolver_match.url_name == 'book_search' or request.resolver_match.url_name == 'book_form' %}aria-current="page"{% endif %} href="{% url 'bookings:book_search' %}">จองห้อง</a></li>
+                  {% if nav_can_book_online %}<li><a {% if request.resolver_match.url_name == 'online_teaching_home' or request.resolver_match.url_name == 'online_teaching_book' %}aria-current="page"{% endif %} href="{% url 'bookings:online_teaching_home' %}">ห้องสอนออนไลน์</a></li>{% endif %}
+            {% if nav_can_book_online %}<li><a {% if request.resolver_match.url_name == 'online_teaching_home' or request.resolver_match.url_name == 'online_teaching_book' %}aria-current="page"{% endif %} href="{% url 'bookings:online_teaching_home' %}">ห้องสอนออนไลน์</a></li>{% endif %}
             <li><a {% if request.resolver_match.url_name == 'my_bookings' %}aria-current="page"{% endif %} href="{% url 'bookings:my_bookings' %}">การจองของฉัน</a></li>
             <li><a {% if request.resolver_match.url_name == 'lodging_index' %}aria-current="page"{% endif %} href="{% url 'bookings:lodging_index' %}">จองห้องพัก</a></li>
             {% if nav_can_access_approvals or nav_can_manage_usage or nav_can_manage_lodging or nav_can_access_reports %}

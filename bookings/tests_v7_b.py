@@ -3,6 +3,7 @@ from datetime import datetime, time, timedelta
 
 import pytest
 from django.test import Client
+from django.contrib.auth.models import Group
 from django.urls import reverse
 from django.utils import timezone
 
@@ -38,6 +39,8 @@ def online_setup():
         username="v7b-req", email="v7b-req@signalschool.ac.th",
         password="Password-2569", unit=unit,
     )
+    teacher_group, _ = Group.objects.get_or_create(name="signalschool-teacher")
+    requester.groups.add(teacher_group)
     same_unit_user = User.objects.create_user(
         username="v7b-same", email="v7b-same@signalschool.ac.th",
         password="Password-2569", unit=unit,
