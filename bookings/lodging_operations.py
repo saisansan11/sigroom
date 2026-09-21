@@ -9,7 +9,7 @@ from django.db import IntegrityError
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 
-from .lodging_models import CourseLodgingCohort, PublicLodgingAccess
+from .lodging_models import CourseLodgingCohort, CourseLodgingRelease, PublicLodgingAccess
 from .lodging_services import (
     assign_lodging_bed,
     can_access_lodging_management,
@@ -18,6 +18,7 @@ from .lodging_services import (
     cohort_hold_range,
     cohort_self_booking_status,
     move_lodging_bed,
+    release_lodging_reservation,
     request_general_lodging,
     set_cohort_self_booking,
     update_cohort_allocation,
@@ -162,6 +163,11 @@ def _cohort_operations_card(cohort):
         "free_beds": max(0, capacity - len(students)),
         "pending_arrivals": sum(1 for student in students if not student.checked_in_at),
         "checked_in": sum(1 for student in students if student.checked_in_at),
+        "no_show": sum(
+            1
+            for release in cohort.releases.all()
+            if release.outcome == CourseLodgingRelease.Outcome.NO_SHOW
+        ),
         "can_toggle_booking": (
             cohort.allocation_status == CourseLodgingCohort.AllocationStatus.ALLOCATED
             and cohort.check_out_date >= timezone.localdate()
@@ -181,6 +187,7 @@ def _operations_summary(cards, public_pending):
         "assigned": sum(card["assigned"] for card in active_cards),
         "free_beds": sum(card["free_beds"] for card in active_cards),
         "pending_arrivals": sum(card["pending_arrivals"] for card in active_cards),
+        "no_show": sum(card["no_show"] for card in cards),
     }
 
 
@@ -193,9 +200,16 @@ def general_request(request):
         }
     form = GeneralRequestForm(request.POST if request.method == "POST" else None, initial=initial)
     if request.method == "POST" and form.is_valid():
+        authenticated = bool(getattr(request.user, "is_authenticated", False))
+        client_key = ""
+        if not authenticated:
+            if request.session.session_key is None:
+                request.session.create()
+            client_key = request.session.session_key or ""
         try:
             booking = request_general_lodging(
-                actor=request.user if getattr(request.user, "is_authenticated", False) else None,
+                actor=request.user if authenticated else None,
+                client_key=client_key,
                 **form.cleaned_data,
             )
         except (ValidationError, BookingConflict) as exc:
@@ -214,7 +228,7 @@ def lodging_workspace(request):
         raise PermissionDenied
     cohorts = (
         CourseLodgingCohort.objects.all()
-        .prefetch_related("rooms", "students")
+        .prefetch_related("rooms", "students", "releases")
         .order_by("-check_in_date")
     )
     if not (request.user.is_superuser or request.user.has_perm("bookings.change_courselodgingcohort")):
@@ -275,6 +289,30 @@ def lodging_workspace(request):
                         "เปิดรับจองสำหรับนักเรียนแล้ว" if requested_state == "open" else "ปิดรับจองสำหรับนักเรียนแล้ว",
                     )
                     return redirect(f"{request.path}?cohort={cohort.slug}")
+
+        if action == "release_student":
+            student_id = request.POST.get("student_id", "")
+            outcome = request.POST.get("outcome", "")
+            target_student = cohort.students.filter(pk=student_id).first()
+            if target_student is None:
+                messages.error(request, "ไม่พบผู้เข้าพักที่ต้องการดำเนินการ")
+            else:
+                try:
+                    release_lodging_reservation(
+                        student=target_student,
+                        outcome=outcome,
+                        actor=request.user,
+                        reason=request.POST.get("reason", ""),
+                    )
+                except (PermissionDenied, ValidationError, ValueError, IntegrityError) as exc:
+                    text = " · ".join(exc.messages) if isinstance(exc, ValidationError) else str(exc)
+                    messages.error(request, text)
+                else:
+                    if outcome == CourseLodgingRelease.Outcome.NO_SHOW:
+                        messages.success(request, "บันทึกไม่มารายงานตัวและคืนเตียงแล้ว")
+                    else:
+                        messages.success(request, "ยกเลิกการจองและคืนเตียงแล้ว")
+                    return redirect(f"{request.path}?cohort={cohort.slug}#room-board")
 
         allocating = action == "allocation"
         if allocating:
@@ -455,6 +493,7 @@ def lodging_workspace(request):
             "arrival_filter": arrival_filter,
             "move_student": move_student,
             "move_form": move_form,
+            "can_mark_no_show": bool(cohort and timezone.localdate() >= cohort.check_in_date),
         },
     )
     response["Cache-Control"] = "private, no-store"

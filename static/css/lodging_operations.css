@@ -42,7 +42,7 @@
   .bed-assign-link, .bed-checkin-link { width: 100%; justify-content: center; }
 }
 
-.lodging-operations-summary { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 12px; }
+.lodging-operations-summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; }
 .lodging-operations-stat { display: grid; gap: 4px; padding: 16px; border: 1px solid var(--line); border-radius: 14px; background: var(--surface-soft, rgba(127, 127, 127, .08)); text-decoration: none; color: inherit; }
 .lodging-operations-stat strong { font-size: clamp(1.6rem, 4vw, 2.2rem); line-height: 1; }
 .lodging-operations-stat span { color: var(--muted); }
@@ -70,6 +70,9 @@
 .lodging-workspace-side .lodging-assignment-panel { position: static; }
 .bed-move-link { justify-self: start; min-height: 40px; display: inline-flex; align-items: center; padding: 6px 10px; border: 1px solid var(--line); border-radius: 10px; text-decoration: none; }
 .bed-move-link:focus-visible { outline: 3px solid var(--cyan); outline-offset: 2px; }
+.lodging-bed-release-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 6px; }
+.lodging-bed-release-actions form { margin: 0; }
+.lodging-bed-release-actions button { min-height: 40px; }
 .lodging-move-panel { scroll-margin-top: 88px; }
 @media (max-width: 1000px) {
   .lodging-operations-summary { grid-template-columns: repeat(2, minmax(0, 1fr)); }

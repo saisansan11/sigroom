@@ -5,6 +5,8 @@
 """
 
 from datetime import date, datetime, time, timedelta
+import hashlib
+import hmac
 from typing import Sequence
 from urllib.parse import urlencode
 
@@ -12,13 +14,20 @@ from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.db.backends.postgresql.psycopg_any import DateTimeTZRange
 from django.core.exceptions import PermissionDenied, ValidationError
-from django.db import transaction
+from django.db import IntegrityError, transaction
 from django.utils import timezone
 
 from audit.services import audit
 from resources.models import Resource
 
-from .lodging_models import CourseLodgingCohort, CourseStudentLodging, PublicLodgingAccess
+from .lodging_models import (
+    CourseLodgingAccess,
+    CourseLodgingCohort,
+    CourseLodgingRelease,
+    CourseStudentLodging,
+    PublicLodgingAccess,
+    PublicLodgingThrottle,
+)
 from .models import BookingResource
 from .phone_utils import normalize_phone  # noqa: F401 (re-exported for bookings.lodging_views)
 
@@ -108,9 +117,10 @@ def can_access_lodging_management(user) -> bool:
 def cohort_self_booking_status(cohort: CourseLodgingCohort, now: datetime | None = None) -> tuple[str, str]:
     """Return policy status for student self-booking. Legacy rows without a window stay compatible."""
     now = now or timezone.now()
+    today = timezone.localtime(now).date()
     if cohort.allocation_status != CourseLodgingCohort.AllocationStatus.ALLOCATED:
         return "unavailable", "หลักสูตรนี้ยังไม่ได้จัดสรรห้องพัก"
-    if cohort.check_out_date < timezone.localdate():
+    if cohort.check_out_date < today:
         return "ended", "รอบเข้าพักนี้สิ้นสุดแล้ว"
     if not cohort.is_active:
         return "closed", "หลักสูตรนี้ปิดรับจองอยู่"
@@ -121,6 +131,46 @@ def cohort_self_booking_status(cohort: CourseLodgingCohort, now: datetime | None
     if cohort.booking_close_at and now > cohort.booking_close_at:
         return "closed", "หมดเวลารับจองแล้ว"
     return "open", "เปิดรับจอง"
+
+
+def _public_throttle_digest(scope: str, value: str) -> str:
+    payload = f"{scope}:{value}".encode("utf-8")
+    return hmac.new(settings.SECRET_KEY.encode("utf-8"), payload, hashlib.sha256).hexdigest()
+
+
+def _public_throttle_window_start(now: datetime) -> datetime:
+    window_seconds = max(60, int(getattr(settings, "PUBLIC_LODGING_RATE_WINDOW_SECONDS", 900)))
+    epoch = int(now.timestamp())
+    return datetime.fromtimestamp(epoch - (epoch % window_seconds), tz=now.tzinfo)
+
+
+@transaction.atomic
+def _consume_public_lodging_quota(*, scope: str, value: str, limit: int, now: datetime | None = None):
+    """Consume one anonymous-request quota without storing the raw identifier."""
+    now = now or timezone.now()
+    limit = max(1, int(limit))
+    window_start = _public_throttle_window_start(now)
+    key_hash = _public_throttle_digest(scope, value)
+    row = (
+        PublicLodgingThrottle.objects.select_for_update()
+        .filter(scope=scope, key_hash=key_hash, window_start=window_start)
+        .first()
+    )
+    if row is None:
+        try:
+            with transaction.atomic():
+                row = PublicLodgingThrottle.objects.create(
+                    scope=scope, key_hash=key_hash, window_start=window_start, count=0
+                )
+        except IntegrityError:
+            row = PublicLodgingThrottle.objects.select_for_update().get(
+                scope=scope, key_hash=key_hash, window_start=window_start
+            )
+    if row.count >= limit:
+        raise ValidationError("ส่งคำขอถี่เกินไป กรุณารอสักครู่แล้วลองใหม่")
+    row.count += 1
+    row.save(update_fields=["count"])
+    return row
 
 
 def _public_lodging_principal():
@@ -190,6 +240,8 @@ def assign_lodging_bed(*, cohort, room_id, bed_number, rank, full_name,
         raise ValidationError("เบอร์โทรศัพท์นี้ลงทะเบียนในรอบนี้แล้ว")
     student = CourseStudentLodging.objects.create(
         cohort=cohort, room=room, bed_number=bed_number, note=note, **values)
+    if actor is None:
+        CourseLodgingAccess.objects.create(student=student)
     audit(actor, "bookings.coursestudentlodging", student.pk,
           "lodging_bed_assigned", after={"cohort": str(cohort.pk), "room": room.code,
                                         "bed_number": bed_number, "by_staff": actor is not None})
@@ -243,6 +295,107 @@ def move_lodging_bed(*, student: CourseStudentLodging, room_id, bed_number, acto
 
 
 @transaction.atomic
+def release_lodging_reservation(
+    *,
+    student: CourseStudentLodging,
+    outcome: str,
+    actor=None,
+    access_token=None,
+    reason: str = "",
+    now: datetime | None = None,
+) -> CourseLodgingRelease:
+    """Remove an active bed reservation while preserving immutable operational history."""
+    now = now or timezone.now()
+    current = CourseStudentLodging.objects.only("cohort_id", "room_id").get(pk=student.pk)
+    cohort = CourseLodgingCohort.objects.select_for_update().get(pk=current.cohort_id)
+    room = Resource.objects.select_for_update().get(pk=current.room_id)
+    locked = (
+        CourseStudentLodging.objects.select_related("cohort", "room")
+        .select_for_update()
+        .get(pk=student.pk)
+    )
+    if locked.checked_in_at is not None:
+        raise ValidationError("ผู้เข้าพักรายงานตัวแล้ว ไม่สามารถปล่อยเตียงด้วยขั้นตอนนี้")
+    if outcome not in CourseLodgingRelease.Outcome.values:
+        raise ValidationError("ผลการปล่อยเตียงไม่ถูกต้อง")
+
+    today = timezone.localtime(now).date()
+    authenticated = bool(getattr(actor, "is_authenticated", False))
+    if authenticated:
+        if not can_manage_cohort(actor, cohort):
+            raise PermissionDenied("คุณไม่มีสิทธิ์ยกเลิกหรือบันทึกไม่มารายงานตัวของหลักสูตรนี้")
+        channel = CourseLodgingRelease.Channel.STAFF
+        if today > cohort.check_out_date:
+            raise ValidationError("รอบเข้าพักนี้สิ้นสุดแล้ว")
+        if outcome == CourseLodgingRelease.Outcome.NO_SHOW and today < cohort.check_in_date:
+            raise ValidationError("ยังไม่ถึงวันเข้าพัก จึงยังบันทึกเป็นไม่มารายงานตัวไม่ได้")
+    else:
+        if outcome != CourseLodgingRelease.Outcome.CANCELLED:
+            raise PermissionDenied("การบันทึกไม่มารายงานตัวทำได้โดยเจ้าหน้าที่เท่านั้น")
+        if not access_token:
+            raise PermissionDenied("ลิงก์จัดการการจองไม่ถูกต้อง")
+        access = (
+            CourseLodgingAccess.objects.select_for_update()
+            .filter(pk=access_token, student=locked)
+            .first()
+        )
+        if access is None:
+            raise PermissionDenied("ลิงก์จัดการการจองไม่ถูกต้อง")
+        booking_state, booking_message = cohort_self_booking_status(cohort, now=now)
+        if booking_state != "open":
+            raise ValidationError(f"ยกเลิกด้วยตนเองไม่ได้: {booking_message}")
+        channel = CourseLodgingRelease.Channel.SELF_SERVICE
+
+    snapshot = {
+        "cohort": str(cohort.pk),
+        "room": room.code,
+        "bed_number": locked.bed_number,
+        "rank": locked.rank,
+        "full_name": locked.full_name,
+        "origin_unit": locked.origin_unit,
+        "phone": locked.phone,
+        "note": locked.note,
+        "booked_at": locked.booked_at,
+    }
+    release = CourseLodgingRelease.objects.create(
+        original_student_id=locked.pk,
+        cohort=cohort,
+        room=room,
+        bed_number=locked.bed_number,
+        rank=locked.rank,
+        full_name=locked.full_name,
+        origin_unit=locked.origin_unit,
+        phone=locked.phone,
+        note=locked.note,
+        booked_at=locked.booked_at,
+        outcome=outcome,
+        channel=channel,
+        reason=(reason or "").strip(),
+        released_by=actor if authenticated else None,
+    )
+    action = (
+        "lodging_no_show"
+        if outcome == CourseLodgingRelease.Outcome.NO_SHOW
+        else "lodging_reservation_cancelled"
+    )
+    audit(
+        actor,
+        "bookings.coursestudentlodging",
+        locked.pk,
+        action,
+        before=snapshot,
+        after={
+            "release_id": str(release.pk),
+            "outcome": outcome,
+            "channel": channel,
+            "reason": release.reason,
+        },
+    )
+    locked.delete()
+    return release
+
+
+@transaction.atomic
 def set_cohort_self_booking(*, cohort: CourseLodgingCohort, actor, enabled: bool) -> CourseLodgingCohort:
     """Quick open/close action for staff; preserves allocation and uses the shared allocation service."""
     locked = CourseLodgingCohort.objects.select_for_update().get(pk=cohort.pk)
@@ -284,9 +437,10 @@ def set_cohort_self_booking(*, cohort: CourseLodgingCohort, actor, enabled: bool
     )
 
 
-@transaction.atomic
-def request_general_lodging(*, actor=None, room, check_in, check_out, phone, note="", guest_name=""):
-    """Create a general/public lodging request on Booking Core and return the pending Booking."""
+def request_general_lodging(
+    *, actor=None, room, check_in, check_out, phone, note="", guest_name="", client_key=""
+):
+    """Create an idempotent general/public lodging request on Booking Core."""
     from .models import Booking
     from .services import submit_booking
 
@@ -309,19 +463,51 @@ def request_general_lodging(*, actor=None, room, check_in, check_out, phone, not
     if check_out <= check_in:
         raise ValidationError("วันออกต้องอยู่หลังวันเข้า")
     zone = timezone.get_current_timezone()
-    booking = Booking(
-        room=room, requester=requester, unit=requester.unit,
-        title="คำขอเข้าพักทั่วไป", purpose=Booking.Purpose.OTHER,
-        responsible_name=responsible_name, responsible_phone=phone,
-        start_at=timezone.make_aware(datetime.combine(check_in, time(14)), zone),
-        end_at=timezone.make_aware(datetime.combine(check_out, time(12)), zone),
-        visibility=Booking.Visibility.RESTRICTED, note=note,
+    start_at = timezone.make_aware(datetime.combine(check_in, time(14)), zone)
+    end_at = timezone.make_aware(datetime.combine(check_out, time(12)), zone)
+
+    existing = (
+        Booking.objects.filter(
+            room=room,
+            title="คำขอเข้าพักทั่วไป",
+            responsible_phone=phone,
+            start_at=start_at,
+            end_at=end_at,
+            request_status__in=[Booking.RequestStatus.PENDING, Booking.RequestStatus.APPROVED],
+            public_lodging_access__isnull=False,
+        )
+        .order_by("created_at")
+        .first()
     )
-    booking.full_clean()
-    booking.save()
-    booking = submit_booking(booking)
-    PublicLodgingAccess.objects.create(booking=booking)
-    return booking
+    if existing is not None:
+        raise ValidationError("มีคำขอเข้าพักช่วงนี้ด้วยเบอร์โทรนี้อยู่แล้ว กรุณาใช้ลิงก์ติดตามคำขอเดิม")
+
+    if not authenticated:
+        _consume_public_lodging_quota(
+            scope=PublicLodgingThrottle.Scope.PHONE,
+            value=phone,
+            limit=getattr(settings, "PUBLIC_LODGING_RATE_PHONE_LIMIT", 3),
+        )
+        if client_key:
+            _consume_public_lodging_quota(
+                scope=PublicLodgingThrottle.Scope.CLIENT,
+                value=str(client_key),
+                limit=getattr(settings, "PUBLIC_LODGING_RATE_CLIENT_LIMIT", 8),
+            )
+
+    with transaction.atomic():
+        booking = Booking(
+            room=room, requester=requester, unit=requester.unit,
+            title="คำขอเข้าพักทั่วไป", purpose=Booking.Purpose.OTHER,
+            responsible_name=responsible_name, responsible_phone=phone,
+            start_at=start_at, end_at=end_at,
+            visibility=Booking.Visibility.RESTRICTED, note=note,
+        )
+        booking.full_clean()
+        booking.save()
+        booking = submit_booking(booking)
+        PublicLodgingAccess.objects.create(booking=booking)
+        return booking
 
 
 def generate_cohort_qr_svg(url: str) -> bytes:
@@ -527,7 +713,7 @@ def update_cohort_allocation(
 
 
 @transaction.atomic
-def check_in_student(student: CourseStudentLodging, actor) -> CourseStudentLodging:
+def check_in_student(student: CourseStudentLodging, actor, now: datetime | None = None) -> CourseStudentLodging:
     """ยืนยันรายงานตัวนักเรียนที่หน้าที่พัก (สแกน QR บนบัตร).
 
     ล็อกแถวด้วย select_for_update() ภายใน transaction.atomic() เพื่อกันการยืนยันซ้ำ
@@ -543,9 +729,15 @@ def check_in_student(student: CourseStudentLodging, actor) -> CourseStudentLodgi
         raise PermissionDenied("คุณไม่มีสิทธิ์ยืนยันรายงานตัวของรุ่นนี้")
     if locked_student.checked_in_at is not None:
         raise ValidationError("นักเรียนคนนี้รายงานตัวไปแล้ว ไม่สามารถยืนยันซ้ำได้")
+    now = now or timezone.now()
+    today = timezone.localtime(now).date()
+    if today < locked_student.cohort.check_in_date:
+        raise ValidationError("ยังไม่ถึงวันเข้าพัก จึงยังยืนยันรายงานตัวไม่ได้")
+    if today > locked_student.cohort.check_out_date:
+        raise ValidationError("รอบเข้าพักสิ้นสุดแล้ว ไม่สามารถยืนยันรายงานตัวได้")
 
     before = {"checked_in_at": None, "checked_in_by": None}
-    locked_student.checked_in_at = timezone.now()
+    locked_student.checked_in_at = now
     locked_student.checked_in_by = actor
     locked_student.save(update_fields=["checked_in_at", "checked_in_by"])
     after = {

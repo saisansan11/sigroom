@@ -26,7 +26,7 @@ def arrival_data():
         )
         for number in (401, 402, 403)
     ]
-    start = timezone.localdate() + timedelta(days=7)
+    start = timezone.localdate()
     cohort = CourseLodgingCohort.objects.create(
         title="หลักสูตร UX31",
         slug="ux31",
