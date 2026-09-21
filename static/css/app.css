@@ -4600,7 +4600,7 @@ details.operational-calendar-section[open] .disclosure-arrow {
   margin: 0;
   padding: .35rem .75rem;
   font-size: var(--text-xs);
-  min-height: 38px;
+  min-height: 44px;
   cursor: pointer;
   box-sizing: border-box;
 }

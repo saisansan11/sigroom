@@ -6,7 +6,7 @@
 <div class="online-teaching-shell">
   <div class="page-heading online-teaching-heading">
     <div>
-      <p class="eyebrow">Teacher Self-Service · {{ room.code }}</p>
+      <p class="eyebrow">สำหรับครูผู้สอน</p>
       <h1>{{ room.name }}</h1>
       <p>{{ room.building }}{% if room.floor %} · ชั้น {{ room.floor }}{% endif %} · รองรับ {{ room.capacity }} คน</p>
     </div>
@@ -17,7 +17,7 @@
     <div><span>เวลาให้บริการ</span><strong>{{ room.rule.service_start|time:'H:i' }}–{{ room.rule.service_end|time:'H:i' }}</strong></div>
     <div><span>จองล่วงหน้า</span><strong>ไม่เกิน {{ room.rule.max_advance_days }} วัน</strong></div>
     <div><span>ระยะต่อครั้ง</span><strong>{{ room.rule.min_duration_min }}–{{ room.rule.max_duration_min }} นาที</strong></div>
-    <div><span>สถานะ</span><strong>อนุมัติอัตโนมัติเมื่อว่าง</strong></div>
+    <div><span>สถานะ</span><strong>ยืนยันให้ทันทีเมื่อว่าง</strong></div>
   </section>
 
   {% if room.fixed_equipment %}
@@ -65,7 +65,7 @@
 
     <div class="online-booking-actions">
       <button type="submit" name="action" value="check" class="secondary" {% if not form.course_catalog_ready %}disabled{% endif %}>ตรวจสอบช่วงเวลา</button>
-      <button type="submit" name="action" value="book" {% if not form.course_catalog_ready %}disabled{% endif %}>ยืนยันจองและอนุมัติอัตโนมัติ</button>
+      <button type="submit" name="action" value="book" {% if not form.course_catalog_ready %}disabled{% endif %}>ยืนยันการจอง</button>
     </div>
   </form>
 </div>
