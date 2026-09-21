@@ -181,14 +181,14 @@ def test_custodian_user_navigation_groups_usage(client, ux1_data):
 
 
 def test_lodging_manager_navigation_groups_lodging_management(client, ux1_data):
-    """Supervisor gets task nav plus grouped operational menu with course lodging manage."""
+    """Supervisor gets the shared lodging operations entry in the operational menu."""
     client.force_login(ux1_data["supervisor_user"])
     resp = client.get(reverse("bookings:calendar"))
     assert resp.status_code == 200
     header = _header_html(resp.content.decode())
 
     assert "งานปฏิบัติการ" in header
-    assert "จัดการที่พักหลักสูตร" in header
+    assert "จัดการที่พัก" in header
     assert reverse("bookings:lodging_workspace") in header
 
 

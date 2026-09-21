@@ -41,3 +41,46 @@
   .lodging-assignment-panel { position: static; }
   .bed-assign-link, .bed-checkin-link { width: 100%; justify-content: center; }
 }
+
+.lodging-operations-summary { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 12px; }
+.lodging-operations-stat { display: grid; gap: 4px; padding: 16px; border: 1px solid var(--line); border-radius: 14px; background: var(--surface-soft, rgba(127, 127, 127, .08)); text-decoration: none; color: inherit; }
+.lodging-operations-stat strong { font-size: clamp(1.6rem, 4vw, 2.2rem); line-height: 1; }
+.lodging-operations-stat span { color: var(--muted); }
+.lodging-operations-stat.needs-attention { border-color: var(--amber, #c8881a); }
+.lodging-operations-section { display: grid; gap: 12px; scroll-margin-top: 88px; }
+.lodging-public-request-list { display: grid; gap: 12px; }
+.lodging-public-request-card { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 18px; align-items: start; }
+.lodging-public-request-main { display: grid; gap: 5px; }
+.lodging-public-request-main p, .lodging-public-request-main h3 { margin: 0; }
+.lodging-public-request-actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: flex-start; }
+.lodging-public-request-actions form { margin: 0; }
+.lodging-public-request-actions details { min-width: 220px; margin: 0; }
+.lodging-course-ops-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 12px; }
+.lodging-course-ops-card { display: grid; gap: 10px; }
+.lodging-course-ops-card.is-selected { border-color: var(--cyan); }
+.lodging-course-ops-head { display: flex; flex-wrap: wrap; gap: 8px; align-items: flex-start; justify-content: space-between; }
+.lodging-course-ops-head h3 { margin: 0; }
+.lodging-course-mini-stats { display: flex; flex-wrap: wrap; gap: 8px; }
+.lodging-course-mini-stats span { padding: 5px 8px; border-radius: 999px; background: var(--surface-soft, rgba(127, 127, 127, .08)); }
+.lodging-course-policy-copy { color: var(--muted); margin: 0; }
+.lodging-course-ops-actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.lodging-course-ops-actions form { margin: 0; }
+.lodging-selected-cohort { display: grid; gap: 8px; }
+.lodging-workspace-side { display: grid; gap: 16px; position: sticky; top: 88px; }
+.lodging-workspace-side .lodging-assignment-panel { position: static; }
+.bed-move-link { justify-self: start; min-height: 40px; display: inline-flex; align-items: center; padding: 6px 10px; border: 1px solid var(--line); border-radius: 10px; text-decoration: none; }
+.bed-move-link:focus-visible { outline: 3px solid var(--cyan); outline-offset: 2px; }
+.lodging-move-panel { scroll-margin-top: 88px; }
+@media (max-width: 1000px) {
+  .lodging-operations-summary { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 800px) {
+  .lodging-public-request-card { grid-template-columns: 1fr; }
+  .lodging-public-request-actions, .lodging-public-request-actions > form, .lodging-public-request-actions details { width: 100%; }
+  .lodging-public-request-actions button { width: 100%; }
+  .lodging-workspace-side { position: static; }
+  .bed-move-link { width: 100%; justify-content: center; }
+}
+@media (max-width: 520px) {
+  .lodging-operations-summary { grid-template-columns: 1fr; }
+}
