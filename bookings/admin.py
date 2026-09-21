@@ -8,6 +8,8 @@ from .models import (
     BookingAmendment,
     BookingResource,
     BookingSeries,
+    Course,
+    CourseRun,
     CourseLodgingCohort,
     CourseStudentLodging,
     Preemption,
@@ -101,6 +103,23 @@ class PreemptionAdmin(admin.ModelAdmin):
 
     def has_delete_permission(self, request, obj=None):
         return False
+
+
+@admin.register(Course)
+class CourseAdmin(admin.ModelAdmin):
+    list_display = ("name", "code", "include_year_in_label", "is_active", "created_at")
+    list_filter = ("include_year_in_label", "is_active")
+    search_fields = ("name", "code")
+    ordering = ("name",)
+
+
+@admin.register(CourseRun)
+class CourseRunAdmin(admin.ModelAdmin):
+    list_display = ("course", "run_number", "year_code", "start_date", "end_date", "is_active", "slug")
+    list_filter = ("is_active", "course", "start_date")
+    search_fields = ("course__name", "slug", "year_code")
+    autocomplete_fields = ("course",)
+    ordering = ("-start_date", "course__name", "-run_number")
 
 
 @admin.register(ReferenceValue)

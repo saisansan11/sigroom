@@ -24,15 +24,24 @@ Backend enforcement exists at both the focused route and booking policy validati
 
 Superusers are allowed for administration/testing. Other authenticated users receive HTTP 403 when accessing the focused booking route. Anonymous users are redirected to login.
 
-## Course Source of Truth adapter
+## Shared Course Catalog
 
-The current repository has no dedicated generic Course model. `bookings.management.commands.seed_courses` already publishes configured course titles into:
+Phase E now uses a shared two-level catalog instead of treating the full course title as repeated free text:
 
-`ReferenceValue(field="attendee_level")`
+- `Course` stores the stable course name once.
+- `CourseRun` stores each delivery/run: run number, optional year code, start/end dates and active state.
 
-Phase E therefore treats active rows in that configured catalog as the current Course Source of Truth adapter. The online booking form renders these values as a strict `<select>` and rejects values that are missing or inactive. No free-text course title is accepted.
+Example:
 
-This avoids creating a second course table before a school-wide Course/Enrollment source is selected. A future external course service can replace the adapter without changing Booking Core.
+`นายสิบชั้นต้น เหล่า ส. ผ่านสื่ออิเล็กทรอนิกส์(หลักสูตรเร่งรัด)`
+
+can have `รุ่นที่ 11`, `รุ่นที่ 12`, etc. Staff do not need to retype the long course name each year.
+
+Teacher Self-Service renders active current/future `CourseRun` rows as a strict dropdown. The submitted booking stores a nullable stable `course_run` foreign key and also snapshots the display title into the existing `title` / `attendee_level` text fields for backward compatibility. Arbitrary free-text course titles are not accepted by this focused workflow.
+
+The staff workspace `/courses/` provides a low-typing action “เปิดรุ่นถัดไป”. It automatically proposes the next run number; courses that historically use labels such as `30/69` also increment the year code from the latest configured run. Staff enter only the start and end dates.
+
+The lodging create screen consumes the same `CourseRun` catalog. Choosing a run automatically supplies its title, stable slug and default dates, while the existing lodging title fields remain in the database for compatibility with old records.
 
 Important: this Course Catalog is **not** the missing student-enrollment roster. The Phase D blocker `student ∈ course` for lodging remains unresolved.
 
@@ -43,7 +52,7 @@ Important: this Course Catalog is **not** the missing student-enrollment roster.
 3. See the three configured online rooms, capacity, service hours, equipment and near-term availability.
 4. Choose a room.
 5. Select date/start/end.
-6. Select a course from the active Course Catalog dropdown.
+6. Select the course/run from the active shared catalog dropdown.
 7. Select purpose from the standard Booking purpose choices.
 8. Use “ตรวจสอบช่วงเวลา” to run the same Booking Core availability policy used by other rooms.
 9. Use “ยืนยันจองและอนุมัติอัตโนมัติ”.
@@ -60,7 +69,7 @@ Booking is blocked when any of these are true:
 - room is inactive;
 - room has no rule or its rule is not AUTO;
 - teacher account has no unit or phone;
-- selected course is not an active catalog value;
+- selected course/run is inactive, already ended, or not present in the shared catalog;
 - start/end violates 15-minute grid, service hours, min/max duration or max advance;
 - blackout/outage applies;
 - room or associated held resources conflict with another active booking.
@@ -81,7 +90,7 @@ Optionally assign existing users to the teacher role:
 uv run manage.py seed_online_teaching --owner-unit EDU --teacher <username> --teacher <username2>
 ```
 
-The command is idempotent. It creates the teacher group if missing, verifies/creates exactly the three allowlisted online resources, ensures AUTO policy for newly created rooms, and publishes the existing `COURSES` list into the active course catalog.
+The command is idempotent. It creates the teacher group if missing, verifies/creates exactly the three allowlisted online resources, ensures AUTO policy for newly created rooms, and idempotently publishes the existing `COURSES` list into `Course` + `CourseRun`. Legacy `ReferenceValue(attendee_level)` suggestions are preserved for generic booking forms.
 
 Safety behavior:
 
@@ -100,11 +109,11 @@ Before a Production rollout:
 3. review service hours, duration limits, advance limits and cancel cutoff for each room;
 4. confirm the active course catalog;
 5. backup database;
-6. run migration/check gates (Phase E should introduce no schema migration);
+6. review and apply additive migration `0014` (new Course/CourseRun tables plus nullable links only; no destructive operation);
 7. deploy only after explicit approval;
 8. smoke-test teacher login → three rooms → availability → booking → My Bookings → cancel;
 9. verify non-teacher direct URL returns 403 and no conflicting booking can be created.
 
 ## Rollback
 
-Phase E is application/configuration-only and introduces no new schema by design. Application rollback therefore consists of returning to the previous application revision. Any room/group/catalog records created by the setup command should normally be left in place and marked/configured through admin rather than deleted during emergency rollback; deleting configuration is a separate explicit operational action.
+Phase E uses additive migration `0014`. Application rollback can return to the previous application revision while leaving the new tables and nullable foreign-key columns in place; the old code does not depend on them. Course/run and room/group records created by setup should normally be left in place rather than deleted during emergency rollback. Destructive schema or data rollback is a separate explicit operation and is not part of the normal rollback path.

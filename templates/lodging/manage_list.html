@@ -13,7 +13,10 @@
   </div>
 </div>
 
-<p><a role="button" href="{% url 'bookings:lodging_workspace' %}">ผังจัดผู้เข้าพัก →</a></p>
+<p>
+  <a role="button" href="{% url 'bookings:lodging_workspace' %}">ผังจัดผู้เข้าพัก →</a>
+  {% if can_create %}<a role="button" class="secondary" href="{% url 'bookings:course_catalog_manage' %}">หลักสูตรและรุ่น</a>{% endif %}
+</p>
 <div class="lodging-manage-grid">
   <!-- รายการรอบจองที่เปิดอยู่ -->
   <section aria-labelledby="heading-cohorts-list">
@@ -94,15 +97,18 @@
 
         <form method="post">
           {% csrf_token %}
-          <label for="id_title">ชื่อหลักสูตร / รุ่น
-            <input type="text" id="id_title" name="title" list="course-titles" placeholder="เลือกชื่อเดิม หรือพิมพ์หลักสูตรใหม่" required>
-            <datalist id="course-titles">{% for c in cohorts %}<option value="{{ c.title }}">{% endfor %}</datalist>
+          <label for="id_course_run">หลักสูตร / รุ่น
+            <select id="id_course_run" name="course_run" required>
+              <option value="">เลือกหลักสูตรและรุ่น</option>
+              {% for run in course_runs %}
+                <option value="{{ run.pk }}" data-start="{{ run.start_date|date:'Y-m-d' }}" data-end="{{ run.end_date|date:'Y-m-d' }}">{{ run.display_name }}</option>
+              {% endfor %}
+            </select>
+            <small>ไม่ต้องพิมพ์ชื่อใหม่ ถ้ายังไม่มีรุ่นที่ต้องการ ให้ไปที่ “หลักสูตรและรุ่น” แล้วกด “เปิดรุ่นถัดไป”</small>
           </label>
-
-          <label for="id_slug">รหัสลิงก์ (ภาษาอังกฤษ/ตัวเลข ไม่มีเว้นวรรค)
-            <input type="text" id="id_slug" name="slug" placeholder="เว้นว่าง ระบบสร้างรหัสให้" pattern="[a-zA-Z0-9_-]+">
-            <small>นักเรียนจะเข้าผ่านลิงก์ <code>.../lodging/c/&lt;รหัส&gt;/</code></small>
-          </label>
+          {% if not course_runs %}
+            <div class="notice warning">ยังไม่มีรุ่นหลักสูตรที่เปิดใช้ กรุณาเปิดรุ่นก่อนสร้างรอบที่พัก</div>
+          {% endif %}
 
           <div class="grid-dates">
             <label for="id_check_in_date">วันที่เริ่มเข้าพัก
@@ -225,6 +231,18 @@ function setRoomCheckboxes(checked) {
 }
 
 document.addEventListener('DOMContentLoaded', function () {
+  var courseRun = document.getElementById('id_course_run');
+  if (courseRun) {
+    courseRun.addEventListener('change', function () {
+      var selected = courseRun.options[courseRun.selectedIndex];
+      if (!selected || !selected.value) return;
+      var start = document.getElementById('id_check_in_date');
+      var end = document.getElementById('id_check_out_date');
+      if (start && !start.value) start.value = selected.getAttribute('data-start') || '';
+      if (end && !end.value) end.value = selected.getAttribute('data-end') || '';
+    });
+  }
+
   var lineBtns = document.querySelectorAll('.lodging-line-share-btn');
   lineBtns.forEach(function (btn) {
     var path = btn.getAttribute('data-portal-path');

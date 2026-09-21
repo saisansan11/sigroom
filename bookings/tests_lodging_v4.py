@@ -19,7 +19,7 @@ from bookings.lodging_services import (
     normalize_phone,
     update_cohort_allocation,
 )
-from bookings.models import Booking
+from bookings.models import Booking, Course, CourseRun
 from bookings.services import BookingConflict, place_holds, validate_booking_window
 from resources.models import Resource, ResourceRule
 
@@ -523,7 +523,13 @@ def test_seed_courses_is_idempotent_and_safe(lodging_data):
         is_active=False,
     ).count() == 14
     assert "นำเข้า/ตรวจสอบหลักสูตรครบ 14" in output.getvalue()
-    assert CourseLodgingCohort.objects.get(slug="nns-29-68").title == "นนส.ทบ. 1 ปี 6 เดือน เหล่า ส.(ระยะเวลา 8 เดือน) รุ่นที่ 29/68"
+    assert Course.objects.count() == 8
+    assert CourseRun.objects.count() == 14
+    assert CourseLodgingCohort.objects.filter(course_run__isnull=False).count() == 14
+    nns = CourseLodgingCohort.objects.select_related("course_run__course").get(slug="nns-29-68")
+    assert nns.title == "นนส.ทบ. 1 ปี 6 เดือน เหล่า ส.(ระยะเวลา 8 เดือน) รุ่นที่ 29/68"
+    assert nns.course_run.display_name == nns.title
+    assert nns.course_run.course.name == "นนส.ทบ. 1 ปี 6 เดือน เหล่า ส.(ระยะเวลา 8 เดือน)"
 
 
 def test_strict_create_and_global_manage_permissions(lodging_data):

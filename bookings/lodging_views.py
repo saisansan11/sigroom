@@ -26,6 +26,7 @@ from .lodging_models import (
     CourseStudentLodging,
     PublicLodgingAccess,
 )
+from .course_catalog import selectable_course_runs
 from .lodging_services import (
     assign_lodging_bed,
     can_access_lodging_management,
@@ -348,14 +349,24 @@ def lodging_manage(request):
         room_category=Resource.Category.LODGING,
         status=Resource.Status.ACTIVE,
     ).order_by("building", "code")
+    course_runs = selectable_course_runs()
 
     if request.method == "POST":
         if not can_create:
             raise PermissionDenied("คุณไม่มีสิทธิ์สร้างรอบที่พัก")
-        title = request.POST.get("title", "").strip()
-        slug = request.POST.get("slug", "").strip().lower() or f"course-{uuid.uuid4().hex[:12]}"
-        check_in_raw = request.POST.get("check_in_date")
-        check_out_raw = request.POST.get("check_out_date")
+        course_run = None
+        course_run_id = request.POST.get("course_run", "").strip()
+        if course_run_id:
+            course_run = course_runs.filter(pk=course_run_id).select_related("course").first()
+            if course_run is None:
+                messages.error(request, "ไม่พบหลักสูตร/รุ่นที่เปิดใช้ กรุณาเลือกใหม่")
+                return redirect("bookings:lodging_manage")
+        title = course_run.display_name if course_run else request.POST.get("title", "").strip()
+        slug = request.POST.get("slug", "").strip().lower()
+        if not slug:
+            slug = course_run.slug if course_run else f"course-{uuid.uuid4().hex[:12]}"
+        check_in_raw = request.POST.get("check_in_date") or (course_run.start_date.isoformat() if course_run else "")
+        check_out_raw = request.POST.get("check_out_date") or (course_run.end_date.isoformat() if course_run else "")
         booking_open_raw = request.POST.get("booking_open_at")
         booking_close_raw = request.POST.get("booking_close_at")
         beds_per_room_raw = request.POST.get("beds_per_room", "4")
@@ -384,6 +395,7 @@ def lodging_manage(request):
                     messages.error(request, f"รหัสลิงก์ '{slug}' มีอยู่ในระบบแล้ว กรุณาตั้งรหัสอื่น")
                 else:
                     cohort = CourseLodgingCohort(
+                        course_run=course_run,
                         title=title,
                         slug=slug,
                         supervisor=request.user,
@@ -424,6 +436,7 @@ def lodging_manage(request):
         {
             "cohorts": cohorts,
             "lodging_rooms": lodging_rooms,
+            "course_runs": course_runs,
             "can_create": can_create,
         },
     )

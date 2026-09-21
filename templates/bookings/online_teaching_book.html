@@ -51,7 +51,7 @@
     <section class="online-booking-step" aria-labelledby="online-course-heading">
       <div><p class="eyebrow">2 · ข้อมูลการสอน</p><h2 id="online-course-heading">เลือกหลักสูตรและวัตถุประสงค์</h2></div>
       <div class="online-booking-grid two">
-        <label for="{{ form.course.id_for_label }}">{{ form.course.label }} {{ form.course }}{% for error in form.course.errors %}<small class="field-error" role="alert">{{ error }}</small>{% endfor %}</label>
+        <label for="{{ form.course_run.id_for_label }}">{{ form.course_run.label }} {{ form.course_run }}{% for error in form.course_run.errors %}<small class="field-error" role="alert">{{ error }}</small>{% endfor %}</label>
         <label for="{{ form.purpose.id_for_label }}">{{ form.purpose.label }} {{ form.purpose }}{% for error in form.purpose.errors %}<small class="field-error" role="alert">{{ error }}</small>{% endfor %}</label>
       </div>
       <p class="muted-text">ชื่อผู้จอง สังกัด และข้อมูลเจ้าของคำขอจะใช้จากบัญชีที่เข้าสู่ระบบโดยอัตโนมัติ ไม่ต้องพิมพ์ซ้ำ</p>

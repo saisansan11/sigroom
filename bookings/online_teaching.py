@@ -18,7 +18,8 @@ from notifications.services import notify_submitted
 from resources.models import Resource, ResourceRule
 
 from .forms import BuddhistDateField, time_choices
-from .models import Booking, ReferenceValue
+from .models import Booking, CourseRun
+from .course_catalog import selectable_course_runs
 from .services import BookingConflict, find_available_rooms, next_quarter_start, submit_booking
 
 
@@ -45,19 +46,14 @@ def online_booking_editable_fields(fields: set[str]) -> set[str]:
     return set(fields).intersection({"online_meeting_url", "attendees", "note"})
 
 
-def online_course_titles() -> list[str]:
-    """Current course catalog adapter.
+def online_course_runs():
+    """Shared course-run catalog adapter used by Teacher Self-Service."""
+    return selectable_course_runs()
 
-    seed_courses.py already publishes the canonical configured course titles into
-    ReferenceValue(attendee_level).  The focused workflow consumes only active rows
-    and never accepts arbitrary free text.  A future external course service can
-    replace this adapter without changing Booking Core.
-    """
-    return list(
-        ReferenceValue.objects.filter(field="attendee_level", is_active=True)
-        .order_by("order", "value")
-        .values_list("value", flat=True)
-    )
+
+class CourseRunChoiceField(forms.ModelChoiceField):
+    def label_from_instance(self, obj):
+        return obj.display_name
 
 
 def _room_queryset(*, active_only=True):
@@ -118,7 +114,12 @@ class OnlineTeachingBookingForm(forms.Form):
         widget=forms.Select(choices=time_choices()),
         input_formats=["%H:%M"],
     )
-    course = forms.ChoiceField(label="หลักสูตร", choices=())
+    course_run = CourseRunChoiceField(
+        label="หลักสูตร / รุ่น",
+        queryset=CourseRun.objects.none(),
+        empty_label=None,
+        error_messages={"invalid_choice": "หลักสูตร/รุ่นนี้ไม่ได้อยู่ในรายการที่เปิดใช้"},
+    )
     purpose = forms.ChoiceField(
         label="วัตถุประสงค์",
         choices=Booking.Purpose.choices,
@@ -127,17 +128,9 @@ class OnlineTeachingBookingForm(forms.Form):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        titles = online_course_titles()
-        self.fields["course"].choices = [(title, title) for title in titles]
-        self.course_catalog_ready = bool(titles)
-
-    def clean_course(self):
-        value = self.cleaned_data["course"]
-        if not ReferenceValue.objects.filter(
-            field="attendee_level", value=value, is_active=True
-        ).exists():
-            raise forms.ValidationError("หลักสูตรนี้ไม่ได้อยู่ในรายการที่เปิดใช้")
-        return value
+        runs = online_course_runs()
+        self.fields["course_run"].queryset = runs
+        self.course_catalog_ready = runs.exists()
 
     def clean(self):
         cleaned = super().clean()
@@ -185,7 +178,7 @@ def online_teaching_home(request):
             "configured_room_count": len(rooms),
             "next_start": next_start,
             "next_end": next_end,
-            "course_count": len(online_course_titles()),
+            "course_count": online_course_runs().count(),
         },
     )
 
@@ -226,15 +219,17 @@ def online_teaching_book(request, code):
                 if not is_available:
                     form.add_error(None, reason)
                 else:
-                    course = form.cleaned_data["course"]
+                    course_run = form.cleaned_data["course_run"]
+                    course_title = course_run.display_name
                     booking = Booking(
                         room=room,
                         requester=request.user,
                         unit=request.user.unit,
                         responsible_name=request.user.display_name,
                         responsible_phone=(request.user.phone or "").strip(),
-                        title=course,
-                        attendee_level=course,
+                        course_run=course_run,
+                        title=course_title,
+                        attendee_level=course_title,
                         purpose=form.cleaned_data["purpose"],
                         start_at=start_at,
                         end_at=end_at,
@@ -281,6 +276,6 @@ def online_teaching_book(request, code):
             "room": room,
             "form": form,
             "availability": availability,
-            "course_count": len(online_course_titles()),
+            "course_count": online_course_runs().count(),
         },
     )

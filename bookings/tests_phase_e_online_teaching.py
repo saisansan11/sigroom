@@ -9,7 +9,8 @@ from django.urls import reverse
 from django.utils import timezone
 
 from accounts.models import Unit, User
-from bookings.models import Booking, ReferenceValue
+from bookings.models import Booking, Course, CourseRun, ReferenceValue
+from bookings.lodging_models import CourseLodgingCohort
 from bookings.online_teaching import (
     ONLINE_TEACHER_GROUP,
     ONLINE_TEACHING_ROOM_CODES,
@@ -25,12 +26,12 @@ def _future_day(days=3):
     return timezone.localdate() + timedelta(days=days)
 
 
-def _post_payload(course, *, day=None, start="09:00", end="10:00", purpose=Booking.Purpose.TEACHING, **extra):
+def _post_payload(course_run, *, day=None, start="09:00", end="10:00", purpose=Booking.Purpose.TEACHING, **extra):
     payload = {
         "date": (day or _future_day()).isoformat(),
         "start_time": start,
         "end_time": end,
-        "course": course,
+        "course_run": str(course_run.pk),
         "purpose": purpose,
         "action": "book",
     }
@@ -86,9 +87,27 @@ def online_e_setup():
         )
         rooms.append(room)
 
-    courses = ["หลักสูตรทดสอบ ก", "หลักสูตรทดสอบ ข"]
-    for order, title in enumerate(courses, 1):
-        ReferenceValue.objects.create(field="attendee_level", value=title, order=order)
+    course_a = Course.objects.create(code="test-a", name="หลักสูตรทดสอบ ก")
+    course_b = Course.objects.create(code="test-b", name="หลักสูตรทดสอบ ข")
+    today = timezone.localdate()
+    courses = [
+        CourseRun.objects.create(
+            course=course_a,
+            slug="test-a-1",
+            run_number=1,
+            start_date=today - timedelta(days=5),
+            end_date=today + timedelta(days=60),
+        ),
+        CourseRun.objects.create(
+            course=course_b,
+            slug="test-b-3",
+            run_number=3,
+            start_date=today + timedelta(days=10),
+            end_date=today + timedelta(days=90),
+        ),
+    ]
+    for order, run in enumerate(courses, 1):
+        ReferenceValue.objects.create(field="attendee_level", value=run.display_name, order=order)
 
     return {
         "edu": edu,
@@ -134,8 +153,8 @@ def test_online_form_is_focused_and_course_is_strict_dropdown(client, online_e_s
     response = client.get(reverse("bookings:online_teaching_book", args=[room.code]))
     assert response.status_code == 200
     form = response.context["form"]
-    assert set(form.fields) == {"date", "start_time", "end_time", "course", "purpose"}
-    assert [value for value, _label in form.fields["course"].choices] == online_e_setup["courses"]
+    assert set(form.fields) == {"date", "start_time", "end_time", "course_run", "purpose"}
+    assert list(form.fields["course_run"].queryset) == online_e_setup["courses"]
     assert "unit" not in form.fields
     assert "responsible_name" not in form.fields
     assert "title" not in form.fields
@@ -147,11 +166,14 @@ def test_invalid_or_inactive_course_is_rejected_server_side(client, online_e_set
     client.force_login(teacher)
     url = reverse("bookings:online_teaching_book", args=[room.code])
 
-    invalid = client.post(url, _post_payload("หลักสูตรปลอม"))
+    invalid_payload = _post_payload(online_e_setup["courses"][0])
+    invalid_payload["course_run"] = "00000000-0000-0000-0000-000000000000"
+    invalid = client.post(url, invalid_payload)
     assert invalid.status_code == 200
     assert not Booking.objects.exists()
 
-    ReferenceValue.objects.filter(value=online_e_setup["courses"][0]).update(is_active=False)
+    online_e_setup["courses"][0].is_active = False
+    online_e_setup["courses"][0].save(update_fields=["is_active"])
     inactive = client.post(url, _post_payload(online_e_setup["courses"][0]))
     assert inactive.status_code == 200
     assert not Booking.objects.exists()
@@ -179,8 +201,9 @@ def test_teacher_booking_auto_approves_and_client_cannot_spoof_owner_or_unit(cli
     assert booking.unit_id == teacher.unit_id
     assert booking.responsible_name == teacher.display_name
     assert booking.responsible_phone == teacher.phone
-    assert booking.title == course
-    assert booking.attendee_level == course
+    assert booking.course_run_id == course.pk
+    assert booking.title == course.display_name
+    assert booking.attendee_level == course.display_name
     assert booking.request_status == Booking.RequestStatus.APPROVED
     assert booking.has_external_attendees is False
     assert booking.holds.filter(released_at__isnull=True).exists()
@@ -205,8 +228,8 @@ def test_submit_booking_service_rejects_non_teacher_for_online_room(online_e_set
         unit=user.unit,
         responsible_name=user.display_name,
         responsible_phone=user.phone,
-        title=online_e_setup["courses"][0],
-        attendee_level=online_e_setup["courses"][0],
+        title=online_e_setup["courses"][0].display_name,
+        attendee_level=online_e_setup["courses"][0].display_name,
         start_at=timezone.make_aware(datetime.combine(day, time(9)), zone),
         end_at=timezone.make_aware(datetime.combine(day, time(10)), zone),
     )
@@ -317,8 +340,9 @@ def test_online_booking_edit_does_not_allow_course_or_owner_rewrite(client, onli
         },
     )
     booking.refresh_from_db()
-    assert booking.title == course
-    assert booking.attendee_level == course
+    assert booking.course_run_id == course.pk
+    assert booking.title == course.display_name
+    assert booking.attendee_level == course.display_name
     assert booking.responsible_name == teacher.display_name
 
 
@@ -382,6 +406,7 @@ def test_seed_online_teaching_is_idempotent_and_can_assign_teacher():
     )
     teacher.refresh_from_db()
     assert teacher.groups.filter(name=ONLINE_TEACHER_GROUP).exists()
+    assert CourseRun.objects.filter(is_active=True).count() >= 14
     assert ReferenceValue.objects.filter(field="attendee_level", is_active=True).count() >= 14
 
 
@@ -397,3 +422,110 @@ def test_seed_online_teaching_fails_closed_on_conflicting_reserved_code():
     with pytest.raises(CommandError, match="ไม่ใช่ห้องสอนออนไลน์"):
         call_command("seed_online_teaching", stdout=StringIO())
     assert Resource.objects.filter(code="STU-ONLINE-2").count() == 0
+
+
+
+def test_course_catalog_opens_next_run_without_retyping_course_name(client):
+    manager = User.objects.create_superuser(
+        username="course-manager",
+        email="course-manager@signalschool.ac.th",
+        password="Password-2569",
+    )
+    course = Course.objects.create(
+        code="nns",
+        name="นนส.ทบ. 1 ปี 6 เดือน เหล่า ส.(ระยะเวลา 8 เดือน)",
+        include_year_in_label=True,
+    )
+    CourseRun.objects.create(
+        course=course,
+        slug="nns-29-68",
+        run_number=29,
+        year_code="68",
+        start_date=timezone.localdate() - timedelta(days=100),
+        end_date=timezone.localdate() - timedelta(days=10),
+    )
+    CourseRun.objects.create(
+        course=course,
+        slug="nns-30-69",
+        run_number=30,
+        year_code="69",
+        start_date=timezone.localdate() + timedelta(days=30),
+        end_date=timezone.localdate() + timedelta(days=120),
+    )
+
+    client.force_login(manager)
+    url = reverse("bookings:course_catalog_manage")
+    page = client.get(url)
+    assert page.status_code == 200
+    html = page.content.decode()
+    assert "เปิดรุ่นถัดไป" in html
+    assert "รุ่นที่ 31/70" in html
+
+    start = timezone.localdate() + timedelta(days=180)
+    end = start + timedelta(days=90)
+    created = client.post(
+        url,
+        {
+            "course_id": str(course.pk),
+            "start_date": start.isoformat(),
+            "end_date": end.isoformat(),
+        },
+    )
+    assert created.status_code == 302
+    run = CourseRun.objects.get(slug="nns-31-70")
+    assert run.course_id == course.pk
+    assert run.run_number == 31
+    assert run.year_code == "70"
+    assert run.display_name.endswith("รุ่นที่ 31/70")
+
+
+def test_lodging_create_can_reuse_course_run_and_dates_without_title_typing(client):
+    manager = User.objects.create_superuser(
+        username="lodging-course-manager",
+        email="lodging-course-manager@signalschool.ac.th",
+        password="Password-2569",
+    )
+    unit = Unit.objects.create(code="LODGE", name="หน่วยที่พัก")
+    manager.unit = unit
+    manager.save(update_fields=["unit"])
+    course = Course.objects.create(code="easy-course", name="หลักสูตรใช้งานง่าย")
+    start = timezone.localdate() + timedelta(days=20)
+    end = start + timedelta(days=30)
+    run = CourseRun.objects.create(
+        course=course,
+        slug="easy-course-7",
+        run_number=7,
+        start_date=start,
+        end_date=end,
+    )
+    room = Resource.objects.create(
+        code="DORM-EASY-1",
+        name="ห้องพักทดสอบ",
+        resource_type=Resource.Type.ROOM,
+        room_category=Resource.Category.LODGING,
+        owner_unit=unit,
+        status=Resource.Status.ACTIVE,
+    )
+
+    client.force_login(manager)
+    page = client.get(reverse("bookings:lodging_manage"))
+    assert page.status_code == 200
+    html = page.content.decode()
+    assert 'name="course_run"' in html
+    assert 'name="title"' not in html
+
+    created = client.post(
+        reverse("bookings:lodging_manage"),
+        {
+            "course_run": str(run.pk),
+            "beds_per_room": "4",
+            "rooms": [str(room.pk)],
+            "publication": "closed",
+        },
+    )
+    assert created.status_code == 302
+    cohort = CourseLodgingCohort.objects.get(slug=run.slug)
+    assert cohort.course_run_id == run.pk
+    assert cohort.title == run.display_name
+    assert cohort.check_in_date == run.start_date
+    assert cohort.check_out_date == run.end_date

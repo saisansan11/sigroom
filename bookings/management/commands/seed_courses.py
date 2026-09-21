@@ -5,11 +5,14 @@ from django.core.exceptions import ValidationError
 from django.db import transaction
 
 from accounts.models import User
+from bookings.course_catalog import ensure_course_run
 from bookings.lodging_models import CourseLodgingCohort
 from bookings.lodging_services import can_create_cohort, update_cohort_allocation
 from bookings.models import ReferenceValue
 
 
+# Keep this tuple shape stable because readiness tests and operational notes use it.
+# The shared Course/CourseRun catalog is derived from these rows idempotently.
 COURSES = (
     ("นนส.ทบ. 1 ปี 6 เดือน เหล่า ส.(ระยะเวลา 8 เดือน) รุ่นที่ 29/68", "nns-29-68", "2026-03-02", "2026-10-30"),
     ("นนส.ทบ. 1 ปี 6 เดือน เหล่า ส.(ระยะเวลา 8 เดือน) รุ่นที่ 30/69", "nns-30-69", "2027-03-01", "2027-10-29"),
@@ -29,7 +32,7 @@ COURSES = (
 
 
 class Command(BaseCommand):
-    help = "นำเข้าข้อมูล 14 หลักสูตรสำหรับระบบที่พักหลักสูตร โดยไม่จัดสรรห้องอัตโนมัติ"
+    help = "นำเข้าหลักสูตรแม่ + รุ่น และข้อมูลที่พัก 14 รุ่น โดยไม่จัดสรรห้องอัตโนมัติ"
 
     def add_arguments(self, parser):
         parser.add_argument(
@@ -63,9 +66,16 @@ class Command(BaseCommand):
             check_in_date = date.fromisoformat(start_text)
             check_out_date = date.fromisoformat(end_text)
             with transaction.atomic():
+                course_run = ensure_course_run(
+                    title=title,
+                    slug=slug,
+                    start_date=check_in_date,
+                    end_date=check_out_date,
+                )
                 cohort, created = CourseLodgingCohort.objects.get_or_create(
                     slug=slug,
                     defaults={
+                        "course_run": course_run,
                         "title": title,
                         "supervisor": supervisor,
                         "unit": supervisor.unit,
@@ -76,6 +86,12 @@ class Command(BaseCommand):
                         "is_active": False,
                     },
                 )
+                if cohort.course_run_id not in (None, course_run.pk):
+                    raise CommandError(f"{slug} เชื่อมกับรุ่นหลักสูตรอื่นอยู่แล้ว — หยุดเพื่อป้องกันข้อมูลปน")
+                if cohort.course_run_id is None:
+                    cohort.course_run = course_run
+                    cohort.save(update_fields=["course_run"])
+
                 old_status = cohort.allocation_status
                 old_rooms = list(cohort.rooms.all())
                 try:
@@ -88,7 +104,7 @@ class Command(BaseCommand):
                         is_active=cohort.is_active,
                         beds_per_room=cohort.beds_per_room,
                         supervisor=cohort.supervisor or supervisor,
-                        title=title,
+                        title=course_run.display_name,
                         note=cohort.note,
                     )
                 except ValidationError as exc:
@@ -101,11 +117,12 @@ class Command(BaseCommand):
                     else:
                         raise
                 else:
-                    self.stdout.write(f"{'สร้าง' if created else 'อัปเดต'} หลักสูตร {slug}: {title}")
+                    self.stdout.write(f"{'สร้าง' if created else 'อัปเดต'} รุ่น {slug}: {course_run.display_name}")
 
+            # Legacy generic booking forms may still use attendee_level suggestions.
             ReferenceValue.objects.get_or_create(
                 field="attendee_level",
-                value=title,
+                value=course_run.display_name,
                 defaults={"order": 100},
             )
 

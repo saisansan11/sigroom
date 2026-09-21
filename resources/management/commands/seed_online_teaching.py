@@ -4,11 +4,14 @@ This command prepares configuration only.  It never creates bookings and it does
 perform a deployment. Existing incompatible room records fail closed instead of being
 silently repurposed.
 """
+from datetime import date
+
 from django.contrib.auth.models import Group
 from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
 
 from accounts.models import Unit, User
+from bookings.course_catalog import ensure_course_run
 from bookings.management.commands.seed_courses import COURSES
 from bookings.models import ReferenceValue
 from bookings.online_teaching import ONLINE_TEACHER_GROUP, ONLINE_TEACHING_ROOM_CODES
@@ -89,10 +92,17 @@ class Command(BaseCommand):
         if actual_codes != set(ONLINE_TEACHING_ROOM_CODES):
             raise CommandError("ตั้งค่าห้องสอนออนไลน์ไม่ครบ 3 ห้อง")
 
-        for title, _slug, _start, _end in COURSES:
+        for title, slug, start_text, end_text in COURSES:
+            course_run = ensure_course_run(
+                title=title,
+                slug=slug,
+                start_date=date.fromisoformat(start_text),
+                end_date=date.fromisoformat(end_text),
+            )
+            # Preserve suggestions used by legacy generic booking forms.
             ReferenceValue.objects.get_or_create(
                 field="attendee_level",
-                value=title,
+                value=course_run.display_name,
                 defaults={"order": 100},
             )
 
@@ -107,4 +117,4 @@ class Command(BaseCommand):
             user.groups.add(teacher_group)
             self.stdout.write(f"เพิ่มสิทธิ์ครูให้ {username}")
 
-        self.stdout.write(self.style.SUCCESS("ตั้งค่าห้องสอนออนไลน์ 3 ห้องและ Course Catalog เรียบร้อย"))
+        self.stdout.write(self.style.SUCCESS("ตั้งค่าห้องสอนออนไลน์ 3 ห้องและหลักสูตร/รุ่นเรียบร้อย"))
