@@ -23,6 +23,7 @@ from .amendment_services import amendment_ref, evaluate_amendment_policy, submit
 from .forms import AmendmentForm, BookingForm, BuddhistDateField, PreemptionForm, time_choices
 from .lodging_models import CourseLodgingCohort
 from .models import Booking, BookingAmendment, BookingSeries, Preemption
+from .online_teaching import can_book_online_teaching, online_booking_editable_fields
 from .preemption_services import acknowledge, can_preempt, execute_preemption, replacement_options
 from .series_services import cancel_remaining, create_series, preview_series, series_ref
 from .services import (
@@ -612,6 +613,12 @@ def book_form(request, code):
         code=code,
         resource_type=Resource.Type.ROOM,
     )
+    if room.room_category == Resource.Category.ONLINE:
+        if not can_book_online_teaching(request.user):
+            raise PermissionDenied("เฉพาะครูที่ได้รับสิทธิ์จองห้องสอนออนไลน์")
+        if request.method == "POST":
+            raise PermissionDenied("ห้องสอนออนไลน์ต้องจองผ่าน Teacher Self-Service")
+        return redirect("bookings:online_teaching_book", code=room.code)
     booking = Booking(room=room, requester=request.user, unit=request.user.unit)
     if request.method == "POST":
         post_data = request.POST
@@ -679,6 +686,8 @@ def _series_form_booking(form, room, user):
 @require_POST
 def series_preview(request, code):
     room = get_object_or_404(Resource.objects.select_related("rule"), code=code, resource_type=Resource.Type.ROOM)
+    if room.room_category == Resource.Category.ONLINE:
+        raise PermissionDenied("ห้องสอนออนไลน์ใช้ Teacher Self-Service แบบครั้งเดียว")
     booking = Booking(room=room, requester=request.user, unit=request.user.unit)
     form = BookingForm(request.POST, user=request.user, room=room, instance=booking)
     if not form.is_valid() or not form.cleaned_data.get("is_series"):
@@ -703,6 +712,8 @@ def series_preview(request, code):
 @require_POST
 def series_create(request, code):
     room = get_object_or_404(Resource.objects.select_related("rule"), code=code, resource_type=Resource.Type.ROOM)
+    if room.room_category == Resource.Category.ONLINE:
+        raise PermissionDenied("ห้องสอนออนไลน์ใช้ Teacher Self-Service แบบครั้งเดียว")
     booking = Booking(room=room, requester=request.user, unit=request.user.unit)
     form = BookingForm(request.POST, user=request.user, room=room, instance=booking)
     if not form.is_valid() or not form.cleaned_data.get("is_series"):
@@ -811,6 +822,7 @@ def booking_detail(request, id):
             "can_edit": bool(fields),
             "can_amend": (
                 owner
+                and booking.room.room_category != Resource.Category.ONLINE
                 and booking.request_status == Booking.RequestStatus.APPROVED
                 and booking.usage_status == Booking.UsageStatus.UPCOMING
                 and not self_service_message(booking)
@@ -844,6 +856,8 @@ def booking_edit(request, id):
     if booking.requester_id != request.user.pk and not request.user.is_superuser:
         raise PermissionDenied
     fields = editable_fields(booking)
+    if booking.room.room_category == Resource.Category.ONLINE:
+        fields = online_booking_editable_fields(fields)
     if not fields:
         messages.error(request, self_service_message(booking) or "การจองสถานะนี้แก้ไขไม่ได้")
         return redirect("bookings:booking_detail", id=booking.id)
@@ -882,6 +896,8 @@ def booking_cancel(request, id):
 @login_required
 def booking_amend(request, id):
     booking = get_object_or_404(_booking_queryset(), id=id)
+    if booking.room.room_category == Resource.Category.ONLINE:
+        raise PermissionDenied("ห้องสอนออนไลน์ให้ยกเลิกแล้วจองใหม่ผ่าน Teacher Self-Service")
     if booking.requester_id != request.user.pk and not request.user.is_superuser:
         raise PermissionDenied("คุณไม่มีสิทธิ์ขอแก้ไขการจองนี้")
     form = AmendmentForm(request.POST or None, booking=booking, user=request.user)

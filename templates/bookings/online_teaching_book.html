@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}จอง {{ room.name }} · SIGROOM{% endblock %}
+{% block head %}<link rel="stylesheet" href="{% static 'css/online_teaching.css' %}">{% endblock %}
+{% block content %}
+<div class="online-teaching-shell">
+  <div class="page-heading online-teaching-heading">
+    <div>
+      <p class="eyebrow">Teacher Self-Service · {{ room.code }}</p>
+      <h1>{{ room.name }}</h1>
+      <p>{{ room.building }}{% if room.floor %} · ชั้น {{ room.floor }}{% endif %} · รองรับ {{ room.capacity }} คน</p>
+    </div>
+    <a role="button" class="secondary" href="{% url 'bookings:online_teaching_home' %}">← เลือกห้องอื่น</a>
+  </div>
+
+  <section class="online-room-detail-strip" aria-label="รายละเอียดห้อง">
+    <div><span>เวลาให้บริการ</span><strong>{{ room.rule.service_start|time:'H:i' }}–{{ room.rule.service_end|time:'H:i' }}</strong></div>
+    <div><span>จองล่วงหน้า</span><strong>ไม่เกิน {{ room.rule.max_advance_days }} วัน</strong></div>
+    <div><span>ระยะต่อครั้ง</span><strong>{{ room.rule.min_duration_min }}–{{ room.rule.max_duration_min }} นาที</strong></div>
+    <div><span>สถานะ</span><strong>อนุมัติอัตโนมัติเมื่อว่าง</strong></div>
+  </section>
+
+  {% if room.fixed_equipment %}
+    <section class="online-room-equipment online-room-equipment-detail">
+      <strong>อุปกรณ์ประจำห้อง</strong>
+      <p>{{ room.fixed_equipment|linebreaksbr }}</p>
+    </section>
+  {% endif %}
+
+  {% if not form.course_catalog_ready %}
+    <div class="notice warning" role="alert">ยังไม่มีหลักสูตรที่เปิดใช้ ผู้ดูแลต้องนำเข้ารายการหลักสูตรก่อนจอง</div>
+  {% endif %}
+
+  <form method="post" class="online-booking-form" novalidate>
+    {% csrf_token %}
+    {% if form.non_field_errors %}
+      <div class="notice error" role="alert">{% for error in form.non_field_errors %}<div>{{ error }}</div>{% endfor %}</div>
+    {% endif %}
+
+    <section class="online-booking-step" aria-labelledby="online-time-heading">
+      <div><p class="eyebrow">1 · วันและเวลา</p><h2 id="online-time-heading">เลือกช่วงที่จะใช้ห้อง</h2></div>
+      <div class="online-booking-grid three">
+        {% for field in form %}
+          {% if field.name == 'date' or field.name == 'start_time' or field.name == 'end_time' %}
+            <label for="{{ field.id_for_label }}">{{ field.label }} {{ field }}{% for error in field.errors %}<small class="field-error" role="alert">{{ error }}</small>{% endfor %}</label>
+          {% endif %}
+        {% endfor %}
+      </div>
+    </section>
+
+    <section class="online-booking-step" aria-labelledby="online-course-heading">
+      <div><p class="eyebrow">2 · ข้อมูลการสอน</p><h2 id="online-course-heading">เลือกหลักสูตรและวัตถุประสงค์</h2></div>
+      <div class="online-booking-grid two">
+        <label for="{{ form.course_run.id_for_label }}">{{ form.course_run.label }} {{ form.course_run }}{% for error in form.course_run.errors %}<small class="field-error" role="alert">{{ error }}</small>{% endfor %}</label>
+        <label for="{{ form.purpose.id_for_label }}">{{ form.purpose.label }} {{ form.purpose }}{% for error in form.purpose.errors %}<small class="field-error" role="alert">{{ error }}</small>{% endfor %}</label>
+      </div>
+      <p class="muted-text">ชื่อผู้จอง สังกัด และข้อมูลเจ้าของคำขอจะใช้จากบัญชีที่เข้าสู่ระบบโดยอัตโนมัติ ไม่ต้องพิมพ์ซ้ำ</p>
+    </section>
+
+    {% if availability %}
+      <div class="notice {% if availability.ok %}success{% else %}warning{% endif %}" role="status">
+        <strong>{% if availability.ok %}ช่วงเวลานี้จองได้{% else %}ช่วงเวลานี้ยังจองไม่ได้{% endif %}</strong><br>{{ availability.message }}
+      </div>
+    {% endif %}
+
+    <div class="online-booking-actions">
+      <button type="submit" name="action" value="check" class="secondary" {% if not form.course_catalog_ready %}disabled{% endif %}>ตรวจสอบช่วงเวลา</button>
+      <button type="submit" name="action" value="book" {% if not form.course_catalog_ready %}disabled{% endif %}>ยืนยันจองและอนุมัติอัตโนมัติ</button>
+    </div>
+  </form>
+</div>
+{% endblock %}

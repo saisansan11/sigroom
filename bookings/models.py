@@ -49,6 +49,64 @@ class BookingSeries(models.Model):
         return f"{self.room.code} {self.start_date} ({self.get_freq_display()})"
 
 
+class Course(models.Model):
+    """ชื่อหลักสูตรแม่ เก็บครั้งเดียว แล้วเปิดหลายรุ่นได้โดยไม่พิมพ์ชื่อซ้ำ"""
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    code = models.SlugField("รหัสหลักสูตร", max_length=50, unique=True)
+    name = models.CharField("ชื่อหลักสูตร", max_length=200, unique=True)
+    include_year_in_label = models.BooleanField("แสดงปีต่อท้ายเลขรุ่น", default=False)
+    is_active = models.BooleanField("เปิดใช้งาน", default=True)
+    created_at = models.DateTimeField("สร้างเมื่อ", auto_now_add=True)
+
+    class Meta:
+        verbose_name = "หลักสูตร"
+        verbose_name_plural = "หลักสูตร"
+        ordering = ["name"]
+
+    def __str__(self):
+        return self.name
+
+
+class CourseRun(models.Model):
+    """รุ่นที่เปิดสอนของหลักสูตรแม่ เช่น รุ่นที่ 11 หรือ รุ่นที่ 30/69"""
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    course = models.ForeignKey(Course, verbose_name="หลักสูตร", on_delete=models.PROTECT, related_name="runs")
+    slug = models.SlugField("รหัสรุ่น", max_length=70, unique=True)
+    run_number = models.PositiveIntegerField("รุ่นที่")
+    year_code = models.CharField("ปีที่แสดงต่อท้าย", max_length=4, blank=True)
+    start_date = models.DateField("วันที่เริ่มหลักสูตร")
+    end_date = models.DateField("วันที่สิ้นสุดหลักสูตร")
+    is_active = models.BooleanField("เปิดใช้งาน", default=True)
+    created_at = models.DateTimeField("สร้างเมื่อ", auto_now_add=True)
+
+    class Meta:
+        verbose_name = "รุ่นหลักสูตร"
+        verbose_name_plural = "รุ่นหลักสูตร"
+        ordering = ["-start_date", "course__name", "-run_number"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["course", "run_number", "year_code"],
+                name="uniq_course_run_number_year",
+            ),
+            models.CheckConstraint(
+                condition=models.Q(end_date__gte=models.F("start_date")),
+                name="check_course_run_end_after_start",
+            ),
+        ]
+
+    @property
+    def display_name(self):
+        suffix = f"รุ่นที่ {self.run_number}"
+        if self.year_code:
+            suffix += f"/{self.year_code}"
+        return f"{self.course.name} {suffix}"
+
+    def __str__(self):
+        return self.display_name
+
+
 class Booking(models.Model):
     class RequestStatus(models.TextChoices):
         DRAFT = "draft", "ร่าง"
@@ -100,6 +158,14 @@ class Booking(models.Model):
     responsible_name = models.CharField("ผู้รับผิดชอบ (ชื่อ-ตำแหน่ง)", max_length=200)
     responsible_phone = models.CharField("โทรศัพท์ผู้รับผิดชอบ", max_length=30)
 
+    course_run = models.ForeignKey(
+        CourseRun,
+        verbose_name="รุ่นหลักสูตร",
+        null=True,
+        blank=True,
+        on_delete=models.PROTECT,
+        related_name="bookings",
+    )
     title = models.CharField("ชื่อกิจกรรม / วิชา", max_length=200)
     purpose = models.CharField("ประเภทการใช้งาน", max_length=20, choices=Purpose.choices, default=Purpose.TEACHING)
     start_at = models.DateTimeField("เริ่ม")

@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% load thaidate %}
+{% block title %}หลักสูตรและรุ่น · SIGROOM{% endblock %}
+{% block content %}
+<div class="page-heading">
+  <div>
+    <p class="eyebrow">ใช้ชื่อหลักสูตรเดิมได้ทุกปี</p>
+    <h1>หลักสูตรและรุ่น</h1>
+    <p>ชื่อหลักสูตรเก็บครั้งเดียว เมื่อมีรุ่นใหม่ให้กด “เปิดรุ่นถัดไป” แล้วใส่เพียงวันที่เริ่มและวันที่สิ้นสุด</p>
+  </div>
+  <a role="button" class="secondary" href="{% url 'bookings:lodging_manage' %}">กลับงานที่พัก</a>
+</div>
+
+<div class="notice info">
+  <strong>ไม่ต้องพิมพ์ชื่อหลักสูตรซ้ำ</strong><br>
+  ระบบจะเพิ่มเลขรุ่นให้อัตโนมัติ และหลักสูตรที่ใช้รูปแบบปี เช่น 30/69 จะเสนอปีถัดไปให้อัตโนมัติด้วย
+</div>
+
+<div class="lodging-cohorts-list">
+  {% for course in courses %}
+    <article class="detail-card">
+      <div class="section-title">
+        <div>
+          <p class="eyebrow">หลักสูตร</p>
+          <h2>{{ course.name }}</h2>
+        </div>
+      </div>
+
+      {% if course.recent_runs %}
+        <div class="lodging-status-tags" aria-label="รุ่นล่าสุด">
+          {% for run in course.recent_runs %}
+            <span class="{% if run.status_key == 'active' %}room-badge-free{% elif run.status_key == 'upcoming' %}count-badge{% else %}room-badge-full{% endif %}">
+              รุ่นที่ {{ run.run_number }}{% if run.year_code %}/{{ run.year_code }}{% endif %} · {{ run.status_label }}
+            </span>
+          {% endfor %}
+        </div>
+      {% endif %}
+
+      <details>
+        <summary role="button">เปิดรุ่นถัดไป{% if course.next_run_number %} — รุ่นที่ {{ course.next_run_number }}{% if course.next_year_code %}/{{ course.next_year_code }}{% endif %}{% endif %}</summary>
+        <form method="post">
+          {% csrf_token %}
+          <input type="hidden" name="course_id" value="{{ course.pk }}">
+          <p><strong>ระบบจะสร้าง:</strong> {{ course.name }} รุ่นที่ {{ course.next_run_number }}{% if course.next_year_code %}/{{ course.next_year_code }}{% endif %}</p>
+          <div class="grid-dates">
+            <label>วันที่เริ่ม
+              <input type="date" name="start_date" required>
+            </label>
+            <label>วันที่สิ้นสุด
+              <input type="date" name="end_date" required>
+            </label>
+          </div>
+          <button type="submit">เปิดรุ่นถัดไป</button>
+        </form>
+      </details>
+    </article>
+  {% empty %}
+    <div class="notice warning">
+      ยังไม่มีชื่อหลักสูตรในระบบ กรุณาให้ผู้ดูแลนำเข้ารายการหลักสูตรครั้งแรกก่อน หลังจากนั้นเปิดรุ่นใหม่ได้จากหน้านี้โดยไม่ต้องพิมพ์ชื่อซ้ำ
+    </div>
+  {% endfor %}
+</div>
+{% endblock %}

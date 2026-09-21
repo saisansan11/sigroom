@@ -16,6 +16,14 @@ class CourseLodgingCohort(models.Model):
         RELEASED = "released", "ปลดการสงวนห้อง (ยังไม่จัดสรร/เสร็จสิ้น)"
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    course_run = models.OneToOneField(
+        "bookings.CourseRun",
+        verbose_name="รุ่นหลักสูตรกลาง",
+        null=True,
+        blank=True,
+        on_delete=models.PROTECT,
+        related_name="lodging_cohort",
+    )
     title = models.CharField("ชื่อหลักสูตร/รุ่น", max_length=200, help_text="เช่น หลักสูตรชั้นนายร้อย เหล่า ส. รุ่นที่ 70")
     slug = models.SlugField("รหัสลิงก์ (URL slug)", max_length=50, unique=True, help_text="ใช้ในลิงก์แชร์ เช่น nr-70")
     supervisor = models.ForeignKey(
