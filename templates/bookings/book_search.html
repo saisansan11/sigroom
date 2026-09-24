@@ -1,57 +1,107 @@
 {% extends "base.html" %}
-{% block title %}ค้นหาห้องว่าง · SIGROOM{% endblock %}
+{% block title %}จองห้องเรียน · SIGROOM{% endblock %}
 {% block content %}
 {% include "bookings/partials/booking_stepper.html" with current_step=1 %}
 
-<div class="page-heading booking-flow-heading">
+<div class="page-heading booking-flow-heading booking-v2-heading">
   <div>
-    <p class="eyebrow">ขั้นที่ 1 จาก 5</p>
-    <h1>เลือกวันเวลาและค้นหาห้อง</h1>
-    <p class="heading-desc">ระบุวันและช่วงเวลาที่ต้องการใช้งานเพื่อตรวจสอบห้องว่างและอุปกรณ์ทันที</p>
+    <p class="eyebrow">ขั้นที่ 1 จาก 5 · เลือกเวลา</p>
+    <h1>จองห้องเรียน / ห้องประชุม</h1>
+    <p class="heading-desc">เลือกประเภท วัน และช่วงเวลาที่ต้องการ ระบบจะคัดเฉพาะห้องที่ว่างจริงในขั้นถัดไป</p>
   </div>
+  <a class="booking-help-link" href="{% url 'bookings:about' %}">วิธีใช้งาน SIGROOM</a>
 </div>
 
-<form class="search-panel booking-search-panel" method="get" hx-get="{% url 'bookings:book_search' %}" hx-target="#room-results" hx-push-url="true" hx-indicator="#searching">
-  <input type="hidden" name="search" value="1">
-  <div class="form-grid four booking-search-grid">
-    <label>วันที่ (พ.ศ.)
-      <input name="date" value="{{ date_value }}" placeholder="24/08/2569" inputmode="numeric" autocomplete="off" required>
-    </label>
-    <label>เริ่ม
-      <select name="start" required>
-        {% for value, label in time_options %}
-          <option value="{{ value }}" {% if value == start_value %}selected{% endif %}>{{ label }}</option>
-        {% endfor %}
-      </select>
-    </label>
-    <label>สิ้นสุด
-      <select name="end" required>
-        {% for value, label in time_options %}
-          <option value="{{ value }}" {% if value == end_value %}selected{% endif %}>{{ label }}</option>
-        {% endfor %}
-      </select>
-    </label>
-    <label>จำนวนคน
-      <input type="number" name="attendees" min="1" value="{{ attendees }}" placeholder="เช่น 30" inputmode="numeric">
-    </label>
-  </div>
+<nav class="booking-path-switcher" aria-label="เลือกประเภทการจอง">
+  <a class="booking-path-card is-current" aria-current="page" href="{% url 'bookings:book_search' %}">
+    <span class="booking-path-kicker">ห้องทั่วไป</span>
+    <strong>ห้องเรียน / ประชุม</strong>
+    <small>ค้นหาห้องว่างตามวันและเวลา</small>
+  </a>
+  {% if nav_can_book_online %}
+  <a class="booking-path-card" href="{% url 'bookings:online_teaching_home' %}">
+    <span class="booking-path-kicker">สำหรับครู</span>
+    <strong>ห้องสอนออนไลน์</strong>
+    <small>เลือกจาก 3 ห้องและหลักสูตร/รุ่น</small>
+  </a>
+  {% endif %}
+  <a class="booking-path-card" href="{% url 'bookings:lodging_index' %}">
+    <span class="booking-path-kicker">ที่พัก</span>
+    <strong>ห้องพัก</strong>
+    <small>ดูรอบหลักสูตรและที่พัก</small>
+  </a>
+</nav>
 
-  {% include "bookings/partials/time_presets.html" %}
+<form class="search-panel booking-search-panel booking-search-v2" method="get" hx-get="{% url 'bookings:book_search' %}" hx-target="#room-results" hx-push-url="true" hx-indicator="#searching">
+  <input type="hidden" name="search" value="1">
+
+  <section class="booking-search-block" aria-labelledby="room-type-title">
+    <div class="booking-search-block-heading">
+      <span class="booking-search-block-num">1</span>
+      <div><strong id="room-type-title">เลือกประเภทห้อง</strong><small>ห้องพักและห้องสอนออนไลน์แยก flow เพื่อให้กรอกข้อมูลน้อยลง</small></div>
+    </div>
+    <div class="booking-category-choice" role="radiogroup" aria-label="ประเภทห้อง">
+      {% for value, label in booking_category_choices %}
+      <label class="booking-category-pill{% if selected_booking_category == value %} is-selected{% endif %}">
+        <input type="radio" name="category" value="{{ value }}" {% if selected_booking_category == value %}checked{% endif %}>
+        <span>{{ label }}</span>
+      </label>
+      {% endfor %}
+    </div>
+  </section>
+
+  <section class="booking-search-block" aria-labelledby="date-title">
+    <div class="booking-search-block-heading">
+      <span class="booking-search-block-num">2</span>
+      <div><strong id="date-title">วันและจำนวนผู้ใช้</strong><small>จำนวนคนไม่บังคับ แต่ช่วยเตือนเมื่อห้องเล็กเกินไป</small></div>
+    </div>
+    <div class="form-grid two booking-search-grid booking-date-grid">
+      <label>วันที่ (พ.ศ.)
+        <input id="booking-search-date" name="date" value="{{ date_value }}" placeholder="24/08/2569" inputmode="numeric" autocomplete="off" required>
+      </label>
+      <label>จำนวนคน <small>ไม่บังคับ</small>
+        <input type="number" name="attendees" min="1" value="{{ attendees }}" placeholder="เช่น 30" inputmode="numeric">
+      </label>
+    </div>
+    <div class="booking-date-shortcuts" role="group" aria-label="เลือกวันที่เร็ว">
+      <span>เลือกเร็ว:</span>
+      <button type="button" class="booking-date-shortcut" data-day-offset="0">วันนี้</button>
+      <button type="button" class="booking-date-shortcut" data-day-offset="1">พรุ่งนี้</button>
+    </div>
+  </section>
+
+  <section class="booking-search-block" aria-labelledby="time-title">
+    <div class="booking-search-block-heading">
+      <span class="booking-search-block-num">3</span>
+      <div><strong id="time-title">เลือกช่วงเวลา</strong><small>เริ่มจากช่วงเวลาที่ใช้บ่อย หรือเปิดกำหนดเวลาเองเมื่อต้องการ</small></div>
+    </div>
+    {% include "bookings/partials/time_presets.html" %}
+    <details class="booking-custom-time">
+      <summary>กำหนดเวลาเอง · <span id="booking-time-summary">{{ start_value }}–{{ end_value }}</span> น.</summary>
+      <div class="form-grid two booking-custom-time-grid">
+        <label>เริ่ม
+          <select name="start" required>
+            {% for value, label in time_options %}<option value="{{ value }}" {% if value == start_value %}selected{% endif %}>{{ label }}</option>{% endfor %}
+          </select>
+        </label>
+        <label>สิ้นสุด
+          <select name="end" required>
+            {% for value, label in time_options %}<option value="{{ value }}" {% if value == end_value %}selected{% endif %}>{{ label }}</option>{% endfor %}
+          </select>
+        </label>
+      </div>
+    </details>
+  </section>
 
   {% if equipment %}
     <details class="search-equipment-details" {% if equipment_codes %}open{% endif %}>
-      <summary class="search-equipment-summary">
-        <span>ตัวเลือกเพิ่มเติม · อุปกรณ์ส่วนกลาง {% if equipment_codes %}<span class="count-pill">{{ equipment_codes|length }} ชิ้น</span>{% endif %}</span>
-      </summary>
+      <summary class="search-equipment-summary"><span>ตัวเลือกเพิ่มเติม · อุปกรณ์ส่วนกลาง {% if equipment_codes %}<span class="count-pill">{{ equipment_codes|length }} ชิ้น</span>{% endif %}</span></summary>
       <div class="search-equipment-content">
         <fieldset>
           <legend class="visually-hidden">อุปกรณ์ส่วนกลางที่ต้องการ</legend>
           <div class="check-grid">
             {% for item in equipment %}
-              <label class="equipment-check-label">
-                <input type="checkbox" name="equipment" value="{{ item.code }}" {% if item.code in equipment_codes %}checked{% endif %}>
-                <span class="equipment-name"><strong>{{ item.code }}</strong> {{ item.name }}</span>
-              </label>
+              <label class="equipment-check-label"><input type="checkbox" name="equipment" value="{{ item.code }}" {% if item.code in equipment_codes %}checked{% endif %}><span class="equipment-name"><strong>{{ item.code }}</strong> {{ item.name }}</span></label>
             {% endfor %}
           </div>
         </fieldset>
@@ -59,13 +109,45 @@
     </details>
   {% endif %}
 
-  <div class="form-actions booking-search-actions">
-    <button type="submit" class="btn-primary booking-search-submit">ค้นหาห้องว่าง</button>
+  <div class="form-actions booking-search-actions booking-search-actions-v2">
+    <button type="submit" class="btn-primary booking-search-submit">ค้นหาห้องว่าง →</button>
     <small id="searching" class="htmx-indicator searching-indicator" role="status" aria-live="polite">กำลังตรวจสอบห้องและอุปกรณ์…</small>
   </div>
 </form>
 
-<div id="room-results" aria-live="polite" data-scroll-on-swap>
-  {% include "bookings/partials/room_list.html" %}
-</div>
+<div id="room-results" aria-live="polite" data-scroll-on-swap>{% include "bookings/partials/room_list.html" %}</div>
+
+<script>
+(function () {
+  const form = document.querySelector('.booking-search-v2');
+  if (!form) return;
+  const dateField = form.querySelector('[name="date"]');
+  const startField = form.querySelector('[name="start"]');
+  const endField = form.querySelector('[name="end"]');
+  const timeSummary = document.getElementById('booking-time-summary');
+  const pad = value => String(value).padStart(2, '0');
+  const formatThaiDate = date => `${pad(date.getDate())}/${pad(date.getMonth() + 1)}/${date.getFullYear() + 543}`;
+  const syncTimeSummary = () => {
+    if (timeSummary && startField && endField) timeSummary.textContent = `${startField.value}–${endField.value}`;
+  };
+  form.addEventListener('click', function (event) {
+    const shortcut = event.target.closest('.booking-date-shortcut');
+    if (!shortcut || !dateField) return;
+    const date = new Date();
+    date.setHours(12, 0, 0, 0);
+    date.setDate(date.getDate() + Number(shortcut.dataset.dayOffset || 0));
+    dateField.value = formatThaiDate(date);
+  });
+  form.addEventListener('change', function (event) {
+    if (event.target.matches('[name="start"], [name="end"]')) syncTimeSummary();
+    if (event.target.matches('[name="category"]')) {
+      document.querySelectorAll('.booking-category-pill').forEach(el => el.classList.toggle('is-selected', el.contains(event.target)));
+    }
+  });
+  form.addEventListener('click', function (event) {
+    if (event.target.closest('.time-preset-button')) requestAnimationFrame(syncTimeSummary);
+  });
+  syncTimeSummary();
+})();
+</script>
 {% endblock %}

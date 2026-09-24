@@ -5160,3 +5160,130 @@ details.operational-calendar-section[open] .disclosure-arrow {
     grid-template-columns: 1fr;
   }
 }
+
+
+/* UX-32 Task-first intro, booking flow V2, navigation cleanup */
+.home-primary-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-md);
+  margin-bottom: var(--space-lg);
+}
+.home-primary-card {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: var(--space-md);
+  margin: 0;
+  padding: clamp(var(--space-md), 2.4vw, var(--space-xl));
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+}
+.home-primary-card-teaching { border-top: 3px solid var(--cyan); }
+.home-primary-card-lodging { border-top: 3px solid var(--green); }
+.home-primary-card h2 { margin: .2rem 0 var(--space-xs); font-size: clamp(1.18rem, 2vw, 1.55rem); }
+.home-primary-card p { margin: 0; color: var(--muted); max-width: 56ch; }
+.home-primary-card-actions { display: flex; gap: var(--space-xs); flex-wrap: wrap; }
+.home-primary-card-actions a { min-height: max(44px, 2.75rem); display: inline-flex; align-items: center; justify-content: center; text-decoration: none; }
+.service-kicker { display: inline-block; color: var(--cyan); font-size: .76rem; font-weight: 800; letter-spacing: .04em; }
+.home-primary-card-lodging .service-kicker { color: var(--green); }
+
+.sigroom-intro-hero {
+  margin-bottom: var(--space-xl);
+  padding: clamp(1.4rem, 4vw, 3rem);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-lg);
+  background: linear-gradient(145deg, var(--surface-raised), var(--surface));
+}
+.sigroom-intro-copy { max-width: 66rem; }
+.sigroom-intro-copy .hero-sub { max-width: 70ch; color: var(--muted); }
+.sigroom-intro-actions { display: flex; gap: var(--space-sm); flex-wrap: wrap; margin-top: var(--space-lg); }
+.sigroom-intro-actions a { min-height: max(44px, 2.75rem); text-decoration: none; }
+.sigroom-service-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--space-md); margin-bottom: var(--space-2xl); }
+.sigroom-service-card { margin: 0; padding: var(--space-lg); border: 1px solid var(--line); border-radius: var(--radius-lg); background: var(--surface); }
+.sigroom-service-card h2 { margin: var(--space-xs) 0; font-size: 1.2rem; }
+.sigroom-service-card p { color: var(--muted); }
+.sigroom-service-card > a { min-height: max(44px, 2.75rem); display: inline-flex; align-items: center; font-weight: 800; }
+.sigroom-howto { margin-bottom: var(--space-xl); }
+.sigroom-howto-list { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--space-sm); padding: 0; list-style: none; counter-reset: howto; }
+.sigroom-howto-list li { min-width: 0; padding: var(--space-md); border: 1px solid var(--line); border-radius: var(--radius-md); background: var(--surface); counter-increment: howto; }
+.sigroom-howto-list li::before { content: counter(howto, decimal-leading-zero); display: block; margin-bottom: var(--space-xs); color: var(--cyan); font-family: var(--font-mono); font-size: .72rem; }
+.sigroom-howto-list strong, .sigroom-howto-list span { display: block; }
+.sigroom-howto-list span { margin-top: .25rem; color: var(--muted); font-size: .88rem; }
+
+.booking-help-link { min-height: max(44px, 2.75rem); display: inline-flex; align-items: center; padding: .35rem .7rem; color: var(--cyan); font-weight: 700; }
+.booking-path-switcher {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-sm);
+  margin-bottom: var(--space-lg);
+}
+.booking-path-card {
+  min-width: 0;
+  min-height: 7.2rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: .2rem;
+  padding: var(--space-md);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  color: var(--ink);
+  text-decoration: none;
+}
+.booking-path-card:hover { border-color: var(--line-strong); background: var(--surface-raised); }
+.booking-path-card.is-current { border-color: var(--cyan-strong); box-shadow: inset 0 -2px var(--cyan); }
+.booking-path-kicker { color: var(--cyan); font-size: .72rem; font-weight: 800; }
+.booking-path-card small { color: var(--muted); font-weight: 400; }
+
+.booking-search-v2 { padding: clamp(var(--space-md), 2.4vw, var(--space-xl)); }
+.booking-search-block + .booking-search-block { margin-top: var(--space-lg); padding-top: var(--space-lg); border-top: 1px solid var(--line); }
+.booking-search-block-heading { display: flex; align-items: center; gap: var(--space-sm); margin-bottom: var(--space-sm); }
+.booking-search-block-heading > div { min-width: 0; }
+.booking-search-block-heading strong { display: block; font-size: 1.05rem; }
+.booking-search-block-heading small { display: block; color: var(--muted); font-weight: 400; }
+.booking-search-block-num { width: 2rem; height: 2rem; flex: 0 0 2rem; display: grid; place-items: center; border: 1px solid var(--cyan-strong); border-radius: 50%; color: var(--cyan); font-family: var(--font-mono); font-weight: 800; }
+.booking-category-choice { display: flex; gap: var(--space-xs); flex-wrap: wrap; }
+.booking-category-pill { position: relative; min-height: max(44px, 2.75rem); display: inline-flex; align-items: center; margin: 0; cursor: pointer; }
+.booking-category-pill input { position: absolute; opacity: 0; pointer-events: none; }
+.booking-category-pill span { min-height: max(44px, 2.75rem); display: inline-flex; align-items: center; padding: .45rem .9rem; border: 1px solid var(--line); border-radius: 999px; background: var(--surface-raised); color: var(--muted); font-weight: 700; }
+.booking-category-pill:hover span { border-color: var(--line-strong); color: var(--ink); }
+.booking-category-pill input:focus-visible + span { outline: .18rem solid var(--cyan); outline-offset: .18rem; box-shadow: var(--focus-ring); }
+.booking-category-pill.is-selected span, .booking-category-pill input:checked + span { border-color: var(--cyan); background: var(--info-bg); color: var(--cyan); }
+.booking-date-grid { max-width: 44rem; margin-bottom: var(--space-xs); }
+.booking-date-shortcuts { display: flex; align-items: center; gap: var(--space-xs); flex-wrap: wrap; color: var(--muted); font-size: .86rem; }
+.booking-date-shortcut, .time-preset-button { min-height: max(44px, 2.75rem); }
+.booking-custom-time { margin-top: var(--space-sm); border: 1px solid var(--line); border-radius: var(--radius-md); background: var(--surface-raised); }
+.booking-custom-time > summary { min-height: max(44px, 2.75rem); display: flex; align-items: center; padding: .55rem .9rem; color: var(--muted); font-weight: 700; cursor: pointer; }
+.booking-custom-time[open] > summary { color: var(--ink); border-bottom: 1px solid var(--line); }
+.booking-custom-time-grid { padding: var(--space-md); }
+.booking-custom-time-grid label { margin-bottom: 0; }
+.search-equipment-summary { min-height: max(44px, 2.75rem); display: flex; align-items: center; }
+.booking-search-actions-v2 { padding-top: var(--space-sm); border-top: 1px solid var(--line); }
+.booking-search-actions-v2 .booking-search-submit { min-width: min(100%, 16rem); }
+
+.lodging-workspace-link { min-height: max(44px, 2.75rem); display: inline-flex; align-items: center; padding: .35rem .25rem; }
+
+@media (max-width: 64rem) {
+  .sigroom-service-grid { grid-template-columns: 1fr; }
+  .sigroom-howto-list { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 50rem) {
+  .home-primary-actions, .booking-path-switcher, .sigroom-howto-list { grid-template-columns: 1fr; }
+  .home-primary-card-actions, .sigroom-intro-actions { flex-direction: column; align-items: stretch; }
+  .home-primary-card-actions a, .sigroom-intro-actions a { width: 100%; }
+  .booking-category-choice { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .booking-category-pill, .booking-category-pill span { width: 100%; justify-content: center; text-align: center; }
+  .booking-path-card { min-height: 5.7rem; }
+  .booking-help-link { width: 100%; padding-left: 0; }
+  .lodging-workspace-link { min-height: 44px; padding: .55rem .35rem; }
+}
+@media (max-width: 30rem) {
+  .booking-category-choice { grid-template-columns: 1fr; }
+  .booking-date-shortcuts { display: grid; grid-template-columns: 1fr 1fr; }
+  .booking-date-shortcuts > span { grid-column: 1 / -1; }
+  .booking-date-shortcut { width: 100%; }
+}

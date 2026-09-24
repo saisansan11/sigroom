@@ -43,6 +43,26 @@ from .services import (
 )
 
 
+GENERIC_BOOKING_CATEGORIES = (
+    Resource.Category.CLASSROOM,
+    Resource.Category.MEETING,
+    Resource.Category.SPECIAL,
+    Resource.Category.LAB,
+)
+BOOK_SEARCH_CATEGORY_MAP = {
+    "": GENERIC_BOOKING_CATEGORIES,
+    "classroom": (Resource.Category.CLASSROOM,),
+    "meeting": (Resource.Category.MEETING, Resource.Category.SPECIAL),
+    "lab": (Resource.Category.LAB,),
+}
+BOOK_SEARCH_CATEGORY_CHOICES = (
+    ("", "ทุกห้องเรียน/ประชุม"),
+    ("classroom", "ห้องเรียน"),
+    ("meeting", "ห้องประชุม"),
+    ("lab", "ห้องปฏิบัติ"),
+)
+
+
 def _parse_calendar_datetime(value: str | None, fallback: datetime) -> datetime:
     parsed = parse_datetime(value or "") or fallback
     if timezone.is_naive(parsed):
@@ -227,6 +247,11 @@ def _homepage_availability_context(request, selected_category=""):
         "groups": groups,
         "has_online": has_online,
     }
+
+
+def about_view(request):
+    """Public, task-first introduction to SIGROOM. No operational data is exposed."""
+    return render(request, "bookings/about.html")
 
 
 def calendar_view(request):
@@ -503,6 +528,10 @@ def book_search(request):
     searched = bool(request.GET.get("search") or request.GET.get("date"))
     error = ""
     equipment_codes = request.GET.getlist("equipment")
+    selected_category = request.GET.get("category", "").strip()
+    if selected_category not in BOOK_SEARCH_CATEGORY_MAP:
+        selected_category = ""
+    room_categories = BOOK_SEARCH_CATEGORY_MAP[selected_category]
     try:
         attendees = int(request.GET.get("attendees", "") or 0) or None
     except ValueError:
@@ -518,6 +547,7 @@ def book_search(request):
                 request.user,
                 attendees=attendees,
                 equipment_codes=equipment_codes,
+                room_categories=room_categories,
             )
     elif searched and not start:
         error = "กรุณาตรวจวันที่และเวลาอีกครั้ง"
@@ -536,6 +566,8 @@ def book_search(request):
         "error": error,
         "query_string": request.GET.urlencode(),
         "time_presets": time_presets(),
+        "booking_category_choices": BOOK_SEARCH_CATEGORY_CHOICES,
+        "selected_booking_category": selected_category,
         "favorite_ids": set(request.user.favorite_resources.values_list("pk", flat=True)),
     }
     template = "bookings/partials/room_list.html" if getattr(request, "htmx", False) else "bookings/book_search.html"
