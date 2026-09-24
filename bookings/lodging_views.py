@@ -140,6 +140,7 @@ def _build_portal_context(cohort):
             "beds": beds,
             "occupied_count": room_occupied,
             "beds_count": beds_count,
+            "free_count": max(0, beds_count - room_occupied),
             "is_full": room_occupied >= beds_count,
         })
 

@@ -80,7 +80,7 @@
           {% if rdata.is_full %}
             <span class="room-badge-full">เต็ม ({{ rdata.occupied_count }}/{{ rdata.beds_count }})</span>
           {% else %}
-            <span class="room-badge-free">ว่าง {{ rdata.beds_count|add:"-"|add:rdata.occupied_count }}/{{ rdata.beds_count }}</span>
+            <span class="room-badge-free">ว่าง {{ rdata.free_count }}/{{ rdata.beds_count }}</span>
           {% endif %}
         </div>
       </div>
