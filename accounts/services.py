@@ -62,3 +62,34 @@ def reset_password_by_superuser(*, operator, target, raw_password):
         },
     )
     return locked_target, audit_row
+
+
+@transaction.atomic
+def complete_self_service_password_reset(user, raw_password):
+    """ตั้งรหัสใหม่จากลิงก์ reset และเขียน audit แบบ secret-free ใน transaction เดียว"""
+    locked = get_user_model().objects.select_for_update().get(pk=user.pk)
+    if not locked.is_active:
+        raise ValidationError("บัญชีนี้ปิดใช้งานอยู่ จึงไม่สามารถตั้งรหัสผ่านใหม่ได้")
+
+    validate_password(raw_password, locked)
+    before = {
+        "must_change_password": locked.must_change_password,
+        "password_usable": locked.has_usable_password(),
+    }
+    locked.set_password(raw_password)
+    locked.must_change_password = False
+    locked._audit_skip_registry = True
+    locked.save(update_fields=["password", "must_change_password"])
+    audit_row = audit(
+        locked,
+        "accounts.user",
+        locked.pk,
+        "password_reset_self_service",
+        before=before,
+        after={
+            "must_change_password": False,
+            "password_changed": True,
+            "reset_via": "self_service_email",
+        },
+    )
+    return locked, audit_row

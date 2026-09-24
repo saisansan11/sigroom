@@ -38,7 +38,8 @@
       <input type="hidden" name="next" value="{{ next }}">
       <button type="submit">เข้าสู่ระบบ</button>
     </form>
-    <small class="muted-text">ลืมรหัสผ่านหรือลงชื่อเข้าใช้ไม่ได้ กรุณาติดต่อผู้ดูแลระบบของหน่วย</small>
+    <p><a href="{% url 'accounts:password_reset' %}">ลืมรหัสผ่าน?</a></p>
+    <small class="muted-text">ระบบจะส่งลิงก์ตั้งรหัสใหม่ไปยังอีเมลหน่วย @signalschool.ac.th ของบัญชีคุณ</small>
   </section>
 </div>
 {% endblock %}
