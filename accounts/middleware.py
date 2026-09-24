@@ -14,13 +14,18 @@ class MustChangePasswordMiddleware:
         if getattr(user, "is_authenticated", False) and user.must_change_password:
             allowed = {
                 reverse("accounts:first_password_change"),
+                reverse("accounts:password_reset"),
+                reverse("accounts:password_reset_done"),
+                reverse("accounts:password_reset_complete"),
                 reverse("logout"),
-                reverse("password_reset"),
-                reverse("password_reset_done"),
-                reverse("password_reset_complete"),
                 reverse("webmanifest"),
             }
-            allowed_prefixes = ("/static/", "/accounts/reset/")
+            allowed_prefixes = (
+                "/static/",
+                "/accounts/password-reset/",
+                "/accounts/password_reset/",
+                "/accounts/reset/",
+            )
             if request.path not in allowed and not request.path.startswith(allowed_prefixes):
                 if request.headers.get("HX-Request") == "true":
                     response = HttpResponse(status=204)

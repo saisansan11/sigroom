@@ -8,7 +8,7 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 
-from .security import secure_configuration_warning
+from .security import password_reset_email_configuration_warning, secure_configuration_warning
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 load_dotenv(BASE_DIR / ".env")
@@ -116,6 +116,31 @@ PASSWORD_HASHERS = [
     "django.contrib.auth.hashers.Argon2PasswordHasher",  # SR-12
     "django.contrib.auth.hashers.PBKDF2PasswordHasher",
 ]
+
+# --- อีเมล / Self-Service Password Reset -----------------------------------
+# Production ต้องใช้ backend ที่ส่งอีเมลจริงและเก็บ EMAIL_HOST_PASSWORD ใน secret.
+# ห้ามใช้ console backend บน production เพราะ reset token จะปรากฏใน application logs.
+EMAIL_BACKEND = os.environ.get(
+    "EMAIL_BACKEND",
+    "django.core.mail.backends.smtp.EmailBackend",
+).strip()
+EMAIL_HOST = os.environ.get("EMAIL_HOST", "").strip()
+EMAIL_PORT = int(os.environ.get("EMAIL_PORT", "587"))
+EMAIL_HOST_USER = os.environ.get("EMAIL_HOST_USER", "").strip()
+EMAIL_HOST_PASSWORD = os.environ.get("EMAIL_HOST_PASSWORD", "")
+EMAIL_USE_TLS = os.environ.get("EMAIL_USE_TLS", "1") == "1"
+EMAIL_USE_SSL = os.environ.get("EMAIL_USE_SSL", "0") == "1"
+EMAIL_TIMEOUT = int(os.environ.get("EMAIL_TIMEOUT", "10"))
+DEFAULT_FROM_EMAIL = os.environ.get(
+    "DEFAULT_FROM_EMAIL",
+    "SIGROOM <noreply@signalschool.ac.th>",
+).strip()
+PASSWORD_RESET_TIMEOUT = int(os.environ.get("PASSWORD_RESET_TIMEOUT", "3600"))
+if EMAIL_USE_TLS and EMAIL_USE_SSL:
+    raise ValueError("EMAIL_USE_TLS และ EMAIL_USE_SSL ห้ามเปิดพร้อมกัน")
+email_warning = password_reset_email_configuration_warning(DEBUG, EMAIL_BACKEND, EMAIL_HOST)
+if email_warning:
+    warnings.warn(email_warning, RuntimeWarning, stacklevel=2)
 
 # --- ภาษา/เวลา (SRS NF-07) --------------------------------------------------
 LANGUAGE_CODE = "th"
