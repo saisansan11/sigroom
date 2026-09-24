@@ -3,6 +3,7 @@ const AxeBuilder = require('@axe-core/playwright').default;
 
 const PUBLIC_ROUTES = [
   '/',
+  '/about/',
   '/accounts/login/',
   '/accounts/password-reset/',
   '/accounts/password-reset/done/',

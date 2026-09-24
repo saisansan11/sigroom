@@ -8,6 +8,7 @@ app_name = "bookings"
 
 urlpatterns = [
     path("", views.calendar_view, name="calendar"),
+    path("about/", views.about_view, name="about"),
     path("api/calendar/events/", views.calendar_events, name="calendar_events"),
     path("book/", views.book_search, name="book_search"),
     path("online/", online_teaching_home, name="online_teaching_home"),

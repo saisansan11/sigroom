@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% block title %}รู้จัก SIGROOM{% endblock %}
+{% block content %}
+<section class="sigroom-intro-hero" aria-labelledby="about-title">
+  <div class="sigroom-intro-copy">
+    <p class="eyebrow">SIGROOM · โรงเรียนทหารสื่อสาร</p>
+    <h1 id="about-title">จองห้องและที่พักให้จบในไม่กี่ขั้นตอน</h1>
+    <p class="hero-sub">SIGROOM รวมการค้นหาห้องว่าง ห้องเรียน ห้องประชุม ห้องสอนออนไลน์ และที่พักหลักสูตรไว้ในระบบเดียว โดยใช้ข้อมูลผู้จองจากบัญชีที่เข้าสู่ระบบ ลดการกรอกข้อมูลซ้ำและติดตามสถานะได้จากหน้าเดียว</p>
+    <div class="sigroom-intro-actions">
+      {% if user.is_authenticated %}
+        <a role="button" class="btn-primary" href="{% url 'bookings:book_search' %}">จองห้องเรียน / ห้องประชุม</a>
+      {% else %}
+        <a role="button" class="btn-primary" href="{% url 'login' %}?next={% url 'bookings:book_search' %}">เข้าสู่ระบบเพื่อจองห้อง</a>
+      {% endif %}
+      <a role="button" class="btn-secondary" href="{% url 'bookings:lodging_index' %}">จองห้องพัก</a>
+    </div>
+  </div>
+</section>
+
+<section class="sigroom-service-grid" aria-label="บริการหลักของ SIGROOM">
+  <article class="sigroom-service-card">
+    <span class="service-kicker">01 · ห้องเรียน / ประชุม</span>
+    <h2>ค้นหาเฉพาะห้องที่ว่างจริง</h2>
+    <p>เลือกวันและช่วงเวลา ระบบตรวจการชน เวลาเตรียมห้อง อุปกรณ์ และสิทธิ์ของหน่วยให้อัตโนมัติ</p>
+    {% if user.is_authenticated %}<a href="{% url 'bookings:book_search' %}">เริ่มค้นหาห้อง →</a>{% endif %}
+  </article>
+  <article class="sigroom-service-card">
+    <span class="service-kicker">02 · ห้องสอนออนไลน์</span>
+    <h2>ทางลัดสำหรับครูผู้สอน</h2>
+    <p>เลือกจากห้องสอนออนไลน์ที่กำหนด เลือกหลักสูตรและรุ่น แล้วระบบยืนยันอัตโนมัติเมื่อช่วงเวลาว่าง</p>
+    {% if user.is_authenticated and nav_can_book_online %}<a href="{% url 'bookings:online_teaching_home' %}">เปิดห้องสอนออนไลน์ →</a>{% endif %}
+  </article>
+  <article class="sigroom-service-card">
+    <span class="service-kicker">03 · ห้องพัก</span>
+    <h2>ดูที่พักและรอบหลักสูตร</h2>
+    <p>ตรวจที่พักที่เปิดใช้งาน เลือกเตียงตามรอบหลักสูตร และติดตามข้อมูลการเข้าพักได้จากโทรศัพท์</p>
+    <a href="{% url 'bookings:lodging_index' %}">ดูห้องพัก →</a>
+  </article>
+</section>
+
+<section class="sigroom-howto" aria-labelledby="how-title">
+  <div class="section-title"><div><p class="eyebrow">วิธีใช้งาน</p><h2 id="how-title">เลือกงานก่อน แล้วค่อยเห็นเฉพาะข้อมูลที่จำเป็น</h2></div></div>
+  <ol class="sigroom-howto-list">
+    <li><strong>เลือกบริการ</strong><span>ห้องเรียน/ประชุม ห้องสอนออนไลน์ หรือห้องพัก</span></li>
+    <li><strong>เลือกวันและเวลา</strong><span>ใช้ช่วงเวลาแนะนำ หรือเปิด “กำหนดเวลาเอง” เมื่อจำเป็น</span></li>
+    <li><strong>เลือกห้อง</strong><span>ระบบแสดงเฉพาะห้องที่พร้อมใช้พร้อมความจุและอุปกรณ์</span></li>
+    <li><strong>ตรวจสอบและยืนยัน</strong><span>ชื่อ หน่วย และเบอร์โทรใช้จากบัญชีเพื่อลดการกรอกซ้ำ</span></li>
+  </ol>
+</section>
+{% endblock %}

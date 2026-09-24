@@ -25,8 +25,7 @@
         <nav class="desktop-nav" aria-label="เมนูหลัก">
           <ul class="main-nav">
             <li><a {% if request.resolver_match.url_name == 'calendar' %}aria-current="page"{% endif %} href="{% url 'bookings:calendar' %}">หน้าแรก</a></li>
-            <li><a {% if request.resolver_match.url_name == 'book_search' or request.resolver_match.url_name == 'book_form' %}aria-current="page"{% endif %} href="{% url 'bookings:book_search' %}">จองห้อง</a></li>
-                  {% if nav_can_book_online %}<li><a {% if request.resolver_match.url_name == 'online_teaching_home' or request.resolver_match.url_name == 'online_teaching_book' %}aria-current="page"{% endif %} href="{% url 'bookings:online_teaching_home' %}">ห้องสอนออนไลน์</a></li>{% endif %}
+            <li><a {% if request.resolver_match.url_name == 'book_search' or request.resolver_match.url_name == 'book_form' %}aria-current="page"{% endif %} href="{% url 'bookings:book_search' %}">จองห้องเรียน</a></li>
             {% if nav_can_book_online %}<li><a {% if request.resolver_match.url_name == 'online_teaching_home' or request.resolver_match.url_name == 'online_teaching_book' %}aria-current="page"{% endif %} href="{% url 'bookings:online_teaching_home' %}">ห้องสอนออนไลน์</a></li>{% endif %}
             <li><a {% if request.resolver_match.url_name == 'my_bookings' %}aria-current="page"{% endif %} href="{% url 'bookings:my_bookings' %}">การจองของฉัน</a></li>
             <li><a {% if request.resolver_match.url_name == 'lodging_index' %}aria-current="page"{% endif %} href="{% url 'bookings:lodging_index' %}">จองห้องพัก</a></li>
@@ -65,6 +64,7 @@
             <summary>{{ user.display_name }}</summary>
             <div class="account-popover">
               <p><strong>{{ user.display_name }}</strong>{% if user.unit %}<br><small>{{ user.unit.code }} · {{ user.unit.name }}</small>{% endif %}</p>
+              <p><a href="{% url 'bookings:about' %}">รู้จัก SIGROOM / วิธีใช้งาน</a></p>
               {% include "includes/pwa_install_guide.html" %}
               <form class="logout-form" action="{% url 'logout' %}" method="post">
                 {% csrf_token %}<button class="link-button" type="submit">ออกจากระบบ</button>
@@ -77,7 +77,7 @@
               <nav aria-label="เมนูหลักสำหรับมือถือ">
                 <ul class="main-nav">
                   <li><a {% if request.resolver_match.url_name == 'calendar' %}aria-current="page"{% endif %} href="{% url 'bookings:calendar' %}">หน้าแรก</a></li>
-                  <li><a {% if request.resolver_match.url_name == 'book_search' or request.resolver_match.url_name == 'book_form' %}aria-current="page"{% endif %} href="{% url 'bookings:book_search' %}">จองห้อง</a></li>
+                  <li><a {% if request.resolver_match.url_name == 'book_search' or request.resolver_match.url_name == 'book_form' %}aria-current="page"{% endif %} href="{% url 'bookings:book_search' %}">จองห้องเรียน</a></li>
                   <li><a {% if request.resolver_match.url_name == 'my_bookings' %}aria-current="page"{% endif %} href="{% url 'bookings:my_bookings' %}">การจองของฉัน</a></li>
                   <li><a {% if request.resolver_match.url_name == 'lodging_index' %}aria-current="page"{% endif %} href="{% url 'bookings:lodging_index' %}">จองห้องพัก</a></li>
                 </ul>
@@ -116,6 +116,7 @@
           <ul class="main-nav">
             <li><a {% if request.resolver_match.url_name == 'calendar' %}aria-current="page"{% endif %} href="{% url 'bookings:calendar' %}">สถานะห้องวันนี้</a></li>
             <li><a {% if request.resolver_match.url_name == 'lodging_index' or 'lodging' in request.path %}aria-current="page"{% endif %} href="{% url 'bookings:lodging_index' %}">จองห้องพัก</a></li>
+            <li><a {% if request.resolver_match.url_name == 'about' %}aria-current="page"{% endif %} href="{% url 'bookings:about' %}">รู้จัก SIGROOM</a></li>
           </ul>
         </nav>
         <div class="header-tools">
@@ -127,6 +128,7 @@
                 <ul class="main-nav">
                   <li><a {% if request.resolver_match.url_name == 'calendar' %}aria-current="page"{% endif %} href="{% url 'bookings:calendar' %}">สถานะห้องวันนี้</a></li>
                   <li><a {% if request.resolver_match.url_name == 'lodging_index' or 'lodging' in request.path %}aria-current="page"{% endif %} href="{% url 'bookings:lodging_index' %}">จองห้องพัก</a></li>
+                  <li><a {% if request.resolver_match.url_name == 'about' %}aria-current="page"{% endif %} href="{% url 'bookings:about' %}">รู้จัก SIGROOM</a></li>
                 </ul>
               </nav>
               <div class="mobile-account">

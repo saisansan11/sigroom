@@ -65,7 +65,7 @@
   <section id="course-operations" class="lodging-operations-section" aria-labelledby="course-operations-heading">
     <div class="section-title">
       <div><p class="eyebrow">หลักสูตร</p><h2 id="course-operations-heading">สถานะรอบที่พัก</h2></div>
-      {% if can_manage_course_operations %}<a href="{% url 'bookings:lodging_manage' %}">จัดสรรห้อง / สร้างหลักสูตร →</a>{% endif %}
+      {% if can_manage_course_operations %}<a class="lodging-workspace-link" href="{% url 'bookings:lodging_manage' %}">จัดสรรห้อง / สร้างหลักสูตร →</a>{% endif %}
     </div>
     <div class="lodging-course-ops-grid">
       {% for item in cohort_cards %}
@@ -130,7 +130,7 @@
       <div class="lodging-occupancy-stat"><strong>{{ occupancy.rooms_total }}</strong><span>ห้องที่จัดสรร</span></div>
     </section>
 
-    <p><a href="{% url 'bookings:lodging_cohort_edit' cohort.slug %}">ปรับห้องและการเปิดรับจอง</a> · <a href="{% url 'bookings:lodging_cohort_export_csv' cohort.slug %}">ส่งออกรายชื่อ</a></p>
+    <p><a class="lodging-workspace-link" href="{% url 'bookings:lodging_cohort_edit' cohort.slug %}">ปรับห้องและการเปิดรับจอง</a> <span aria-hidden="true">·</span> <a class="lodging-workspace-link" href="{% url 'bookings:lodging_cohort_export_csv' cohort.slug %}">ส่งออกรายชื่อ</a></p>
 
     <details class="detail-card"><summary>จัดสรรห้องและเปิดรับจอง — ช่วงวันที่ของหลักสูตรนี้</summary>
       <form method="post">{% csrf_token %}<input type="hidden" name="action" value="allocation">

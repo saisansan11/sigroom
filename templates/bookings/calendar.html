@@ -8,9 +8,9 @@
   <section class="hero-section task-home-hero" aria-label="ศูนย์งานและการจองห้อง">
     <div class="task-hero-header">
       <div class="task-hero-intro">
-        <p class="eyebrow">ศูนย์งาน SIGROOM</p>
+        <p class="eyebrow">SIGROOM · ระบบจองห้องและที่พัก รร.ส.สส.</p>
         <h1 class="hero-headline">สวัสดี, {{ user.display_name }}</h1>
-        <p class="hero-sub">{% if user.unit %}{{ user.unit.name }} · {% endif %}ตรวจสอบงานด่วน ดูห้องว่าง และจองห้องได้ทันที</p>
+        <p class="hero-sub">{% if user.unit %}{{ user.unit.name }} · {% endif %}เลือกงานที่ต้องการก่อน ระบบจะแสดงเฉพาะข้อมูลที่จำเป็นให้ทำต่อได้ทันที</p>
       </div>
       <div class="task-hero-quick-actions">
         <a class="btn-primary" href="{% url 'bookings:book_search' %}">
@@ -18,9 +18,34 @@
           <span>จองห้อง</span>
         </a>
         <a class="btn-secondary" href="#homepage-availability">ห้องว่างช่วงนี้ <span aria-hidden="true">↓</span></a>
-        <a class="btn-secondary" href="#operational-calendar-section">ผังห้องวันนี้ <span aria-hidden="true">↓</span></a>
+        <a class="btn-secondary" href="{% url 'bookings:about' %}">รู้จัก SIGROOM <span aria-hidden="true">→</span></a>
       </div>
     </div>
+
+    <section class="home-primary-actions" aria-label="เริ่มจองจากงานที่ต้องการ">
+      <article class="home-primary-card home-primary-card-teaching">
+        <div>
+          <span class="service-kicker">ห้องสอน / ห้องเรียน</span>
+          <h2>จองห้องเรียนหรือห้องประชุม</h2>
+          <p>เลือกวันและเวลา แล้วดูเฉพาะห้องที่ว่างจริง ไม่ต้องไล่ดูตารางทีละห้อง</p>
+        </div>
+        <div class="home-primary-card-actions">
+          <a class="btn-primary" href="{% url 'bookings:book_search' %}">ค้นหาห้องว่าง →</a>
+          {% if nav_can_book_online %}<a class="btn-secondary" href="{% url 'bookings:online_teaching_home' %}">ห้องสอนออนไลน์</a>{% endif %}
+        </div>
+      </article>
+      <article class="home-primary-card home-primary-card-lodging">
+        <div>
+          <span class="service-kicker">ห้องพัก</span>
+          <h2>จองห้องพัก / ดูรอบหลักสูตร</h2>
+          <p>ดูที่พักที่เปิดใช้งาน เลือกรอบหลักสูตร และไปยังหน้าจองเตียงโดยตรง</p>
+        </div>
+        <div class="home-primary-card-actions">
+          <a class="btn-primary" href="{% url 'bookings:lodging_index' %}">จองห้องพัก →</a>
+          <a class="btn-secondary" href="{% url 'bookings:about' %}">รู้จัก SIGROOM</a>
+        </div>
+      </article>
+    </section>
 
     {# Primary Task / Next Action Card #}
     {% if nav_can_access_approvals and nav_pending_approval_count and nav_pending_approval_count > 0 %}
@@ -147,9 +172,9 @@
   </section>
 {% else %}
   <section class="hero-section guest-hero" aria-label="ศูนย์บริการจองห้อง">
-    <p class="eyebrow">ระบบจองและบริหารการใช้ห้อง รร.ส.สส.</p>
-    <h1 class="hero-headline">สถานะห้องและที่พักวันนี้</h1>
-    <p class="hero-sub">ตรวจสอบห้องที่ว่างอยู่จริง — เข้าสู่ระบบเพื่อจอง</p>
+    <p class="eyebrow">สถานะห้องและที่พักวันนี้ · ระบบจองและบริหารการใช้ห้อง รร.ส.สส.</p>
+    <h1 class="hero-headline">จองห้องและที่พักได้จากจุดเดียว</h1>
+    <p class="hero-sub">ค้นหาห้องเรียน ห้องประชุม ห้องสอนออนไลน์ และที่พักของ รร.ส.สส. พร้อมตรวจสถานะห้องว่างจากข้อมูลจริง</p>
     <div class="hero-actions">
       <a class="btn-primary" href="{% url 'login' %}?next={% url 'bookings:book_search' %}">เข้าสู่ระบบ <span aria-hidden="true">→</span></a>
       <a class="btn-secondary" href="{% url 'bookings:lodging_index' %}">จองห้องพัก <span aria-hidden="true">→</span></a>
