@@ -160,6 +160,11 @@ def test_lodging_portal_sorts_available_rooms_before_full_rooms(client, v6_a_set
     # room2 ว่าง -> ต้องอยู่ลำดับแรก
     assert rooms_data[0]["room"].code == "DORM-102"
     assert not rooms_data[0]["is_full"]
+    assert rooms_data[0]["free_count"] == 1
+    assert rooms_data[1]["free_count"] == 0
+    content = resp.content.decode()
+    room2_start = content.index("DORM-102")
+    assert "1/1" in content[room2_start : room2_start + 700]
     # room1 เต็ม -> ต้องอยู่ลำดับหลัง
     assert rooms_data[1]["room"].code == "DORM-101"
     assert rooms_data[1]["is_full"]
