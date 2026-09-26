@@ -3,6 +3,14 @@ const AxeBuilder = require('@axe-core/playwright').default;
 
 test.beforeEach(async ({ page }) => {
   await page.goto('/lodging/about/', { waitUntil: 'networkidle' });
+  const shell = page.locator('#lka-explorer-shell');
+  const width = page.viewportSize()?.width || 1280;
+  if (width >= 896) {
+    await expect(shell).toHaveAttribute('open');
+  } else {
+    await page.locator('#lka-hub-action-3d').click();
+    await expect(shell).toHaveAttribute('open');
+  }
 });
 
 async function rooms(page) {
@@ -11,6 +19,46 @@ async function rooms(page) {
     w: Number(node.dataset.w), d: Number(node.dataset.d), side: node.dataset.side,
   })));
 }
+
+test('desktop viewport: explorer shell auto-opens by default before interaction', async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await page.reload({ waitUntil: 'networkidle' });
+  const shell = page.locator('#lka-explorer-shell');
+  expect(await shell.evaluate(el => el.open)).toBe(true);
+  await expect(shell).toHaveAttribute('open');
+});
+
+test('mobile viewport: shell initially closed, 3D hub action opens shell, and document root has no horizontal overflow', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.reload({ waitUntil: 'networkidle' });
+
+  const shell = page.locator('#lka-explorer-shell');
+  expect(await shell.evaluate(el => el.open)).toBe(false);
+
+  await page.locator('#lka-hub-action-3d').click();
+  expect(await shell.evaluate(el => el.open)).toBe(true);
+  await expect(shell).toHaveAttribute('open');
+
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+});
+
+test('mobile viewport: fallback action opens both explorer shell and fallback text plan', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.reload({ waitUntil: 'networkidle' });
+
+  const shell = page.locator('#lka-explorer-shell');
+  const fallback = page.locator('#lka-explorer-fallback');
+
+  expect(await shell.evaluate(el => el.open)).toBe(false);
+  expect(await fallback.evaluate(el => el.open)).toBe(false);
+
+  await page.locator('#lka-hub-action-fallback').click();
+
+  expect(await shell.evaluate(el => el.open)).toBe(true);
+  expect(await fallback.evaluate(el => el.open)).toBe(true);
+  await expect(shell).toHaveAttribute('open');
+  await expect(fallback).toHaveAttribute('open');
+});
 
 test('floor plans preserve room ordering, gaps, sides and non-overlapping footprints', async ({ page }) => {
   for (const floor of [4, 5]) {

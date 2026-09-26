@@ -73,8 +73,21 @@
   const modelFloor = document.getElementById('lka-model-floor');
   const modelView = document.getElementById('lka-model-view');
   const modelSelection = document.getElementById('lka-model-selection');
+  const shell = document.getElementById('lka-explorer-shell');
+  const fallback = document.getElementById('lka-explorer-fallback');
+  const hubActionFallback = document.getElementById('lka-hub-action-fallback');
 
   if (!canvas || !scene || !panel || !panelClose) return;
+
+  function openExplorerShell() {
+    if (shell) shell.open = true;
+  }
+
+  function initExplorerShell() {
+    if (shell && window.matchMedia && window.matchMedia('(min-width: 56rem)').matches) {
+      shell.open = true;
+    }
+  }
 
   function svgEl(tag, attrs = {}) {
     const el = document.createElementNS(SVG_NS, tag);
@@ -757,10 +770,24 @@
 
   document.querySelectorAll('[data-explorer-floor]').forEach(button => {
     button.addEventListener('click', () => {
+      openExplorerShell();
       const targetFloor = button.dataset.explorerFloor;
       if (targetFloor) switchFloor(targetFloor);
     });
   });
+
+  document.querySelectorAll('#lka-hub-action-3d, a[href="#lka-explorer"]').forEach(trigger => {
+    trigger.addEventListener('click', () => {
+      openExplorerShell();
+    });
+  });
+
+  if (hubActionFallback) {
+    hubActionFallback.addEventListener('click', () => {
+      openExplorerShell();
+      if (fallback) fallback.open = true;
+    });
+  }
 
   document.querySelectorAll('.lka-filter').forEach(button => {
     button.addEventListener('click', () => {
@@ -871,6 +898,7 @@
     applyTransform();
   }, { passive: false });
 
+  initExplorerShell();
   applyTransform();
   renderFloor();
 })();

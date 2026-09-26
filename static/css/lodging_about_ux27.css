@@ -83,6 +83,11 @@
 .lka-original-plans .lka-floor-card { box-shadow: none; }
 .lka-original-plans .lka-floor-card-head { flex-wrap: wrap; }
 .lka-original-plans .lka-floor-card-head a { min-height: 44px; display: inline-flex; align-items: center; font-size: .8rem; }
+.lka-original-plans .lka-floor-foot { padding: 0 var(--space-lg) var(--space-md); }
+.lka-original-plans .lka-floor-foot a { min-height: 44px; display: inline-flex; align-items: center; }
+.lka-explorer-shell:not([open]) > :not(summary) { display: none !important; }
+.lka-explorer-shell-trigger { min-height: 48px; }
+.lka-shell-toggle-badge { min-height: 44px; }
 .lka-site-guide { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 2rem; margin-top: 2rem; padding-top: 1.5rem; border-top: 1px solid #cbd8d1; }
 .lka-site-index { color: #48665b; font-size: .75rem; }
 .lka-site-guide h3 { font-size: 1.1rem; color: #173c3b; margin: .4rem 0; }
@@ -94,8 +99,8 @@
   .lka-explorer-section .lka-room-panel.has-selection { display: block; position: fixed; top: auto; right: 1rem; bottom: 1rem; width: min(24rem, calc(100vw - 2rem)); min-height: 0; max-height: 48vh; overflow: auto; z-index: 50; padding: 1rem; }
 }
 @media (max-width: 720px) {
-  .lka-explorer-section .lka-explorer-canvas { height: 570px; }
-  .lka-explorer-section .lka-iso-scene { min-width: 820px; }
+  .lka-explorer-section .lka-explorer-canvas { height: min(78vw, 400px); min-height: 300px; }
+  .lka-explorer-section .lka-iso-scene { min-width: 760px; }
   .lka-explorer-section .lka-room-panel.has-selection { left: .75rem; right: .75rem; width: auto; bottom: .75rem; }
   .lka-explorer-section .lka-panel-number { font-size: 2rem; }
   .lka-facing-card { padding: .7rem .85rem; }
@@ -105,7 +110,9 @@
   .lka-site-guide { grid-template-columns: 1fr; gap: 1.2rem; }
   .lka-original-plans summary { align-items: flex-start; flex-direction: column; gap: .3rem; padding-block: 1rem; }
   .lka-plan-actions { padding: .6rem; }
+  .lka-explorer-shell-trigger { padding: var(--space-sm) var(--space-md); flex-wrap: wrap; gap: var(--space-xs); }
 }
 @media (prefers-reduced-motion: reduce) {
   .lka-explorer-section .lka-room-model.selected { animation: none; transform: none; }
+  .lka-explorer-shell, .lka-shell-chevron { transition: none !important; animation: none !important; }
 }
