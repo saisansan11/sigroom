@@ -1,10 +1,10 @@
 {% load static %}
 <!doctype html>
-<html lang="th" data-theme="dark">
+<html lang="th" data-theme="{% block html_theme %}dark{% endblock %}">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#0b1117">
+  <meta name="theme-color" content="{% block theme_color %}#0b1117{% endblock %}">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="SIGROOM">
@@ -16,7 +16,7 @@
   <link rel="stylesheet" href="{% static 'css/app.css' %}">
   {% block head %}{% endblock %}
 </head>
-<body>
+<body class="{% block body_class %}{% endblock %}">
   <a class="skip-link" href="#main-content">ข้ามไปเนื้อหาหลัก</a>
   <header class="site-header">
     <div class="header-shell">

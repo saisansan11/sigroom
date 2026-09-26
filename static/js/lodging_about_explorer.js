@@ -115,12 +115,15 @@
       ['lka-air-top', [['0%', '#f4fcff'], ['58%', '#d8f3ff'], ['100%', '#b7e4f8']], 'diagonal'],
       ['lka-air-x', [['0%', '#7cc8e8'], ['100%', '#318fba']], 'vertical'],
       ['lka-air-y', [['0%', '#b9e7f8'], ['100%', '#67b8d9']], 'reverse'],
-      ['lka-fan-top', [['0%', '#fffaf0'], ['58%', '#ffedb7'], ['100%', '#f5cf6c']], 'diagonal'],
-      ['lka-fan-x', [['0%', '#e1b249'], ['100%', '#b97912']], 'vertical'],
-      ['lka-fan-y', [['0%', '#f5d787'], ['100%', '#d79f2b']], 'reverse'],
+      ['lka-fan-top', [['0%', '#effdfb'], ['58%', '#c8f0ec'], ['100%', '#8ddbd4']], 'diagonal'],
+      ['lka-fan-x', [['0%', '#58bfb8'], ['100%', '#167f7b']], 'vertical'],
+      ['lka-fan-y', [['0%', '#9ee2dc'], ['100%', '#39a9a2']], 'reverse'],
       ['lka-facility-top', [['0%', '#effdf9'], ['100%', '#b7eee3']], 'diagonal'],
       ['lka-facility-x', [['0%', '#68cbbb'], ['100%', '#258e83']], 'vertical'],
       ['lka-facility-y', [['0%', '#a8e8dc'], ['100%', '#54b7a8']], 'reverse'],
+      ['lka-future-top', [['0%', '#f4f5f7'], ['100%', '#d5d9df']], 'diagonal'],
+      ['lka-future-x', [['0%', '#b8bec7'], ['100%', '#7f8792']], 'vertical'],
+      ['lka-future-y', [['0%', '#d9dde2'], ['100%', '#a4abb4']], 'reverse'],
       ['lka-base-top', [['0%', '#ffffff'], ['100%', '#e7eef3']], 'diagonal'],
       ['lka-base-x', [['0%', '#cfdae3'], ['100%', '#9fb0be']], 'vertical'],
       ['lka-base-y', [['0%', '#e5edf3'], ['100%', '#b9c8d3']], 'reverse'],
@@ -244,9 +247,9 @@
         service('ห้องอาบน้ำ', 868, 22, 40, 390),
         service('ห้องส้วม', 914, 22, 44, 280),
         service('ที่ซักล้าง', 914, 306, 44, 160),
-        service('ห้องพัก / บริการ', 414, 22, 112, 110),
-        service('409 · พื้นที่บริการ', 528, 22, 36, 110),
-        service('410 · พื้นที่บริการ', 566, 22, 36, 110),
+        service('408 · พื้นที่ไม่เปิดจอง', 414, 22, 112, 110, 'future'),
+        service('409 · พื้นที่ไม่เปิดจอง', 528, 22, 36, 110, 'future'),
+        service('410 · พื้นที่ไม่เปิดจอง', 566, 22, 36, 110, 'future'),
         service('ห้องเก็บของ', 38, 474, 66, 110),
         service('ห้องพยาบาล', 832, 474, 76, 110),
         service('บันได', 282, 474, 47, 110, 'stairs'),
@@ -523,9 +526,11 @@
     });
 
     layout.spaces.forEach(facility => {
+      const zone = facility.type === 'future' ? 'future' : 'service';
       const group = svgEl('g', {
-        class: `lka-facility-model facility${facility.type === 'stairs' ? ' lka-core-model' : ''}`,
-        'data-cooling': 'facility',
+        class: `lka-facility-model facility zone-${zone}${facility.type === 'stairs' ? ' lka-core-model' : ''}`,
+        'data-cooling': facility.type === 'future' ? 'future' : 'facility',
+        'data-zone': zone,
         'aria-label': facility.label,
         'data-x': facility.x,
         'data-y': facility.y,
@@ -533,7 +538,7 @@
         'data-d': facility.d,
       });
       const faces = cuboidFaces(project, facility.x, facility.y, facility.w, facility.d, BASE_H + CORRIDOR_H, 2);
-      appendCuboid(group, faces, 'lka-facility');
+      appendCuboid(group, faces, facility.type === 'future' ? 'lka-future' : 'lka-facility');
       const label = svgEl('text', {
         x: faces.center.x,
         y: faces.center.y,
@@ -628,8 +633,10 @@
     scene.querySelectorAll('.lka-room-model, .lka-facility-model').forEach(model => {
       const isFacility = model.classList.contains('lka-facility-model');
       const cooling = model.dataset.cooling;
+      const zone = model.dataset.zone || (isFacility ? 'service' : 'lodging');
       let hidden = false;
-      if (filter === 'facility') hidden = !isFacility;
+      if (filter === 'facility') hidden = !isFacility || zone === 'future';
+      else if (filter === 'future') hidden = zone !== 'future';
       else if (filter !== 'all') hidden = isFacility || cooling !== filter;
 
       model.classList.toggle('hidden-filter', hidden);
@@ -664,9 +671,9 @@
       canvas.parentElement.insertBefore(legend, canvas);
     }
     legend.innerHTML = `
-      <span class="lka-legend-item"><span class="lka-legend-swatch lka-legend-swatch--air"></span>ปรับอากาศ</span>
-      <span class="lka-legend-item"><span class="lka-legend-swatch lka-legend-swatch--fan"></span>พัดลม</span>
-      <span class="lka-legend-item"><span class="lka-legend-swatch lka-legend-swatch--facility"></span>สิ่งอำนวยความสะดวก</span>
+      <span class="lka-legend-item"><span class="lka-legend-swatch lka-legend-swatch--lodging"></span>ห้องพัก</span>
+      <span class="lka-legend-item"><span class="lka-legend-swatch lka-legend-swatch--service"></span>ส่วนบริการ</span>
+      <span class="lka-legend-item"><span class="lka-legend-swatch lka-legend-swatch--future"></span>ไม่เปิดจอง</span>
     `;
   }
 
@@ -819,12 +826,20 @@
   if (viewRight) viewRight.addEventListener('click', () => rotateView(1));
   if (zoomIn) zoomIn.addEventListener('click', () => { scale = clampScale(scale + 0.12); applyTransform(); });
   if (zoomOut) zoomOut.addEventListener('click', () => { scale = clampScale(scale - 0.12); applyTransform(); });
+  function resetViewToFit() {
+    viewQuarter = 0;
+    perspective = false;
+    scale = 1;
+    const toggle = document.getElementById('lka-perspective');
+    if (toggle) {
+      toggle.setAttribute('aria-pressed', 'false');
+      toggle.textContent = 'ดูมุมอาคาร';
+    }
+    scheduleRender();
+  }
+
   if (resetBtn) {
-    resetBtn.addEventListener('click', () => {
-      viewQuarter = 0;
-      scale = 1;
-      scheduleRender();
-    });
+    resetBtn.addEventListener('click', resetViewToFit);
   }
 
   canvas.addEventListener('mousedown', event => {
@@ -880,7 +895,7 @@
       case '-':
       case '_': scale = clampScale(scale - 0.12); applyTransform(); event.preventDefault(); break;
       case 'r':
-      case 'R': viewQuarter = 0; scale = 1; scheduleRender(); event.preventDefault(); break;
+      case 'R': resetViewToFit(); event.preventDefault(); break;
       case 'Escape': closePanel({ restoreFocus: true }); event.preventDefault(); break;
     }
   });

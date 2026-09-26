@@ -1,0 +1,18 @@
+<svg class="lka-icon{% if class_name %} {{ class_name }}{% endif %}" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+  {% if icon == "lodging" %}<path d="M4 18v-7.5A2.5 2.5 0 0 1 6.5 8h4A2.5 2.5 0 0 1 13 10.5V18M13 12h4.5A2.5 2.5 0 0 1 20 14.5V18M3 18h18M6 8V6.5A1.5 1.5 0 0 1 7.5 5h2A1.5 1.5 0 0 1 11 6.5V8"/>
+  {% elif icon == "online" %}<rect x="4" y="5" width="12" height="14" rx="2"/><path d="M16 10l4-2v8l-4-2zM7 9h6M7 13h4"/>
+  {% elif icon == "learning" %}<path d="M3 6.5h18v11H3zM7 17.5v2M17 17.5v2M8 10h8M8 13.5h5"/>
+  {% elif icon == "map" %}<path d="M4 6.5l5-2 6 2 5-2v13l-5 2-6-2-5 2zM9 4.5v13M15 6.5v13"/>
+  {% elif icon == "photo" %}<rect x="3.5" y="5" width="17" height="14" rx="2"/><circle cx="9" cy="10" r="1.5"/><path d="M5.5 17l4-4 2.5 2.5 2-2 4.5 3.5"/>
+  {% elif icon == "building" %}<path d="M5 20V5l7-2 7 2v15M9 8h2M9 12h2M9 16h2M15 8h1M15 12h1M15 16h1M3 20h18"/>
+  {% elif icon == "people" %}<circle cx="9" cy="9" r="3"/><path d="M3.5 19c.5-3.1 2.5-5 5.5-5s5 1.9 5.5 5M15 7.5a2.5 2.5 0 1 1 0 5M16 14c2.4.3 3.8 1.9 4.2 4.5"/>
+  {% elif icon == "search" %}<circle cx="10.5" cy="10.5" r="5.5"/><path d="M15 15l5 5"/>
+  {% elif icon == "calendar" %}<rect x="4" y="5.5" width="16" height="14" rx="2"/><path d="M8 3.5v4M16 3.5v4M4 9.5h16M8 13h3M13 13h3M8 16h3"/>
+  {% elif icon == "shield" %}<path d="M12 3l7 3v5c0 4.6-2.8 7.7-7 10-4.2-2.3-7-5.4-7-10V6z"/><path d="M9 12l2 2 4-4"/>
+  {% elif icon == "bath" %}<path d="M5 11V7a2 2 0 0 1 4 0M3 11h18v2a5 5 0 0 1-5 5H8a5 5 0 0 1-5-5zM7 18v2M17 18v2"/>
+  {% elif icon == "shower" %}<path d="M6 7a4 4 0 0 1 8 0v2M12 9h6M13 12v1M16 12v2M19 12v1M13 16v1M16 16v2M19 16v1"/>
+  {% elif icon == "document" %}<path d="M6 3h8l4 4v14H6zM14 3v5h5M9 12h6M9 16h6"/>
+  {% elif icon == "staff" %}<circle cx="9" cy="8" r="3"/><path d="M4 19c.4-3.2 2.2-5 5-5s4.6 1.8 5 5M16 13h5M18.5 10.5V15.5"/>
+  {% elif icon == "arrow" %}<path d="M5 12h14M14 7l5 5-5 5"/>
+  {% else %}<circle cx="12" cy="12" r="8"/><path d="M12 8v4l3 2"/>{% endif %}
+</svg>
