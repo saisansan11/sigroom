@@ -41,3 +41,9 @@ P0: no defect observed in the sampled requests or guest browser paths. P1: no de
 - The user subsequently signed into the ordinary login page as `qa_p1_20260927`; the browser showed the authenticated home page greeting `QA SIGROOM P1`. Authenticated navigation to `/lodging/staff/lodging/`, `/lodging/staff/online/`, `/lodging/staff/learning/`, and `/online/` showed the expected access-denied pages for the no-role account.
 - The authenticated booking CTA opened `/book/` at step 1 of 5. Lodging CTA opened `/lodging/`, showing one open course with 12 of 16 beds available; its course page showed occupied beds without personal identities. In Edge, selecting DORM-104 bed 4 opened the registration dialog, and Cancel closed it. No form was submitted.
 - No staff permission was granted and no Production booking was created. Positive staff role routing and P2–P4 remain pending.
+
+## Staff entry follow-up — 27 Sep 2026
+
+- The user entered an existing privileged account in the Edge browser without sharing credentials with the agent. The login-first `/lodging/staff/lodging/` route redirected to `/lodging/workspace/`, which rendered the lodging operations board with one open cohort, four assigned occupants, and twelve free beds.
+- With the same authenticated session, `/lodging/staff/online/` and `/lodging/staff/learning/` each redirected to `/usage/`, which rendered the room usage workspace. The current list was empty; no record was edited.
+- The QA account's three staff routes were previously denied. This verifies anonymous-to-login, no-role rejection, and privileged routing in the production browser. Positive routing for a non-superuser custodian/approver remains untested; the QA account has not been granted any staff permissions.
