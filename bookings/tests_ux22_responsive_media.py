@@ -23,10 +23,7 @@ pytestmark = pytest.mark.django_db
 PHOTO_FALLBACKS = (
     "room4p_3421.jpg",
     "room2p_444.jpg",
-    "room4p_3421.jpg",
-    "room2p_444.jpg",
     "room2p_222.jpg",
-    "room4p_3421.jpg",
     "room4p_4444.jpg",
     "bath1.jpg",
     "bath2.jpg",
@@ -52,7 +49,7 @@ def test_ux22_public_access_200(client):
 def test_ux22_photo_picture_source_order_and_original_fallback(client):
     html = _about_html(client)
     photo_blocks = [block for block in _picture_blocks(html) if ".jpg" in block]
-    assert len(photo_blocks) == 10
+    assert len(photo_blocks) == 8
 
     for block in photo_blocks:
         sources = re.findall(r'<source\b[^>]+>', block)
@@ -69,7 +66,7 @@ def test_ux22_photo_picture_source_order_and_original_fallback(client):
 def test_ux22_png_diagrams_use_lossless_webp_with_original_fallback(client):
     html = _about_html(client)
     picture_blocks = _picture_blocks(html)
-    assert len(picture_blocks) == 13
+    assert len(picture_blocks) == 11
 
     for filename in PNG_FALLBACKS:
         stem = Path(filename).stem
@@ -151,9 +148,14 @@ def test_ux22_hero_fallback_attributes_retained(client):
 def test_ux22_below_fold_lazy_discipline(client):
     html = _about_html(client)
     img_tags = re.findall(r'<img\b[^>]+>', html)
-    assert len(img_tags) == 13
+    assert len(img_tags) == 11
+    eager_tags = [tag for tag in img_tags if 'loading="eager"' in tag]
+    assert len(eager_tags) == 1
+    assert "room4p_3421.jpg" in eager_tags[0]
+    assert 'fetchpriority="high"' in eager_tags[0]
+
     lazy_tags = [tag for tag in img_tags if 'loading="lazy"' in tag]
-    assert len(lazy_tags) == 12
+    assert len(lazy_tags) == 10
     for tag in lazy_tags:
         assert 'loading="eager"' not in tag
         assert 'fetchpriority="high"' not in tag

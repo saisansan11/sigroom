@@ -4,16 +4,17 @@ UX-21A Lodging About Bright Hospitality Re-direction — contract tests.
 Validates:
 1. Public 200 access without authentication.
 2. Bright hospitality visual architecture:
-   - Hero features real photo showcase (room4p_3421.jpg) as the primary star.
+   - Hero features real photo card showcase (room4p_3421.jpg) as the primary star.
    - Real photo badge ("ภาพถ่ายสถานที่จริง") and floating hospitality chips.
-   - Supportive 3D preview retained with non-BIM disclaimer.
-   - Elimination of dark tech grid patterns and dark-tech background overlays.
+   - Elimination of old pseudo-3D hero cards/mockups and obsolete BIM disclaimers.
+   - 3D launcher hub (#lka-preview-hub, #lka-hub-action-3d) and expandable explorer shell (#lka-explorer-shell).
 3. Bright hospitality design tokens present in lodging_about.css:
    - Light canvas (--lka-canvas), white surfaces (--lka-surface).
    - Deep navy / slate typography (--lka-navy-900, --lka-navy-800).
    - Sky blue (--lka-sky), fresh mint (--lka-mint), warm sand/amber (--lka-amber).
-4. Preservation of all Floor Explorer hooks, rates, facilities, and CTAs.
-5. Strict performance and asset hygiene: local static assets only, lazy loading, overflow shield, reduced motion.
+   - Elimination of dark tech grid patterns and dark-tech background overlays.
+4. Preservation of all Floor Explorer hooks, controls, and filters.
+5. Strict performance and asset hygiene: local static assets only, overflow shield, reduced motion.
 
 Run with: uv run pytest bookings/tests_ux21a_lodging_about.py -v
 """
@@ -42,26 +43,39 @@ def test_ux21a_public_access_200():
     assert response.status_code == 200
 
 
-def test_ux21a_hero_real_photo_prominence(client):
-    """Hero visual prominently features real room photography."""
+def test_ux21a_hero_real_photo_card(client):
+    """Hero visual prominently features real room photography card without dark/tech overlay."""
     response = client.get(reverse("bookings:lodging_about"))
     html = response.content.decode("utf-8")
 
-    assert "lka-hero-photo-showcase" in html, "Missing real photo showcase in hero"
+    assert "lka-hero-photo-card" in html, "Missing real photo card in hero"
     assert "room4p_3421.jpg" in html, "Missing room4p_3421.jpg in hero photo frame"
+    assert "lka-hero-main-img" in html, "Missing main hero image class"
     assert "ภาพถ่ายสถานที่จริง" in html, "Missing real photo badge"
-    assert "lka-hero-floating-card" in html, "Missing floating hospitality card in hero"
-    assert "เตียงเดี่ยวแยกสัดส่วน" in html, "Missing bed highlight chip in hero"
+    assert "lka-hero-chips" in html, "Missing floating chips in hero"
 
 
-def test_ux21a_hero_supportive_3d_preview(client):
-    """3D floor mockup is positioned as supportive preview with non-BIM disclaimer."""
+def test_ux21a_no_pseudo_3d_hero_mockup(client):
+    """Hero has eliminated pseudo-3D building card and obsolete BIM disclaimer."""
     response = client.get(reverse("bookings:lodging_about"))
     html = response.content.decode("utf-8")
 
-    assert "lka-hero-support-3d" in html, "Missing supportive 3D container"
-    assert "lka-iso-dorm-mockup" in html, "Missing 3D mockup element"
-    assert "ไม่ใช่แบบสถาปัตยกรรม BIM หรือระบุขนาดจริง" in html, "Missing non-BIM disclaimer"
+    assert "lka-hero-card-3d" not in html, "Old pseudo-3D card class should be absent"
+    assert "lka-hero-support-3d" not in html, "Old hero supportive 3D container should be absent"
+    assert "lka-iso-dorm-mockup" not in html, "Old pseudo-3D mockup class should be absent"
+    assert "ไม่ใช่แบบสถาปัตยกรรม BIM" not in html, "Old BIM copy should be absent"
+
+
+def test_ux21a_3d_launcher_and_shell(client):
+    """3D experience is organized as launcher hub and expandable explorer shell."""
+    response = client.get(reverse("bookings:lodging_about"))
+    html = response.content.decode("utf-8")
+
+    assert 'id="lka-preview-hub"' in html, "Missing 3D preview hub"
+    assert 'id="lka-hub-action-3d"' in html, "Missing 3D hub launcher action"
+    assert 'id="lka-explorer-shell"' in html, "Missing expandable explorer shell"
+    assert "lka-explorer-shell" in html, "Missing explorer shell class"
+    assert "ไม่ใช่แบบวัดขนาดจริง" in html, "Missing non-exact-model explorer disclaimer"
 
 
 def test_ux21a_bright_hospitality_tokens_in_css():
@@ -103,3 +117,7 @@ def test_ux21a_interactive_explorer_hooks_preserved(client):
     assert 'id="lka-explorer-canvas"' in html
     assert 'id="lka-iso-scene"' in html
     assert 'id="lka-room-panel"' in html
+    assert 'id="lka-panel-close"' in html
+    assert 'id="lka-room-picker"' in html
+    assert 'id="lka-perspective"' in html
+    assert 'id="lka-explorer-fallback"' in html

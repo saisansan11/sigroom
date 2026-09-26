@@ -12,6 +12,14 @@ const PUBLIC_ROUTES = [
   '/lodging/about/',
 ];
 
+async function ensureExplorerOpen(page) {
+  const shell = page.locator('#lka-explorer-shell');
+  if (!(await shell.evaluate(el => el.open))) {
+    await page.locator('#lka-hub-action-3d').click();
+    await expect(shell).toHaveAttribute('open');
+  }
+}
+
 for (const route of PUBLIC_ROUTES) {
   test(`WCAG A/AA automated scan: ${route}`, async ({ page }) => {
     await page.goto(route, { waitUntil: 'networkidle' });
@@ -26,6 +34,7 @@ for (const route of PUBLIC_ROUTES) {
 
 test('lodging explorer preserves room focus across a camera rerender', async ({ page }) => {
   await page.goto('/lodging/about/', { waitUntil: 'networkidle' });
+  await ensureExplorerOpen(page);
   const room = page.locator('.lka-room-block[data-num="401"]');
   await room.focus();
   await expect(room).toBeFocused();
@@ -38,6 +47,7 @@ test('lodging explorer preserves room focus across a camera rerender', async ({ 
 
 test('Escape closes the mobile inspector and restores the selected room focus', async ({ page }) => {
   await page.goto('/lodging/about/', { waitUntil: 'networkidle' });
+  await ensureExplorerOpen(page);
   const room = page.locator('.lka-room-block[data-num="401"]');
   await room.click();
   await expect(page.locator('#lka-room-panel')).toHaveAttribute('data-state', 'selected');

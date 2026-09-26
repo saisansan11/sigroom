@@ -10,12 +10,12 @@ Validates:
    - Explicit width and height on hero and all showcase images.
    - Appropriate decoding="async" on images.
 4. Below-the-fold image lazy loading discipline:
-   - Exactly 12 below-the-fold images retain loading="lazy".
-   - Experience cards, floor overviews, gallery figures, bath photos, and rates diagram are lazy loaded.
+   - Exactly 10 below-the-fold images retain loading="lazy" (gallery 4, bath 3, rates notice 1, floor diagrams 2).
+   - Old room experience images (lka-exp-img) are removed.
 5. Preload hygiene:
    - No speculative or redundant <link rel="preload" as="image"> in template or rendered HTML.
 6. Multi-instance asset caching & priority isolation:
-   - room4p_3421.jpg appears in hero as eager/high, but subsequent instances in experience and gallery remain lazy.
+   - room4p_3421.jpg appears exactly twice: in hero as eager/high, and in gallery as lazy.
 
 Run with: uv run --env-file F:/ogn_ROOM/.env pytest bookings/tests_ux21b_lcp_media.py -v
 """
@@ -60,7 +60,7 @@ def test_ux21b_hero_lcp_loading_and_fetchpriority(client):
 
 
 def test_ux21b_image_dimensions_and_decoding_contract(client):
-    """All showcase images have explicit width and height (CLS guard) and decoding='async'."""
+    """All 11 showcase images have explicit width and height (CLS guard) and decoding='async'."""
     response = client.get(reverse("bookings:lodging_about"))
     html = response.content.decode("utf-8")
 
@@ -69,7 +69,7 @@ def test_ux21b_image_dimensions_and_decoding_contract(client):
     content_to_scan = page_wrap_match.group(1) if page_wrap_match else html
 
     img_tags = re.findall(r'<img\s+[^>]+>', content_to_scan)
-    assert len(img_tags) == 13, f"Expected 13 showcase images in lodging_about, found {len(img_tags)}"
+    assert len(img_tags) == 11, f"Expected 11 showcase images in lodging_about, found {len(img_tags)}"
 
     for tag in img_tags:
         assert re.search(r'width="\d+"', tag), f"Image tag missing explicit width: {tag}"
@@ -78,26 +78,30 @@ def test_ux21b_image_dimensions_and_decoding_contract(client):
 
 
 def test_ux21b_below_fold_images_remain_lazy(client):
-    """Every below-the-fold image retains loading='lazy'."""
+    """Exactly 10 below-the-fold images retain loading='lazy', and lka-exp-img is absent."""
     response = client.get(reverse("bookings:lodging_about"))
     html = response.content.decode("utf-8")
 
     lazy_matches = re.findall(r'<img\s+[^>]*loading="lazy"[^>]*>', html)
-    assert len(lazy_matches) == 12, (
-        f"Expected exactly 12 below-the-fold images with loading='lazy', found {len(lazy_matches)}"
+    assert len(lazy_matches) == 10, (
+        f"Expected exactly 10 below-the-fold images with loading='lazy', found {len(lazy_matches)}"
     )
 
-    # Check key sections below fold individually
+    # Old room experience image class must be completely absent
+    assert "lka-exp-img" not in html, "Old lka-exp-img class should not be present"
+
+    # Check key sections below fold individually with exact expected counts
     below_fold_classes = [
-        "lka-exp-img",       # Room Experience cards
-        "lka-floor-img",     # Floor overviews
-        "lka-gallery-img",   # Gallery mosaic
-        "lka-bath-img",      # Bathroom amenities
-        "lka-rates-img",     # Rates document
+        ("lka-gallery-img", 4),   # Gallery mosaic (4 images)
+        ("lka-bath-img", 3),      # Bathroom amenities (3 images)
+        ("lka-rates-img", 1),     # Rates document (1 image)
+        ("lka-floor-img", 2),     # Floor diagrams (2 images)
     ]
-    for cls_name in below_fold_classes:
+    for cls_name, expected_count in below_fold_classes:
         matches = re.findall(rf'<img[^>]*class="[^"]*{cls_name}[^"]*"[^>]*>', html)
-        assert len(matches) > 0, f"No images found for class {cls_name}"
+        assert len(matches) == expected_count, (
+            f"Expected {expected_count} images for class {cls_name}, found {len(matches)}"
+        )
         for tag in matches:
             assert 'loading="lazy"' in tag, f"Below-fold image {cls_name} must have loading='lazy': {tag}"
             assert 'loading="eager"' not in tag, f"Below-fold image {cls_name} must NOT have loading='eager'"
@@ -114,13 +118,13 @@ def test_ux21b_no_preload_spam(client):
 
 
 def test_ux21b_same_asset_multi_instance_priority_isolation(client):
-    """room4p_3421.jpg appears in hero as eager, but subsequent below-fold instances remain lazy."""
+    """room4p_3421.jpg appears exactly twice: in hero as eager/high, and in gallery as lazy."""
     response = client.get(reverse("bookings:lodging_about"))
     html = response.content.decode("utf-8")
 
     # Find all occurrences of room4p_3421.jpg in <img> tags
     matches = re.findall(r'<img[^>]*room4p_3421\.jpg[^>]*>', html)
-    assert len(matches) == 3, f"Expected 3 occurrences of room4p_3421.jpg, found {len(matches)}"
+    assert len(matches) == 2, f"Expected exactly 2 occurrences of room4p_3421.jpg, found {len(matches)}"
 
     # First instance is hero
     hero_instance = matches[0]
@@ -128,14 +132,9 @@ def test_ux21b_same_asset_multi_instance_priority_isolation(client):
     assert 'fetchpriority="high"' in hero_instance
     assert 'lka-hero-main-img' in hero_instance
 
-    # Second instance is Floor 5 Experience card
-    exp_instance = matches[1]
-    assert 'loading="lazy"' in exp_instance
-    assert 'loading="eager"' not in exp_instance
-    assert 'lka-exp-img' in exp_instance
-
-    # Third instance is Stay Gallery
-    gallery_instance = matches[2]
+    # Second instance is Stay Gallery
+    gallery_instance = matches[1]
     assert 'loading="lazy"' in gallery_instance
     assert 'loading="eager"' not in gallery_instance
+    assert 'fetchpriority="high"' not in gallery_instance
     assert 'lka-gallery-img' in gallery_instance
