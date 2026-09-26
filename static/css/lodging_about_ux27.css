@@ -99,8 +99,28 @@
   .lka-explorer-section .lka-room-panel.has-selection { display: block; position: fixed; top: auto; right: 1rem; bottom: 1rem; width: min(24rem, calc(100vw - 2rem)); min-height: 0; max-height: 48vh; overflow: auto; z-index: 50; padding: 1rem; }
 }
 @media (max-width: 720px) {
-  .lka-explorer-section .lka-explorer-canvas { height: min(78vw, 400px); min-height: 300px; }
-  .lka-explorer-section .lka-iso-scene { min-width: 760px; }
+  .lka-explorer-section .lka-explorer-canvas {
+    height: clamp(300px, 82vw, 410px);
+    min-height: 300px;
+    overflow: hidden;
+    overscroll-behavior: contain;
+    touch-action: pan-y pinch-zoom;
+  }
+  .lka-explorer-section .lka-iso-scene {
+    width: 100%;
+    min-width: 0;
+    height: 100%;
+    align-items: center;
+    justify-content: center;
+    transform-origin: 50% 50%;
+  }
+  .lka-explorer-section .lka-iso-svg {
+    width: 100%;
+    max-width: 100%;
+    height: calc(100% - 1rem);
+    max-height: calc(100% - 1rem);
+    overflow: hidden;
+  }
   .lka-explorer-section .lka-room-panel.has-selection { left: .75rem; right: .75rem; width: auto; bottom: .75rem; }
   .lka-explorer-section .lka-panel-number { font-size: 2rem; }
   .lka-facing-card { padding: .7rem .85rem; }
@@ -115,4 +135,174 @@
 @media (prefers-reduced-motion: reduce) {
   .lka-explorer-section .lka-room-model.selected { animation: none; transform: none; }
   .lka-explorer-shell, .lka-shell-chevron { transition: none !important; animation: none !important; }
+}
+
+
+/* iOS 27 explorer convergence */
+.lka-explorer-section .lka-explorer-toolbar {
+  border-color: rgba(15, 23, 42, .09);
+  border-radius: 1.25rem;
+  background: rgba(255, 255, 255, .82);
+  box-shadow: 0 10px 28px rgb(15 23 42 / .06);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+}
+.lka-explorer-section .lka-floor-toggle {
+  padding: .2rem;
+  border: 1px solid rgba(15, 23, 42, .08);
+  border-radius: 1rem;
+  background: rgba(238, 243, 247, .88);
+}
+.lka-explorer-section .lka-ftoggle,
+.lka-explorer-section .lka-filter {
+  border-radius: .85rem;
+  font-family: var(--font-sans);
+  font-size: .88rem;
+  font-weight: 750;
+}
+.lka-explorer-section .lka-ftoggle[aria-pressed="true"] {
+  border-color: transparent;
+  background: #ffffff;
+  color: #0b6f86;
+  box-shadow: 0 3px 10px rgb(15 23 42 / .08);
+}
+.lka-explorer-section .lka-filter[aria-pressed="true"] {
+  border-color: transparent;
+  background: #153f46;
+  color: #ffffff;
+  box-shadow: 0 4px 12px rgb(21 63 70 / .13);
+}
+.lka-explorer-section .lka-explorer-wrap {
+  border-color: rgba(15, 23, 42, .09);
+  border-radius: 1.5rem;
+  background: #fbfcfd;
+  box-shadow: 0 20px 44px -30px rgb(15 23 42 / .25);
+}
+.lka-plan-actions {
+  gap: .55rem;
+  padding: .7rem;
+  border-color: rgba(15, 23, 42, .08);
+  background: rgba(255, 255, 255, .90);
+}
+.lka-plan-actions label { color: #52606f; font-weight: 700; }
+.lka-plan-actions select {
+  border-color: rgba(15, 23, 42, .12);
+  border-radius: .95rem;
+  background-color: #f5f7fa;
+  color: #1f3340;
+  font-family: var(--font-sans);
+}
+.lka-plan-actions button {
+  border-color: #164d55;
+  border-radius: .95rem;
+  background: #164d55;
+  font-family: var(--font-sans);
+  font-weight: 750;
+}
+.lka-explorer-section .lka-controls {
+  gap: .5rem;
+  border-color: rgba(15, 23, 42, .08);
+  background: rgba(249, 251, 252, .94);
+}
+.lka-explorer-section .lka-ctrl-btn {
+  min-width: 44px;
+  min-height: 44px;
+  border-color: rgba(15, 23, 42, .11);
+  border-radius: .9rem;
+  background: rgba(255, 255, 255, .94);
+  color: #263746;
+  box-shadow: 0 5px 14px rgb(15 23 42 / .05);
+}
+.lka-explorer-section .lka-ctrl-reset {
+  border-color: rgb(11 143 176 / .22);
+  background: #e9f7fb;
+  color: #0b6f86;
+}
+.lka-explorer-section .lka-room-panel,
+.lka-explorer-section .lka-room-panel.has-selection {
+  border: 1px solid rgba(15, 23, 42, .09);
+  background: rgba(250, 252, 252, .95);
+  color: #17343b;
+  box-shadow: 0 20px 46px -24px rgb(15 23 42 / .24);
+  backdrop-filter: blur(22px);
+  -webkit-backdrop-filter: blur(22px);
+}
+.lka-explorer-section .lka-panel-empty h3,
+.lka-explorer-section .lka-panel-number { color: #17343b; }
+.lka-explorer-section .lka-panel-empty p,
+.lka-explorer-section .lka-panel-kicker,
+.lka-explorer-section .lka-panel-note { color: #60716e; }
+.lka-explorer-section .lka-panel-empty-mark { background: #e5f2ee; color: #24564f; }
+.lka-panel-empty-tip { border-color: #d4e2de; color: #60716e; }
+.lka-explorer-section .lka-panel-close {
+  border: 1px solid rgba(15, 23, 42, .08);
+  background: #edf2f2;
+  color: #294c48;
+}
+.lka-explorer-section .lka-panel-pill { color: #55736d; }
+.lka-facing-card { background: #e5f2ee; color: #173c3b; }
+.lka-explorer-section .lka-panel-dl dt { color: #536863; }
+.lka-explorer-section .lka-panel-dl dd { color: #173c3b; border-color: #d7e3df; }
+.lka-room-next { border-color: #d7e3df; color: #0b7188; }
+.lka-room-next:hover { color: #07566a; }
+
+@media (max-width: 720px) {
+  .lka-explorer-section .lka-explorer-toolbar { gap: .45rem; padding: .45rem; }
+  .lka-explorer-section .lka-filter-row {
+    display: flex;
+    width: 100%;
+    gap: .35rem;
+    overflow-x: auto;
+    padding-bottom: .1rem;
+    scrollbar-width: none;
+  }
+  .lka-explorer-section .lka-filter-row::-webkit-scrollbar { display: none; }
+  .lka-explorer-section .lka-filter { width: auto; flex: 0 0 auto; padding-inline: .75rem; }
+  .lka-plan-actions { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; }
+  .lka-plan-actions label { font-size: .8rem; white-space: nowrap; }
+  .lka-plan-actions select { min-width: 0; width: 100%; }
+  .lka-plan-actions button { padding-inline: .72rem; white-space: nowrap; }
+  .lka-explorer-section .lka-controls {
+    grid-template-columns: repeat(5, minmax(44px, 1fr));
+    width: 100%;
+    padding: .55rem;
+    overflow: visible;
+  }
+  .lka-explorer-section .lka-ctrl-btn { width: 100%; padding-inline: 0; }
+  .lka-explorer-section .lka-ctrl-reset-label { display: none; }
+  .lka-explorer-section .lka-room-panel.has-selection {
+    left: max(.65rem, env(safe-area-inset-left));
+    right: max(.65rem, env(safe-area-inset-right));
+    bottom: max(.65rem, env(safe-area-inset-bottom));
+    max-height: min(50dvh, 29rem);
+    border-radius: 1.45rem;
+  }
+}
+
+
+/* Service Gateway zoning overrides */
+.lka-explorer-section .lka-room-model.air .lka-room-block { fill:#dff6fa; stroke:#118da4; }
+.lka-explorer-section .lka-room-model.fan .lka-room-block { fill:#dff4ef; stroke:#218b84; }
+.lka-explorer-section .lka-future-top { fill:#e6e8ec; stroke:#8a929d; }
+.lka-explorer-section .lka-future-face--x { fill:#aeb4bd; stroke:#7f8792; }
+.lka-explorer-section .lka-future-face--y { fill:#cbd0d6; stroke:#8a929d; }
+.lka-explorer-section .zone-future .lka-facility-label { fill:#6f7782; }
+.lka-explorer-section .zone-future.hidden-filter, .lka-explorer-section .lka-facility-model.hidden-filter { opacity:.12; pointer-events:none; }
+.lka-explorer-section .zone-future.hidden-filter text, .lka-explorer-section .lka-facility-model.hidden-filter text { opacity:.12; }
+
+
+/* Mobile inspector must not cover explorer controls */
+@media (max-width: 720px) {
+  .lka-explorer-section .lka-room-panel.has-selection {
+    position: relative;
+    inset: auto;
+    left: auto;
+    right: auto;
+    bottom: auto;
+    width: 100%;
+    max-height: none;
+    overflow: visible;
+    z-index: 1;
+    margin-top: .75rem;
+  }
 }

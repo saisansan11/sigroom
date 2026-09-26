@@ -2683,3 +2683,366 @@
   .lka-cta-btn,
   .lka-cta-btn-sub { min-height: 44px; padding: 0.65rem 0.9rem; }
 }
+
+
+/* ===== iOS 27-inspired unified lodging surface (2026-09-26) ===== */
+body.lodging-about-ios27 {
+  color-scheme: light;
+  --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Noto Sans Thai", "IBM Plex Sans Thai", Tahoma, sans-serif;
+  --cyan: #138fa8;
+  --cyan-strong: #0b7188;
+  --ios-bg: #f4f6fa;
+  --ios-surface: rgba(255, 255, 255, 0.78);
+  --ios-surface-solid: #ffffff;
+  --ios-stroke: rgba(15, 23, 42, 0.10);
+  --ios-stroke-strong: rgba(15, 23, 42, 0.16);
+  --ios-ink: #111827;
+  --ios-muted: #667085;
+  --ios-accent: #0b8fb0;
+  --ios-accent-strong: #08728d;
+  --ios-glass-shadow: 0 14px 40px rgb(15 23 42 / 0.09);
+  margin: 0;
+  background: var(--ios-bg);
+  color: var(--ios-ink);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+body.lodging-about-ios27 main.container.page-shell {
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  padding: 0;
+  background: var(--ios-bg);
+}
+
+body.lodging-about-ios27 .site-header {
+  border-bottom: 1px solid var(--ios-stroke);
+  background: rgb(248 250 252 / 0.82);
+  box-shadow: 0 1px 0 rgb(255 255 255 / 0.75), 0 8px 28px rgb(15 23 42 / 0.06);
+  backdrop-filter: saturate(1.35) blur(24px);
+  -webkit-backdrop-filter: saturate(1.35) blur(24px);
+}
+
+body.lodging-about-ios27 .header-shell {
+  width: min(100% - 2rem, var(--header-max));
+  min-height: 4.5rem;
+  gap: 1rem;
+}
+
+body.lodging-about-ios27 .brand {
+  color: var(--ios-ink);
+  font-family: var(--font-sans);
+  font-size: 1rem;
+  font-weight: 800;
+  letter-spacing: .13em;
+}
+body.lodging-about-ios27 .brand-accent { color: #075f75; }
+body.lodging-about-ios27 .brand .brand-mark { width: 1.8rem; height: 1.8rem; }
+body.lodging-about-ios27 .brand .brand-mark g { stroke: var(--ios-accent); }
+
+body.lodging-about-ios27 .main-nav a,
+body.lodging-about-ios27 .account-menu > summary,
+body.lodging-about-ios27 .mobile-menu > summary {
+  min-height: 3rem;
+  border-radius: 1rem;
+  color: #475467;
+  font-size: .92rem;
+  font-weight: 700;
+}
+body.lodging-about-ios27 .main-nav a:hover,
+body.lodging-about-ios27 .main-nav a[aria-current="page"] {
+  border-color: transparent;
+  background: rgb(255 255 255 / .82);
+  color: var(--ios-ink);
+  box-shadow: inset 0 0 0 1px var(--ios-stroke);
+}
+body.lodging-about-ios27 .main-nav a[aria-current="page"] { box-shadow: inset 0 -2px var(--ios-accent), inset 0 0 0 1px var(--ios-stroke); }
+
+body.lodging-about-ios27 .login-btn-header {
+  min-height: 3rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0;
+  padding: .65rem 1.1rem;
+  border: 1px solid rgb(11 143 176 / .16);
+  border-radius: 1rem;
+  background: linear-gradient(180deg, #35c5df, #22b4cf);
+  color: #062f39;
+  box-shadow: 0 7px 18px rgb(34 180 207 / .20), inset 0 1px rgb(255 255 255 / .48);
+  font-size: .94rem;
+  font-weight: 800;
+}
+body.lodging-about-ios27 .login-btn-header:hover { background: linear-gradient(180deg, #50cee4, #2dbbd4); color: #062f39; }
+
+body.lodging-about-ios27 .mobile-menu > summary {
+  border-color: var(--ios-stroke-strong);
+  background: rgb(255 255 255 / .66);
+  color: var(--ios-ink);
+  box-shadow: inset 0 1px rgb(255 255 255 / .9);
+}
+body.lodging-about-ios27 .mobile-menu[open] > summary { border-color: rgb(11 143 176 / .44); background: #fff; }
+body.lodging-about-ios27 .mobile-menu-panel {
+  top: calc(100% + .4rem);
+  right: 1rem;
+  left: 1rem;
+  max-height: calc(100dvh - 6rem - env(safe-area-inset-bottom));
+  overflow-y: auto;
+  padding: .75rem;
+  border: 1px solid var(--ios-stroke);
+  border-radius: 1.5rem;
+  background: rgb(250 251 253 / .94);
+  box-shadow: 0 24px 70px rgb(15 23 42 / .18);
+  backdrop-filter: blur(28px) saturate(1.25);
+  -webkit-backdrop-filter: blur(28px) saturate(1.25);
+}
+body.lodging-about-ios27 .mobile-menu .main-nav { grid-template-columns: 1fr; gap: .35rem; }
+body.lodging-about-ios27 .mobile-menu .main-nav a {
+  min-height: 3.25rem;
+  width: 100%;
+  padding-inline: 1rem;
+  border-radius: 1rem;
+  background: transparent;
+  color: #344054;
+}
+body.lodging-about-ios27 .mobile-menu .main-nav a[aria-current="page"] {
+  background: #eaf7fb;
+  color: #075f75;
+  box-shadow: none;
+}
+body.lodging-about-ios27 .mobile-account {
+  margin-top: .6rem;
+  padding-top: .6rem;
+  border-color: var(--ios-stroke);
+}
+body.lodging-about-ios27 .mobile-account > a[role="button"] { display: none; }
+body.lodging-about-ios27 .install-guide {
+  width: 100%;
+  margin: 0;
+  border-color: var(--ios-stroke);
+  border-radius: 1rem;
+  background: rgb(255 255 255 / .72);
+  color: var(--ios-ink);
+}
+body.lodging-about-ios27 .install-guide > summary { color: #344054; }
+body.lodging-about-ios27 .install-guide :is(h3, li, p, small) { color: #475467; }
+
+body.lodging-about-ios27 .lka-page-wrap {
+  --radius-sm: .95rem;
+  --radius-md: 1.15rem;
+  --radius-lg: 1.45rem;
+  --radius-xl: 1.75rem;
+  --lka-canvas: #f4f6fa;
+  --lka-canvas-alt: #eef3f8;
+  --lka-surface: rgba(255, 255, 255, .86);
+  --lka-surface-raised: #ffffff;
+  --lka-border: rgba(15, 23, 42, .09);
+  --lka-border-subtle: rgba(15, 23, 42, .06);
+  --lka-shadow-sm: 0 4px 16px rgb(15 23 42 / .05);
+  --lka-shadow-md: 0 12px 28px rgb(15 23 42 / .08);
+  --lka-shadow-lg: 0 22px 50px rgb(15 23 42 / .10);
+  background: var(--ios-bg);
+  font-family: var(--font-sans);
+}
+
+body.lodging-about-ios27 .lka-hero {
+  border-bottom: 0;
+  background:
+    radial-gradient(circle at 84% 12%, rgb(174 230 243 / .60), transparent 34%),
+    radial-gradient(circle at 10% 78%, rgb(194 244 232 / .48), transparent 34%),
+    linear-gradient(180deg, #f8fbfd 0%, #f5f8fb 66%, #f4f6fa 100%);
+}
+body.lodging-about-ios27 .lka-hero-inner,
+body.lodging-about-ios27 .lka-section { padding-inline: max(0px, env(safe-area-inset-left)); }
+body.lodging-about-ios27 .lka-hero-title,
+body.lodging-about-ios27 .lka-section-header h2,
+body.lodging-about-ios27 .lka-hub-card-title,
+body.lodging-about-ios27 .lka-journey-title,
+body.lodging-about-ios27 .lka-why-title { letter-spacing: -.025em; }
+body.lodging-about-ios27 .lka-text-gradient {
+  background: linear-gradient(100deg, #0a7898 0%, #0e8e88 72%, #4f7f78 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+}
+body.lodging-about-ios27 :is(.lka-hchip, .lka-fact-card, .lka-hub-card, .lka-journey-card, .lka-why-card, .lka-hero-photo-card, .lka-faq-item, .lka-cta-card) {
+  border-color: var(--lka-border);
+  box-shadow: var(--lka-shadow-sm);
+}
+body.lodging-about-ios27 :is(.lka-hchip, .lka-fact-card, .lka-hub-card, .lka-journey-card, .lka-why-card) {
+  background: rgb(255 255 255 / .82);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+}
+body.lodging-about-ios27 .lka-hchip-num,
+body.lodging-about-ios27 .lka-hchip-tag,
+body.lodging-about-ios27 .lka-fact-num { font-family: var(--font-sans); font-variant-numeric: tabular-nums; }
+
+body.lodging-about-ios27 .lka-hero-cta .btn-primary,
+body.lodging-about-ios27 .lka-btn-glow,
+body.lodging-about-ios27 .lka-btn-soft,
+body.lodging-about-ios27 .lka-cta-btn,
+body.lodging-about-ios27 .lka-cta-btn-sub {
+  min-height: 3.15rem;
+  border-radius: 1rem;
+  font-size: .96rem;
+  font-weight: 750;
+}
+body.lodging-about-ios27 .lka-hero-cta .btn-primary,
+body.lodging-about-ios27 .lka-btn-glow,
+body.lodging-about-ios27 .lka-cta-btn {
+  border-color: #0b8fb0;
+  background: linear-gradient(180deg, #18a7c7, #0b8fb0);
+  box-shadow: 0 10px 22px rgb(11 143 176 / .18), inset 0 1px rgb(255 255 255 / .30);
+}
+body.lodging-about-ios27 .lka-btn-soft,
+body.lodging-about-ios27 .lka-cta-btn-sub {
+  border-color: var(--ios-stroke);
+  background: rgb(255 255 255 / .86);
+  color: #263547;
+  box-shadow: inset 0 1px rgb(255 255 255 / .9), 0 5px 14px rgb(15 23 42 / .05);
+}
+body.lodging-about-ios27 .lka-hero-sublink { color: #536273; }
+
+@media (max-width: 50rem) {
+  body.lodging-about-ios27 .header-shell {
+    width: calc(100% - 1.25rem);
+    min-height: 4.25rem;
+    gap: .55rem;
+  }
+  body.lodging-about-ios27 .brand { font-size: .93rem; letter-spacing: .11em; }
+  body.lodging-about-ios27 .brand .brand-mark { width: 1.7rem; height: 1.7rem; }
+  body.lodging-about-ios27 .header-tools { gap: .45rem; }
+  body.lodging-about-ios27 .login-btn-header,
+  body.lodging-about-ios27 .mobile-menu > summary { min-height: 3rem; padding-inline: .9rem; }
+  body.lodging-about-ios27 .lka-section { width: calc(100% - 1.25rem); }
+  body.lodging-about-ios27 .lka-hero-inner { width: calc(100% - 1.25rem); }
+  body.lodging-about-ios27 .lka-section-header { margin-bottom: 1.15rem; }
+  body.lodging-about-ios27 .lka-section-header h2 { font-size: clamp(1.45rem, 6.2vw, 1.85rem); }
+  body.lodging-about-ios27 .lka-hero-title { font-size: clamp(1.95rem, 8.2vw, 2.45rem); line-height: 1.15; }
+  body.lodging-about-ios27 .lka-hero-sub { font-size: 1rem; line-height: 1.6; }
+  body.lodging-about-ios27 .lka-hchip { min-height: 5rem; display: grid; place-content: center; border-radius: 1.15rem; }
+  body.lodging-about-ios27 .lka-hchip-num { font-size: 1.35rem; }
+  body.lodging-about-ios27 .lka-hchip-tag { font-size: .92rem; }
+  body.lodging-about-ios27 .lka-hchip-label { font-size: .72rem; }
+  body.lodging-about-ios27 .lka-fact-card { border-radius: 1.3rem; }
+  body.lodging-about-ios27 .lka-hub-card { border-radius: 1.35rem; }
+}
+
+@media (max-width: 30rem) {
+  body.lodging-about-ios27 .lka-hero-chips { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .55rem; }
+  body.lodging-about-ios27 .lka-hero-cta { grid-template-columns: 1fr 1fr; gap: .55rem; }
+  body.lodging-about-ios27 .lka-hero-cta .btn-primary,
+  body.lodging-about-ios27 .lka-hero-cta .lka-btn-soft { min-width: 0; min-height: 3.15rem; padding: .65rem .6rem; font-size: .9rem; }
+  body.lodging-about-ios27 .lka-hero-sublink { grid-column: 1 / -1; }
+  body.lodging-about-ios27 .lka-hub-card-desc { display: block; font-size: .76rem; }
+}
+
+
+/* ===== SIGROOM Service Gateway refresh (2026-09-26) ===== */
+body.lodging-about-ios27 .lka-page-wrap { font-size: 16px; overflow-x: clip; }
+body.lodging-about-ios27 .lka-page-wrap :is(a, button, summary, select) { -webkit-tap-highlight-color: transparent; }
+.lka-icon { width: 1.25rem; height: 1.25rem; flex: 0 0 auto; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+.lka-cta-arrow { width: 1.05rem; height: 1.05rem; margin-left: auto; }
+
+body.lodging-about-ios27 .lka-info-chips { grid-template-columns: repeat(3, minmax(0, 1fr)); max-width: 32rem; }
+body.lodging-about-ios27 .lka-info-chips .lka-hchip { cursor: default; pointer-events: none; background: #fff; backdrop-filter: none; -webkit-backdrop-filter: none; box-shadow: inset 0 0 0 1px rgba(15,23,42,.07); }
+body.lodging-about-ios27 .lka-gateway-cta { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); align-items: stretch; gap: .65rem; }
+body.lodging-about-ios27 .lka-service-cta { min-height: 3.25rem; display: flex; align-items: center; gap: .55rem; padding: .72rem .9rem; border-radius: 1rem; text-decoration: none; line-height: 1.25; }
+body.lodging-about-ios27 .lka-service-cta small { display: block; margin-top: .08rem; color: #7a818c; font-size: .72rem; font-weight: 650; }
+body.lodging-about-ios27 .lka-service-cta--disabled { border: 1px solid rgba(15,23,42,.10); background: #eef1f4; color: #69717c; cursor: not-allowed; }
+body.lodging-about-ios27 .lka-hero-sublink { display: inline-flex; align-items: center; gap: .45rem; min-height: 3rem; margin-top: .35rem; }
+body.lodging-about-ios27 .lka-hero-photo-card { background: #fff; backdrop-filter: none; -webkit-backdrop-filter: none; }
+body.lodging-about-ios27 .lka-hphoto-badge, body.lodging-about-ios27 .lka-hfloat-item { display: inline-flex; align-items: center; gap: .4rem; }
+body.lodging-about-ios27 .lka-hfloat-item .lka-icon { width: 1.15rem; height: 1.15rem; color: #0b7f91; }
+
+.lka-service-grid { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 1rem; }
+.lka-service-card { --service-accent:#0d94aa; position: relative; display: grid; grid-template-rows: auto 1fr auto; gap: 1rem; min-width: 0; padding: 1.15rem; border: 1px solid rgba(15,23,42,.09); border-top: 4px solid var(--service-accent); border-radius: 1.4rem; background: #fff; box-shadow: 0 12px 28px rgba(15,23,42,.06); }
+.lka-service-card--online { --service-accent:#6d5bd0; }
+.lka-service-card--learning { --service-accent:#c68a22; }
+.lka-service-card.is-future { background: #fbfaf7; }
+.lka-service-icon { width: 2.75rem; height: 2.75rem; display: grid; place-items: center; border-radius: .9rem; background: color-mix(in srgb, var(--service-accent) 10%, white); color: var(--service-accent); }
+.lka-service-icon .lka-icon { width: 1.45rem; height: 1.45rem; }
+.lka-service-copy { min-width: 0; }
+.lka-service-copy h3 { margin: .25rem 0 .4rem; font-size: 1.18rem; color:#17202b; }
+.lka-service-copy p { margin: 0 0 .55rem; color:#5c6674; font-size:.96rem; line-height:1.6; }
+.lka-service-copy small { color:#59636f; font-weight:600; }
+.lka-service-kicker { color:var(--service-accent); font-size:.76rem; font-weight:800; letter-spacing:.02em; }
+.lka-service-actions { display:flex; flex-wrap:wrap; align-items:center; gap:.55rem; }
+.lka-service-primary, .lka-service-secondary { min-height: 48px; display:inline-flex; align-items:center; justify-content:center; gap:.45rem; padding:.65rem .85rem; border-radius:.9rem; font-weight:780; text-decoration:none; }
+.lka-service-primary { background:#172f38; color:#fff; }
+.lka-service-primary .lka-icon { width:1rem; height:1rem; }
+.lka-service-primary.is-disabled { background:#e6e8eb; color:#747b84; cursor:not-allowed; }
+.lka-service-secondary { border:1px solid rgba(15,23,42,.11); background:#f7f9fa; color:#2e4951; }
+
+.lka-online-room-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:.85rem; }
+.lka-online-room-card { display:grid; grid-template-columns:auto 1fr; gap:.8rem 1rem; min-width:0; padding:1rem; border:1px solid rgba(109,91,208,.16); border-radius:1.25rem; background:#fff; box-shadow:0 8px 22px rgba(28,25,55,.05); }
+.lka-online-room-number { width:2.6rem; height:2.6rem; display:grid; place-items:center; border-radius:.85rem; background:#f0edff; color:#5b49bd; font-weight:850; font-variant-numeric:tabular-nums; }
+.lka-online-room-card h3 { margin:.05rem 0 .25rem; font-size:1.05rem; }
+.lka-online-room-card p { margin:0 0 .4rem; color:#5f6675; font-size:.9rem; }
+.lka-online-room-card span { color:#756f86; font-size:.82rem; }
+.lka-online-room-card > a { grid-column:1/-1; min-height:48px; display:flex; align-items:center; justify-content:center; gap:.45rem; border-radius:.9rem; background:#f2f0ff; color:#4f3fb4; font-weight:800; text-decoration:none; }
+.lka-online-room-card > a .lka-icon { width:1rem; height:1rem; }
+.lka-future-banner { --service-accent:#c68a22; display:grid; grid-template-columns:auto 1fr auto; align-items:center; gap:1rem; margin-top:1rem; padding:1rem 1.1rem; border:1px solid rgba(198,138,34,.2); border-radius:1.2rem; background:#fffaf0; }
+.lka-future-banner p { margin:.2rem 0 0; color:#6b6253; }
+.lka-future-status { padding:.4rem .65rem; border-radius:999px; background:#f2e6ce; color:#7b581e; font-size:.8rem; font-weight:800; white-space:nowrap; }
+
+.lka-staff-entry { border-top:1px solid rgba(15,23,42,.07); }
+.lka-staff-entry-head { display:flex; align-items:center; gap:.7rem; }
+.lka-staff-entry-head > .lka-icon { width:1.4rem; height:1.4rem; color:#66717f; }
+.lka-staff-entry-head .eyebrow, .lka-staff-entry-head h2 { margin:0; }
+.lka-staff-entry-head h2 { font-size:1.25rem; }
+.lka-staff-entry-note { max-width:58rem; margin:.65rem 0 1rem; color:#6b7480; font-size:.9rem; }
+.lka-staff-links { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:.65rem; }
+.lka-staff-links a { min-height:3rem; display:grid; grid-template-columns:1fr auto; grid-template-rows:auto auto; align-items:center; column-gap:.65rem; padding:.7rem .85rem; border:1px solid rgba(15,23,42,.08); border-radius:.9rem; background:#f7f8fa; color:#3d4652; text-decoration:none; }
+.lka-staff-links a span { font-weight:750; }
+.lka-staff-links a small { color:#59636f; font-weight:600; }
+.lka-staff-links a .lka-icon { grid-column:2; grid-row:1/3; width:1rem; height:1rem; }
+
+.lka-zone-legend { display:flex; flex-wrap:wrap; gap:.45rem .9rem; margin:.7rem 0 1rem; padding:.65rem .8rem; border:1px solid rgba(15,23,42,.08); border-radius:1rem; background:#f8fafb; color:#4f5b67; font-size:.82rem; }
+.lka-zone-legend > span { display:inline-flex; align-items:center; gap:.35rem; }
+.lka-zone-legend i, .lka-legend-swatch { width:.75rem; height:.75rem; border-radius:.25rem; display:inline-block; box-shadow:inset 0 0 0 1px rgba(15,23,42,.12); }
+.lka-zone-legend small { color:#59636f; font-weight:600; }
+.zone-lodging, .lka-legend-swatch--lodging { background:linear-gradient(135deg,#62c9da,#138fa8); }
+.zone-online { background:linear-gradient(135deg,#8b7be5,#5b49bd); }
+.zone-learning { background:linear-gradient(135deg,#e8b85c,#c68a22); }
+.zone-service, .lka-legend-swatch--service { background:linear-gradient(135deg,#9bc8b0,#5f9577); }
+.zone-future, .lka-legend-swatch--future { background:linear-gradient(135deg,#d8dce2,#8b929c); }
+
+body.lodging-about-ios27 .lka-faq-question { position:relative; padding-right:3rem; list-style:none; }
+body.lodging-about-ios27 .lka-faq-question::-webkit-details-marker { display:none; }
+body.lodging-about-ios27 .lka-faq-question::after { content:'›'; position:absolute; right:1rem; top:50%; translate:0 -50%; font-size:1.45rem; color:#6f7882; transform:rotate(90deg); transition:transform .18s ease; }
+body.lodging-about-ios27 .lka-faq-item[open] > .lka-faq-question::after { transform:rotate(-90deg); }
+
+@media (max-width: 64rem) {
+  .lka-service-grid, .lka-online-room-grid { grid-template-columns:1fr; }
+  .lka-staff-links { grid-template-columns:1fr 1fr; }
+}
+@media (max-width: 48rem) {
+  body.lodging-about-ios27 .lka-gateway-cta { grid-template-columns:1fr; }
+  body.lodging-about-ios27 .lka-info-chips { grid-template-columns:repeat(3,minmax(0,1fr)); }
+  .lka-staff-links { grid-template-columns:1fr; }
+  .lka-future-banner { grid-template-columns:auto 1fr; }
+  .lka-future-status { grid-column:1/-1; width:max-content; }
+  .lka-rates-table-wrap { overflow:visible; }
+  .lka-rates-table, .lka-rates-table tbody, .lka-rates-table tr, .lka-rates-table td { display:block; width:100%; }
+  .lka-rates-table thead { display:none; }
+  .lka-rates-table tr { margin:0 0 .75rem; padding:.4rem .8rem; border:1px solid rgba(15,23,42,.09); border-radius:1rem; background:#fff; }
+  .lka-rates-table td { display:flex; align-items:baseline; justify-content:space-between; gap:1rem; padding:.55rem 0; border:0; border-bottom:1px solid rgba(15,23,42,.06); text-align:right; }
+  .lka-rates-table td:last-child { border-bottom:0; }
+  .lka-rates-table td::before { content:attr(data-label); color:#66707d; font-size:.84rem; font-weight:700; text-align:left; }
+  .lka-rates-table .lka-rate-category { display:block; padding:.65rem 0 .45rem; color:#1e2c38; text-align:left; font-weight:850; }
+  .lka-rates-table .lka-rate-category::before { display:block; margin-bottom:.18rem; }
+}
+@media (max-width: 30rem) {
+  body.lodging-about-ios27 .lka-info-chips { gap:.45rem; }
+  body.lodging-about-ios27 .lka-info-chips .lka-hchip { min-height:4.35rem; padding:.5rem .35rem; }
+  .lka-service-card { padding:1rem; }
+  .lka-zone-legend { display:grid; grid-template-columns:1fr 1fr; }
+}
+@media (prefers-reduced-motion: reduce) {
+  body.lodging-about-ios27 .lka-faq-question::after { transition:none; }
+}
+@media (prefers-reduced-transparency: reduce) {
+  body.lodging-about-ios27 .site-header, body.lodging-about-ios27 .mobile-menu-panel, .lka-explorer-section .lka-explorer-toolbar, .lka-explorer-section .lka-room-panel { backdrop-filter:none !important; -webkit-backdrop-filter:none !important; background:#fff !important; }
+}

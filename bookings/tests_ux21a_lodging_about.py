@@ -28,6 +28,7 @@ WORKTREE_ROOT = Path(__file__).resolve().parent.parent
 TEMPLATE_PATH = WORKTREE_ROOT / "templates" / "lodging" / "lodging_about.html"
 CSS_PATH = WORKTREE_ROOT / "static" / "css" / "lodging_about.css"
 JS_PATH = WORKTREE_ROOT / "static" / "js" / "lodging_about_explorer.js"
+UX27_CSS_PATH = WORKTREE_ROOT / "static" / "css" / "lodging_about_ux27.css"
 
 pytestmark = pytest.mark.django_db
 
@@ -121,3 +122,37 @@ def test_ux21a_interactive_explorer_hooks_preserved(client):
     assert 'id="lka-room-picker"' in html
     assert 'id="lka-perspective"' in html
     assert 'id="lka-explorer-fallback"' in html
+
+
+def test_ios27_lodging_theme_is_scoped_to_about_page(client):
+    html = client.get(reverse("bookings:lodging_about")).content.decode("utf-8")
+    assert '<html lang="th" data-theme="light">' in html
+    assert '<body class="lodging-about-ios27">' in html
+    assert '<meta name="theme-color" content="#f6f7fb">' in html
+
+
+def test_ios27_visual_system_tokens_and_header_convergence():
+    css = _read_file(CSS_PATH)
+    assert "iOS 27-inspired unified lodging surface" in css
+    assert "body.lodging-about-ios27 .site-header" in css
+    assert "backdrop-filter: saturate(1.35) blur(24px)" in css
+    assert "body.lodging-about-ios27 .mobile-menu-panel" in css
+    assert "grid-template-columns: repeat(2, minmax(0, 1fr))" in css
+
+
+def test_mobile_explorer_uses_true_fit_instead_of_fixed_760px_scene():
+    css = _read_file(UX27_CSS_PATH)
+    assert "min-width: 760px" not in css
+    assert ".lka-explorer-section .lka-iso-scene" in css
+    assert "min-width: 0" in css
+    assert "max-width: 100%" in css
+    assert "overscroll-behavior: contain" in css
+
+
+def test_fit_control_resets_camera_and_scale():
+    js = _read_file(JS_PATH)
+    assert "function resetViewToFit()" in js
+    assert "perspective = false;" in js
+    assert "viewQuarter = 0;" in js
+    assert "scale = 1;" in js
+    assert "resetBtn.addEventListener('click', resetViewToFit)" in js

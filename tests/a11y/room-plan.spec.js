@@ -66,8 +66,13 @@ test('floor plans preserve room ordering, gaps, sides and non-overlapping footpr
     await expect(page.locator('.lka-room-model')).toHaveCount(floor === 4 ? 57 : 30);
     const data = await rooms(page);
     await page.locator('[data-filter="facility"]').click();
-    await expect(page.locator('.lka-facility-model:not(.hidden-filter)')).toHaveCount(floor === 4 ? 15 : 7);
+    await expect(page.locator('.lka-facility-model:not(.hidden-filter)')).toHaveCount(floor === 4 ? 12 : 7);
     await expect(page.locator('.lka-room-model:not(.hidden-filter)')).toHaveCount(0);
+    if (floor === 4) {
+      await page.locator('[data-filter="future"]').click();
+      await expect(page.locator('.lka-facility-model:not(.hidden-filter)')).toHaveCount(3);
+      await expect(page.locator('.lka-room-model:not(.hidden-filter)')).toHaveCount(0);
+    }
     await page.locator('[data-filter="all"]').click();
     const row = y => data.filter(room => room.y === y).sort((a, b) => a.x - b.x).map(room => room.num);
     if (floor === 4) {
@@ -150,4 +155,122 @@ test('internal stair pairs have equal readable footprints without intersecting r
       }
     }
   }
+});
+
+
+test('mobile fit mode keeps the full SVG scene inside the canvas on narrow iPhone-class widths', async ({ page }) => {
+  const assertFit = async () => {
+    const metrics = await page.evaluate(() => {
+      const canvas = document.querySelector('#lka-explorer-canvas');
+      const scene = document.querySelector('#lka-iso-scene');
+      const svg = document.querySelector('#lka-iso-scene .lka-iso-svg');
+      const c = canvas.getBoundingClientRect();
+      const s = scene.getBoundingClientRect();
+      const v = svg.getBoundingClientRect();
+      return {
+        documentOverflow: document.documentElement.scrollWidth > innerWidth,
+        canvasClientWidth: canvas.clientWidth,
+        canvasScrollWidth: canvas.scrollWidth,
+        sceneScrollWidth: scene.scrollWidth,
+        canvas: { left: c.left, right: c.right, top: c.top, bottom: c.bottom },
+        scene: { left: s.left, right: s.right, top: s.top, bottom: s.bottom },
+        svg: { left: v.left, right: v.right, top: v.top, bottom: v.bottom },
+      };
+    });
+    expect(metrics.documentOverflow).toBe(false);
+    expect(metrics.canvasScrollWidth).toBeLessThanOrEqual(metrics.canvasClientWidth + 1);
+    expect(metrics.sceneScrollWidth).toBeLessThanOrEqual(metrics.canvasClientWidth + 1);
+    expect(metrics.scene.left).toBeGreaterThanOrEqual(metrics.canvas.left - 2);
+    expect(metrics.scene.right).toBeLessThanOrEqual(metrics.canvas.right + 2);
+    expect(metrics.svg.left).toBeGreaterThanOrEqual(metrics.canvas.left - 2);
+    expect(metrics.svg.right).toBeLessThanOrEqual(metrics.canvas.right + 2);
+    expect(metrics.svg.top).toBeGreaterThanOrEqual(metrics.canvas.top - 2);
+    expect(metrics.svg.bottom).toBeLessThanOrEqual(metrics.canvas.bottom + 2);
+  };
+
+  for (const width of [360, 390, 430]) {
+    await page.setViewportSize({ width, height: 900 });
+    await page.goto('/lodging/about/', { waitUntil: 'networkidle' });
+    const shell = page.locator('#lka-explorer-shell');
+    if (!(await shell.evaluate(el => el.open))) {
+      await page.locator('#lka-hub-action-3d').click();
+    }
+    await expect(shell).toHaveAttribute('open');
+
+    for (const floor of [4, 5]) {
+      await page.locator(`#lka-btn-f${floor}`).click();
+      await assertFit();
+      await page.locator('#lka-perspective').click();
+      await assertFit();
+      for (let quarter = 0; quarter < 4; quarter++) {
+        await page.locator('#lka-view-right').click();
+        await assertFit();
+      }
+      await page.locator('#lka-reset').click();
+      await expect(page.locator('#lka-perspective')).toHaveAttribute('aria-pressed', 'false');
+      await expect(page.locator('#lka-model-view')).toHaveText('ผังจากด้านบน');
+      await assertFit();
+    }
+  }
+});
+
+
+test('service gateway responsive matrix has no page overflow, 16px body text, and 48px primary touch targets', async ({ page }) => {
+  const widths = [320, 360, 390, 393, 430, 768, 834, 1024, 1280, 1440];
+  for (const width of widths) {
+    await page.setViewportSize({ width, height: width < 600 ? 900 : 1000 });
+    await page.goto('/lodging/about/', { waitUntil: 'networkidle' });
+
+    const metrics = await page.evaluate(() => {
+      const bodySize = parseFloat(getComputedStyle(document.querySelector('.lka-page-wrap')).fontSize);
+      const targets = [...document.querySelectorAll('.lka-service-cta, .lka-service-primary, .lka-online-room-card > a')];
+      const smallTargets = targets.filter(el => el.getBoundingClientRect().height < 48).map(el => ({
+        text: el.textContent.trim().replace(/\s+/g, ' ').slice(0, 60),
+        height: el.getBoundingClientRect().height,
+      }));
+      return {
+        pageOverflow: document.documentElement.scrollWidth > innerWidth + 1,
+        bodySize,
+        smallTargets,
+      };
+    });
+    expect(metrics.pageOverflow, `horizontal overflow at ${width}px`).toBe(false);
+    expect(metrics.bodySize, `body text below 16px at ${width}px`).toBeGreaterThanOrEqual(16);
+    expect(metrics.smallTargets, `touch target below 48px at ${width}px`).toEqual([]);
+
+    const lodging = page.locator('.lka-service-card--lodging .lka-service-primary');
+    const online = page.locator('.lka-service-card--online .lka-service-primary');
+    await expect(lodging).toBeVisible();
+    await expect(online).toBeVisible();
+    await expect(page.locator('.lka-service-card--learning')).toContainText('กำลังพัฒนาระบบ');
+
+    await page.locator('.lka-rates-disclosure > summary').click();
+    if (width <= 768) {
+      await expect(page.locator('.lka-rates-table tr').nth(1)).toHaveCSS('display', 'block');
+    } else {
+      await expect(page.locator('.lka-rates-table')).toHaveCSS('display', 'table');
+    }
+  }
+});
+
+test('FAQ uses one disclosure indicator and whole summary row is keyboard operable', async ({ page }) => {
+  const item = page.locator('.lka-faq-item').first();
+  const summary = item.locator('summary');
+  await expect(summary.locator('.lka-faq-icon')).toHaveCount(0);
+  await summary.focus();
+  await page.keyboard.press('Enter');
+  await expect(item).toHaveAttribute('open');
+  await page.keyboard.press('Enter');
+  await expect(item).not.toHaveAttribute('open');
+});
+
+test('reduced motion mode still opens and operates the 3D explorer', async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('/lodging/about/', { waitUntil: 'networkidle' });
+  await page.locator('#lka-hub-action-3d').click();
+  await expect(page.locator('#lka-explorer-shell')).toHaveAttribute('open');
+  await page.locator('#lka-btn-f5').click();
+  await expect(page.locator('.lka-room-model')).toHaveCount(30);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
 });

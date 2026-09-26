@@ -33,6 +33,7 @@ urlpatterns = [
     # ที่พักหลักสูตร
     path("lodging/", lodging_views.lodging_index, name="lodging_index"),
     path("lodging/about/", lodging_views.lodging_about, name="lodging_about"),  # UX-17 public showcase
+    path("lodging/staff/<slug:service>/", lodging_views.service_staff_entry, name="service_staff_entry"),
     path("lodging/manage/", lodging_views.lodging_manage, name="lodging_manage"),
     path("lodging/workspace/", lodging_workspace, name="lodging_workspace"),
     path("lodging/request/", general_request, name="lodging_general_request"),
