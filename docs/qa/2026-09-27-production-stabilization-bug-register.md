@@ -31,3 +31,11 @@ P0: no defect observed in the sampled requests or guest browser paths. P1: no de
 - Non-request revision logs show the initial deployment rollout and worker boot, with no later restart entry in the 24-hour sample. This is a log observation, not a restart metric.
 - Guest requests to the three staff entries and online teaching routes redirected to Login with their intended `next` path. Post-login role routing remains unverified without role-specific access.
 - No end-to-end production booking was created. P1 acceptance remains open for authenticated role routing and safe booking-flow execution.
+
+## Authenticated QA follow-up — 27 Sep 2026
+
+- After explicit approval, a one-time execution of the existing Production image created the separate, non-staff account `qa_p1_20260927` with a random server-side password. Execution `sigroom-migrate-d5gfj` succeeded and logged `QA_ACCOUNT_RESULT=CREATED`. The existing user tied to the primary QA mailbox was not changed.
+- A password-reset request for the QA alias reached the generic completion page. Cloud Run request logs show the reset confirmation flow reached its completion page, and the QA account has an active, usable password. The password was never shown to the agent. A later read-only inspection execution failed because its optional audit query used the wrong field name; it had no database write. The account has no successful login recorded yet.
+- A screenshot of a failed login showed the existing username `wasan.t` on the Admin login page. The QA username is `qa_p1_20260927` and the ordinary login page is `/accounts/login/`. The user was asked to enter the QA password there. This does not establish a product defect or a successful authenticated test.
+- Production remained at revision `sigroom-00066-88b`, 100% traffic, exact image SHA `9145a79ba7abbdac045c343cf6b3a283835e16e1`. The migration job retained generation 61 and its original `manage.py migrate --noinput` configuration after the temporary executions.
+- No staff permission was granted and no Production booking was created. P1 authenticated acceptance and P2–P4 remain pending.
