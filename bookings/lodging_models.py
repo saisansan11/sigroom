@@ -221,6 +221,7 @@ class CourseLodgingRelease(models.Model):
     class Outcome(models.TextChoices):
         CANCELLED = "cancelled", "ยกเลิก"
         NO_SHOW = "no_show", "ไม่มารายงานตัว"
+        CHECKED_OUT = "checked_out", "ออกจากที่พัก"
 
     class Channel(models.TextChoices):
         SELF_SERVICE = "self_service", "นักเรียนยกเลิกเอง"
@@ -247,6 +248,15 @@ class CourseLodgingRelease(models.Model):
     phone = models.CharField("เบอร์โทรศัพท์", max_length=30)
     note = models.CharField("หมายเหตุเดิม", max_length=200, blank=True)
     booked_at = models.DateTimeField("เวลาที่จองเดิม")
+    checked_in_at = models.DateTimeField("เวลารายงานตัวเดิม", null=True, blank=True)
+    checked_in_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        verbose_name="ผู้ยืนยันรายงานตัวเดิม",
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="checked_out_course_lodgings",
+    )
     outcome = models.CharField("ผลการปล่อยเตียง", max_length=20, choices=Outcome.choices)
     channel = models.CharField("ช่องทาง", max_length=20, choices=Channel.choices)
     reason = models.CharField("เหตุผล", max_length=300, blank=True)
