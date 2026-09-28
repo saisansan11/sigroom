@@ -310,6 +310,8 @@ def lodging_workspace(request):
                 else:
                     if outcome == CourseLodgingRelease.Outcome.NO_SHOW:
                         messages.success(request, "บันทึกไม่มารายงานตัวและคืนเตียงแล้ว")
+                    elif outcome == CourseLodgingRelease.Outcome.CHECKED_OUT:
+                        messages.success(request, "บันทึกออกจากที่พักและคืนเตียงแล้ว")
                     else:
                         messages.success(request, "ยกเลิกการจองและคืนเตียงแล้ว")
                     return redirect(f"{request.path}?cohort={cohort.slug}#room-board")

@@ -32,6 +32,14 @@ def test_manifest_icons_have_declared_dimensions():
             assert icon.size == (size, size)
 
 
+def test_favicon_root_redirects_to_existing_static_icon(client):
+    response = client.get(reverse("favicon"))
+
+    assert response.status_code == 302
+    assert response.headers["Location"] == "/static/img/pwa-icon-192.png"
+    assert finders.find("img/pwa-icon-192.png") is not None
+
+
 @pytest.mark.django_db
 def test_base_template_links_manifest_and_ios_metadata(client):
     response = client.get(reverse("bookings:calendar"))
@@ -40,6 +48,7 @@ def test_base_template_links_manifest_and_ios_metadata(client):
     assert f'<link rel="manifest" href="{reverse("webmanifest")}">' in content
     assert '<meta name="theme-color" content="#0b1117">' in content
     assert '<meta name="apple-mobile-web-app-capable" content="yes">' in content
+    assert 'rel="icon" type="image/png" href="/static/img/pwa-icon-192.png"' in content
     assert 'rel="apple-touch-icon"' in content
 
 

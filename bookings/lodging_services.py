@@ -314,21 +314,24 @@ def release_lodging_reservation(
         .select_for_update()
         .get(pk=student.pk)
     )
-    if locked.checked_in_at is not None:
-        raise ValidationError("ผู้เข้าพักรายงานตัวแล้ว ไม่สามารถปล่อยเตียงด้วยขั้นตอนนี้")
     if outcome not in CourseLodgingRelease.Outcome.values:
         raise ValidationError("ผลการปล่อยเตียงไม่ถูกต้อง")
 
     today = timezone.localtime(now).date()
+    reason = (reason or "").strip()
+    if len(reason) > 300:
+        raise ValidationError("เหตุผลต้องไม่เกิน 300 ตัวอักษร")
     authenticated = bool(getattr(actor, "is_authenticated", False))
     if authenticated:
         if not can_manage_cohort(actor, cohort):
-            raise PermissionDenied("คุณไม่มีสิทธิ์ยกเลิกหรือบันทึกไม่มารายงานตัวของหลักสูตรนี้")
+            raise PermissionDenied("คุณไม่มีสิทธิ์ดำเนินการคืนเตียงของหลักสูตรนี้")
         channel = CourseLodgingRelease.Channel.STAFF
-        if today > cohort.check_out_date:
+        if outcome != CourseLodgingRelease.Outcome.CHECKED_OUT and today > cohort.check_out_date:
             raise ValidationError("รอบเข้าพักนี้สิ้นสุดแล้ว")
         if outcome == CourseLodgingRelease.Outcome.NO_SHOW and today < cohort.check_in_date:
             raise ValidationError("ยังไม่ถึงวันเข้าพัก จึงยังบันทึกเป็นไม่มารายงานตัวไม่ได้")
+        if outcome == CourseLodgingRelease.Outcome.CHECKED_OUT and not reason:
+            raise ValidationError("กรุณาระบุเหตุผลที่ออกจากที่พัก")
     else:
         if outcome != CourseLodgingRelease.Outcome.CANCELLED:
             raise PermissionDenied("การบันทึกไม่มารายงานตัวทำได้โดยเจ้าหน้าที่เท่านั้น")
@@ -346,6 +349,11 @@ def release_lodging_reservation(
             raise ValidationError(f"ยกเลิกด้วยตนเองไม่ได้: {booking_message}")
         channel = CourseLodgingRelease.Channel.SELF_SERVICE
 
+    if locked.checked_in_at is not None and outcome != CourseLodgingRelease.Outcome.CHECKED_OUT:
+        raise ValidationError("ผู้เข้าพักรายงานตัวแล้ว ต้องใช้ขั้นตอนออกจากที่พัก")
+    if locked.checked_in_at is None and outcome == CourseLodgingRelease.Outcome.CHECKED_OUT:
+        raise ValidationError("ผู้เข้าพักยังไม่รายงานตัว ไม่สามารถบันทึกออกจากที่พักได้")
+
     snapshot = {
         "cohort": str(cohort.pk),
         "room": room.code,
@@ -356,6 +364,8 @@ def release_lodging_reservation(
         "phone": locked.phone,
         "note": locked.note,
         "booked_at": locked.booked_at,
+        "checked_in_at": locked.checked_in_at,
+        "checked_in_by": locked.checked_in_by_id,
     }
     release = CourseLodgingRelease.objects.create(
         original_student_id=locked.pk,
@@ -368,16 +378,18 @@ def release_lodging_reservation(
         phone=locked.phone,
         note=locked.note,
         booked_at=locked.booked_at,
+        checked_in_at=locked.checked_in_at,
+        checked_in_by_id=locked.checked_in_by_id,
         outcome=outcome,
         channel=channel,
-        reason=(reason or "").strip(),
+        reason=reason,
         released_by=actor if authenticated else None,
     )
-    action = (
-        "lodging_no_show"
-        if outcome == CourseLodgingRelease.Outcome.NO_SHOW
-        else "lodging_reservation_cancelled"
-    )
+    action = {
+        CourseLodgingRelease.Outcome.NO_SHOW: "lodging_no_show",
+        CourseLodgingRelease.Outcome.CANCELLED: "lodging_reservation_cancelled",
+        CourseLodgingRelease.Outcome.CHECKED_OUT: "lodging_checked_out",
+    }[outcome]
     audit(
         actor,
         "bookings.coursestudentlodging",
