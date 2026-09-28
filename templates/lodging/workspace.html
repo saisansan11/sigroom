@@ -168,6 +168,12 @@
                           <strong>{{ bed.student.rank }} {{ bed.student.full_name }}</strong><span>{{ bed.student.origin_unit }} · {{ bed.student.phone }}</span>
                           {% if bed.student.checked_in_at %}
                             <span class="lodging-arrival-status is-checked">✓ รายงานตัวแล้ว</span>
+                            <form method="post" class="lodging-bed-release-actions lodging-checkout-form" onsubmit="return confirm('ยืนยันบันทึกออกจากที่พักและคืนเตียงนี้?');">
+                              {% csrf_token %}<input type="hidden" name="action" value="release_student"><input type="hidden" name="student_id" value="{{ bed.student.id }}"><input type="hidden" name="outcome" value="checked_out">
+                              <label for="checkout-reason-{{ bed.student.id }}">เหตุผลที่ออกจากที่พัก</label>
+                              <input id="checkout-reason-{{ bed.student.id }}" name="reason" type="text" maxlength="300" required placeholder="เช่น ครบกำหนดหรือออกก่อนกำหนด">
+                              <button type="submit" class="secondary">บันทึกออกจากที่พัก</button>
+                            </form>
                           {% else %}
                             <span class="lodging-arrival-status is-pending">รอรายงานตัว</span>
                             <a class="bed-checkin-link" href="{% url 'bookings:lodging_checkin' bed.student.id %}?from_workspace=1">ตรวจรับรายงานตัว</a>
