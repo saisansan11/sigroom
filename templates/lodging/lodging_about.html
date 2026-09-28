@@ -11,7 +11,7 @@
 <link rel="stylesheet" href="{% static 'css/lodging_about.css' %}?v=31">
 <link rel="stylesheet" href="{% static 'css/lodging_about_ux23.css' %}">
 <link rel="stylesheet" href="{% static 'css/lodging_about_ux24.css' %}">
-<link rel="stylesheet" href="{% static 'css/lodging_about_ux27.css' %}?v=31">
+<link rel="stylesheet" href="{% static 'css/lodging_about_ux27.css' %}?v=32">
 {% endblock %}
 
 {% block content %}
@@ -176,7 +176,7 @@
           <p class="eyebrow">เลือกมุมพักของคุณ</p>
           <h2 id="lka-explorer-heading">ห้องของคุณ อยู่มุมไหนของอาคาร</h2>
           <p class="lka-section-sub">
-            เริ่มจากผังที่อ่านง่าย แตะหมายเลขแล้วห้องจะยกขึ้นให้สำรวจ · ตำแหน่งอ้างอิงผังชั้น 4 และ 5 ฉากรอบอาคารเป็นภาพประกอบ ไม่ใช่แบบสถาปัตยกรรมหรือ BIM และไม่ใช่แบบวัดขนาดจริง
+            เริ่มจากผังที่อ่านง่าย แตะหมายเลขเพื่อดูข้อมูลห้องและเริ่มจอง · ตำแหน่งอ้างอิงผังชั้น 4 และ 5 ฉากรอบอาคารเป็นภาพประกอบ ไม่ใช่แบบสถาปัตยกรรมหรือ BIM และไม่ใช่แบบวัดขนาดจริง
           </p>
         </div>
 
@@ -211,7 +211,7 @@
             <div class="lka-drag-hint-bar">
               <span class="lka-hint-icon" aria-hidden="true">↔</span>
               <p class="lka-drag-hint" id="lka-explorer-help">
-                แตะห้องเพื่อยกขึ้นดูข้อมูล · มือถือเลื่อนผังซ้าย–ขวาได้ หรือเลือกหมายเลขด้านล่าง · ใช้ปุ่มมุมอาคารเพื่อดูมิติ
+                แตะห้องเพื่อดูข้อมูลและเริ่มจอง · มือถือเลื่อนผังซ้าย–ขวาได้ หรือเลือกหมายเลขด้านล่าง · ใช้ปุ่มมุมอาคารเพื่อดูมิติ
               </p>
             </div>
 
@@ -256,14 +256,13 @@
           </div>
 
           {# Contextual room inspector #}
-          <aside class="lka-room-panel" id="lka-room-panel" data-state="empty"
-                 aria-label="ข้อมูลห้องที่เลือก">
+          <dialog class="lka-room-panel" id="lka-room-panel" data-state="empty" aria-labelledby="lka-panel-number" data-room-url="{% url 'bookings:lodging_room_detail' 0 %}">
             <p class="lka-sr-only" id="lka-panel-status" aria-live="polite" aria-atomic="true"></p>
             <div class="lka-panel-empty">
               <span class="lka-panel-kicker">ข้อมูลห้อง</span>
               <span class="lka-panel-empty-mark" aria-hidden="true">401</span>
               <h3>ลองแตะห้องที่อยากรู้จัก</h3>
-              <p>ห้องจะยกขึ้นจากผัง พร้อมบอกประเภท ความจุ และด้านที่หันออกจากอาคาร</p>
+              <p>เลือกห้องเพื่อดูข้อมูลและเริ่มจอง</p>
               <span class="lka-panel-empty-tip">ด้านหลังคือฝั่งสระว่ายน้ำ</span>
             </div>
             <div class="lka-panel-content">
@@ -283,10 +282,18 @@
                 <dt>ระบบทำความเย็น</dt><dd id="lka-panel-cooling"></dd>
                 <dt>ความจุ</dt><dd id="lka-panel-capacity"></dd>
               </dl>
-              <a class="lka-room-next" href="#lka-gallery-heading">ดูบรรยากาศห้องพัก <span aria-hidden="true">↗</span></a>
-              <p class="lka-panel-note">แสดงด้านของอาคาร ไม่รับรองวิวจากหน้าต่างแต่ละห้อง · ตรวจห้องว่างในระบบจอง</p>
+              <div id="lka-room-live" aria-live="polite"></div>
+              <button type="button" id="lka-room-retry" hidden>ลองโหลดข้อมูลอีกครั้ง</button>
+              <div class="lka-room-actions">
+                <label for="lka-room-cohort">จองตามหลักสูตร</label>
+                <select id="lka-room-cohort" disabled><option value="">กำลังตรวจสอบหลักสูตร</option></select>
+                <p id="lka-room-availability" role="status"></p>
+                <a class="lka-room-next" id="lka-room-book" hidden>จองห้องนี้</a>
+                <a id="lka-room-request" hidden>ส่งคำขอพักสำหรับบุคคลทั่วไป →</a>
+              </div>
+              <p class="lka-panel-note">ข้อมูลว่างอาจเปลี่ยนแปลง ระบบตรวจสอบอีกครั้งเมื่อส่งจอง · บุคคลทั่วไปต้องระบุวันเข้าพักก่อนตรวจห้องว่าง</p>
             </div>
-          </aside>
+          </dialog>
         </div>
 
         <div class="lka-site-guide" aria-label="บริบทรอบอาคาร">
@@ -645,5 +652,5 @@
 {% endblock %}
 
 {% block scripts %}
-<script src="{% static 'js/lodging_about_explorer.js' %}?v=31" defer></script>
+<script src="{% static 'js/lodging_about_explorer.js' %}?v=32" defer></script>
 {% endblock %}

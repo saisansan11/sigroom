@@ -102,8 +102,8 @@ test('picker selects the correct side, persists in perspective, and clears with 
   await picker.selectOption('401');
   await expect(page.locator('#lka-panel-facing')).toHaveText('ด้านสระว่ายน้ำ');
   await expect(page.locator('.lka-room-model.selected')).toHaveAttribute('data-num', '401');
-  await page.locator('#lka-perspective').click();
-  await expect(page.locator('.lka-room-model.selected')).toHaveAttribute('data-num', '401');
+  // A modal intentionally makes background camera controls inert.
+  await expect(page.locator('#lka-room-panel')).toHaveAttribute('open');
   await page.locator('#lka-panel-close').click();
   await page.locator('[data-filter="fan"]').click();
   await expect(picker.locator('option')).toHaveCount(33);
@@ -132,7 +132,9 @@ test('raised room paints above service blocks in every camera view', async ({ pa
       [...layer.parentElement.querySelectorAll('.lka-facility-model')].every(service =>
         Boolean(service.compareDocumentPosition(layer) & Node.DOCUMENT_POSITION_FOLLOWING)));
     expect(selectionPaintsLast).toBe(true);
+    await page.locator('#lka-panel-close').click();
     await page.locator('#lka-view-right').click();
+    await page.locator('#lka-room-picker').selectOption('460');
   }
 });
 
@@ -273,4 +275,15 @@ test('reduced motion mode still opens and operates the 3D explorer', async ({ pa
   await page.locator('#lka-btn-f5').click();
   await expect(page.locator('.lka-room-model')).toHaveCount(30);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+});
+
+test('room dialog traps keyboard focus, closes with Escape and restores room focus', async ({page}) => {
+  await page.locator('.lka-room-block[data-num="425"]').press('Enter');
+  await expect(page.locator('#lka-room-panel')).toHaveAttribute('open');
+  await expect(page.locator('#lka-panel-close')).toBeFocused();
+  await page.keyboard.press('Shift+Tab');
+  expect(await page.locator('#lka-room-panel').evaluate(el => el.contains(document.activeElement))).toBe(true);
+  await page.keyboard.press('Escape');
+  await expect(page.locator('#lka-room-panel')).not.toHaveAttribute('open');
+  await expect(page.locator('.lka-room-block[data-num="425"]')).toBeFocused();
 });

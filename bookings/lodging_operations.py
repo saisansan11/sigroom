@@ -198,6 +198,20 @@ def general_request(request):
             "guest_name": request.user.display_name,
             "phone": getattr(request.user, "phone", ""),
         }
+    selected_room = None
+    selected_id = request.GET.get("room_id", "")
+    if selected_id:
+        try:
+            selected_room = Resource.objects.filter(
+                pk=selected_id, resource_type=Resource.Type.ROOM,
+                room_category=Resource.Category.LODGING, status=Resource.Status.ACTIVE,
+            ).first()
+        except (ValueError, TypeError, OverflowError):
+            pass
+        if selected_room:
+            initial["room"] = selected_room.pk
+        else:
+            messages.warning(request, "ห้องที่เลือกไม่พร้อมรับคำขอ กรุณาตรวจสอบห้องพักอีกครั้ง")
     form = GeneralRequestForm(request.POST if request.method == "POST" else None, initial=initial)
     if request.method == "POST" and form.is_valid():
         authenticated = bool(getattr(request.user, "is_authenticated", False))

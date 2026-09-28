@@ -509,7 +509,7 @@ def test_template_aria_live_panel():
     tmpl = _template()
     assert 'id="lka-panel-status"' in tmpl
     assert 'id="lka-panel-status" aria-live="polite" aria-atomic="true"' in tmpl
-    panel_open = tmpl.split('<aside class="lka-room-panel"', 1)[1].split('>', 1)[0]
+    panel_open = tmpl.split('<dialog class="lka-room-panel"', 1)[1].split('>', 1)[0]
     assert 'aria-live=' not in panel_open
 
 
@@ -761,7 +761,10 @@ def test_js_no_external_cdn():
     assert "sketchfab" not in js.lower()
     assert "three.min.js" not in js
     assert "import(" not in js, "JS must not use dynamic import()"
-    assert "fetch(" not in js, "JS must not fetch remote resources"
+    # Live availability now uses our server-generated same-origin endpoint.
+    assert "fetch(panel.dataset.roomUrl" in js
+    assert 'data-room-url="{% url' in _template()
+    assert "https://" not in js and "http://" not in js.replace("http://www.w3.org/2000/svg", "")
 
 
 def test_js_no_webgl():
