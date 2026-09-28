@@ -2,6 +2,11 @@
 {% load static %}
 {% load thaidate %}
 
+{% block html_theme %}light{% endblock %}
+{% block theme_color %}#f4f6fa{% endblock %}
+{% block body_class %}lodging-booking-ios27{% endblock %}
+{% block head %}<link rel="stylesheet" href="{% static 'css/lodging_booking_ios27.css' %}?v=1">{% endblock %}
+
 {% block title %}เลือกห้องพัก · {{ cohort.title }} · SIGROOM{% endblock %}
 
 {% block content %}
@@ -41,7 +46,7 @@
   </div>
 
   <div class="lodging-privacy-callout">
-    <span aria-hidden="true">🔒</span>
+    <span class="lodging-privacy-icon" aria-hidden="true">{% include "lodging/partials/gateway_icon.html" with icon="shield" %}</span>
     <span>ระบบรักษาความเป็นส่วนตัว: ไม่แสดงข้อมูลส่วนบุคคลหรือรายชื่อเพื่อนร่วมห้องในหน้านี้</span>
   </div>
 </div>
@@ -63,7 +68,7 @@
             <button type="button" class="room-photo-trigger" aria-label="ดูรูปห้อง {{ rdata.room.code }} ทั้งหมด ({{ photo_urls|length }} รูป)" data-photos="{{ photo_urls|join:'|' }}" data-room-label="{{ rdata.room.code }}">
               <img src="{{ photo_urls.0 }}" alt="รูปห้อง {{ rdata.room.code }}" width="320" height="180" loading="lazy" decoding="async" class="room-photo-cover">
               {% if photo_urls|length > 1 %}
-                <span class="room-photo-count">🖼 {{ photo_urls|length }}</span>
+                <span class="room-photo-count"><span class="room-photo-count-icon" aria-hidden="true">{% include "lodging/partials/gateway_icon.html" with icon="photo" %}</span>{{ photo_urls|length }}</span>
               {% endif %}
             </button>
           {% else %}
@@ -127,18 +132,25 @@
 {% endif %}
 
 <!-- Modal Dialog สำหรับกรอกข้อมูลจองเตียง -->
-<dialog id="bookingModal">
+<dialog id="bookingModal" aria-labelledby="bookingModalHeading" aria-describedby="bookingModalHint">
   <article class="booking-dialog-article">
     <header>
-      <button aria-label="Close" rel="prev" onclick="closeBookingModal()"></button>
-      <h3>ลงทะเบียนเข้าพัก</h3>
-      <p id="modalRoomTitle" class="lodging-accent-text">
-        {% if modal_data.room_code %}
-          ห้อง {{ modal_data.room_code }} (เตียง {{ modal_data.bed_number }})
-        {% else %}
-          เลือกเตียงในห้องพัก
-        {% endif %}
-      </p>
+      <button aria-label="ปิดหน้าต่างจองที่พัก" rel="prev" onclick="closeBookingModal()"></button>
+      <div class="booking-dialog-intro">
+        <span class="booking-dialog-icon" aria-hidden="true">{% include "lodging/partials/gateway_icon.html" with icon="lodging" %}</span>
+        <div>
+          <span class="booking-dialog-kicker">Room selection</span>
+          <h3 id="bookingModalHeading">ลงทะเบียนเข้าพัก</h3>
+          <p id="modalRoomTitle" class="lodging-accent-text">
+            {% if modal_data.room_code %}
+              ห้อง {{ modal_data.room_code }} · เตียง {{ modal_data.bed_number }}
+            {% else %}
+              เลือกเตียงในห้องพัก
+            {% endif %}
+          </p>
+        </div>
+      </div>
+      <p id="bookingModalHint" class="booking-dialog-hint">ตรวจสอบห้องและเตียงที่เลือก แล้วกรอกข้อมูลผู้เข้าพักเพื่อยืนยันการจอง</p>
     </header>
 
     {% if modal_error %}
@@ -275,7 +287,8 @@ function openBookingModal(roomId, roomCode, bedNumber) {
   lastFocusedElement = document.activeElement;
   document.getElementById('modalRoomId').value = roomId;
   document.getElementById('modalBedNumber').value = bedNumber;
-  document.getElementById('modalRoomTitle').textContent = `ห้อง ${roomCode} (เตียง ${bedNumber})`;
+  document.getElementById('modalRoomTitle').textContent = `ห้อง ${roomCode} · เตียง ${bedNumber}`;
+  document.getElementById('bookingModalHint').textContent = `คุณเลือกห้อง ${roomCode} เตียง ${bedNumber} · ตรวจสอบข้อมูลแล้วกรอกชื่อ หน่วย และเบอร์โทรเพื่อยืนยัน`;
   const modal = document.getElementById('bookingModal');
   modal.showModal();
   const firstInput = modal.querySelector('input:not([type="hidden"]), select, textarea');
@@ -284,9 +297,15 @@ function openBookingModal(roomId, roomCode, bedNumber) {
 
 function closeBookingModal() {
   document.getElementById('bookingModal').close();
-  if (lastFocusedElement && typeof lastFocusedElement.focus === 'function') {
-    lastFocusedElement.focus();
-  }
+}
+
+const bookingDialog = document.getElementById('bookingModal');
+if (bookingDialog) {
+  bookingDialog.addEventListener('close', function () {
+    if (lastFocusedElement && typeof lastFocusedElement.focus === 'function') {
+      lastFocusedElement.focus();
+    }
+  });
 }
 
 let lastJumpIndex = -1;
