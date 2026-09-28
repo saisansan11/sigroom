@@ -5,7 +5,7 @@
 {% block html_theme %}light{% endblock %}
 {% block theme_color %}#f4f6fa{% endblock %}
 {% block body_class %}lodging-booking-ios27{% endblock %}
-{% block head %}<link rel="stylesheet" href="{% static 'css/lodging_booking_ios27.css' %}?v=1">{% endblock %}
+{% block head %}<link rel="stylesheet" href="{% static 'css/lodging_booking_ios27.css' %}?v=2">{% endblock %}
 
 {% block title %}เลือกห้องพัก · {{ cohort.title }} · SIGROOM{% endblock %}
 
@@ -59,9 +59,12 @@
   </div>
 </div>
 
+{% if selected_room %}
+<div class="notice info" role="status">เลือกห้อง {{ selected_room.room.code }} ไว้แล้ว · เลือกเตียงว่างด้านล่างเพื่อจองต่อ{% if selected_room.is_full %} · ห้องนี้เต็มแล้ว กรุณาเลือกห้องอื่น{% endif %}</div>
+{% endif %}
 <div class="rooms-grid">
   {% for rdata in rooms_data %}
-    <article class="room-lodging-card {% if rdata.is_full %}is-full{% else %}has-free-bed{% endif %}" id="room-{{ rdata.room.id }}">
+    <article class="room-lodging-card {% if rdata.is_full %}is-full{% else %}has-free-bed{% endif %}" id="room-{{ rdata.room.id }}" {% if selected_room.room.pk == rdata.room.pk %}data-selected="true"{% endif %}>
       <div class="room-photo-wrap">
         {% with photo_urls=rdata.room.photo_url_list %}
           {% if photo_urls %}
