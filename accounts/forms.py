@@ -1,7 +1,20 @@
-from django.contrib.auth.forms import PasswordChangeForm, PasswordResetForm, SetPasswordForm
+from django import forms
+from django.contrib.auth.forms import AuthenticationForm, PasswordChangeForm, PasswordResetForm, SetPasswordForm
+
+from audit.context import request_ip
 
 from .models import validate_allowed_email_domain
-from .services import complete_self_service_password_reset
+from .services import LOGIN_THROTTLED_MESSAGE, complete_self_service_password_reset, login_is_throttled
+
+
+class ThrottledAuthenticationForm(AuthenticationForm):
+    """หน้า login ที่ปฏิเสธก่อนตรวจรหัสผ่านเมื่อใส่ผิดถี่เกินเพดาน (กันสุ่มรหัสผ่านผ่านอินเทอร์เน็ต)"""
+
+    def clean(self):
+        username = self.cleaned_data.get("username")
+        if username and login_is_throttled(username, request_ip(self.request)):
+            raise forms.ValidationError(LOGIN_THROTTLED_MESSAGE, code="throttled")
+        return super().clean()
 
 
 class FirstPasswordChangeForm(PasswordChangeForm):

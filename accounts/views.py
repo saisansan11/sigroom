@@ -5,7 +5,7 @@ from django.contrib.auth.decorators import login_required
 from django.shortcuts import redirect, render
 from django.urls import reverse_lazy
 
-from .forms import AuditedSetPasswordForm, FirstPasswordChangeForm, UnitPasswordResetForm
+from .forms import AuditedSetPasswordForm, FirstPasswordChangeForm, ThrottledAuthenticationForm, UnitPasswordResetForm
 from .services import complete_initial_password_change
 
 
@@ -20,6 +20,17 @@ def first_password_change(request):
         messages.success(request, "ตั้งรหัสผ่านใหม่แล้ว ต่อไปให้ใช้รหัสนี้เข้าสู่ระบบ")
         return redirect("bookings:calendar")
     return render(request, "accounts/first_password_change.html", {"form": form})
+
+
+class ThrottledLoginView(auth_views.LoginView):
+    authentication_form = ThrottledAuthenticationForm
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["login_throttled"] = any(
+            error.code == "throttled" for error in context["form"].non_field_errors().as_data()
+        )
+        return context
 
 
 class UnitPasswordResetView(auth_views.PasswordResetView):
