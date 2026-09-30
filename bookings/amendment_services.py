@@ -339,7 +339,13 @@ def withdraw_amendment(
     locked = BookingAmendment.objects.select_for_update().select_related("booking", "submitted_by").get(pk=amendment.pk)
     if locked.status != BookingAmendment.Status.PENDING:
         raise ValueError("คำขอแก้ไขนี้ถูกดำเนินการแล้ว")
-    allowed = locked.submitted_by_id == getattr(user, "pk", None) or getattr(user, "is_superuser", False)
+    user_pk = getattr(user, "pk", None)
+    # เจ้าของการจองถอนได้เสมอ แม้ผู้ดูแลระบบเป็นคนยื่นแทน — ไม่เช่นนั้นยกเลิกการจองของตัวเองไม่ได้
+    allowed = (
+        locked.submitted_by_id == user_pk
+        or locked.booking.requester_id == user_pk
+        or getattr(user, "is_superuser", False)
+    )
     if not allowed and reason == "ถอนอัตโนมัติ: การจองถูกบังคับย้าย":
         from .preemption_services import can_preempt
 

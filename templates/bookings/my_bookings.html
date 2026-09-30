@@ -83,7 +83,11 @@
             <span class="booking-item-title">{{ booking.title }}</span>
           </td>
           <td class="booking-cell-status" data-label="สถานะ">
-            <span class="status status-{{ booking.request_status }}">{{ booking.get_request_status_display }}</span>
+            {% if booking.usage_status == 'displaced' or booking.usage_status == 'room_unavailable' %}
+              <span class="status status-{{ booking.usage_status }}">{{ booking.get_usage_status_display }}</span>
+            {% else %}
+              <span class="status status-{{ booking.request_status }}">{{ booking.get_request_status_display }}</span>
+            {% endif %}
             {% if booking.decision_reason %}
               <small class="decision-reason">{{ booking.decision_reason|truncatechars:80 }}</small>
             {% elif booking.request_status == 'expired' %}
