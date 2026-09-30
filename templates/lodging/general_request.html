@@ -1,4 +1,8 @@
 {% extends "base.html" %}
+{% load static %}
+{% block html_theme %}light{% endblock %}
+{% block body_class %}lodging-booking-ios27{% endblock %}
+{% block head %}<link rel="stylesheet" href="{% static 'css/lodging_booking_ios27.css' %}?v=2">{% endblock %}
 {% block title %}ส่งคำขอจองที่พักทั่วไป · SIGROOM{% endblock %}
 {% block content %}
 <div class="page-heading"><div><p class="eyebrow">สำหรับบุคคลทั่วไป</p><h1>ส่งคำขอจองที่พัก</h1><p>ไม่ต้องมีบัญชี SIGROOM · เจ้าหน้าที่จะตรวจสอบก่อนอนุมัติ และระบบจะให้ลิงก์สำหรับติดตามสถานะ</p></div></div>

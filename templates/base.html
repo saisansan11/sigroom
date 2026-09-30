@@ -16,6 +16,7 @@
   <link rel="stylesheet" href="{% static 'css/fonts.css' %}">
   <link rel="stylesheet" href="{% static 'css/app.css' %}">
   {% block head %}{% endblock %}
+  {% if request.path|slice:":9" == "/lodging/" or request.GET.next|slice:":9" == "/lodging/" %}<link rel="stylesheet" href="{% static 'css/lodging_theme.css' %}?v=1">{% endif %}
 </head>
 <body class="{% block body_class %}{% endblock %}">
   <a class="skip-link" href="#main-content">ข้ามไปเนื้อหาหลัก</a>

@@ -462,7 +462,7 @@
       group.dataset.w = w;
       group.dataset.d = d;
 
-      const faces = cuboidFaces(project, x, y, w, d, BASE_H + CORRIDOR_H, isSelected ? 42 : ROOM_H);
+      const faces = cuboidFaces(project, x, y, w, d, BASE_H + CORRIDOR_H, ROOM_H);
       const sideY = svgEl('polygon', { points: points(faces.sideY), class: 'lka-room-face lka-room-face--y' });
       const sideX = svgEl('polygon', { points: points(faces.sideX), class: 'lka-room-face lka-room-face--x' });
       const top = svgEl('polygon', {
@@ -677,7 +677,93 @@
     `;
   }
 
+  let roomRequest = null;
+  let roomOpener = null;
+  const cohortChoice = document.getElementById('lka-room-cohort');
+  const bookLink = document.getElementById('lka-room-book');
+  const requestLink = document.getElementById('lka-room-request');
+  const liveDetails = document.getElementById('lka-room-live');
+  const availability = document.getElementById('lka-room-availability');
+  const retry = document.getElementById('lka-room-retry');
+  let cohortOptions = [];
+
+  function chooseCohort() {
+    const choice = cohortOptions.find(item => item.url === cohortChoice.value);
+    bookLink.hidden = !choice || choice.free === 0;
+    bookLink.removeAttribute('href');
+    availability.textContent = choice
+      ? `${choice.dates} · ${choice.free === 0 ? 'เต็ม' : `เหลือ ${choice.free} เตียง`} · จองแล้ว ${choice.used} / ${choice.total} เตียง`
+      : 'เลือกหลักสูตรเพื่อดูจำนวนเตียงว่างของห้องนี้';
+    if (choice && choice.free > 0) bookLink.href = choice.url;
+  }
+  cohortChoice.addEventListener('change', chooseCohort);
+
+  async function loadRoom(number) {
+    roomRequest?.abort();
+    const controller = new AbortController();
+    roomRequest = controller;
+    const timeout = setTimeout(() => controller.abort('timeout'), 10000);
+    liveDetails.textContent = 'กำลังตรวจสอบข้อมูลห้อง…';
+    retry.hidden = true;
+    bookLink.hidden = requestLink.hidden = true;
+    bookLink.removeAttribute('href');
+    requestLink.removeAttribute('href');
+    cohortChoice.disabled = true;
+    cohortChoice.replaceChildren(new Option('กำลังตรวจสอบหลักสูตร', ''));
+    availability.textContent = '';
+    try {
+      const response = await fetch(panel.dataset.roomUrl.replace('/0/', `/${number}/`), {signal: controller.signal, cache: 'no-store'});
+      if (!response.ok) throw new Error('room unavailable');
+      const {room} = await response.json();
+      if (controller.signal.aborted) return;
+      cohortChoice.replaceChildren(new Option('เลือกหลักสูตร', ''));
+      if (!room) {
+        liveDetails.textContent = 'ยังไม่พบทะเบียนห้องที่เชื่อมกับแปลนนี้ กรุณาติดต่อเจ้าหน้าที่ที่พัก';
+        return;
+      }
+      liveDetails.textContent = [room.code, room.building, room.status].filter(Boolean).join(' · ');
+      panelCapacity.textContent = room.capacity ? `${room.capacity} คน` : 'ยังไม่ระบุ';
+      if (!room.active) {
+        availability.textContent = 'ห้องนี้ไม่พร้อมรับจอง';
+        return;
+      }
+      cohortOptions = room.cohorts;
+      cohortOptions.forEach(item => cohortChoice.add(new Option(`${item.title} · ${item.free ? `เหลือ ${item.free} เตียง` : 'เต็ม'}`, item.url)));
+      cohortChoice.disabled = !cohortOptions.length;
+      availability.textContent = cohortOptions.length ? 'เลือกหลักสูตรเพื่อดูจำนวนเตียงว่างของห้องนี้' : 'ยังไม่มีหลักสูตรที่เปิดรับจองห้องนี้';
+      if (cohortOptions.length === 1) { cohortChoice.value = cohortOptions[0].url; chooseCohort(); }
+      requestLink.href = room.request_url;
+      requestLink.hidden = false;
+    } catch (error) {
+      if (roomRequest !== controller || !panel.open) return;
+      if (controller.signal.aborted && controller.signal.reason !== 'timeout') return;
+      liveDetails.textContent = 'โหลดข้อมูลไม่สำเร็จ กรุณาลองอีกครั้ง';
+      retry.hidden = false;
+    } finally {
+      clearTimeout(timeout);
+    }
+  }
+  retry.addEventListener('click', () => loadRoom(selectedRoomNumber));
+  panel.addEventListener('keydown', event => {
+    if (event.key !== 'Tab') return;
+    const controls = [...panel.querySelectorAll('button, select, a[href], input')]
+      .filter(control => !control.disabled && control.getClientRects().length);
+    const first = controls[0], last = controls[controls.length - 1];
+    if (event.shiftKey && document.activeElement === first) {
+      event.preventDefault(); last.focus();
+    } else if (!event.shiftKey && document.activeElement === last) {
+      event.preventDefault(); first.focus();
+    }
+  });
+  panel.addEventListener('cancel', event => { event.preventDefault(); closePanel({restoreFocus: true}); });
+  panel.addEventListener('click', event => {
+    const bounds = panel.getBoundingClientRect();
+    if (event.target === panel && (event.clientX < bounds.left || event.clientX > bounds.right || event.clientY < bounds.top || event.clientY > bounds.bottom)) closePanel({restoreFocus: true});
+  });
+
   function showPanel(room) {
+    if (!panel.open) roomOpener = document.activeElement;
+
     panelNumber.textContent = `ห้อง ${room.num}`;
     panelFloor.textContent = `ชั้น ${room.floor}`;
     panelCooling.textContent = room.cooling === 'air' ? 'ปรับอากาศ' : 'พัดลม';
@@ -690,6 +776,10 @@
       : side === 'front' ? 'อยู่แถวหน้าอาคาร ฝั่งพื้นที่โรงเรียนทหารสื่อสาร' : 'อยู่ในกลุ่มห้องกลางผัง ดูตำแหน่งทางเดินและห้องข้างเคียงได้จากแผนผัง';
     panel.dataset.state = 'selected';
     panel.classList.add('has-selection');
+    if (!panel.open) panel.showModal();
+    document.documentElement.classList.add('lodging-dialog-open');
+    panelClose.focus({preventScroll: true});
+    loadRoom(room.num);
     if (panelStatus) {
       panelStatus.textContent = [panelNumber.textContent, panelFloor.textContent, panelCooling.textContent, panelCapacity.textContent, document.getElementById('lka-panel-facing').textContent].join(', ');
     }
@@ -701,6 +791,9 @@
 
   function closePanel({ restoreFocus = false } = {}) {
     const roomToRestore = selectedRoomNumber;
+    roomRequest?.abort();
+    if (panel.open) panel.close();
+    document.documentElement.classList.remove('lodging-dialog-open');
     selectedRoomNumber = null;
     panel.dataset.state = 'empty';
     panel.classList.remove('has-selection');
@@ -719,7 +812,9 @@
       const control = roomToRestore === null
         ? null
         : scene.querySelector(`.lka-room-block[data-num="${roomToRestore}"]`);
-      if (control && control.getAttribute('tabindex') !== '-1') {
+      if (roomOpener === picker) {
+        picker.focus({preventScroll: true});
+      } else if (control && control.getAttribute('tabindex') !== '-1') {
         control.focus({ preventScroll: true });
       } else {
         canvas.focus({ preventScroll: true });
@@ -901,7 +996,7 @@
   });
 
   document.addEventListener('keydown', event => {
-    if (event.key !== 'Escape' || selectedRoomNumber === null) return;
+    if (event.key !== 'Escape' || selectedRoomNumber === null || panel.open) return;
     event.preventDefault();
     closePanel({ restoreFocus: true });
   });

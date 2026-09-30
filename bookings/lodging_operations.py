@@ -9,6 +9,7 @@ from django.db import IntegrityError
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 
+from .lodging_about_data import FLOOR4_LODGING_ROOMS, FLOOR5_LODGING_ROOMS, TOTAL_ROOMS
 from .lodging_models import CourseLodgingCohort, CourseLodgingRelease, PublicLodgingAccess
 from .lodging_services import (
     assign_lodging_bed,
@@ -72,6 +73,36 @@ class MoveBedForm(forms.Form):
             raise ValidationError("ปลายทางไม่ถูกต้อง") from exc
 
 
+def public_lodging_rooms():
+    """Return public lodging choices, preferring the authoritative 401–530 inventory.
+
+    Production originally shipped with four pilot DORM-101..104 rows. Keep them as a
+    temporary fallback only while no authoritative plan room exists, so the public form
+    remains usable before the controlled registry sync. Once any authoritative inventory
+    exists, pilot rows are excluded from public selection without modifying or retiring
+    their database records.
+    """
+    base = Resource.objects.filter(
+        resource_type=Resource.Type.ROOM,
+        room_category=Resource.Category.LODGING,
+        status=Resource.Status.ACTIVE,
+    )
+    plan_numbers = FLOOR4_LODGING_ROOMS + FLOOR5_LODGING_ROOMS
+    plan_codes = [code for number in plan_numbers for code in (str(number), f"DORM-{number}")]
+    authoritative = base.filter(code__in=plan_codes)
+    existing_codes = set(authoritative.values_list("code", flat=True))
+    complete_inventory = (
+        len(existing_codes) == TOTAL_ROOMS
+        and all(
+            sum(alias in existing_codes for alias in (str(number), f"DORM-{number}")) == 1
+            for number in plan_numbers
+        )
+    )
+    if complete_inventory:
+        return authoritative.order_by("floor", "code")
+    return base.order_by("code")
+
+
 class GeneralRequestForm(forms.Form):
     guest_name = forms.CharField(label="ชื่อผู้เข้าพัก / ผู้ติดต่อ", max_length=200)
     room = forms.ModelChoiceField(label="ห้องพัก", queryset=Resource.objects.none())
@@ -83,8 +114,7 @@ class GeneralRequestForm(forms.Form):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields["room"].queryset = Resource.objects.filter(resource_type=Resource.Type.ROOM,
-            room_category=Resource.Category.LODGING, status=Resource.Status.ACTIVE).order_by("code")
+        self.fields["room"].queryset = public_lodging_rooms()
 
 
 def _parse_local_datetime(value, label):
@@ -198,6 +228,17 @@ def general_request(request):
             "guest_name": request.user.display_name,
             "phone": getattr(request.user, "phone", ""),
         }
+    selected_room = None
+    selected_id = request.GET.get("room_id", "")
+    if selected_id:
+        try:
+            selected_room = public_lodging_rooms().filter(pk=selected_id).first()
+        except (ValueError, TypeError, OverflowError):
+            pass
+        if selected_room:
+            initial["room"] = selected_room.pk
+        else:
+            messages.warning(request, "ห้องที่เลือกไม่พร้อมรับคำขอ กรุณาตรวจสอบห้องพักอีกครั้ง")
     form = GeneralRequestForm(request.POST if request.method == "POST" else None, initial=initial)
     if request.method == "POST" and form.is_valid():
         authenticated = bool(getattr(request.user, "is_authenticated", False))

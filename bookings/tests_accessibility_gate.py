@@ -10,7 +10,7 @@ def _read(relative_path: str) -> str:
 
 def test_explorer_uses_scoped_live_region():
     template = _read("templates/lodging/lodging_about.html")
-    aside_open = template.split('<aside class="lka-room-panel"', 1)[1].split(">", 1)[0]
+    aside_open = template.split('<dialog class="lka-room-panel"', 1)[1].split(">", 1)[0]
 
     assert "aria-live=" not in aside_open
     assert 'id="lka-panel-status" aria-live="polite" aria-atomic="true"' in template

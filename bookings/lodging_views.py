@@ -5,11 +5,12 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.db import IntegrityError
-from django.http import Http404, HttpResponse
+from django.http import Http404, HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils import timezone
-from django.views.decorators.http import require_POST
+from django.views.decorators.http import require_GET, require_POST
+from .lodging_room_details import room_details
 
 from audit.services import audit
 from resources.models import Resource
@@ -54,6 +55,14 @@ def _parse_local_datetime(value: str, label: str):
     if timezone.is_naive(parsed):
         parsed = timezone.make_aware(parsed, timezone.get_current_timezone())
     return parsed
+
+
+@require_GET
+def lodging_room_detail(request, number):
+    data = room_details(number)
+    response = JsonResponse({"room": data})
+    response["Cache-Control"] = "no-store"
+    return response
 
 
 # UX-17: Public dormitory showcase — no login required.
@@ -207,6 +216,14 @@ def lodging_portal(request, slug):
         response["X-Robots-Tag"] = "noindex, nofollow"
         return response
     context = _build_portal_context(cohort)
+    selected_id = request.GET.get("room_id", "")
+    selected = next((row for row in context["rooms_data"] if str(row["room"].pk) == selected_id), None)
+    if selected_id and selected is None:
+        messages.warning(request, "ห้องที่เลือกไม่อยู่ในหลักสูตรนี้ กรุณาตรวจสอบหลักสูตรหรือเลือกห้องที่เปิดให้จอง")
+    context["selected_room"] = selected
+    if selected:
+        context["rooms_data"].remove(selected)
+        context["rooms_data"].insert(0, selected)
     portal_path = reverse("bookings:lodging_portal", args=[cohort.slug])
     share_url = get_canonical_public_url(request, portal_path)
     context["share_url"] = share_url
