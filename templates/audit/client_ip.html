@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block title %}ตรวจ IP ผู้ใช้ — SIGROOM{% endblock %}
+{% block content %}
+<div class="page-heading"><div><p class="eyebrow">ผู้ดูแลระบบ</p><h1>ตรวจการอ่าน IP ผู้ใช้</h1>
+<p>หน้านี้แสดงเฉพาะข้อมูลคำขอของคุณเอง ใช้เลือกค่า <code>CLIENT_IP_HEADER</code> หรือ <code>TRUSTED_PROXY_HOPS</code> ให้ระบบอ่าน IP ที่ผู้ใช้ปลอมไม่ได้</p></div></div>
+
+<section class="report-section">
+  <h2>ค่าปัจจุบัน</h2>
+  <p>IP ที่ระบบใช้อยู่ตอนนี้: <strong class="mono">{{ resolved_ip|default:"(ว่าง)" }}</strong></p>
+  <p>CLIENT_IP_HEADER: <code>{{ configured_header|default:"(ไม่ได้ตั้ง)" }}</code> · TRUSTED_PROXY_HOPS: <code>{% if configured_hops is None %}(ไม่ได้ตั้ง){% else %}{{ configured_hops }}{% endif %}</code></p>
+  {% if not is_trusted %}<div class="notice error">ยังไม่ได้ยืนยัน — ระบบใช้ค่าแรกสุดของ X-Forwarded-For ซึ่งผู้ใช้ปลอมได้</div>{% endif %}
+</section>
+
+<section class="report-section">
+  <h2>X-Forwarded-For (ซ้าย → ขวา)</h2>
+  {% if chain_rows %}
+  <div class="table-scroll"><table><caption class="visually-hidden">ค่าใน X-Forwarded-For</caption>
+    <thead><tr><th>IP</th><th>ค่า HOPS</th></tr></thead>
+    <tbody>{% for row in chain_rows %}<tr><td class="mono">{{ row.value }}</td><td>{{ row.hops }}</td></tr>{% endfor %}</tbody>
+  </table></div>
+  {% else %}<p>ไม่มี header นี้</p>{% endif %}
+  <p>REMOTE_ADDR: <span class="mono">{{ remote_addr|default:"(ว่าง)" }}</span></p>
+</section>
+
+<section class="report-section">
+  <h2>header อื่นที่อาจเป็น IP ผู้ใช้</h2>
+  {% if candidate_headers %}
+  <ul>{% for name, value in candidate_headers %}<li><code>{{ name }}</code>: <span class="mono">{{ value }}</span></li>{% endfor %}</ul>
+  {% else %}<p>ไม่พบ</p>{% endif %}
+</section>
+
+<section class="report-section">
+  <h2>วิธีเลือกค่า</h2>
+  <ol>
+    <li>เปิดเว็บตรวจ IP ของตัวเอง (เช่น ค้น "what is my ip") จากเครื่องเดียวกันนี้</li>
+    <li>ถ้ามี header ด้านบนที่มีค่าตรงกับ IP ของคุณ และเป็น header ของแพลตฟอร์ม ให้ตั้ง <code>CLIENT_IP_HEADER</code> เป็นชื่อนั้น</li>
+    <li>ถ้าไม่มี ให้ดูตาราง X-Forwarded-For ว่าแถวที่ตรงกับ IP ของคุณคือ TRUSTED_PROXY_HOPS เท่าใด แล้วตั้งค่านั้น</li>
+    <li>ลองเปิดหน้านี้ผ่านมือถือ (4G) อีกครั้ง ค่าที่ระบบใช้ต้องเปลี่ยนตาม IP ของมือถือ</li>
+  </ol>
+</section>
+{% endblock %}

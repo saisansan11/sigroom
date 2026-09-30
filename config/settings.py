@@ -8,7 +8,11 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 
-from .security import password_reset_email_configuration_warning, secure_configuration_warning
+from .security import (
+    client_ip_configuration_warning,
+    password_reset_email_configuration_warning,
+    secure_configuration_warning,
+)
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 load_dotenv(BASE_DIR / ".env")
@@ -199,9 +203,22 @@ CSRF_COOKIE_SAMESITE = "Lax" if DJANGO_SECURE else "Strict"
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 USE_X_FORWARDED_HOST = True
 
+# IP จริงของผู้ใช้ (ใช้ใน audit log และตัวจำกัดคำขอที่พักจากบุคคลทั่วไป)
+# ค่าแรกสุดของ X-Forwarded-For ผู้ใช้ใส่เองได้ จึงต้องบอกระบบว่าเชื่อค่าจากตรงไหน
+# ตรวจค่าที่ถูกต้องได้จากหน้า /ops/client-ip/ (เฉพาะผู้ดูแลระบบ) แล้วตั้งอย่างใดอย่างหนึ่ง:
+# - CLIENT_IP_HEADER: ชื่อ header ที่แพลตฟอร์มเขียนทับเองทุกครั้ง (ผู้ใช้ปลอมไม่ได้)
+# - TRUSTED_PROXY_HOPS: นับจากขวาของ X-Forwarded-For กี่ตำแหน่ง (0 = ไม่เชื่อ header ใช้ REMOTE_ADDR)
+# เว้นว่างทั้งคู่ = ยังไม่ได้ยืนยัน: ระบบใช้วิธีเดิม (ปลอมได้) และแสดงคำเตือนตอนเริ่มระบบ
+CLIENT_IP_HEADER = os.environ.get("CLIENT_IP_HEADER", "").strip()
+_trusted_proxy_hops = os.environ.get("TRUSTED_PROXY_HOPS", "").strip()
+TRUSTED_PROXY_HOPS = int(_trusted_proxy_hops) if _trusted_proxy_hops else None
+
 security_warning = secure_configuration_warning(DEBUG, DJANGO_SECURE_RAW)
 if security_warning:
     warnings.warn(security_warning, RuntimeWarning, stacklevel=2)
+client_ip_warning = client_ip_configuration_warning(DEBUG, CLIENT_IP_HEADER, TRUSTED_PROXY_HOPS)
+if client_ip_warning:
+    warnings.warn(client_ip_warning, RuntimeWarning, stacklevel=2)
 SESSION_COOKIE_SECURE = DJANGO_SECURE
 CSRF_COOKIE_SECURE = DJANGO_SECURE
 SECURE_SSL_REDIRECT = DJANGO_SECURE
