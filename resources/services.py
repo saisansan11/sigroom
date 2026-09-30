@@ -42,6 +42,8 @@ def affected_bookings(resource: Resource, start: datetime, end: datetime):
         Booking.objects.filter(
             room=resource,
             request_status__in=Booking.HOLDING_STATUSES,
+            # การจองที่ถูกบังคับย้าย/บันทึกผลใช้ห้องแล้ว ไม่ถือครองห้องนี้อีก ห้ามเขียนทับสถานะเดิม
+            usage_status__in=[Booking.UsageStatus.UPCOMING, Booking.UsageStatus.ROOM_UNAVAILABLE],
             start_at__lt=end,
             end_at__gt=start,
         )
@@ -112,6 +114,7 @@ def end_outage_early(outage: ResourceOutage, user, now: datetime | None = None) 
     restored = []
     candidates = Booking.objects.filter(
         room=outage.resource,
+        request_status__in=Booking.HOLDING_STATUSES,
         usage_status=Booking.UsageStatus.ROOM_UNAVAILABLE,
         start_at__lt=outage.end_at,
         end_at__gt=outage.start_at,
