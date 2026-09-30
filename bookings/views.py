@@ -64,7 +64,10 @@ BOOK_SEARCH_CATEGORY_CHOICES = (
 
 
 def _parse_calendar_datetime(value: str | None, fallback: datetime) -> datetime:
-    parsed = parse_datetime(value or "") or fallback
+    try:
+        parsed = parse_datetime(value or "") or fallback
+    except ValueError:  # รูปแบบถูกแต่ค่าผิด เช่น เดือน 13 — ใช้ค่าเริ่มต้นแทนการตอบ 500
+        parsed = fallback
     if timezone.is_naive(parsed):
         parsed = timezone.make_aware(parsed, timezone.get_current_timezone())
     return parsed
@@ -110,6 +113,7 @@ def _today_board(request, rooms, now):
             start_at__lt=board_end,
             end_at__gt=board_start,
         )
+        .exclude(usage_status=Booking.UsageStatus.DISPLACED)
         .order_by("start_at")
     )
     for booking in todays:
@@ -271,6 +275,7 @@ def calendar_view(request):
                 request_status__in=Booking.HOLDING_STATUSES,
                 end_at__gt=now,
             )
+            .exclude(usage_status=Booking.UsageStatus.DISPLACED)
             .order_by("start_at")
             .first()
         )
@@ -321,11 +326,12 @@ def calendar_events(request):
     now = timezone.now()
     start = _parse_calendar_datetime(request.GET.get("start"), now - timedelta(days=30))
     end = _parse_calendar_datetime(request.GET.get("end"), now + timedelta(days=90))
+    # การจองที่ถูกบังคับย้ายปลดช่วงถือครองแล้ว จึงไม่แสดงเป็นช่วงไม่ว่างซ้อนกับงานที่เข้าแทน
     bookings = _booking_queryset().filter(
         request_status__in=Booking.HOLDING_STATUSES,
         start_at__lt=end,
         end_at__gt=start,
-    )
+    ).exclude(usage_status=Booking.UsageStatus.DISPLACED)
     if request.GET.get("category"):
         bookings = bookings.filter(room__room_category=request.GET["category"])
     if request.GET.get("room"):
@@ -1049,7 +1055,7 @@ def my_bookings(request):
     now = timezone.now()
     bookings = _booking_queryset().filter(requester=request.user, series__isnull=True)
     groups = {
-        "upcoming": bookings.filter(start_at__gte=now).exclude(request_status__in=[Booking.RequestStatus.DRAFT, Booking.RequestStatus.CANCELLED, Booking.RequestStatus.REJECTED]),
+        "upcoming": bookings.filter(start_at__gte=now).exclude(request_status__in=[Booking.RequestStatus.DRAFT, Booking.RequestStatus.CANCELLED, Booking.RequestStatus.REJECTED, Booking.RequestStatus.EXPIRED]),
         "drafts": bookings.filter(request_status=Booking.RequestStatus.DRAFT),
         "past": bookings.filter(end_at__lt=now).exclude(request_status__in=[Booking.RequestStatus.CANCELLED, Booking.RequestStatus.REJECTED]),
         "closed": bookings.filter(request_status__in=[Booking.RequestStatus.CANCELLED, Booking.RequestStatus.REJECTED, Booking.RequestStatus.EXPIRED]),
