@@ -5,6 +5,8 @@ from django.templatetags.static import static as static_url
 from django.urls import include, path
 from django.views.generic import RedirectView, TemplateView
 
+from audit.views import client_ip_diagnostics
+
 admin.site.site_header = "SIGROOM — ผู้ดูแลระบบ"
 admin.site.site_title = "SIGROOM"
 admin.site.index_title = "ทะเบียนและการตั้งค่า"
@@ -20,6 +22,7 @@ urlpatterns = [
         TemplateView.as_view(template_name="manifest.webmanifest", content_type="application/manifest+json"),
         name="webmanifest",
     ),
+    path("ops/client-ip/", client_ip_diagnostics, name="client_ip_diagnostics"),
     path("admin/", admin.site.urls),
     path("accounts/", include("accounts.urls")),
     path("accounts/", include("django.contrib.auth.urls")),

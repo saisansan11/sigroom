@@ -27,6 +27,7 @@ from .lodging_services import (
 from .models import BookingResource
 from .services import BookingConflict
 from resources.models import Resource
+from audit.context import client_ip_is_trusted, request_ip
 
 
 class AssignmentForm(forms.Form):
@@ -244,9 +245,14 @@ def general_request(request):
         authenticated = bool(getattr(request.user, "is_authenticated", False))
         client_key = ""
         if not authenticated:
-            if request.session.session_key is None:
-                request.session.create()
-            client_key = request.session.session_key or ""
+            client_ip = request_ip(request) if client_ip_is_trusted() else ""
+            if client_ip:
+                # นับตาม IP ที่ยืนยันแล้ว — cookie/session ผู้ส่งทิ้งได้ทุกครั้ง จึงใช้กันยิงถี่ไม่ได้
+                client_key = f"ip:{client_ip}"
+            else:
+                if request.session.session_key is None:
+                    request.session.create()
+                client_key = request.session.session_key or ""
         try:
             booking = request_general_lodging(
                 actor=request.user if authenticated else None,
