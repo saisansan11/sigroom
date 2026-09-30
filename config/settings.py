@@ -213,6 +213,14 @@ CLIENT_IP_HEADER = os.environ.get("CLIENT_IP_HEADER", "").strip()
 _trusted_proxy_hops = os.environ.get("TRUSTED_PROXY_HOPS", "").strip()
 TRUSTED_PROXY_HOPS = int(_trusted_proxy_hops) if _trusted_proxy_hops else None
 
+# จำกัดจำนวนครั้งที่ใส่รหัสผ่านผิดที่หน้า login (นับใน window แบบเลื่อน)
+# - USER_IP: ชื่อผู้ใช้เดียวกันจาก IP เดียวกัน · USER: ชื่อผู้ใช้เดียวกันจากทุก IP · IP: IP เดียวกันทุกชื่อผู้ใช้
+# USER ตั้งสูงกว่า USER_IP เพื่อไม่ให้คนอื่นล็อกบัญชีเราได้ง่าย แต่ยังกันการสุ่มรหัสที่เปลี่ยน IP หนี
+LOGIN_THROTTLE_WINDOW_SECONDS = int(os.environ.get("LOGIN_THROTTLE_WINDOW_SECONDS", "900"))
+LOGIN_THROTTLE_USER_IP_LIMIT = int(os.environ.get("LOGIN_THROTTLE_USER_IP_LIMIT", "5"))
+LOGIN_THROTTLE_USER_LIMIT = int(os.environ.get("LOGIN_THROTTLE_USER_LIMIT", "20"))
+LOGIN_THROTTLE_IP_LIMIT = int(os.environ.get("LOGIN_THROTTLE_IP_LIMIT", "30"))
+
 security_warning = secure_configuration_warning(DEBUG, DJANGO_SECURE_RAW)
 if security_warning:
     warnings.warn(security_warning, RuntimeWarning, stacklevel=2)

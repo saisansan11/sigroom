@@ -10,6 +10,8 @@ reset_confirm_view = views.UnitPasswordResetConfirmView.as_view()
 reset_complete_view = views.UnitPasswordResetCompleteView.as_view()
 
 urlpatterns = [
+    # Shadow /accounts/login/ ของ django.contrib.auth.urls เพื่อใช้ฟอร์มที่จำกัดจำนวนครั้งที่ใส่รหัสผิด
+    path("login/", views.ThrottledLoginView.as_view(), name="login"),
     path("change-initial-password/", views.first_password_change, name="first_password_change"),
     # เส้นทางหลักที่แสดงต่อผู้ใช้
     path("password-reset/", reset_view, name="password_reset"),

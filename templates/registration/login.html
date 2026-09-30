@@ -59,7 +59,7 @@
     </header>
     <form method="post">
       {% csrf_token %}
-      {% if form.errors %}<div id="login-error" class="notice error" role="alert">ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง กรุณาตรวจสอบแล้วลองอีกครั้ง</div>{% endif %}
+      {% if form.errors %}<div id="login-error" class="notice error" role="alert">{% if login_throttled %}{{ form.non_field_errors.0 }}{% else %}ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง กรุณาตรวจสอบแล้วลองอีกครั้ง{% endif %}</div>{% endif %}
       <label for="id_username">ชื่อผู้ใช้</label>
       <input id="id_username" name="username" autocomplete="username" required{% if form.errors %} aria-invalid="true" aria-describedby="login-error"{% endif %}>
       <label for="id_password">รหัสผ่าน</label>
