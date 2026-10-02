@@ -100,7 +100,7 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 AUTH_USER_MODEL = "accounts.User"
 ALLOWED_EMAIL_DOMAIN = os.environ.get("ALLOWED_EMAIL_DOMAIN", "signalschool.ac.th")
 LOGIN_URL = "/accounts/login/"
-LOGIN_REDIRECT_URL = "/"
+LOGIN_REDIRECT_URL = "/home/"
 AUTH_PASSWORD_VALIDATORS = [
     {"NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"},
     {"NAME": "django.contrib.auth.password_validation.MinimumLengthValidator", "OPTIONS": {"min_length": 12}},  # SR-05
@@ -121,10 +121,11 @@ USE_TZ = True
 # --- ไฟล์ static -----------------------------------------------------------
 STATIC_URL = "static/"
 STATICFILES_DIRS = [BASE_DIR / "static"]
-STATIC_ROOT = BASE_DIR / "staticfiles"
+# เก็บใต้ public/ เพื่อให้ Firebase Hosting ส่ง /static/... จาก CDN ได้ตรงพาธ
+STATIC_ROOT = BASE_DIR / "public" / "static"
 STORAGES = {
     "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},
-    "staticfiles": {"BACKEND": "whitenoise.storage.CompressedStaticFilesStorage"},
+    "staticfiles": {"BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage"},
 }
 
 # --- ความปลอดภัย session/cookie (SRS SR-11 & Cloud Migration Gate) ------------

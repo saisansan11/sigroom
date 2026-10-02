@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SIGROOM · ระบบจองห้อง รร.ส.สส.</title>
+<style>
+  :root { --paper:#F5F1E6; --ink:#1F2A24; --stamp:#A3241C; --rule:#D8CFB8; }
+  * { box-sizing:border-box; }
+  html,body { height:100%; margin:0; }
+  body {
+    background:var(--paper); color:var(--ink);
+    font-family:"IBM Plex Sans Thai","Sarabun","Noto Sans Thai",Tahoma,sans-serif;
+    display:flex; align-items:center; justify-content:center;
+    background-image:repeating-linear-gradient(to bottom, transparent 0, transparent 31px, var(--rule) 31px, var(--rule) 32px);
+  }
+  main { text-align:center; padding:2rem 1.5rem; background:var(--paper); border:1px solid var(--rule); max-width:90vw; }
+  h1 { margin:0; font-size:2.4rem; letter-spacing:.28em; padding-left:.28em; font-weight:700; }
+  .stamp { display:inline-block; margin-top:.5rem; color:var(--stamp); border:2px solid var(--stamp); padding:.1rem .6rem; font-size:.8rem; letter-spacing:.15em; transform:rotate(-3deg); }
+  p { margin:.9rem 0 0; }
+  .status { color:var(--ink); }
+  .rule { position:relative; height:2px; width:14rem; max-width:70vw; margin:1.2rem auto 0; background:var(--rule); overflow:hidden; }
+  .rule::after { content:""; position:absolute; inset:0; background:var(--stamp); transform:translateX(-100%); animation:draw 1.8s ease-in-out infinite; }
+  @keyframes draw { 0% { transform:translateX(-100%); } 60% { transform:translateX(0); } 100% { transform:translateX(100%); } }
+  .slow { opacity:0; visibility:hidden; font-size:.9rem; transition:opacity .4s; }
+  .slow.show { opacity:1; visibility:visible; }
+  a { color:var(--stamp); }
+  @media (prefers-reduced-motion: reduce) {
+    .rule::after { animation:none; transform:none; opacity:.6; }
+    .slow { transition:none; }
+  }
+</style>
+</head>
+<body>
+<main>
+  <h1>SIGROOM</h1>
+  <span class="stamp">รร.ส.สส.</span>
+  <p>ระบบจองห้อง รร.ส.สส.</p>
+  <div class="rule" aria-hidden="true"></div>
+  <p class="status" role="status">กำลังเปิดระบบ…</p>
+  <p class="slow" id="slow">เซิร์ฟเวอร์กำลังเริ่มทำงาน อาจใช้เวลาสักครู่</p>
+  <noscript><p><a href="/home/">เข้าสู่ระบบ SIGROOM</a></p></noscript>
+</main>
+<script>
+  setTimeout(function () { document.getElementById('slow').className = 'slow show'; }, 8000);
+  // รอให้หน้านี้วาดขึ้นจอก่อนหนึ่งเฟรม แล้วค่อยไปหน้าจริง เบราว์เซอร์จะค้างหน้านี้ไว้ระหว่างรอเซิร์ฟเวอร์
+  requestAnimationFrame(function () {
+    setTimeout(function () { location.replace('/home/' + location.search + location.hash); }, 0);
+  });
+</script>
+</body>
+</html>

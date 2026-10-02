@@ -5,7 +5,8 @@ from . import lodging_views, views
 app_name = "bookings"
 
 urlpatterns = [
-    path("", views.calendar_view, name="calendar"),
+    path("home/", views.calendar_view, name="calendar"),
+    path("", views.calendar_view, name="calendar_root"),  # LAN/on-prem: เข้า / ได้เหมือนเดิม
     path("api/calendar/events/", views.calendar_events, name="calendar_events"),
     path("book/", views.book_search, name="book_search"),
     path("book/<str:code>/", views.book_form, name="book_form"),

@@ -382,3 +382,31 @@ New-NetFirewallRule -DisplayName "SIGROOM LAN" -Direction Inbound -Protocol TCP 
 | `permission denied` ตอน migrate | `.env` ยังเป็น `sigroom_app` — ทำตามกติกาในหมวด 7: สลับเป็น `postgres` ก่อน migrate |
 | หน้าเว็บไม่มีสี/ฟอนต์เพี้ยน | ยังไม่ได้รัน `collectstatic` หลังอัปเดต — รันแล้ว restart งาน SIGROOM Server |
 | login แล้วเด้งกลับหน้า login | เวลาเครื่อง server กับเครื่องผู้ใช้ต่างกันมาก — ตั้ง sync เวลากับ time server ของหน่วย |
+
+## ภาคผนวก ค — ทำให้เว็บบน Cloud Run/Firebase เปิดเร็วขึ้น (เฉพาะรุ่นออนไลน์)
+
+หน้าขาวนานตอนเปิดครั้งแรกเกิดจากเซิร์ฟเวอร์ Cloud Run "หลับ" อยู่ แล้วต้องใช้เวลาตื่น ระบบจึงมีหน้า `public/index.html` (หน้า "กำลังเปิดระบบ…") ที่ Firebase ส่งให้ทันที ระหว่างนี้เซิร์ฟเวอร์จะตื่นเอง
+
+**1) ให้เซิร์ฟเวอร์ตื่นค้างไว้ 1 เครื่อง + เร่งตอนสตาร์ท** (มีค่าใช้จ่ายรายเดือนเล็กน้อย เพราะมีเครื่องเปิดตลอด)
+
+```powershell
+gcloud run services update sigroom --region asia-southeast3 --min-instances=1 --cpu-boost
+```
+
+**2) ลำดับการ deploy** — Firebase อัปโหลดโฟลเดอร์ `public/` รวม `public/static` จึงต้องเก็บไฟล์ static ก่อนทุกครั้ง
+
+ขั้นแรก: build และ deploy อิมเมจ Cloud Run ตามที่ทำอยู่เดิม จากนั้นเก็บไฟล์ static ในเครื่อง
+
+```powershell
+uv run manage.py collectstatic --noinput
+```
+
+จากนั้นส่งขึ้น Firebase Hosting
+
+```powershell
+firebase deploy --only hosting
+```
+
+**3) ตรวจผล** — เปิดเว็บ กด F12 แท็บ Network โหลดหน้าใหม่ ไฟล์ที่ขึ้นต้นด้วย `/static/` ต้องมี header `cache-control: public, max-age=31536000, immutable` (แปลว่าส่งจาก Firebase และเบราว์เซอร์จำไว้ได้ยาว) ครั้งที่สองที่เปิดหน้าควรเร็วขึ้นชัดเจน
+
+หมายเหตุ: ติดตั้งในเครือข่ายหน่วย (LAN) ไม่ต้องทำหมวดนี้ — `collectstatic` ในหมวด 5.3 จะเขียนไปที่ `public/static` และ WhiteNoise ส่งไฟล์ให้เหมือนเดิม
