@@ -115,12 +115,10 @@ def test_authenticated_role_actions_priority_ordering(client, v6_a_setup, monkey
     assert resp1.status_code == 200
     content1 = resp1.content.decode()
 
-    # ยืนยันว่างานดูแลห้อง (มีรายการ) ขึ้นช่องแรก ส่วนคิวอนุมัติที่ว่างไปอยู่ในทางลัด
+    # R3-0: ช่องงานหลักเลือกงานดูแลห้อง ส่วนคิวอนุมัติยังเข้าถึงได้จาก ดูเพิ่มเติม โดยไม่ซ้ำข้อความบนหน้าแรก
     assert 'data-task="usage"' in content1
-    assert "คิวอนุมัติเรียบร้อย" in content1
-    idx_usage_1 = content1.index('data-task="usage"')
-    idx_approvals_1 = content1.index("คิวอนุมัติเรียบร้อย")
-    assert idx_usage_1 < idx_approvals_1
+    assert 'data-task="approvals"' not in content1
+    assert reverse("approvals:queue") in content1
 
     # กรณีที่ 2: nav_pending_approval_count = 3, usage_today_count = 2
     monkeypatch.setattr("notifications.context_processors.pending_for", lambda u: [1, 2, 3])
@@ -129,12 +127,10 @@ def test_authenticated_role_actions_priority_ordering(client, v6_a_setup, monkey
     assert resp2.status_code == 200
     content2 = resp2.content.decode()
 
-    # ยืนยันว่างานผู้อนุมัติ (มีรายการ) ขึ้นช่องแรก งานดูแลห้องไปอยู่ในทางลัด
+    # เมื่อมีคำขอรออนุมัติ ช่องงานหลักต้องสลับเป็น approvals; งานดูแลห้องยังเข้าถึงได้จาก ดูเพิ่มเติม
     assert 'data-task="approvals"' in content2
-    assert "การใช้งานห้องวันนี้ 2 รายการ" in content2
-    idx_approvals_2 = content2.index('data-task="approvals"')
-    idx_usage_2 = content2.index("การใช้งานห้องวันนี้ 2 รายการ")
-    assert idx_approvals_2 < idx_usage_2
+    assert 'data-task="usage"' not in content2
+    assert reverse("usage:list") in content2
 
 
 def test_lodging_portal_sorts_available_rooms_before_full_rooms(client, v6_a_setup):

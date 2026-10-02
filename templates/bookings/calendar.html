@@ -49,23 +49,6 @@
       </a>
     </div>
 
-    <ul class="home-links" aria-label="ทางลัด">
-      {% if nav_can_access_approvals and nav_can_manage_usage %}
-        {% if nav_pending_approval_count or not usage_today_count %}
-          <li><a href="{% url 'usage:list' %}">การใช้งานห้องวันนี้ {{ usage_today_count|default:0 }} รายการ</a></li>
-        {% else %}
-          <li><a href="{% url 'approvals:queue' %}">คิวอนุมัติเรียบร้อย</a></li>
-        {% endif %}
-      {% endif %}
-      {% if nav_can_access_approvals or nav_can_manage_usage %}
-        <li><a href="{% url 'bookings:my_bookings' %}">การจองของฉัน{% if my_pending_count %} (รอพิจารณา {{ my_pending_count }}){% endif %}</a></li>
-      {% endif %}
-      {% if nav_can_book_online %}<li><a href="{% url 'bookings:online_teaching_home' %}">ห้องสอนออนไลน์</a></li>{% endif %}
-      <li><a href="{% url 'bookings:lodging_index' %}">จองห้องพัก</a></li>
-      <li><a href="#homepage-availability">ห้องว่างช่วงนี้</a></li>
-      <li><a href="#operational-calendar-section">ปฏิทินการใช้ห้อง</a></li>
-      <li><a href="{% url 'bookings:about' %}">วิธีใช้งาน</a></li>
-    </ul>
   </section>
 {% else %}
   <section class="home-head guest-head" aria-labelledby="home-greeting">
@@ -76,11 +59,6 @@
       <a role="button" class="btn-primary" href="{% url 'login' %}?next={% url 'bookings:book_search' %}">เข้าสู่ระบบเพื่อจองห้อง</a>
       <a role="button" class="btn-secondary" href="{% url 'bookings:lodging_index' %}">จองห้องพัก</a>
     </div>
-    <ul class="home-links" aria-label="ทางลัด">
-      <li><a href="#homepage-availability">ห้องว่างช่วงนี้</a></li>
-      <li><a href="#operational-calendar-section">ปฏิทินการใช้ห้อง</a></li>
-      <li><a href="{% url 'bookings:about' %}">รู้จัก SIGROOM</a></li>
-    </ul>
   </section>
 {% endif %}
 
@@ -112,10 +90,6 @@
       {% for row in board_rows %}
       <div class="ledger-row">
         <div class="ledger-room">
-          {% with cover=row.room.cover_photo %}
-            {% if cover %}<img src="{{ cover.image.url }}" alt="" width="32" height="32" loading="lazy" decoding="async" class="ledger-thumb">
-            {% else %}<img src="{% static 'img/room-placeholder.svg' %}" alt="" width="32" height="32" loading="lazy" decoding="async" class="ledger-thumb is-placeholder">{% endif %}
-          {% endwith %}
           <span class="ledger-room-text"><b>{{ row.room.code }}</b>
           <span>{{ row.room.name }}{% if row.room.capacity %} · {{ row.room.capacity }} คน{% endif %}</span></span>
         </div>
@@ -143,6 +117,22 @@
     <div class="empty-state"><strong>ไม่มีห้องในหมวดนี้</strong><span>เลือกหมวดอื่นด้านบน</span></div>
   {% endif %}
 </section>
+
+<details id="home-more" class="home-more">
+  <summary class="home-more-summary">ดูเพิ่มเติม</summary>
+  <div class="home-more-body">
+    <nav class="home-more-links" aria-label="บริการและข้อมูลเพิ่มเติม">
+      {% if user.is_authenticated %}
+        <a href="{% url 'bookings:my_bookings' %}">การจองของฉัน</a>
+        {% if nav_can_access_approvals %}<a href="{% url 'approvals:queue' %}">คิวอนุมัติ</a>{% endif %}
+        {% if nav_can_manage_usage %}<a href="{% url 'usage:list' %}">การใช้งานห้อง</a>{% endif %}
+        {% if nav_can_book_online %}<a href="{% url 'bookings:online_teaching_home' %}">ห้องสอนออนไลน์</a>{% endif %}
+      {% endif %}
+      <a href="{% url 'bookings:lodging_index' %}">จองห้องพัก</a>
+      <a href="#homepage-availability-section">ห้องว่างช่วงนี้</a>
+      <a href="#operational-calendar-section">ปฏิทินการใช้ห้อง</a>
+      <a href="{% url 'bookings:about' %}">{% if user.is_authenticated %}วิธีใช้งาน{% else %}รู้จัก SIGROOM{% endif %}</a>
+    </nav>
 
 <section id="homepage-availability-section" class="home-section" aria-labelledby="homepage-availability-title">
   <div class="ledger-head">
@@ -196,11 +186,11 @@
   {% endif %}
 </section>
 
-<details id="operational-calendar-section" class="operational-calendar-section">
-  <summary class="operational-disclosure-summary" id="operational-schedule-summary">
-    <span class="summary-heading">ปฏิทินการใช้ห้อง</span>
-    <span class="summary-note">รายวัน รายสัปดาห์ รายเดือน · แตะเพื่อเปิด</span>
-  </summary>
+<section id="operational-calendar-section" class="operational-calendar-section">
+  <div class="ledger-head">
+    <h2 id="operational-schedule-summary">ปฏิทินการใช้ห้อง</h2>
+    <p class="ledger-summary">รายวัน · รายสัปดาห์ · รายเดือน</p>
+  </div>
   <div class="operational-disclosure-body">
     <div class="filter-bar">
       <label for="room-filter">ห้อง
@@ -213,12 +203,14 @@
     </div>
     <div id="calendar" aria-label="ปฏิทินการจอง"></div>
   </div>
+</section>
+  </div>
 </details>
 {% endblock %}
 {% block scripts %}
 <script>
 document.addEventListener('DOMContentLoaded', function () {
-  const opsDetails = document.getElementById('operational-calendar-section');
+  const moreDetails = document.getElementById('home-more');
   const room = document.getElementById('room-filter');
   const building = document.getElementById('building-filter');
   const compact = window.matchMedia('(max-width: 640px)').matches;
@@ -254,20 +246,22 @@ document.addEventListener('DOMContentLoaded', function () {
     if (building) building.addEventListener('change', () => calendar.refetchEvents());
   }
 
-  if (opsDetails) {
-    if (opsDetails.open) ensureCalendarRendered();
-    opsDetails.addEventListener('toggle', function () { if (opsDetails.open) ensureCalendarRendered(); });
+  if (moreDetails) {
+    if (moreDetails.open) ensureCalendarRendered();
+    moreDetails.addEventListener('toggle', function () { if (moreDetails.open) ensureCalendarRendered(); });
     const openFromHash = function () {
       const h = window.location.hash;
-      if (h === '#operational-calendar-section' || h === '#calendar' || h === '#operational-schedule-summary') {
-        opsDetails.open = true;
+      if (!h) return;
+      const target = document.getElementById(decodeURIComponent(h.slice(1)));
+      if (target && moreDetails.contains(target)) {
+        moreDetails.open = true;
         ensureCalendarRendered();
       }
     };
     window.addEventListener('hashchange', openFromHash);
     openFromHash();
     document.querySelectorAll('a[href="#operational-calendar-section"], a[href="#calendar"]').forEach(a => {
-      a.addEventListener('click', function () { opsDetails.open = true; ensureCalendarRendered(); });
+      a.addEventListener('click', function () { moreDetails.open = true; ensureCalendarRendered(); });
     });
   }
 

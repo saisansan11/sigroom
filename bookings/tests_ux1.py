@@ -293,32 +293,32 @@ def test_task_first_home_shows_quick_booking_banner_for_idle_user(client, ux1_da
 
 
 def test_task_first_home_quick_launcher_links(client, ux1_data):
-    """Home shortcuts link to booking, availability and the calendar disclosure."""
+    """Primary booking stays visible while secondary shortcuts move under one disclosure."""
     client.force_login(ux1_data["normal_user"])
     resp = client.get(reverse("bookings:calendar"))
     assert resp.status_code == 200
     html = resp.content.decode()
 
-    assert 'class="home-links"' in html
+    assert 'id="home-more"' in html
+    assert 'class="home-more-links"' in html
     assert reverse("bookings:book_search") in html
-    assert 'href="#homepage-availability"' in html
+    assert 'href="#homepage-availability-section"' in html
     assert 'href="#operational-calendar-section"' in html
 
 
 def test_operational_calendar_and_today_board_remain_accessible(client):
-    """Today's ledger board is open on the page; the full calendar stays a collapsed disclosure."""
+    """Today's ledger stays primary; all secondary content shares one collapsed disclosure."""
     resp = client.get(reverse("bookings:calendar"))
     assert resp.status_code == 200
     html = resp.content.decode()
 
-    assert '<details id="operational-calendar-section"' in html
-    assert '<details id="operational-calendar-section" open' not in html
-    assert '<details id="operational-calendar-section" class="operational-calendar-section"' in html
+    assert '<details id="home-more" class="home-more">' in html
+    assert '<details id="home-more" class="home-more" open' not in html
+    assert '<section id="operational-calendar-section" class="operational-calendar-section">' in html
     assert 'id="operational-schedule-summary"' in html
-    assert 'class="operational-disclosure-summary"' in html
 
     assert 'id="today-board"' in html
-    assert html.index('id="today-board"') < html.index('id="operational-calendar-section"')
+    assert html.index('id="today-board"') < html.index('id="home-more"') < html.index('id="operational-calendar-section"')
     assert 'id="calendar"' in html
     assert 'id="room-filter"' in html
     assert 'id="building-filter"' in html

@@ -197,16 +197,18 @@ def test_admin_inline_shows_upload_field_when_flag_enabled(settings):
 # --- C3: หน้าเว็บ (render + N+1) ---------------------------------------------
 
 
-def test_calendar_view_renders_cover_photo_and_placeholder(client, room):
+def test_calendar_view_omits_room_thumbnails_from_today_ledger(client, room):
     other_room = _make_room("ROOM-C2")
     save_room_photo(resource=room, image=_make_upload(), is_cover=True)
 
     resp = client.get(reverse("bookings:calendar"))
     assert resp.status_code == 200
     content = resp.content.decode()
-    assert "ledger-thumb" in content
-    assert "room-placeholder.svg" in content  # other_room ไม่มีรูป ต้องได้ placeholder
-    assert other_room.code in content
+    ledger = content[content.index('id="today-board"'):content.index('id="home-more"')]
+    assert "ledger-thumb" not in ledger
+    assert "room-placeholder.svg" not in ledger
+    assert room.code in ledger
+    assert other_room.code in ledger
 
 
 @pytest.fixture
