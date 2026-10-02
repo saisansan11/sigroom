@@ -171,7 +171,7 @@ def test_lodging_portal_sorts_available_rooms_before_full_rooms(client, v6_a_set
 
 
 def test_lodging_portal_renders_jump_button_and_input_attributes(client, v6_a_setup):
-    """หน้า student portal ต้องมีปุ่มลอยไปเตียงว่าง, inputmode="tel" และ autofocus"""
+    """หน้า student portal ต้องมีปุ่มลอยไปห้องว่าง, inputmode="tel" และ autofocus"""
     _, _, cohort, _, _ = v6_a_setup
 
     resp = client.get(reverse("bookings:lodging_portal", args=[cohort.slug]))
@@ -179,7 +179,7 @@ def test_lodging_portal_renders_jump_button_and_input_attributes(client, v6_a_se
     content = resp.content.decode()
 
     # ปุ่มลอย
-    assert "ไปที่เตียงว่างถัดไป ▾" in content
+    assert "ไปที่ห้องว่างถัดไป" in content
     assert "btn-jump-next-bed" in content
     assert "scrollToNextFreeBed" in content
 

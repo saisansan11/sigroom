@@ -1,19 +1,21 @@
 {% extends "base.html" %}
-{% load static %}
+{% load static thaidate %}
 {% block html_theme %}light{% endblock %}
 {% block body_class %}lodging-booking-ios27{% endblock %}
-{% block head %}<link rel="stylesheet" href="{% static 'css/lodging_booking_ios27.css' %}?v=2">{% endblock %}
-{% load thaidate %}
+{% block head %}
+<link rel="stylesheet" href="{% static 'css/lodging_booking_ios27.css' %}?v=2">
+<link rel="stylesheet" href="{% static 'css/lodging_booking_r3l.css' %}?v=1">
+{% endblock %}
 {% block title %}{{ cohort.title }} · ที่พัก SIGROOM{% endblock %}
 {% block content %}
 <div class="page-heading">
   <div>
-    <p class="eyebrow">ที่พักหลักสูตร</p>
+    <p class="eyebrow">ห้องพักหลักสูตร</p>
     <h1>{{ cohort.title }}</h1>
-    <p>เข้าพัก {{ cohort.check_in_date|thai_date }} – {{ cohort.check_out_date|thai_date }}</p>
+    <p>{{ cohort.check_in_date|thai_date }} – {{ cohort.check_out_date|thai_date }}</p>
   </div>
 </div>
-<article class="detail-card">
+<section class="r3l-closed-sheet">
   {% if booking_state == 'not_open' %}
     <h2>ยังไม่เปิดรับจอง</h2>
   {% elif booking_state == 'ended' %}
@@ -25,7 +27,6 @@
   {% if cohort.booking_open_at and cohort.booking_close_at %}
     <p><strong>ช่วงรับจอง:</strong> {{ cohort.booking_open_at|thai_datetime }} – {{ cohort.booking_close_at|thai_datetime }}</p>
   {% endif %}
-  <p>เมื่ออยู่ในช่วงที่เปิดรับจอง หน้านี้จะแสดงห้องและเตียงที่จัดสรรให้หลักสูตรโดยอัตโนมัติ</p>
-</article>
-<p><a href="{% url 'bookings:lodging_about' %}">← กลับหน้าแนะนำที่พัก</a></p>
+</section>
+<p><a class="r3l-back-link" href="{% url 'bookings:lodging_about' %}">กลับศูนย์จองห้องและที่พัก</a></p>
 {% endblock %}

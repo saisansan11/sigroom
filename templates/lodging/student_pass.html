@@ -2,7 +2,10 @@
 {% load static %}
 {% block html_theme %}light{% endblock %}
 {% block body_class %}lodging-booking-ios27{% endblock %}
-{% block head %}<link rel="stylesheet" href="{% static 'css/lodging_booking_ios27.css' %}?v=2">{% endblock %}
+{% block head %}
+<link rel="stylesheet" href="{% static 'css/lodging_booking_ios27.css' %}?v=2">
+<link rel="stylesheet" href="{% static 'css/lodging_booking_r3l.css' %}?v=1">
+{% endblock %}
 {% load thaidate %}
 
 {% block title %}บัตรรายงานตัวเข้าที่พัก · {{ student.room.code }} · SIGROOM{% endblock %}
@@ -40,7 +43,7 @@
           <p class="keycard-name">{{ student.rank }} {{ student.full_name }}</p>
           <p class="keycard-cohort">{{ cohort.title }}</p>
           <p class="keycard-dates">{{ cohort.check_in_date|thai_date }} – {{ cohort.check_out_date|thai_date }}</p>
-          <p class="keycard-flip-hint">↺ แตะหรือกด Space เพื่อพลิกดู QR รายงานตัว</p>
+          <p class="keycard-flip-hint">แตะบัตรหรือกด Space เพื่อดู QR รายงานตัว</p>
         </div>
       </div>
       <div class="keycard-face keycard-back">
@@ -54,7 +57,7 @@
           alt="QR code สำหรับรายงานตัวเข้าที่พัก"
         >
         <p class="keycard-qr-caption">แสดงบัตรนี้ต่อเวรรับรายงานตัว</p>
-        <p class="keycard-flip-hint">↺ แตะเพื่อพลิกกลับด้านหน้า</p>
+        <p class="keycard-flip-hint">แตะบัตรเพื่อกลับด้านหน้า</p>
       </div>
     </div>
   </div>
@@ -82,7 +85,7 @@
   </button>
   {% if line_share_url %}
     <a role="button" class="secondary" href="{{ line_share_url }}" target="_blank" rel="noopener noreferrer">
-      แชร์เข้า LINE ↗
+      แชร์เข้า LINE
     </a>
   {% endif %}
   <details class="keycard-save-tip">
@@ -90,7 +93,7 @@
     <p>แนะนำให้ <strong>จับภาพหน้าจอ (Screenshot)</strong> บัตรนี้ไว้บนมือถือ เพื่อความสะดวกรวดเร็วในการแสดงต่อเวรรับรายงานตัว</p>
   </details>
   <a role="button" class="secondary" href="{% url 'bookings:lodging_portal' cohort.slug %}">
-    ← ผังห้องรุ่นนี้
+    กลับไปผังห้องรุ่นนี้
   </a>
 </div>
 
@@ -133,7 +136,7 @@ function copyPassLink() {
   navigator.clipboard.writeText(url).then(function () {
     var btn = document.getElementById('copyPassBtn');
     var originalText = btn.textContent;
-    btn.textContent = '✓ คัดลอกสำเร็จ!';
+    btn.textContent = 'คัดลอกแล้ว';
     btn.classList.add('is-copied');
     setTimeout(function () {
       btn.textContent = originalText;
