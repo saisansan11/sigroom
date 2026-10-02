@@ -141,7 +141,7 @@ def test_reference_value_clean_validates_time_preset():
 
 def test_time_presets_reads_admin_rows_and_falls_back_to_defaults():
     labels = [preset["label"] for preset in time_presets()]
-    assert labels == ["คาบเช้า", "คาบบ่าย", "ทั้งวัน"]  # ไม่มีแถวใน Admin → ใช้ค่า default
+    assert labels == ["เช้า", "บ่าย", "ทั้งวัน"]  # ไม่มีแถวใน Admin → ใช้ค่า default (ชิปหน้าจอง ธีม A)
 
     ReferenceValue.objects.create(field="time_preset", value="0700-0800|เช้าตรู่", order=1)
     ReferenceValue.objects.create(field="time_preset", value="0900-1000|ปิดใช้", order=2, is_active=False)
@@ -153,7 +153,8 @@ def test_time_presets_reads_admin_rows_and_falls_back_to_defaults():
 def test_search_page_renders_presets_but_summary_mode_does_not(client, rebook_setup):
     user, _, rooms = rebook_setup
     client.force_login(user)
-    assert "time-preset-button" in client.get(reverse("bookings:book_search")).content.decode()
+    # หน้าค้นหาแสดงช่วงเวลาสำเร็จรูปเป็นชิป (radio name=period)
+    assert 'name="period" value="08:00-12:00"' in client.get(reverse("bookings:book_search")).content.decode()
 
     # ฟอร์มจองโหมดสรุป (มาจากผลค้นหาพร้อมวันเวลา) ต้องไม่มีปุ่มคาบ
     resp = client.get(
@@ -161,7 +162,7 @@ def test_search_page_renders_presets_but_summary_mode_does_not(client, rebook_se
         {"search": "1", "date": (timezone.localdate() + timedelta(days=1)).isoformat(), "start": "09:00", "end": "10:00"},
     )
     content = resp.content.decode()
-    assert "สรุปการจอง" in content
+    assert "booking-selection-summary" in content
     assert "time-preset-button" not in content
 
 

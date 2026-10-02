@@ -176,7 +176,12 @@
       if (error) {
         const fieldId = error.dataset.fieldId;
         const field = fieldId ? document.getElementById(fieldId) : error.closest('.field')?.querySelector('input, select, textarea');
-        scrollAndFocus(field || error);
+        // ช่องที่ผิดอยู่ในส่วนที่พับไว้ → เปิดส่วนนั้นก่อนแล้วค่อยโฟกัส
+        const target = field || error;
+        const folded = target.closest('details');
+        if (folded) folded.open = true;
+        target.closest('[hidden]')?.removeAttribute('hidden');
+        scrollAndFocus(target);
       }
       document.addEventListener('click', function (event) {
         document.querySelectorAll('.ops-menu[open], .account-menu[open]').forEach(function (el) {

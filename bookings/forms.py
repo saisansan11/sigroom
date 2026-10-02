@@ -170,6 +170,11 @@ class BookingForm(forms.ModelForm):
             self.fields["unit"].queryset = Unit.objects.filter(pk__in=_unit_ids_with_children(user.unit), is_active=True)
             if is_new and user.unit_id:
                 self.initial.setdefault("unit", user.unit_id)
+        # หน่วยที่ดึงจากการจองครั้งก่อนอาจไม่อยู่ในสิทธิ์ปัจจุบันแล้ว (ย้ายหน่วย) → กลับไปใช้หน่วยของผู้ใช้
+        initial_unit = self.initial.get("unit")
+        initial_unit = getattr(initial_unit, "pk", initial_unit)
+        if is_new and not self.is_bound and initial_unit and not self.fields["unit"].queryset.filter(pk=initial_unit).exists():
+            self.initial["unit"] = user.unit_id
 
         fixed_items = [line.strip() for line in room.fixed_equipment.splitlines() if line.strip()]
         self.fields["fixed_equipment_choices"].choices = [(item, item) for item in fixed_items]
@@ -228,7 +233,9 @@ class BookingForm(forms.ModelForm):
             "series_custom_dates",
         }
         names = more_fields.intersection(self.fields)
-        if self.is_bound and any(name in self.errors for name in names):
+        # ใบขอใช้ห้องแบบย่อ (จองใหม่) ย้ายประเภทการใช้งาน/จำนวนคนไปไว้ในส่วนนี้ด้วย → เปิดเมื่อช่องเหล่านี้ผิด
+        error_names = names | ({"purpose", "attendees"}.intersection(self.fields) if self.show_booking_summary else set())
+        if self.is_bound and any(name in self.errors for name in error_names):
             return True
         if self.is_bound:
             for name in names:
@@ -247,6 +254,37 @@ class BookingForm(forms.ModelForm):
                 self.instance.external_attendees_note, self.instance.visibility != Booking.Visibility.NORMAL, self.instance.note,
             ))
         return False
+
+    prefill_source = "profile"  # view ตั้งเป็น "last_booking"/"rebook" เพื่อบอกผู้ใช้ว่าค่ามาจากไหน
+
+    @property
+    def selected_date_label(self):
+        """วันที่ของใบขอใช้ห้องแบบสั้น เช่น "ศ. 2 ต.ค. 2569" (ค่าผิดรูปแบบ → แสดงตามที่กรอก)"""
+        from .services import short_thai_date
+
+        if "date" not in self.fields:
+            return ""
+        value = self["date"].value()
+        try:
+            parsed = self.fields["date"].to_python(value)
+        except forms.ValidationError:
+            return value or ""
+        return f"{short_thai_date(parsed)} {parsed.year + 543}" if parsed else ""
+
+    @property
+    def selected_unit_label(self):
+        """ชื่อหน่วยที่เลือกอยู่ ใช้ในบรรทัดสรุปผู้รับผิดชอบของใบขอใช้ห้อง"""
+        if "unit" not in self.fields:
+            return ""
+        value = self["unit"].value()
+        value = getattr(value, "pk", value)
+        if value in (None, ""):
+            return ""
+        try:
+            unit = self.fields["unit"].queryset.filter(pk=value).first()
+        except (TypeError, ValueError):
+            return ""
+        return unit.name if unit else ""
 
     @property
     def responsible_section_open(self):

@@ -1,7 +1,6 @@
-"""UX-33 lodging visual convergence and login arrival journey regression tests."""
+"""UX-33 lodging visual convergence regression tests (login journey retired in theme A)."""
 from pathlib import Path
 
-import pytest
 
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -52,40 +51,16 @@ def test_booking_css_matches_bright_info_page_and_dark_reference_dialog():
     assert "grid-template-columns: minmax(0, .72fr) minmax(0, 1.28fr)" in css
 
 
-def test_login_uses_non_emoji_vector_soldier_suitcase_journey():
+# ผู้ใช้ตัดสินใจ 2 ต.ค. 2569: เลิกภาพทหาร/กระเป๋าเคลื่อนไหวบนหน้าเข้าสู่ระบบ ใช้แผ่นแบบฟอร์มกระดาษ (ธีม A)
+# ชุดทดสอบหน้าเข้าสู่ระบบแบบใหม่อยู่ที่ accounts/tests_login_ledger.py
+
+
+def test_login_has_no_arrival_illustration_or_journey_css():
     html = _text(LOGIN)
-    assert "{% block body_class %}sigroom-login-journey{% endblock %}" in html
-    assert 'class="arrival-soldier"' in html
-    assert 'class="arrival-suitcase"' in html
-    assert 'class="arrival-suitcase-lid"' in html
-    assert 'class="login-card"' in html
-    assert "sigroom-login-journey-seen-v1" in html
-    assert "prefers-reduced-motion: reduce" in html
-    assert "journey-skip" in html
-    assert "journey-play" in html
-    assert "🚀" not in html and "🧳" not in html and "🪖" not in html
-
-
-def test_login_animation_is_progressive_enhancement_and_reduced_motion_safe():
+    assert "arrival-" not in html
+    assert "sigroom-login-journey" not in html
+    assert "lodging_booking_ios27.css" not in html
     css = _text(CSS)
-    assert "@keyframes sigroom-soldier-arrive" in css
-    assert "@keyframes sigroom-suitcase-drop" in css
-    assert "@keyframes sigroom-suitcase-open" in css
-    assert "@keyframes sigroom-login-rise" in css
-    assert "body.sigroom-login-journey.journey-skip .login-card" in css
-    assert "@media (prefers-reduced-motion: reduce)" in css
-    reduced = css.split("@media (prefers-reduced-motion: reduce)", 1)[1]
-    assert "animation: none !important" in reduced
-    assert "body.sigroom-login-journey .login-card" in reduced
-
-
-@pytest.mark.django_db
-def test_login_page_renders_journey_and_existing_recovery_link(client):
-    response = client.get("/accounts/login/")
-    assert response.status_code == 200
-    html = response.content.decode("utf-8")
-    assert 'class="arrival-soldier"' in html
-    assert 'class="arrival-suitcase"' in html
-    assert 'id="id_username"' in html
-    assert 'id="id_password"' in html
-    assert 'href="/accounts/password-reset/"' in html
+    assert "sigroom-login-journey" not in css
+    assert "@keyframes sigroom-soldier-arrive" not in css
+    assert "@keyframes sigroom-login-rise" not in css

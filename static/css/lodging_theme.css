@@ -1,5 +1,5 @@
 /* Shared lodging palette — re-mapped to theme A Ledger (docs/theme-a-ledger.md). Loaded after legacy page styles; no global admin changes. */
-body:is(.lodging-about-ios27, .lodging-booking-ios27, .sigroom-login-journey) {
+body:is(.lodging-about-ios27, .lodging-booking-ios27) {
   --canvas: #F5F1E6; --surface: #FBF8F0; --surface-raised: #FBF8F0;
   --surface-soft: #EFE8D6; --ink: #1F2A24; --muted: #5E5D52; --dim: #5E5D52;
   --cyan: #1F4E79; --cyan-strong: #1F4E79; --line: #D8CFB8;
@@ -15,7 +15,7 @@ body.lodging-about-ios27 .lka-page-wrap {
   --lka-canvas: #F5F1E6; --lka-surface: #FBF8F0; --lka-mint: #1F2A24;
   --lka-sky: #1F2A24; --lka-border: #D8CFB8; background: #F5F1E6;
 }
-body:is(.lodging-about-ios27, .lodging-booking-ios27, .sigroom-login-journey) .site-header {
+body:is(.lodging-about-ios27, .lodging-booking-ios27) .site-header {
   background: #F5F1E6; backdrop-filter: none; box-shadow: none; border-bottom: 2px solid #1F2A24;
 }
 body.lodging-about-ios27 :is(.lka-hero, .lka-explorer-section, .lka-explorer-canvas) { background: #F5F1E6; }
@@ -86,11 +86,6 @@ body.lodging-booking-ios27 .keycard-face { background: #EFE8D6; color: #1F2A24; 
 body.lodging-booking-ios27 .keycard-face :is(p,span,strong,.keycard-brand) { color: #1F2A24; }
 body.lodging-booking-ios27 .keycard-face::before, body.lodging-booking-ios27 .keycard-face::after { display: none; }
 
-/* Only loaded for a lodging return URL; other service login journeys keep their styles. */
-body.sigroom-login-journey :is(.arrival-horizon,.arrival-caption) { display: none; }
-body.sigroom-login-journey .auth-stage::before { background: #F5F1E6; }
-body.sigroom-login-journey .login-card { animation: none; opacity: 1; transform: none; background: #FBF8F0; border: 1px solid #D8CFB8; box-shadow: 0 1px 2px rgb(31 42 36 / 0.08); }
-body.sigroom-login-journey .login-card button { background: #1F2A24; border-color: #1F2A24; box-shadow: none; }
 /* Staff scope is limited to the existing room board and assignment panel. */
 .lodging-workspace-main { --surface: #FBF8F0; --surface-soft: #EFE8D6; --ink: #1F2A24; --muted: #5E5D52; --line: #D8CFB8; --cyan: #1F2A24; --pico-color: #1F2A24; --pico-primary: #1F2A24; }
 .lodging-workspace-main :is(.lodging-room-board details,.lodging-assignment-panel) { color: #1F2A24; background: #FBF8F0; border-color: #D8CFB8; }
@@ -98,21 +93,21 @@ body.sigroom-login-journey .login-card button { background: #1F2A24; border-colo
 .lodging-workspace-main :is(input,select,textarea) { background-color: #FBF8F0; color: #1F2A24; border-color: #B9AD8F; }
 
 /* ธีม A Ledger: หัวเว็บหน้าที่พัก/เข้าสู่ระบบ ใช้แบบเดียวกับทั้งระบบ (กระดาษ + เส้นหมึก 2px) */
-body:is(.lodging-about-ios27, .lodging-booking-ios27, .sigroom-login-journey) .site-header {
+body:is(.lodging-about-ios27, .lodging-booking-ios27) .site-header {
   border-bottom: 2px solid #1F2A24; background: #F5F1E6; box-shadow: none; backdrop-filter: none; -webkit-backdrop-filter: none;
 }
-body:is(.lodging-about-ios27, .lodging-booking-ios27, .sigroom-login-journey) .brand {
+body:is(.lodging-about-ios27, .lodging-booking-ios27) .brand {
   color: #1F2A24; font-family: var(--font-serif); font-size: inherit; font-weight: 500; letter-spacing: 0;
 }
-body:is(.lodging-about-ios27, .lodging-booking-ios27, .sigroom-login-journey) .brand-sub { letter-spacing: 0; color: #5E5D52; }
-body:is(.lodging-about-ios27, .lodging-booking-ios27, .sigroom-login-journey) .main-nav a {
+body:is(.lodging-about-ios27, .lodging-booking-ios27) .brand-sub { letter-spacing: 0; color: #5E5D52; }
+body:is(.lodging-about-ios27, .lodging-booking-ios27) .main-nav a {
   min-height: max(44px, 2.75rem); border: none; border-radius: 0; background: transparent; box-shadow: none;
   color: #1F2A24; font-size: .95rem; font-weight: 500;
 }
-body:is(.lodging-about-ios27, .lodging-booking-ios27, .sigroom-login-journey) .main-nav a:hover { background: transparent; box-shadow: none; text-decoration: underline; }
-body:is(.lodging-about-ios27, .lodging-booking-ios27, .sigroom-login-journey) .main-nav a[aria-current="page"] { background: transparent; box-shadow: inset 0 -2px #1F2A24; }
-body:is(.lodging-about-ios27, .lodging-booking-ios27, .sigroom-login-journey) .login-btn-header {
+body:is(.lodging-about-ios27, .lodging-booking-ios27) .main-nav a:hover { background: transparent; box-shadow: none; text-decoration: underline; }
+body:is(.lodging-about-ios27, .lodging-booking-ios27) .main-nav a[aria-current="page"] { background: transparent; box-shadow: inset 0 -2px #1F2A24; }
+body:is(.lodging-about-ios27, .lodging-booking-ios27) .login-btn-header {
   border: 1px solid #1F2A24; border-radius: 2px; background: #1F2A24; color: #F5F1E6; box-shadow: none; font-weight: 500;
 }
-body:is(.lodging-about-ios27, .lodging-booking-ios27, .sigroom-login-journey) :is(.account-menu, .mobile-menu) > summary { border-radius: 2px; box-shadow: none; }
-body:is(.lodging-about-ios27, .lodging-booking-ios27, .sigroom-login-journey) .mobile-menu-panel { border-radius: 0; border: none; border-bottom: 2px solid #1F2A24; background: #FBF8F0; box-shadow: 0 2px 6px rgb(31 42 36 / .12); }
+body:is(.lodging-about-ios27, .lodging-booking-ios27) :is(.account-menu, .mobile-menu) > summary { border-radius: 2px; box-shadow: none; }
+body:is(.lodging-about-ios27, .lodging-booking-ios27) .mobile-menu-panel { border-radius: 0; border: none; border-bottom: 2px solid #1F2A24; background: #FBF8F0; box-shadow: 0 2px 6px rgb(31 42 36 / .12); }

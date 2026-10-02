@@ -25,6 +25,7 @@ urlpatterns = [
     path("series/<uuid:id>/cancel-remaining/", views.series_cancel_remaining, name="series_cancel_remaining"),
     path("bookings/mine/", views.my_bookings, name="my_bookings"),
     path("bookings/<uuid:id>/", views.booking_detail, name="booking_detail"),
+    path("bookings/<uuid:id>/calendar.ics", views.booking_ics, name="booking_ics"),
     path("bookings/<uuid:id>/edit/", views.booking_edit, name="booking_edit"),
     path("bookings/<uuid:id>/amend/", views.booking_amend, name="booking_amend"),
     path("bookings/<uuid:id>/preempt/", views.booking_preempt, name="booking_preempt"),

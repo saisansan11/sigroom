@@ -2,16 +2,28 @@
 {% load thaidate %}
 {% block title %}{{ booking.title }} · SIGROOM{% endblock %}
 {% block content %}
-{% include "bookings/partials/booking_stepper.html" with current_step=5 %}
-
 <div class="page-heading booking-flow-heading">
   <div>
-    <p class="eyebrow">ขั้นที่ 5 จาก 5 · รายละเอียดและการยืนยัน</p>
+    <p class="eyebrow">รายละเอียดการจอง · เลขที่ <span class="tabular">{{ booking_ref }}</span></p>
     <h1>{{ booking.title }}</h1>
     <p class="heading-desc">{{ booking.room.code }} · {{ booking.room.name }} ({{ booking.room.building }}{% if booking.room.floor %} ชั้น {{ booking.room.floor }}{% endif %})</p>
   </div>
-  <a class="secondary btn-my-bookings" role="button" href="{% url 'bookings:my_bookings' %}">การจองของฉัน ←</a>
+  <a class="secondary btn-my-bookings" role="button" href="{% url 'bookings:my_bookings' %}">การจองของฉัน</a>
 </div>
+
+{% if just_submitted %}
+<section class="booking-result" aria-labelledby="booking-result-title">
+  <div class="booking-result-stamp" aria-hidden="true">
+    {% if booking.request_status == 'approved' %}<span class="stamp result-stamp stamp-approved">อนุมัติ</span>{% else %}<span class="stamp result-stamp stamp-pending">รอพิจารณา</span>{% endif %}
+  </div>
+  <div class="booking-result-body">
+    <h2 id="booking-result-title">{% if booking.request_status == 'approved' %}อนุมัติแล้ว ห้องเป็นของท่านตามเวลานี้{% else %}ยื่นคำขอแล้ว รอผู้อนุมัติพิจารณา{% endif %}</h2>
+    <p class="booking-result-ref">เลขที่ <b class="tabular">{{ booking_ref }}</b> · {{ booking.room.code }} · {{ booking.start_at|thai_date }} {{ booking.start_at|time:"H:i" }}–{{ booking.end_at|time:"H:i" }} น.</p>
+    {% if booking.request_status != 'approved' %}<p class="booking-result-note">ระบบจะแจ้งเตือนที่กระดิ่งเมื่อมีผลการพิจารณา ระหว่างนี้ช่วงเวลานี้ถูกกันไว้ให้ท่านแล้ว</p>{% endif %}
+    <p class="booking-result-actions"><a href="{% url 'bookings:booking_ics' booking.id %}" download>เพิ่มลงปฏิทิน</a> · <a href="{% url 'bookings:book_search' %}">จองห้องอื่นต่อ</a></p>
+  </div>
+</section>
+{% endif %}
 
 <!-- Above-the-fold Status Hero Card -->
 <section class="booking-status-hero status-card-{{ booking.request_status }}" aria-label="สถานะการจอง">
@@ -88,7 +100,7 @@
       {% endif %}
 
       {% if booking.request_status == 'approved' %}
-        <a role="button" class="secondary" href="{% url 'bookings:book_form' booking.room.code %}?rebook={{ booking.id }}">จองแบบเดิมอีกครั้ง ↻</a>
+        <a role="button" class="secondary" href="{% url 'bookings:book_form' booking.room.code %}?rebook={{ booking.id }}">จองแบบเดิมอีกครั้ง</a>
       {% endif %}
     </div>
   {% endif %}
@@ -150,6 +162,9 @@
     <div><dt>การมองเห็น</dt><dd>{{ booking.get_visibility_display }}</dd></div>
     <div><dt>รหัสการจอง</dt><dd><code class="mono">{{ booking.id|stringformat:"s"|slice:":8" }}</code> · รุ่น {{ booking.revision }}</dd></div>
     <div><dt>ส่งเมื่อ</dt><dd>{{ booking.submitted_at|thai_datetime }}</dd></div>
+    {% if can_add_to_calendar %}
+      <div><dt>ปฏิทินมือถือ</dt><dd><a href="{% url 'bookings:booking_ics' booking.id %}" download>เพิ่มลงปฏิทิน (.ics)</a></dd></div>
+    {% endif %}
     {% if show_online_link %}
       <div class="wide"><dt>ลิงก์ห้องเรียนออนไลน์</dt><dd><a href="{{ booking.online_meeting_url }}" rel="noopener noreferrer" target="_blank">{{ booking.online_meeting_url }}</a><br><small class="muted-text">เห็นเฉพาะผู้จอง เจ้าหน้าที่ห้อง และผู้อนุมัติ</small></dd></div>
     {% endif %}

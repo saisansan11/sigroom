@@ -1,12 +1,13 @@
 {% extends "base.html" %}
+{% block body_class %}auth-page{% endblock %}
 {% block title %}ออกจากระบบแล้ว · SIGROOM{% endblock %}
 {% block content %}
-<div class="auth-stage">
-  <section class="login-card">
-    <p class="eyebrow">สิ้นสุดการใช้งาน</p>
-    <h1>ออกจากระบบแล้ว</h1>
-    <p>เซสชันของคุณสิ้นสุดเรียบร้อย คุณสามารถปิดหน้าต่างนี้หรือเข้าสู่ระบบอีกครั้ง</p>
-    <a role="button" href="{% url 'login' %}">เข้าสู่ระบบอีกครั้ง</a>
+<div class="auth-sheet-wrap">
+  <section class="auth-sheet" aria-labelledby="logged-out-heading">
+    <p class="auth-sheet-kicker">สิ้นสุดการใช้งาน</p>
+    <h1 id="logged-out-heading">ออกจากระบบแล้ว</h1>
+    <p>เซสชันของท่านสิ้นสุดเรียบร้อย ปิดหน้าต่างนี้ได้ หรือเข้าสู่ระบบอีกครั้ง</p>
+    <a role="button" class="btn-primary auth-submit" href="{% url 'login' %}">เข้าสู่ระบบอีกครั้ง</a>
   </section>
 </div>
 {% endblock %}

@@ -119,13 +119,14 @@ def test_booking_v2_uses_progressive_disclosure_for_custom_time(client, ux32_set
     assert response.status_code == 200
     html = response.content.decode()
     assert "booking-path-switcher" in html
-    assert "booking-category-choice" in html
-    assert "booking-date-shortcuts" in html
-    assert 'class="booking-custom-time"' in html
-    assert "กำหนดเวลาเอง" in html
-    assert "time-preset-button" in html
+    # ชิปวัน/ช่วงเวลา/ประเภทห้องเป็น radio จริง และ "กำหนดเอง" เปิดช่องเวลาเริ่ม/สิ้นสุด
+    assert 'name="day" value="other"' in html
+    assert 'name="period" value="custom"' in html
+    assert 'name="category"' in html
+    assert "chip-reveal-time" in html
+    assert "กำหนดเอง" in html
     search_template = (Path(settings.BASE_DIR) / "templates" / "bookings" / "book_search.html").read_text(encoding="utf-8")
-    assert "ตัวเลือกเพิ่มเติม · อุปกรณ์ส่วนกลาง" in search_template
+    assert "อุปกรณ์ส่วนกลางที่ต้องใช้" in search_template
     assert "{% if equipment %}" in search_template
 
 

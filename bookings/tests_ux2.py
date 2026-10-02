@@ -63,7 +63,8 @@ def _booking_query(days=2):
 
 
 def _responsible_tag(html):
-    marker = 'class="booking-responsible-details"'
+    # ธีม A ขั้น ๓: บล็อกผู้รับผิดชอบ — data-open = ต้องแสดงช่องทันที (ข้อมูลไม่ครบ/ผิด)
+    marker = "data-responsible-block"
     assert marker in html
     return html.split(marker, 1)[1].split(">", 1)[0]
 
@@ -74,11 +75,11 @@ def test_complete_profile_collapses_responsible_section_but_keeps_fields(client,
     assert response.status_code == 200
     html = response.content.decode()
 
-    assert "booking-form-express" in html
+    assert "booking-sheet" in html
     assert "booking-selection-summary" in html
-    assert "booking-express-layout" in html
-    assert "booking-review-compact" in html
-    assert "open" not in _responsible_tag(html)
+    assert "data-open" not in _responsible_tag(html)
+    # ไม่มี JS ก็ยังเห็นช่องครบ (บรรทัดสรุปซ่อนไว้จน JS เปิด)
+    assert '<p class="responsible-line" hidden>' in html
     assert 'name="unit"' in html
     assert 'name="responsible_name"' in html
     assert 'name="responsible_phone"' in html
@@ -92,8 +93,7 @@ def test_incomplete_profile_opens_responsible_section(client, ux2_setup):
     assert response.status_code == 200
     html = response.content.decode()
 
-    assert "open" in _responsible_tag(html)
-    assert "ยังไม่มีเบอร์โทร" in html
+    assert "data-open" in _responsible_tag(html)
 
 
 def test_bound_responsible_error_forces_section_open(client, ux2_setup):
@@ -123,7 +123,7 @@ def test_bound_responsible_error_forces_section_open(client, ux2_setup):
     assert response.status_code == 200
     html = response.content.decode()
 
-    assert "open" in _responsible_tag(html)
+    assert "data-open" in _responsible_tag(html)
     assert 'data-field-id="id_responsible_phone"' in html
     assert 'name="responsible_phone"' in html
 
@@ -134,11 +134,12 @@ def test_express_form_keeps_primary_draft_and_series_actions(client, ux2_setup):
     assert response.status_code == 200
     html = response.content.decode()
 
-    assert "ขั้นที่ 3 จาก 5 · กรอกรายละเอียด" in html
+    assert "ใบขอใช้ห้อง UX2-101" in html
     assert "บันทึกร่าง" in html
-    assert "ยืนยันและส่งคำขอ" in html
+    assert "ยื่นขอใช้ห้อง" in html
     assert "ตรวจสอบชุดการจอง" in html
-    assert "เปลี่ยนเวลา/ห้อง ←" in html
+    assert "เปลี่ยนเวลาหรือห้อง" in html
+    assert "←" not in html
 
 
 def test_change_room_link_preserves_search_query(client, ux2_setup):
@@ -149,27 +150,27 @@ def test_change_room_link_preserves_search_query(client, ux2_setup):
     html = response.content.decode()
 
     assert 'class="summary-change-link"' in html
-    assert "search=1" in html
+    assert f"date={query['date']}" in html
     assert "start=09%3A00" in html or "start=09:00" in html
     assert "attendees=12" in html
 
 
-def test_ux2_css_contracts():
+def test_booking_sheet_css_contracts():
     from django.conf import settings
     from pathlib import Path
 
     css = (Path(settings.BASE_DIR) / "static" / "css" / "app.css").read_text(encoding="utf-8")
-    assert "/* ===== UX-2 Express Booking ===== */" in css
-    assert ".booking-express-layout" in css
-    assert ".booking-express-review-column" in css
-    assert ".booking-responsible-summary" in css
+    assert ".booking-sheet" in css
+    assert ".responsible-line" in css
+    assert ".chip input:checked + span" in css
     assert "max(44px, 2.75rem)" in css
 
-def test_responsible_disclosure_has_enter_keyboard_bridge():
+
+def test_responsible_block_collapses_only_with_js():
     from django.conf import settings
     from pathlib import Path
 
     template = (Path(settings.BASE_DIR) / "templates" / "bookings" / "book_form.html").read_text(encoding="utf-8")
-    assert "responsibleSummary.addEventListener('keydown'" in template
-    assert "event.key === 'Enter'" in template
-    assert "responsibleSummary.click()" in template
+    assert "block.hasAttribute('data-open')" in template
+    assert "fields.hidden = true" in template
+    assert "edit.addEventListener('click'" in template

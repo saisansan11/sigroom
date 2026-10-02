@@ -1,10 +1,9 @@
-/* Lodging booking + login visual convergence — 2026-09-28
+/* Lodging booking visual convergence — 2026-09-28
    Bright iOS-style hospitality shell aligned with /lodging/about/.
    Booking dialog remains a dark focus layer inspired by the supplied reference.
 */
 
-body.lodging-booking-ios27,
-body.sigroom-login-journey {
+body.lodging-booking-ios27 {
   color-scheme: light;
   --font-sans: "Sarabun", Tahoma, sans-serif;
   --cyan: #1F2A24;
@@ -48,8 +47,7 @@ body.sigroom-login-journey {
   -webkit-font-smoothing: antialiased;
 }
 
-body.lodging-booking-ios27 .site-header,
-body.sigroom-login-journey .site-header {
+body.lodging-booking-ios27 .site-header {
   border-bottom: 1px solid rgb(31 42 36 / 0.09);
   background: rgb(251 248 240 / 0.82);
   box-shadow: 0 1px 2px rgb(31 42 36 / 0.08);
@@ -57,24 +55,18 @@ body.sigroom-login-journey .site-header {
   -webkit-backdrop-filter: none;
 }
 
-body.lodging-booking-ios27 .header-shell,
-body.sigroom-login-journey .header-shell { min-height: 4.5rem; }
-body.lodging-booking-ios27 .brand,
-body.sigroom-login-journey .brand {
+body.lodging-booking-ios27 .header-shell { min-height: 4.5rem; }
+body.lodging-booking-ios27 .brand {
   color: #1F2A24;
   font-family: var(--font-serif);
   font-size: 1rem;
   font-weight: 800;
   letter-spacing: .13em;
 }
-body.lodging-booking-ios27 .brand-accent,
-body.sigroom-login-journey .brand-accent { color: #1F2A24; }
-body.lodging-booking-ios27 .brand .brand-mark g,
-body.sigroom-login-journey .brand .brand-mark g { stroke: #1F2A24; }
+body.lodging-booking-ios27 .brand-accent { color: #1F2A24; }
+body.lodging-booking-ios27 .brand .brand-mark g { stroke: #1F2A24; }
 body.lodging-booking-ios27 .main-nav a,
-body.lodging-booking-ios27 .mobile-menu > summary,
-body.sigroom-login-journey .main-nav a,
-body.sigroom-login-journey .mobile-menu > summary {
+body.lodging-booking-ios27 .mobile-menu > summary {
   min-height: 3rem;
   border-radius: 2px;
   color: #5E5D52;
@@ -82,16 +74,13 @@ body.sigroom-login-journey .mobile-menu > summary {
   font-weight: 700;
 }
 body.lodging-booking-ios27 .main-nav a:hover,
-body.lodging-booking-ios27 .main-nav a[aria-current="page"],
-body.sigroom-login-journey .main-nav a:hover,
-body.sigroom-login-journey .main-nav a[aria-current="page"] {
+body.lodging-booking-ios27 .main-nav a[aria-current="page"] {
   background: rgb(251 248 240 / 0.84);
   color: #1F2A24;
   box-shadow: inset 0 0 0 1px rgb(31 42 36 / 0.1);
 }
 body.lodging-booking-ios27 .main-nav a[aria-current="page"] { box-shadow: inset 0 -2px #1F2A24, inset 0 0 0 1px rgb(31 42 36 / 0.1); }
-body.lodging-booking-ios27 .login-btn-header,
-body.sigroom-login-journey .login-btn-header {
+body.lodging-booking-ios27 .login-btn-header {
   min-height: 3rem;
   display: inline-flex;
   align-items: center;
@@ -105,8 +94,7 @@ body.sigroom-login-journey .login-btn-header {
   box-shadow: 0 7px 18px rgb(31 42 36 / 0.19), inset 0 1px rgb(251 248 240 / 0.5);
   font-weight: 800;
 }
-body.lodging-booking-ios27 .mobile-menu-panel,
-body.sigroom-login-journey .mobile-menu-panel {
+body.lodging-booking-ios27 .mobile-menu-panel {
   border-color: rgb(31 42 36 / 0.1);
   background: rgb(251 248 240 / 0.96);
   color: #1F2A24;
@@ -385,155 +373,6 @@ body.lodging-booking-ios27 #roomGalleryDialog header { background: #FBF8F0; bord
 body.lodging-booking-ios27 .room-gallery-viewport { background: #F5F1E6; }
 body.lodging-booking-ios27 .room-gallery-counter { color: #5E5D52; }
 
-/* ---------- Login arrival journey ---------- */
-body.sigroom-login-journey main.container.page-shell {
-  width: 100%;
-  max-width: none;
-  min-height: calc(100dvh - 4.5rem);
-  margin: 0;
-  padding: 0;
-}
-body.sigroom-login-journey .auth-stage {
-  position: relative;
-  min-height: calc(100dvh - 4.5rem);
-  display: grid;
-  place-items: center;
-  overflow: hidden;
-  padding: clamp(1rem, 4vw, 2.5rem);
-  isolation: isolate;
-}
-body.sigroom-login-journey .auth-stage::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  z-index: -3;
-  background:
-    linear-gradient(180deg, #FBF8F0, #F5F1E6);
-}
-body.sigroom-login-journey .arrival-horizon {
-  position: absolute;
-  left: 50%;
-  bottom: clamp(1.5rem, 6vh, 4.5rem);
-  width: min(72rem, 94vw);
-  height: 18rem;
-  translate: -50% 0;
-  z-index: -1;
-  pointer-events: none;
-}
-body.sigroom-login-journey .arrival-horizon::after {
-  content: "";
-  position: absolute;
-  left: 8%;
-  right: 8%;
-  bottom: 1.2rem;
-  height: 1px;
-  background: linear-gradient(90deg, transparent, rgb(31 42 36 / 0.12) 15%, rgb(31 42 36 / 0.12) 85%, transparent);
-}
-body.sigroom-login-journey .arrival-illustration {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  overflow: visible;
-}
-body.sigroom-login-journey .arrival-soldier,
-body.sigroom-login-journey .arrival-suitcase { transform-box: fill-box; transform-origin: center bottom; }
-body.sigroom-login-journey .arrival-soldier { transform: translateX(-430px); opacity: 0; }
-body.sigroom-login-journey .arrival-suitcase { transform: translateX(-390px) translateY(-8px); opacity: 0; }
-body.sigroom-login-journey .arrival-suitcase-lid { transform-box: fill-box; transform-origin: 50% 100%; }
-body.sigroom-login-journey .arrival-shadow { opacity: 0; transform-origin: center; }
-body.sigroom-login-journey:not(.journey-skip) .arrival-soldier { animation: sigroom-soldier-arrive 1.45s cubic-bezier(.22,.75,.18,1) .08s both; }
-body.sigroom-login-journey:not(.journey-skip) .arrival-suitcase { animation: sigroom-suitcase-arrive 1.32s cubic-bezier(.22,.78,.19,1) .18s both, sigroom-suitcase-drop .32s cubic-bezier(.2,.9,.2,1) 1.52s both; }
-body.sigroom-login-journey:not(.journey-skip) .arrival-suitcase-lid { animation: sigroom-suitcase-open .5s cubic-bezier(.2,.85,.2,1) 1.76s both; }
-body.sigroom-login-journey:not(.journey-skip) .arrival-shadow { animation: sigroom-shadow-in .45s ease 1.42s both; }
-body.sigroom-login-journey .login-card {
-  width: min(100%, 32rem);
-  margin: 0;
-  z-index: 2;
-  border: 1px solid rgb(31 42 36 / 0.09);
-  border-radius: 2px;
-  background: rgb(251 248 240 / 0.89);
-  color: #1F2A24;
-  box-shadow: 0 28px 70px -30px rgb(31 42 36 / 0.35), inset 0 1px rgb(251 248 240 / 0.94);
-  backdrop-filter: none;
-  -webkit-backdrop-filter: none;
-  transform-origin: 50% 100%;
-}
-body.sigroom-login-journey:not(.journey-skip) .login-card {
-  animation: sigroom-login-rise .78s cubic-bezier(.2,.82,.18,1) 1.92s both;
-}
-body.sigroom-login-journey.journey-skip .arrival-soldier,
-body.sigroom-login-journey.journey-skip .arrival-suitcase,
-body.sigroom-login-journey.journey-skip .arrival-shadow { opacity: .16; transform: none; }
-body.sigroom-login-journey.journey-skip .arrival-suitcase-lid { transform: rotate(-42deg) translateY(-2px); }
-body.sigroom-login-journey.journey-skip .login-card { opacity: 1; transform: none; }
-body.sigroom-login-journey .login-card header { margin-bottom: 1.35rem; }
-body.sigroom-login-journey .login-card .eyebrow { color: #1F2A24; }
-body.sigroom-login-journey .login-card h1 { color: #1F2A24; font-family: var(--font-serif); letter-spacing: .12em; }
-body.sigroom-login-journey .login-card > header > p:not(.eyebrow) { color: #5E5D52; }
-body.sigroom-login-journey .login-card .sysline { color: #5E5D52; }
-body.sigroom-login-journey .login-card .sysline::after { background: linear-gradient(90deg, rgb(31 42 36 / 0.18), transparent); }
-body.sigroom-login-journey .login-card label { color: #1F2A24; }
-body.sigroom-login-journey .login-card input {
-  border-radius: 2px;
-  border-color: rgb(31 42 36 / 0.13);
-  background: rgb(251 248 240 / 0.94);
-  color: #1F2A24;
-}
-body.sigroom-login-journey .login-card button[type="submit"] {
-  min-height: 3rem;
-  border-color: rgb(31 42 36 / 0.16);
-  border-radius: 2px;
-  background: linear-gradient(180deg, #1F2A24, #1F2A24);
-  color: #FBF8F0;
-  box-shadow: 0 10px 22px rgb(31 42 36 / 0.18), inset 0 1px rgb(251 248 240 / 0.46);
-}
-body.sigroom-login-journey .login-card a { color: #1F2A24; font-weight: 700; }
-body.sigroom-login-journey .login-card .muted-text { color: #5E5D52; }
-body.sigroom-login-journey .login-card .notice.error { border-color: rgb(163 36 28 / 0.22); background: #FBF8F0; color: #A3241C; }
-body.sigroom-login-journey .arrival-caption {
-  position: absolute;
-  left: 50%;
-  bottom: clamp(.35rem, 2vh, 1.1rem);
-  translate: -50% 0;
-  z-index: 1;
-  margin: 0;
-  color: #5E5D52;
-  font-size: .76rem;
-  font-weight: 650;
-  letter-spacing: .025em;
-  text-align: center;
-  pointer-events: none;
-}
-
-@keyframes sigroom-soldier-arrive {
-  0% { opacity: 0; transform: translateX(-430px); }
-  12% { opacity: 1; }
-  78% { opacity: 1; transform: translateX(-5px); }
-  100% { opacity: .18; transform: translateX(70px); }
-}
-@keyframes sigroom-suitcase-arrive {
-  0% { opacity: 0; transform: translateX(-390px) translateY(-8px) rotate(-2deg); }
-  10% { opacity: 1; }
-  100% { opacity: 1; transform: translateX(0) translateY(-8px) rotate(0); }
-}
-@keyframes sigroom-suitcase-drop {
-  0% { transform: translateX(0) translateY(-8px); }
-  58% { transform: translateX(0) translateY(9px); }
-  76% { transform: translateX(0) translateY(2px); }
-  100% { transform: translateX(0) translateY(6px); }
-}
-@keyframes sigroom-suitcase-open {
-  0%, 28% { transform: rotate(0deg); }
-  100% { transform: rotate(-48deg) translateY(-2px); }
-}
-@keyframes sigroom-shadow-in { from { opacity: 0; transform: scaleX(.45); } to { opacity: .2; transform: scaleX(1); } }
-@keyframes sigroom-login-rise {
-  0% { opacity: 0; transform: translateY(108px) scale(.84); filter: blur(7px); }
-  56% { opacity: 1; transform: translateY(-8px) scale(1.012); filter: blur(0); }
-  100% { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
-}
-
 @media (max-width: 47.99rem) {
   body.lodging-booking-ios27 main.container.page-shell { width: min(100% - 1rem, 82rem); padding-top: 1rem; }
   body.lodging-booking-ios27 .lodging-portal-hero { border-radius: 2px; }
@@ -546,46 +385,32 @@ body.sigroom-login-journey .arrival-caption {
   }
   body.lodging-booking-ios27 #bookingModal .modal-form-actions { display: grid; grid-template-columns: minmax(0, .72fr) minmax(0, 1.28fr); gap: .65rem; }
   body.lodging-booking-ios27 #bookingModal .modal-form-actions > button { width: 100%; min-width: 0; }
-  body.sigroom-login-journey .auth-stage { padding: .75rem; align-items: center; }
-  body.sigroom-login-journey .login-card { width: min(100%, 31rem); padding: 1.15rem; border-radius: 2px; }
-  body.sigroom-login-journey .arrival-horizon { bottom: 1rem; width: 125vw; height: 13.5rem; opacity: .8; }
-  body.sigroom-login-journey .arrival-caption { display: none; }
 }
 
 @media (prefers-reduced-motion: reduce) {
   body.lodging-booking-ios27 .room-lodging-card,
-  body.lodging-booking-ios27 .bed-select-btn,
-  body.sigroom-login-journey .arrival-soldier,
-  body.sigroom-login-journey .arrival-suitcase,
-  body.sigroom-login-journey .arrival-suitcase-lid,
-  body.sigroom-login-journey .arrival-shadow,
-  body.sigroom-login-journey .login-card {
+  body.lodging-booking-ios27 .bed-select-btn {
     animation: none !important;
     transition: none !important;
   }
-  body.sigroom-login-journey .arrival-soldier,
-  body.sigroom-login-journey .arrival-suitcase,
-  body.sigroom-login-journey .arrival-shadow { opacity: .12; transform: none; }
-  body.sigroom-login-journey .arrival-suitcase-lid { transform: rotate(-42deg) translateY(-2px); }
-  body.sigroom-login-journey .login-card { opacity: 1; transform: none; filter: none; }
 }
 
 /* ธีม A Ledger: หัวเว็บหน้าที่พัก/เข้าสู่ระบบ ใช้แบบเดียวกับทั้งระบบ (กระดาษ + เส้นหมึก 2px) */
-body:is(.lodging-about-ios27, .lodging-booking-ios27, .sigroom-login-journey) .site-header {
+body:is(.lodging-about-ios27, .lodging-booking-ios27) .site-header {
   border-bottom: 2px solid #1F2A24; background: #F5F1E6; box-shadow: none; backdrop-filter: none; -webkit-backdrop-filter: none;
 }
-body:is(.lodging-about-ios27, .lodging-booking-ios27, .sigroom-login-journey) .brand {
+body:is(.lodging-about-ios27, .lodging-booking-ios27) .brand {
   color: #1F2A24; font-family: var(--font-serif); font-size: inherit; font-weight: 500; letter-spacing: 0;
 }
-body:is(.lodging-about-ios27, .lodging-booking-ios27, .sigroom-login-journey) .brand-sub { letter-spacing: 0; color: #5E5D52; }
-body:is(.lodging-about-ios27, .lodging-booking-ios27, .sigroom-login-journey) .main-nav a {
+body:is(.lodging-about-ios27, .lodging-booking-ios27) .brand-sub { letter-spacing: 0; color: #5E5D52; }
+body:is(.lodging-about-ios27, .lodging-booking-ios27) .main-nav a {
   min-height: max(44px, 2.75rem); border: none; border-radius: 0; background: transparent; box-shadow: none;
   color: #1F2A24; font-size: .95rem; font-weight: 500;
 }
-body:is(.lodging-about-ios27, .lodging-booking-ios27, .sigroom-login-journey) .main-nav a:hover { background: transparent; box-shadow: none; text-decoration: underline; }
-body:is(.lodging-about-ios27, .lodging-booking-ios27, .sigroom-login-journey) .main-nav a[aria-current="page"] { background: transparent; box-shadow: inset 0 -2px #1F2A24; }
-body:is(.lodging-about-ios27, .lodging-booking-ios27, .sigroom-login-journey) .login-btn-header {
+body:is(.lodging-about-ios27, .lodging-booking-ios27) .main-nav a:hover { background: transparent; box-shadow: none; text-decoration: underline; }
+body:is(.lodging-about-ios27, .lodging-booking-ios27) .main-nav a[aria-current="page"] { background: transparent; box-shadow: inset 0 -2px #1F2A24; }
+body:is(.lodging-about-ios27, .lodging-booking-ios27) .login-btn-header {
   border: 1px solid #1F2A24; border-radius: 2px; background: #1F2A24; color: #F5F1E6; box-shadow: none; font-weight: 500;
 }
-body:is(.lodging-about-ios27, .lodging-booking-ios27, .sigroom-login-journey) :is(.account-menu, .mobile-menu) > summary { border-radius: 2px; box-shadow: none; }
-body:is(.lodging-about-ios27, .lodging-booking-ios27, .sigroom-login-journey) .mobile-menu-panel { border-radius: 0; border: none; border-bottom: 2px solid #1F2A24; background: #FBF8F0; box-shadow: 0 2px 6px rgb(31 42 36 / .12); }
+body:is(.lodging-about-ios27, .lodging-booking-ios27) :is(.account-menu, .mobile-menu) > summary { border-radius: 2px; box-shadow: none; }
+body:is(.lodging-about-ios27, .lodging-booking-ios27) .mobile-menu-panel { border-radius: 0; border: none; border-bottom: 2px solid #1F2A24; background: #FBF8F0; box-shadow: 0 2px 6px rgb(31 42 36 / .12); }

@@ -72,7 +72,7 @@ def test_room_list_heading_reports_available_count(trial_data):
         "bookings/partials/room_list.html",
         {"searched": True, "error": "", "available": [result], "unavailable": [], "query_string": ""},
     )
-    assert "พบ 1 ห้องว่าง" in html
+    assert "ห้องที่ว่าง 1 ห้อง" in html
 
 
 def test_booking_form_prefills_responsible_fields_from_user(trial_data):
