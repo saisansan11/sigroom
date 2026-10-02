@@ -34,9 +34,10 @@ def test_explorer_uses_architectural_view_controls():
 
 def test_explorer_hint_describes_plan_selection_and_optional_perspective():
     html = _read(TEMPLATE)
-    # UX-27 intentionally starts overhead; touch scrolling must not rotate it.
+    # R3-G keeps the explorer secondary and describes the controls in plain Thai.
     assert "แตะห้องเพื่อดูข้อมูลและเริ่มจอง" in html
-    assert "มือถือเลื่อนผังซ้าย–ขวาได้" in html
+    assert "มือถือเลือกหมายเลขด้านล่างหรือใช้ปุ่มหมุนซ้าย/ขวา" in html
+    assert "ลากเพื่อหมุนผังบนเดสก์ท็อป" in html
     assert 'id="lka-perspective" aria-pressed="false"' in html
 
 

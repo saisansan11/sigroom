@@ -84,9 +84,9 @@
   }
 
   function initExplorerShell() {
-    if (shell && window.matchMedia && window.matchMedia('(min-width: 56rem)').matches) {
-      shell.open = true;
-    }
+    // R3-G: the floor plan is secondary information, so it starts collapsed
+    // on every viewport and opens only after an explicit user action.
+    if (shell) shell.open = false;
   }
 
   function svgEl(tag, attrs = {}) {

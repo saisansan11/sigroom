@@ -45,26 +45,34 @@ def test_public_page_is_service_gateway_with_three_clear_entries(client):
     assert response.status_code == 200
     html = response.content.decode("utf-8")
 
-    assert "บริการจองพื้นที่ของ SIGROOM" in html
-    assert "จองห้องพัก" in html
-    assert "จองห้องสอน" in html
-    assert "ห้องเรียน / ประชุม" in html
+    assert "ศูนย์จองห้องและที่พัก รร.ส.สส." in html
+    assert "ห้องพักหลักสูตร" in html
+    assert "ห้องพักคนทั่วไป" in html
+    assert "ห้องสอนออนไลน์" in html
+    assert "ห้องเรียน / ห้องประชุม" in html
     assert "กำลังพัฒนาระบบ" in html
+    assert reverse("bookings:lodging_index") in html
+    assert reverse("bookings:lodging_general_request") in html
+    assert reverse("bookings:online_teaching_home") in html
     assert "งานห้องพัก" in html
     assert "บก.กศ.รร.ส.สส." in html
     assert "แผนกสนับสนุนการศึกษา" in html
 
-
 def test_gateway_keeps_statistics_informational_and_3d_action_real(client):
     html = client.get(reverse("bookings:lodging_about")).content.decode("utf-8")
-    assert 'class="lka-hero-chips lka-info-chips"' in html
-    assert '>87<' in html
-    assert '>234<' in html
-    assert 'id="lka-hub-action-3d"' in html
-    assert 'id="lka-explorer"' in html
-    assert 'href="#lka-explorer"' in html
-    assert 'id="lka-explorer-shell"' in html
+    source = TEMPLATE.read_text(encoding="utf-8")
+    js = JS.read_text(encoding="utf-8")
 
+    assert 'lka-info-chips' not in html
+    assert 'class="lka-explorer-shell-trigger"' in html
+    assert 'id="lka-explorer"' in html
+    assert 'id="lka-explorer-shell"' in html
+    assert 'id="lka-hub-action-fallback"' in html
+    assert 'href="#lka-explorer-fallback"' in html
+    assert 'if (shell) shell.open = false;' in js
+    assert "Service Gateway" not in html
+    for symbol in ("↓", "↶", "↷", "⌂", "▾"):
+        assert symbol not in source
 
 def test_online_teaching_section_exposes_exact_three_signal_school_rooms(client):
     html = client.get(reverse("bookings:lodging_about")).content.decode("utf-8")

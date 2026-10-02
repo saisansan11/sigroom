@@ -126,7 +126,7 @@ def test_ux22_no_upscaling_enforced(client):
 def test_ux22_hero_fallback_attributes_retained(client):
     html = _about_html(client)
     match = re.search(
-        r'<div class="lka-hero-photo-frame">\s*<picture\b[^>]*>(.*?)</picture>',
+        r'<picture class="lka-r3g-hero-photo"[^>]*>(.*?)</picture>',
         html,
         re.DOTALL,
     )

@@ -462,11 +462,10 @@ def test_template_has_drag_hint():
 
 
 def test_template_has_keyboard_hint_text():
-    """Template must mention arrow-key and +/- keyboard controls."""
+    """Template must mention keyboard rotation controls without decorative glyphs."""
     tmpl = _template()
-    assert "←" in tmpl or "arrow" in tmpl.lower() or "↑" in tmpl or "← →" in tmpl, (
-        "Template must mention keyboard rotation hint (arrows)"
-    )
+    assert "แป้นลูกศรซ้าย/ขวา" in tmpl, "Template must mention keyboard rotation controls"
+    assert "หมุนซ้าย" in tmpl and "หมุนขวา" in tmpl
 
 
 def test_template_has_2d_text_fallback():

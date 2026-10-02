@@ -49,11 +49,10 @@ def test_ux21a_hero_real_photo_card(client):
     response = client.get(reverse("bookings:lodging_about"))
     html = response.content.decode("utf-8")
 
-    assert "lka-hero-photo-card" in html, "Missing real photo card in hero"
-    assert "room4p_3421.jpg" in html, "Missing room4p_3421.jpg in hero photo frame"
-    assert "lka-hero-main-img" in html, "Missing main hero image class"
-    assert "ภาพถ่ายสถานที่จริง" in html, "Missing real photo badge"
-    assert "lka-hero-chips" in html, "Missing floating chips in hero"
+    assert "lka-r3g-hero-photo" in html, "Missing R3-G real hero photo"
+    assert "room4p_3421.jpg" in html, "Missing room4p_3421.jpg in hero photo"
+    assert "lka-hero-main-img" in html, "Missing main hero image LCP marker"
+    assert "lka-info-chips" not in html, "R3-G must not restore duplicate hero statistics"
 
 
 def test_ux21a_no_pseudo_3d_hero_mockup(client):
@@ -72,9 +71,10 @@ def test_ux21a_3d_launcher_and_shell(client):
     response = client.get(reverse("bookings:lodging_about"))
     html = response.content.decode("utf-8")
 
-    assert 'id="lka-preview-hub"' in html, "Missing 3D preview hub"
-    assert 'id="lka-hub-action-3d"' in html, "Missing 3D hub launcher action"
+    assert 'id="lka-preview-hub"' in html, "Missing service gateway hub"
+    assert 'class="lka-explorer-shell-trigger"' in html, "Missing native 3D disclosure trigger"
     assert 'id="lka-explorer-shell"' in html, "Missing expandable explorer shell"
+    assert '<details class="lka-explorer-shell" id="lka-explorer-shell" open' not in html, "Explorer must start collapsed"
     assert "lka-explorer-shell" in html, "Missing explorer shell class"
     assert "ไม่ใช่แบบวัดขนาดจริง" in html, "Missing non-exact-model explorer disclaimer"
 
@@ -126,7 +126,7 @@ def test_ux21a_interactive_explorer_hooks_preserved(client):
 def test_ios27_lodging_theme_is_scoped_to_about_page(client):
     html = client.get(reverse("bookings:lodging_about")).content.decode("utf-8")
     assert '<html lang="th" data-theme="light">' in html
-    assert '<body class="lodging-about-ios27">' in html
+    assert '<body class="lodging-about-ledger-r3g">' in html
     assert '<meta name="theme-color" content="#F5F1E6">' in html
 
 
