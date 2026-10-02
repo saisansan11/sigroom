@@ -55,19 +55,15 @@ body.lodging-about-ledger-r3g main.page-shell {
   letter-spacing: .02em;
 }
 
-.lodging-about-ledger-r3g .lka-g2-logo-plate {
-  display: inline-block;
-  margin-top: .5rem;
-  padding: .7rem 1rem .6rem;
-  background: var(--g2-paper-ink);
-  border: 1px solid #D8CFB8;
-  border-radius: 2px;
+.lodging-about-ledger-r3g .lka-g2-logo-white {
+  display: block;
+  margin-top: .6rem;
   line-height: 0;
 }
 
-.lodging-about-ledger-r3g .lka-g2-logo-plate img {
+.lodging-about-ledger-r3g .lka-g2-logo-white img {
   display: block;
-  width: min(15rem, 62vw);
+  width: min(20rem, 70vw);
   height: auto;
 }
 
@@ -333,8 +329,7 @@ body.lodging-about-ledger-r3g main.page-shell {
   }
   .lodging-about-ledger-r3g .lka-g2-kicker { font-size: .8rem; margin-bottom: .35rem; }
   .lodging-about-ledger-r3g .lka-page-wrap .lka-g2-title { font-size: 2.35rem; }
-  .lodging-about-ledger-r3g .lka-g2-logo-plate { padding: .45rem .7rem .4rem; }
-  .lodging-about-ledger-r3g .lka-g2-logo-plate img { width: 9.5rem; }
+  .lodging-about-ledger-r3g .lka-g2-logo-white img { width: 15rem; }
   .lodging-about-ledger-r3g .lka-g2-lede { margin-top: .35rem; font-size: 1.08rem; }
   .lodging-about-ledger-r3g .lka-g2-sub { margin-top: .3rem; font-size: .9rem; line-height: 1.5; }
   .lodging-about-ledger-r3g .lka-g2-ctas {
@@ -357,6 +352,24 @@ body.lodging-about-ledger-r3g main.page-shell {
   .lodging-about-ledger-r3g .lka-rates-section .lka-rates-summary-grid { grid-template-columns: 1fr; }
 }
 
+/* Compact mobile room inspector: preserve the 3D plan behind the selected room card. */
+@media (max-width: 47.99rem) {
+  body.lodging-about-ledger-r3g dialog#lka-room-panel[open] {
+    position: fixed;
+    inset: auto max(.5rem, env(safe-area-inset-right)) max(.5rem, env(safe-area-inset-bottom)) max(.5rem, env(safe-area-inset-left));
+    width: auto;
+    max-width: none;
+    max-height: min(48dvh, 28rem);
+    margin: 0;
+    padding: .85rem .9rem max(.85rem, env(safe-area-inset-bottom));
+    overflow-y: auto;
+    box-sizing: border-box;
+    z-index: 1000;
+  }
+  body.lodging-about-ledger-r3g dialog#lka-room-panel::backdrop { background: rgb(31 42 36 / 0.06); }
+  body.lodging-about-ledger-r3g #lka-room-panel .lka-room-actions { position: static; bottom: auto; margin-top: .65rem; padding-top: .65rem; padding-bottom: 0; }
+  body.lodging-about-ledger-r3g #lka-room-panel .lka-panel-note { display: none; }
+}
 @media (prefers-reduced-motion: reduce) {
   .lodging-about-ledger-r3g .lka-hero-canvas { transition: none; }
 }

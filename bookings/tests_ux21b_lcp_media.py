@@ -60,7 +60,7 @@ def test_ux21b_hero_lcp_loading_and_fetchpriority(client):
 
 
 def test_ux21b_image_dimensions_and_decoding_contract(client):
-    """All 11 showcase images have explicit width and height (CLS guard) and decoding='async'."""
+    """All rendered showcase images have explicit dimensions (CLS guard) and async decoding."""
     response = client.get(reverse("bookings:lodging_about"))
     html = response.content.decode("utf-8")
 
@@ -69,7 +69,7 @@ def test_ux21b_image_dimensions_and_decoding_contract(client):
     content_to_scan = page_wrap_match.group(1) if page_wrap_match else html
 
     img_tags = [t for t in re.findall(r'<img\s+[^>]+>', content_to_scan) if "img/brand/" not in t]  # ไม่นับโลโก้แบรนด์
-    assert len(img_tags) == 11, f"Expected 11 showcase images in lodging_about, found {len(img_tags)}"
+    assert len(img_tags) == 9, f"Expected 9 rendered showcase images in lodging_about, found {len(img_tags)}"
 
     for tag in img_tags:
         assert re.search(r'width="\d+"', tag), f"Image tag missing explicit width: {tag}"
@@ -78,13 +78,13 @@ def test_ux21b_image_dimensions_and_decoding_contract(client):
 
 
 def test_ux21b_below_fold_images_remain_lazy(client):
-    """Exactly 10 below-the-fold images retain loading='lazy', and lka-exp-img is absent."""
+    """Exactly 8 rendered below-the-fold images retain loading='lazy', and lka-exp-img is absent."""
     response = client.get(reverse("bookings:lodging_about"))
     html = response.content.decode("utf-8")
 
     lazy_matches = re.findall(r'<img\s+[^>]*loading="lazy"[^>]*>', html)
-    assert len(lazy_matches) == 10, (
-        f"Expected exactly 10 below-the-fold images with loading='lazy', found {len(lazy_matches)}"
+    assert len(lazy_matches) == 8, (
+        f"Expected exactly 8 below-the-fold images with loading='lazy', found {len(lazy_matches)}"
     )
 
     # Old room experience image class must be completely absent
@@ -95,7 +95,6 @@ def test_ux21b_below_fold_images_remain_lazy(client):
         ("lka-gallery-img", 4),   # Gallery mosaic (4 images)
         ("lka-bath-img", 3),      # Bathroom amenities (3 images)
         ("lka-rates-img", 1),     # Rates document (1 image)
-        ("lka-floor-img", 2),     # Floor diagrams (2 images)
     ]
     for cls_name, expected_count in below_fold_classes:
         matches = re.findall(rf'<img[^>]*class="[^"]*{cls_name}[^"]*"[^>]*>', html)

@@ -67,9 +67,9 @@ def test_ux22_photo_picture_source_order_and_original_fallback(client):
 def test_ux22_png_diagrams_use_lossless_webp_with_original_fallback(client):
     html = _about_html(client)
     picture_blocks = [b for b in _picture_blocks(html) if "img/brand/" not in b]  # ไม่นับโลโก้แบรนด์
-    assert len(picture_blocks) == 11
+    assert len(picture_blocks) == 9
 
-    for filename in PNG_FALLBACKS:
+    for filename in ("rates.png",):
         stem = Path(filename).stem
         blocks = [block for block in picture_blocks if filename in block]
         assert len(blocks) == 1
@@ -152,14 +152,14 @@ def test_ux22_hero_fallback_attributes_retained(client):
 def test_ux22_below_fold_lazy_discipline(client):
     html = _about_html(client)
     img_tags = [t for t in re.findall(r'<img\b[^>]+>', html) if "img/brand/" not in t]  # ไม่นับโลโก้แบรนด์
-    assert len(img_tags) == 11
+    assert len(img_tags) == 9
     eager_tags = [tag for tag in img_tags if 'loading="eager"' in tag]
     assert len(eager_tags) == 1
     assert "sigroom-building" in eager_tags[0]
     assert 'fetchpriority="high"' in eager_tags[0]
 
     lazy_tags = [tag for tag in img_tags if 'loading="lazy"' in tag]
-    assert len(lazy_tags) == 10
+    assert len(lazy_tags) == 8
     for tag in lazy_tags:
         assert 'loading="eager"' not in tag
         assert 'fetchpriority="high"' not in tag

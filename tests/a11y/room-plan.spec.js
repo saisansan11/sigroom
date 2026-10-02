@@ -40,6 +40,19 @@ test('mobile viewport: shell initially closed, native disclosure opens shell, an
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
 });
 
+test('mobile room card stays compact so the 3D plan remains visible', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.reload({ waitUntil: 'networkidle' });
+  await page.locator('.lka-explorer-shell-trigger').click();
+  await page.locator('#lka-room-picker').selectOption('444');
+  const panel = page.locator('#lka-room-panel');
+  await expect(panel).toHaveAttribute('open');
+  const box = await panel.boundingBox();
+  expect(box).not.toBeNull();
+  expect(box.height).toBeLessThanOrEqual(844 * 0.52);
+  expect(box.y).toBeGreaterThanOrEqual(844 * 0.45);
+});
+
 test('mobile viewport: fallback action opens the text plan inside the expanded explorer', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.reload({ waitUntil: 'networkidle' });
@@ -251,7 +264,14 @@ test('service gateway responsive matrix has no page overflow, 16px body text, an
 
     await page.locator('.lka-rates-disclosure > summary').click();
     if (width <= 768) {
+      const ratesTable = page.locator('.lka-rates-table');
       await expect(page.locator('.lka-rates-table tr').nth(1)).toHaveCSS('display', 'block');
+      await expect(ratesTable).toHaveCSS('min-width', '0px');
+      const visibleRate = page.locator('.lka-rate-num').first();
+      await expect(visibleRate).toContainText('บาท');
+      const rateBox = await visibleRate.boundingBox();
+      expect(rateBox).not.toBeNull();
+      expect(rateBox.x + rateBox.width, `rate value clipped at ${width}px`).toBeLessThanOrEqual(width + 1);
     } else {
       await expect(page.locator('.lka-rates-table')).toHaveCSS('display', 'table');
     }

@@ -3022,6 +3022,7 @@ body.lodging-about-ios27 .lka-faq-item[open] > .lka-faq-question::after { transf
   .lka-future-status { grid-column:1/-1; width:max-content; }
   .lka-rates-table-wrap { overflow:visible; }
   .lka-rates-table, .lka-rates-table tbody, .lka-rates-table tr, .lka-rates-table td { display:block; width:100%; }
+  .lka-rates-table { min-width:0; }
   .lka-rates-table thead { display:none; }
   .lka-rates-table tr { margin:0 0 .75rem; padding:.4rem .8rem; border:1px solid rgb(31 42 36 / 0.09); border-radius:2px; background:#FBF8F0; }
   .lka-rates-table td { display:flex; align-items:baseline; justify-content:space-between; gap:1rem; padding:.55rem 0; border:0; border-bottom:1px solid rgb(31 42 36 / 0.06); text-align:right; }
@@ -3029,6 +3030,7 @@ body.lodging-about-ios27 .lka-faq-item[open] > .lka-faq-question::after { transf
   .lka-rates-table td::before { content:attr(data-label); color:#5E5D52; font-size:.84rem; font-weight:700; text-align:left; }
   .lka-rates-table .lka-rate-category { display:block; padding:.65rem 0 .45rem; color:#1F2A24; text-align:left; font-weight:850; }
   .lka-rates-table .lka-rate-category::before { display:block; margin-bottom:.18rem; }
+  .lka-rates-table .lka-rate-num { color:#1F2A24; font-size:1rem; font-weight:800; }
 }
 @media (max-width: 30rem) {
   body.lodging-about-ios27 .lka-info-chips { gap:.45rem; }
