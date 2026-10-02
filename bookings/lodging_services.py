@@ -43,11 +43,14 @@ def cohort_hold_range(check_in_date: date, check_out_date: date) -> DateTimeTZRa
 
 
 def cohort_conflict_for_resource(resource: Resource, start_at: datetime, end_at: datetime):
-    """คืนรุ่นที่สงวนห้องชนกับช่วงเวลานี้ หรือ None."""
+    """คืนรุ่นที่ชนกับช่วงถือครองรวม buffer เช่นเดียวกับการจัดสรรหลักสูตร."""
     if resource.room_category != Resource.Category.LODGING:
         return None
-    local_start = timezone.localtime(start_at).date()
-    local_end = timezone.localtime(end_at - timedelta(microseconds=1)).date()
+    from .services import compute_hold
+
+    hold = compute_hold(resource, start_at, end_at)
+    local_start = timezone.localtime(hold.lower).date()
+    local_end = timezone.localtime(hold.upper - timedelta(microseconds=1)).date()
     return (
         CourseLodgingCohort.objects.filter(
             allocation_status=CourseLodgingCohort.AllocationStatus.ALLOCATED,
