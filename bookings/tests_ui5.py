@@ -157,7 +157,11 @@ def test_image_performance_attributes_in_templates():
             # Only the primary above-the-fold hero image ('lka-hero-main-img') is permitted
             # to be eager, and MUST have BOTH loading="eager" and fetchpriority="high".
             is_lcp_hero = "lka-hero-main-img" in img
-            if is_lcp_hero:
+            if "img/brand/" in img:
+                # โลโก้แบรนด์อยู่เหนือรอยพับ (หัวเว็บ/แผ่นเข้าสู่ระบบ): ต้องไม่ lazy แต่ต้องมีขนาดชัดเจนกัน layout shift
+                assert 'loading="lazy"' not in img and 'loading="eager"' not in img
+                assert 'fetchpriority="high"' not in img
+            elif is_lcp_hero:
                 assert 'loading="eager"' in img, f"LCP hero must have loading='eager' in {html_file.name}: {img}"
                 assert 'fetchpriority="high"' in img, f"LCP hero must have fetchpriority='high' in {html_file.name}: {img}"
                 assert 'loading="lazy"' not in img, f"LCP hero must not have loading='lazy' in {html_file.name}: {img}"

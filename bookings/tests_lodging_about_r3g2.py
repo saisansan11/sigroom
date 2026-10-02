@@ -30,7 +30,7 @@ def _section(html, pattern):
 def test_hero_has_title_poster_stage_and_real_link_ctas(client):
     html = _html(client)
     hero = _section(html, r'<section class="lka-g2-hero".*?</section>')
-    assert ">SIGROOM</h1>" in hero
+    assert "<h1" in hero and ('alt="SIGROOM"' in hero.split("</h1>")[0])  # โลโก้เป็นเนื้อหาของ h1 (alt = ชื่อระบบ)
     assert "ที่พักและบริการห้องของโรงเรียนทหารสื่อสาร" in hero
     # 3D container + poster shown first (size reserved by width/height)
     assert 'id="lka-hero-stage"' in hero

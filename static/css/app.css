@@ -4384,9 +4384,10 @@ input:not([type="checkbox"]):not([type="radio"]), select, textarea { border-radi
 
 /* ---------- หัวเว็บ ---------- */
 .site-header { border-bottom: 2px solid var(--ink); background: var(--paper); box-shadow: none; }
-.brand { gap: var(--space-sm); align-items: baseline; color: var(--ink); font-family: var(--font-serif); letter-spacing: 0; font-weight: 500; }
+.brand { gap: var(--space-sm); align-items: center; color: var(--ink); font-family: var(--font-serif); letter-spacing: 0; font-weight: 500; }
 .brand:hover { color: var(--ink); }
-.brand-name { font-family: var(--font-serif); font-size: 1.35rem; font-weight: 600; letter-spacing: .02em; }
+.brand-logo { display: block; flex: 0 0 auto; line-height: 0; }
+.brand-logo img { display: block; width: auto; height: 40px; }
 .brand-sub { color: var(--ink-muted); font-family: var(--font-sans); font-size: .82rem; font-weight: 400; white-space: nowrap; }
 .main-nav a { border: none; border-radius: 0; color: var(--ink); font-weight: 500; font-size: .95rem; }
 .main-nav a:hover { background: transparent; color: var(--ink); text-decoration: underline; text-decoration-thickness: 1px; }
@@ -4410,7 +4411,7 @@ input:not([type="checkbox"]):not([type="radio"]), select, textarea { border-radi
 .install-guide { border-radius: 2px; background: var(--paper); } .install-guide > summary { color: var(--link); font-weight: 500; }
 .install-guide-note { color: var(--pending-text); }
 .skip-link { background: var(--ink); color: var(--paper); border-radius: 2px; }
-@media (max-width: 30rem) { .brand-sub { display: none; } .brand-name { font-size: 1.2rem; } }
+@media (max-width: 30rem) { .brand-sub { display: none; } .brand-logo img { height: 32px; } }
 
 /* ---------- ระบบสถานะชุดเดียว (ไม่พึ่งสีอย่างเดียว) ---------- */
 .status { gap: .3rem; padding: .1rem .55rem; border: 1px solid var(--rule-strong); border-radius: 2px; background: transparent; color: var(--ink-muted); font-family: var(--font-sans); font-size: .82rem; font-weight: 500; }
@@ -4737,6 +4738,8 @@ button.link-inline:hover { background: transparent; color: var(--ink); }
 /* หน้าเข้าสู่ระบบ/รีเซ็ตรหัสผ่าน: แผ่นแบบฟอร์มกระดาษ */
 .auth-sheet-wrap { display: grid; place-items: start center; padding: clamp(var(--space-md), 6vh, 4rem) 0 var(--space-2xl); }
 .auth-sheet { width: min(100%, 28rem); margin: 0; padding: clamp(1.25rem, 4vw, 2.25rem); border: 1px solid var(--rule); border-top: 2px solid var(--ink); border-radius: 2px; background: var(--paper-raised); box-shadow: none; }
+.auth-sheet-logo { margin: 0 0 var(--space-md); line-height: 0; }
+.auth-sheet-logo img { display: block; width: 200px; max-width: 70%; height: auto; }
 .auth-sheet-head { margin: 0 0 var(--space-md); padding: 0; border: 0; background: none; text-align: left; }
 .auth-sheet h1 { margin: 0; font-family: var(--font-serif); font-size: clamp(1.45rem, 4vw, 1.8rem); font-weight: 500; }
 .auth-sheet-sub, .auth-sheet-kicker { margin: .1rem 0 0; color: var(--ink-muted); font-size: .95rem; }

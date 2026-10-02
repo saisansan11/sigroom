@@ -17,7 +17,7 @@ admin.site.index_title = "ทะเบียนและการตั้งค
 def favicon_redirect(request):
     # คำนวณตอนรับคำขอ (ไม่ใช่ตอน import urls) เพราะ Manifest storage ต้องมี collectstatic ก่อนจึงหา URL แบบ hash ได้
     # ไม่เช่นนั้น migrate/check ก่อน collectstatic จะล้มบนเครื่องที่ DEBUG=0
-    return HttpResponseRedirect(static_url("img/pwa-icon-192.png"))
+    return HttpResponseRedirect(static_url("img/brand/favicon.ico"))
 
 
 urlpatterns = [

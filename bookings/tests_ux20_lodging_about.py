@@ -189,13 +189,15 @@ def test_ux20_interactive_explorer_hooks_intact(client):
     assert 'id="lka-explorer-fallback"' in html, "Missing accessible fallback"
 
 
-def test_ux20_floor_overview_cards_and_exact_ranges(client):
-    """Floor overview diagrams and cards preserve room counts and exact room number ranges."""
+def test_ux20_floor_facts_without_duplicate_original_plan(client):
+    """Floor facts remain in the explorer while the duplicate original-plan block stays removed."""
     response = client.get(reverse("bookings:lodging_about"))
     html = response.content.decode("utf-8")
 
-    assert "floor4.png" in html, "Missing floor4.png diagram"
-    assert "floor5.png" in html, "Missing floor5.png diagram"
+    assert "lka-original-plans" not in html
+    assert "เทียบผังห้องพักต้นฉบับ" not in html
+    assert "floor4.png" not in html
+    assert "floor5.png" not in html
 
     # Floor 4 facts
     assert str(FLOOR4_ROOM_COUNT) in html, "Missing Floor 4 room count (57)"
@@ -209,17 +211,14 @@ def test_ux20_floor_overview_cards_and_exact_ranges(client):
     assert "501–530" in html or "501-530" in html, "Missing Floor 5 air room range"
 
 
-def test_ux20_floor_overview_floor_switching_attributes(client):
-    """Floor overview cards have semantic data-explorer-floor targets and valid href fallback."""
+def test_ux20_explorer_floor_switch_controls_remain(client):
+    """Removing the duplicate static plans must not remove the interactive floor controls."""
     response = client.get(reverse("bookings:lodging_about"))
     html = response.content.decode("utf-8")
 
-    # Floor 4 card button
-    assert 'data-explorer-floor="4"' in html, "Missing data-explorer-floor=4 on Floor 4 card"
-    # Floor 5 card button
-    assert 'data-explorer-floor="5"' in html, "Missing data-explorer-floor=5 on Floor 5 card"
-    # Both preserve href="#lka-explorer" for progressive enhancement
-    assert 'href="#lka-explorer"' in html
+    assert 'id="lka-explorer"' in html
+    assert 'data-floor="4"' in html
+    assert 'data-floor="5"' in html
 
 
 def test_ux20_journey_and_why_sections(client):
