@@ -84,7 +84,7 @@ def test_ux20_hero_section_elements(client):
     assert 'id="lka-hero-stage"' in html
     assert "room4p_3421.jpg" in html
     assert "ห้องพักหลักสูตร" in html
-    assert "ห้องพักคนทั่วไป" in html
+    assert "ห้องพักบุคคลทั่วไป" in html
     assert "ห้องสอนออนไลน์" in html
     assert "ห้องเรียน / ห้องประชุม" in html
     assert "กำลังพัฒนาระบบ" in html

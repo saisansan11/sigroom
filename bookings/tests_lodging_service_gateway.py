@@ -48,7 +48,7 @@ def test_public_page_is_service_gateway_with_three_clear_entries(client):
     assert "SIGROOM" in html
     assert "ที่พักและบริการห้องของโรงเรียนทหารสื่อสาร" in html
     assert "ห้องพักหลักสูตร" in html
-    assert "ห้องพักคนทั่วไป" in html
+    assert "ห้องพักบุคคลทั่วไป" in html
     assert "ห้องสอนออนไลน์" in html
     assert "ห้องเรียน / ห้องประชุม" in html
     assert "กำลังพัฒนาระบบ" in html

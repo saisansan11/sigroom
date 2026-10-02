@@ -57,7 +57,7 @@ def test_four_service_channels_with_correct_links(client):
     services = _section(html, r'<section class="lka-section lka-g2-services" id="lka-preview-hub".*?</section>')
     expected = [
         ("ห้องพักหลักสูตร", reverse("bookings:lodging_index")),
-        ("ห้องพักคนทั่วไป", reverse("bookings:lodging_general_request")),
+        ("ห้องพักบุคคลทั่วไป", reverse("bookings:lodging_general_request")),
         ("ห้องสอนออนไลน์", reverse("bookings:online_teaching_home")),
     ]
     links = re.findall(r'<a class="lka-r3g-service" href="([^"]+)">.*?<strong>([^<]+)</strong>', services, re.DOTALL)
