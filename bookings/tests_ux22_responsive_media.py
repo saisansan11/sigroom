@@ -49,7 +49,8 @@ def test_ux22_public_access_200(client):
 def test_ux22_photo_picture_source_order_and_original_fallback(client):
     html = _about_html(client)
     photo_blocks = [block for block in _picture_blocks(html) if ".jpg" in block]
-    assert len(photo_blocks) == 8
+    # R3-G2: the hero is now a building poster, so the room photo appears only in the gallery.
+    assert len(photo_blocks) == 7
 
     for block in photo_blocks:
         sources = re.findall(r'<source\b[^>]+>', block)
@@ -124,22 +125,25 @@ def test_ux22_no_upscaling_enforced(client):
 
 
 def test_ux22_hero_fallback_attributes_retained(client):
+    """R3-G2: the hero poster is the only eager/high-priority image and reserves its size."""
     html = _about_html(client)
     match = re.search(
-        r'<div class="lka-hero-photo-frame">\s*<picture\b[^>]*>(.*?)</picture>',
+        r'<picture class="lka-hero-poster"[^>]*>(.*?)</picture>',
         html,
         re.DOTALL,
     )
     assert match is not None
+    sources = re.findall(r'<source\b[^>]+>', match.group(1))
+    assert len(sources) == 1 and 'type="image/avif"' in sources[0]
     img = re.search(r'<img\b[^>]+>', match.group(1)).group(0)
     for fragment in (
-        "room4p_3421.jpg",
+        "img/hero/sigroom-building-1200.webp",
         'loading="eager"',
         'fetchpriority="high"',
         'decoding="async"',
-        'width="640"',
-        'height="480"',
-        'class="lka-hero-main-img"',
+        'width="1200"',
+        'height="900"',
+        'class="lka-hero-main-img lka-hero-poster-img"',
     ):
         assert fragment in img
     assert 'loading="lazy"' not in img
@@ -151,7 +155,7 @@ def test_ux22_below_fold_lazy_discipline(client):
     assert len(img_tags) == 11
     eager_tags = [tag for tag in img_tags if 'loading="eager"' in tag]
     assert len(eager_tags) == 1
-    assert "room4p_3421.jpg" in eager_tags[0]
+    assert "sigroom-building" in eager_tags[0]
     assert 'fetchpriority="high"' in eager_tags[0]
 
     lazy_tags = [tag for tag in img_tags if 'loading="lazy"' in tag]

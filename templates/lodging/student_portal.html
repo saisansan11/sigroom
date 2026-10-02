@@ -3,9 +3,11 @@
 {% load thaidate %}
 
 {% block html_theme %}light{% endblock %}
-{% block theme_color %}#f4f6fa{% endblock %}
 {% block body_class %}lodging-booking-ios27{% endblock %}
-{% block head %}<link rel="stylesheet" href="{% static 'css/lodging_booking_ios27.css' %}?v=2">{% endblock %}
+{% block head %}
+<link rel="stylesheet" href="{% static 'css/lodging_booking_ios27.css' %}?v=2">
+<link rel="stylesheet" href="{% static 'css/lodging_booking_r3l.css' %}?v=1">
+{% endblock %}
 
 {% block title %}เลือกห้องพัก · {{ cohort.title }} · SIGROOM{% endblock %}
 
@@ -16,7 +18,7 @@
     <span class="room-badge-free">รร.ส.สส. · ระบบจองที่พักหลักสูตร</span>
     {% if share_url %}
       <a role="button" class="secondary lodging-portal-share-btn" href="{{ line_share_url }}" target="_blank" rel="noopener noreferrer">
-        แชร์เข้า LINE ↗
+        แชร์เข้า LINE
       </a>
     {% endif %}
   </div>
@@ -30,32 +32,22 @@
     </div>
   {% endif %}
 
-  <div class="lodging-stats-strip">
-    <div class="lodging-stat-pill">
-      <span>ความจุทั้งหมด:</span> <strong>{{ total_slots }}</strong> ที่พัก
-    </div>
-    <div class="lodging-stat-pill">
-      <span>จองแล้ว:</span> <strong>{{ occupied_slots }}</strong> คน
-    </div>
-    <div class="lodging-stat-pill is-highlight">
-      <span>ว่างคงเหลือ:</span> <strong>{{ free_slots }}</strong> ที่พัก
-    </div>
-    <div class="lodging-stat-pill">
-      <span>อัตราส่วน:</span> <strong>{{ cohort.beds_per_room }}</strong> คน/ห้อง
-    </div>
+  <div class="lodging-r3l-summary" aria-label="สถานะที่พักหลักสูตร">
+    <strong>ว่าง {{ free_slots }} จาก {{ total_slots }} เตียง</strong>
+    <span>จองแล้ว {{ occupied_slots }} คน · ห้องละ {{ cohort.beds_per_room }} คน</span>
   </div>
 
   <div class="lodging-privacy-callout">
     <span class="lodging-privacy-icon" aria-hidden="true">{% include "lodging/partials/gateway_icon.html" with icon="shield" %}</span>
-    <span>ระบบรักษาความเป็นส่วนตัว: ไม่แสดงข้อมูลส่วนบุคคลหรือรายชื่อเพื่อนร่วมห้องในหน้านี้</span>
+    <span>เพื่อความเป็นส่วนตัว หน้านี้แสดงเฉพาะว่าเตียงว่างหรือมีผู้เข้าพักแล้ว</span>
   </div>
 </div>
 
 <div class="section-title">
   <div>
     <p class="eyebrow">ผังห้องพัก</p>
-    <h2>เลือกห้องและเตียงที่ต้องการเข้าพัก</h2>
-    <p>เลือกเตียงที่ยังว่างเพื่อลงทะเบียนเข้าพัก (ระบบแสดงเฉพาะสถานะว่างหรือมีผู้เข้าพักแล้ว เพื่อความเป็นส่วนตัว)</p>
+    <h2>เลือกเตียงว่าง</h2>
+    <p>แตะ “เลือกเตียงนี้” ที่ห้องที่ต้องการ แล้วกรอกข้อมูลเพื่อยืนยัน</p>
   </div>
 </div>
 
@@ -129,7 +121,7 @@
 {% if free_slots > 0 %}
 <div class="sticky-jump-container">
   <button type="button" class="btn-jump-next-bed" onclick="scrollToNextFreeBed()">
-    ไปที่เตียงว่างถัดไป ▾
+    ไปที่ห้องว่างถัดไป
   </button>
 </div>
 {% endif %}
@@ -142,8 +134,8 @@
       <div class="booking-dialog-intro">
         <span class="booking-dialog-icon" aria-hidden="true">{% include "lodging/partials/gateway_icon.html" with icon="lodging" %}</span>
         <div>
-          <span class="booking-dialog-kicker">Room selection</span>
-          <h3 id="bookingModalHeading">ลงทะเบียนเข้าพัก</h3>
+          <span class="booking-dialog-kicker">ห้องและเตียงที่เลือก</span>
+          <h3 id="bookingModalHeading">ยืนยันการเข้าพัก</h3>
           <p id="modalRoomTitle" class="lodging-accent-text">
             {% if modal_data.room_code %}
               ห้อง {{ modal_data.room_code }} · เตียง {{ modal_data.bed_number }}
@@ -153,7 +145,7 @@
           </p>
         </div>
       </div>
-      <p id="bookingModalHint" class="booking-dialog-hint">ตรวจสอบห้องและเตียงที่เลือก แล้วกรอกข้อมูลผู้เข้าพักเพื่อยืนยันการจอง</p>
+      <p id="bookingModalHint" class="booking-dialog-hint">กรอกข้อมูลผู้เข้าพัก แล้วกดยืนยัน</p>
     </header>
 
     {% if modal_error %}
@@ -291,7 +283,7 @@ function openBookingModal(roomId, roomCode, bedNumber) {
   document.getElementById('modalRoomId').value = roomId;
   document.getElementById('modalBedNumber').value = bedNumber;
   document.getElementById('modalRoomTitle').textContent = `ห้อง ${roomCode} · เตียง ${bedNumber}`;
-  document.getElementById('bookingModalHint').textContent = `คุณเลือกห้อง ${roomCode} เตียง ${bedNumber} · ตรวจสอบข้อมูลแล้วกรอกชื่อ หน่วย และเบอร์โทรเพื่อยืนยัน`;
+  document.getElementById('bookingModalHint').textContent = `ห้อง ${roomCode} · เตียง ${bedNumber} · กรอกชื่อ หน่วย และเบอร์โทรเพื่อยืนยัน`;
   const modal = document.getElementById('bookingModal');
   modal.showModal();
   const firstInput = modal.querySelector('input:not([type="hidden"]), select, textarea');

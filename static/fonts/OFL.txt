@@ -1,0 +1,12 @@
+Fonts in this folder are licensed under the SIL Open Font License, Version 1.1
+(https://openfontlicense.org). They are self-hosted copies of the woff2 subsets
+(thai + latin) served by Google Fonts.
+
+- Sarabun — Copyright 2015 The Sarabun Project Authors
+  (https://github.com/cadsondemak/Sarabun)
+- Noto Serif Thai — Copyright 2022 The Noto Project Authors
+  (https://github.com/notofonts/thai)
+
+Noto Serif Thai files are variable fonts covering weights 500–600 in one file.
+The fonts may be used, bundled and redistributed freely; they must not be sold
+by themselves. The full licence text is available at https://openfontlicense.org/open-font-license-official-text/

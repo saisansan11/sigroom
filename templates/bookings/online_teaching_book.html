@@ -1,7 +1,12 @@
 {% extends "base.html" %}
 {% load static %}
+{% block html_theme %}light{% endblock %}
+{% block body_class %}online-teaching-r3l{% endblock %}
 {% block title %}จอง {{ room.name }} · SIGROOM{% endblock %}
-{% block head %}<link rel="stylesheet" href="{% static 'css/online_teaching.css' %}">{% endblock %}
+{% block head %}
+<link rel="stylesheet" href="{% static 'css/online_teaching.css' %}">
+<link rel="stylesheet" href="{% static 'css/online_teaching_r3l.css' %}?v=1">
+{% endblock %}
 {% block content %}
 <div class="online-teaching-shell">
   <div class="page-heading online-teaching-heading">
@@ -10,21 +15,21 @@
       <h1>{{ room.name }}</h1>
       <p>{{ room.building }}{% if room.floor %} · ชั้น {{ room.floor }}{% endif %} · รองรับ {{ room.capacity }} คน</p>
     </div>
-    <a role="button" class="secondary" href="{% url 'bookings:online_teaching_home' %}">← เลือกห้องอื่น</a>
+    <a role="button" class="secondary" href="{% url 'bookings:online_teaching_home' %}">เลือกห้องอื่น</a>
   </div>
 
-  <section class="online-room-detail-strip" aria-label="รายละเอียดห้อง">
-    <div><span>เวลาให้บริการ</span><strong>{{ room.rule.service_start|time:'H:i' }}–{{ room.rule.service_end|time:'H:i' }}</strong></div>
+  <section class="online-room-detail-strip" aria-label="เงื่อนไขการจองห้อง">
+    <div><span>ให้บริการ</span><strong>{{ room.rule.service_start|time:'H:i' }}–{{ room.rule.service_end|time:'H:i' }}</strong></div>
     <div><span>จองล่วงหน้า</span><strong>ไม่เกิน {{ room.rule.max_advance_days }} วัน</strong></div>
-    <div><span>ระยะต่อครั้ง</span><strong>{{ room.rule.min_duration_min }}–{{ room.rule.max_duration_min }} นาที</strong></div>
-    <div><span>สถานะ</span><strong>ยืนยันให้ทันทีเมื่อว่าง</strong></div>
+    <div><span>ต่อครั้ง</span><strong>{{ room.rule.min_duration_min }}–{{ room.rule.max_duration_min }} นาที</strong></div>
+    <div><strong>ยืนยันอัตโนมัติเมื่อว่าง</strong></div>
   </section>
 
   {% if room.fixed_equipment %}
-    <section class="online-room-equipment online-room-equipment-detail">
-      <strong>อุปกรณ์ประจำห้อง</strong>
+    <details class="online-room-equipment online-room-equipment-detail">
+      <summary>ดูอุปกรณ์ประจำห้อง</summary>
       <p>{{ room.fixed_equipment|linebreaksbr }}</p>
-    </section>
+    </details>
   {% endif %}
 
   {% if not form.course_catalog_ready %}
@@ -49,12 +54,12 @@
     </section>
 
     <section class="online-booking-step" aria-labelledby="online-course-heading">
-      <div><p class="eyebrow">2 · ข้อมูลการสอน</p><h2 id="online-course-heading">เลือกหลักสูตรและวัตถุประสงค์</h2></div>
+      <div><p class="eyebrow">2 · หลักสูตร</p><h2 id="online-course-heading">เลือกหลักสูตรและงานที่สอน</h2></div>
       <div class="online-booking-grid two">
         <label for="{{ form.course_run.id_for_label }}">{{ form.course_run.label }} {{ form.course_run }}{% for error in form.course_run.errors %}<small class="field-error" role="alert">{{ error }}</small>{% endfor %}</label>
         <label for="{{ form.purpose.id_for_label }}">{{ form.purpose.label }} {{ form.purpose }}{% for error in form.purpose.errors %}<small class="field-error" role="alert">{{ error }}</small>{% endfor %}</label>
       </div>
-      <p class="muted-text">ชื่อผู้จอง สังกัด และข้อมูลเจ้าของคำขอจะใช้จากบัญชีที่เข้าสู่ระบบโดยอัตโนมัติ ไม่ต้องพิมพ์ซ้ำ</p>
+      <p class="muted-text">ชื่อ สังกัด และเบอร์โทรใช้จากบัญชีที่เข้าสู่ระบบ</p>
     </section>
 
     {% if availability %}
@@ -64,9 +69,9 @@
     {% endif %}
 
     <div class="online-booking-actions">
-      <button type="submit" name="action" value="check" class="secondary" {% if not form.course_catalog_ready %}disabled{% endif %}>ตรวจสอบช่วงเวลา</button>
       <button type="submit" name="action" value="book" {% if not form.course_catalog_ready %}disabled{% endif %}>ยืนยันการจอง</button>
     </div>
+    <p class="muted-text">ระบบตรวจห้องว่างและเวลาซ้ำอีกครั้งเมื่อกดยืนยัน</p>
   </form>
 </div>
 {% endblock %}

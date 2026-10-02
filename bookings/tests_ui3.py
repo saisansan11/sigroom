@@ -91,10 +91,10 @@ def test_booking_stepper_rendered_on_search_form_and_detail(client, ui3_setup):
     res_search = client.get(reverse("bookings:book_search"))
     assert res_search.status_code == 200
     content_search = res_search.content.decode()
-    assert "booking-stepper" in content_search
-    assert 'aria-label="ขั้นตอนการจองห้อง"' in content_search
-    assert 'ขั้นตอนที่ 1 จาก 5' in content_search
-    assert "ค้นหาห้องว่าง" in content_search
+    # ธีม A: ขั้น ๑ และ ๒ อยู่หน้าเดียวกัน ใช้หัวขั้นเลขไทยแทนแถบ stepper
+    assert "เมื่อไร และกี่คน" in content_search
+    assert "ห้องที่ว่าง" in content_search
+    assert "booking-stepper-compact" not in content_search
 
     # Step 3 Form
     res_form = client.get(
@@ -104,13 +104,13 @@ def test_booking_stepper_rendered_on_search_form_and_detail(client, ui3_setup):
     assert res_form.status_code == 200
     content_form = res_form.content.decode()
     assert "booking-stepper" in content_form
-    assert "ขั้นตอนที่ 3 จาก 5" in content_form
-    assert "สรุปการจอง" in content_form
-    assert "ตรวจสอบข้อมูลก่อนส่ง" in content_form
-    assert "ยืนยันและส่งคำขอ" in content_form
-    assert 'class="booking-stepper-compact"' in content_form
-    assert 'class="booking-stepper-compact" aria-hidden="true"' not in content_form
-    assert "ผู้เข้าร่วมภายนอกหรือเงื่อนไขเพิ่มเติมอาจทำให้ต้องผ่านผู้อนุมัติ" in content_form
+    assert 'aria-label="ขั้นตอนการขอใช้ห้อง"' in content_form
+    assert 'aria-current="step"' in content_form
+    assert "ใบขอใช้ห้อง" in content_form
+    assert "ยื่นขอใช้ห้อง" in content_form
+    assert "step-num" in content_form
+    assert "✓" not in content_form  # ไม่มีวงกลมถูกสีเขียวแบบเดิม
+    assert "ถ้ามีผู้เข้าร่วมจากภายนอกต้องผ่านผู้อนุมัติ" in content_form
 
     # Step 5 Detail
     start_dt = timezone.now() + timedelta(days=2)
@@ -129,8 +129,6 @@ def test_booking_stepper_rendered_on_search_form_and_detail(client, ui3_setup):
     res_detail = client.get(reverse("bookings:booking_detail", args=[booking.id]))
     assert res_detail.status_code == 200
     content_detail = res_detail.content.decode()
-    assert "booking-stepper" in content_detail
-    assert "ขั้นตอนที่ 5 จาก 5" in content_detail
     assert "booking-status-hero" in content_detail
     assert "อนุมัติแล้ว" in content_detail
 
@@ -141,8 +139,11 @@ def test_book_search_equipment_progressive_disclosure(client, ui3_setup):
     res = client.get(reverse("bookings:book_search"))
     assert res.status_code == 200
     content = res.content.decode()
-    assert 'class="search-equipment-details"' in content or "search-equipment-details" in content
-    assert "ค้นหาห้องว่าง" in content
+    assert "อุปกรณ์ส่วนกลางที่ต้องใช้" in content
+    assert '<details class="ledger-disclosure"' in content
+    # ไม่ต้องกดค้นหา (HTMX เปลี่ยนผลเมื่อเลือก) — ปุ่มสำรองอยู่ใน <noscript>
+    assert 'hx-trigger="change delay:250ms, submit"' in content
+    assert "<noscript>" in content
 
 
 def test_room_result_cta_and_approval_label(client, ui3_setup):
@@ -157,8 +158,9 @@ def test_room_result_cta_and_approval_label(client, ui3_setup):
     )
     assert res.status_code == 200
     content = res.content.decode()
-    assert "จองห้องนี้" in content
-    assert "policy-badge" in content
+    assert "เลือกห้องนี้" in content
+    assert "อนุมัติทันที" in content
+    assert "ต้องผ่านผู้อนุมัติ" in content
     assert "UI3-AUTO" in content
     assert "UI3-REVIEW" in content
 

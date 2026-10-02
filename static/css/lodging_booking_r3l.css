@@ -1,0 +1,373 @@
+/* R3-L — simplify lodging booking journeys under Theme A Ledger.
+   This intentionally overrides the older hospitality skin without changing
+   booking, privacy, pass, or check-in behaviour. */
+
+body.lodging-booking-ios27 {
+  --r3l-paper: #F5F1E6;
+  --r3l-raised: #FBF8F0;
+  --r3l-sunk: #EFE8D6;
+  --r3l-rule: #D8CFB8;
+  --r3l-ink: #1F2A24;
+  --r3l-muted: #5E5D52;
+  --r3l-link: #1F4E79;
+  --r3l-ok: #2F6B3A;
+  --r3l-stamp: #A3241C;
+  background: var(--r3l-paper);
+  color: var(--r3l-ink);
+}
+
+body.lodging-booking-ios27 main.container.page-shell {
+  width: min(100% - 2rem, 72rem);
+  max-width: 72rem;
+  padding-top: clamp(1rem, 2.6vw, 2rem);
+  padding-bottom: 3rem;
+}
+
+body.lodging-booking-ios27 .page-heading {
+  margin-bottom: 1rem;
+  padding-bottom: .65rem;
+  border-bottom: 2px solid var(--r3l-ink);
+  align-items: flex-end;
+}
+body.lodging-booking-ios27 .page-heading .eyebrow {
+  margin-bottom: .2rem;
+  color: var(--r3l-muted);
+  letter-spacing: 0;
+  text-transform: none;
+}
+body.lodging-booking-ios27 .page-heading h1 {
+  margin: 0;
+  font-family: var(--font-serif);
+  font-size: clamp(1.45rem, 3vw, 2rem);
+  font-weight: 600;
+  line-height: 1.3;
+}
+body.lodging-booking-ios27 .page-heading p {
+  max-width: 66ch;
+  margin: .25rem 0 0;
+  color: var(--r3l-muted);
+}
+body.lodging-booking-ios27 .page-heading > a[role="button"] {
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+}
+
+/* Course selection is a ledger, not a card gallery. */
+body.lodging-booking-ios27 .lodging-cohort-grid {
+  display: block;
+  border-top: 1px solid var(--r3l-rule);
+}
+body.lodging-booking-ios27 .lodging-cohort-card {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(13rem, 18rem);
+  gap: 1.25rem;
+  align-items: center;
+  margin: 0;
+  padding: .9rem 0;
+  border: 0;
+  border-bottom: 1px solid var(--r3l-rule);
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+body.lodging-booking-ios27 .lodging-cohort-top {
+  display: flex;
+  align-items: center;
+  gap: .65rem;
+  margin-bottom: .2rem;
+}
+body.lodging-booking-ios27 .lodging-cohort-title {
+  margin: .2rem 0;
+  font-family: var(--font-serif);
+  font-size: 1.08rem;
+  font-weight: 600;
+}
+body.lodging-booking-ios27 .lodging-cohort-dates,
+body.lodging-booking-ios27 .lodging-capacity-text {
+  color: var(--r3l-muted);
+  font-size: .86rem;
+}
+body.lodging-booking-ios27 .lodging-capacity-wrapper { margin-top: .55rem; }
+body.lodging-booking-ios27 .lodging-capacity-progress { height: .45rem; }
+body.lodging-booking-ios27 .lodging-select-btn {
+  width: 100%;
+  min-height: 44px;
+  border-radius: 2px;
+  background: var(--r3l-ink);
+  color: var(--r3l-paper);
+  box-shadow: none;
+}
+
+/* Portal: one compact course header and a room/bed ledger. */
+body.lodging-booking-ios27 .lodging-portal-hero {
+  overflow: visible;
+  padding: 0 0 .85rem;
+  border: 0;
+  border-bottom: 2px solid var(--r3l-ink);
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+body.lodging-booking-ios27 .lodging-portal-hero::after { display: none; }
+body.lodging-booking-ios27 .lodging-portal-hero h1 {
+  margin: .35rem 0 .2rem;
+  font-family: var(--font-serif);
+  font-size: clamp(1.45rem, 3vw, 2rem);
+  font-weight: 600;
+}
+body.lodging-booking-ios27 .lodging-portal-share-btn {
+  min-height: 44px;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  color: var(--r3l-link);
+  text-decoration: underline;
+}
+body.lodging-booking-ios27 .lodging-r3l-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .25rem .9rem;
+  align-items: baseline;
+  margin-top: .55rem;
+  color: var(--r3l-muted);
+  font-size: .9rem;
+}
+body.lodging-booking-ios27 .lodging-r3l-summary strong {
+  color: var(--r3l-ink);
+  font-size: 1rem;
+}
+body.lodging-booking-ios27 .lodging-privacy-callout {
+  margin-top: .55rem;
+  padding: .45rem .6rem;
+  border: 0;
+  border-left: 2px solid var(--r3l-ink);
+  border-radius: 0;
+  background: transparent;
+  color: var(--r3l-muted);
+}
+body.lodging-booking-ios27 .section-title {
+  margin: 1.1rem 0 .55rem;
+  padding: 0;
+  border: 0;
+}
+body.lodging-booking-ios27 .section-title .eyebrow { display: none; }
+body.lodging-booking-ios27 .section-title h2 {
+  margin: 0;
+  font-family: var(--font-serif);
+  font-size: 1.18rem;
+  font-weight: 600;
+}
+body.lodging-booking-ios27 .section-title p { margin: .15rem 0 0; font-size: .84rem; }
+body.lodging-booking-ios27 .rooms-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+body.lodging-booking-ios27 .room-lodging-card,
+body.lodging-booking-ios27 .room-lodging-card:not(.is-full):hover {
+  overflow: hidden;
+  border: 1px solid var(--r3l-rule);
+  border-radius: 0;
+  background: var(--r3l-raised);
+  box-shadow: none;
+  transform: none;
+}
+body.lodging-booking-ios27 .room-photo-wrap:has(.room-photo-cover.is-placeholder) {
+  display: none;
+}
+body.lodging-booking-ios27 .room-photo-trigger {
+  border-radius: 0;
+  box-shadow: none;
+}
+body.lodging-booking-ios27 .room-card-head,
+body.lodging-booking-ios27 .room-card-body {
+  background: transparent;
+}
+body.lodging-booking-ios27 .room-card-head { border-bottom: 2px solid var(--r3l-ink); }
+body.lodging-booking-ios27 .room-equip-note { display: none; }
+body.lodging-booking-ios27 .bed-row,
+body.lodging-booking-ios27 .bed-row.free {
+  min-height: 52px;
+  border: 0;
+  border-bottom: 1px solid var(--r3l-rule);
+  border-radius: 0;
+  background: transparent;
+}
+body.lodging-booking-ios27 .bed-row:last-child { border-bottom: 0; }
+body.lodging-booking-ios27 .bed-select-btn,
+body.lodging-booking-ios27 .bed-select-btn:hover {
+  min-height: 44px;
+  border: 1px solid var(--r3l-ink);
+  border-radius: 2px;
+  background: var(--r3l-ink);
+  color: var(--r3l-paper);
+  box-shadow: none;
+}
+body.lodging-booking-ios27 .sticky-jump-container .btn-jump-next-bed {
+  border: 1px solid var(--r3l-ink);
+  border-radius: 2px;
+  background: var(--r3l-raised);
+  color: var(--r3l-ink);
+  box-shadow: none;
+}
+
+/* Booking dialog becomes a paper sheet while preserving all form contracts. */
+body.lodging-booking-ios27 #bookingModal { color-scheme: light; }
+body.lodging-booking-ios27 #bookingModal::backdrop {
+  background: rgb(31 42 36 / .45);
+  backdrop-filter: none;
+}
+body.lodging-booking-ios27 #bookingModal .booking-dialog-article {
+  border: 1px solid var(--r3l-ink);
+  border-radius: 2px;
+  background: var(--r3l-raised);
+  color: var(--r3l-ink);
+  box-shadow: none;
+}
+body.lodging-booking-ios27 #bookingModal .booking-dialog-article::before { display: none; }
+body.lodging-booking-ios27 #bookingModal header {
+  margin: -1rem -1rem .8rem;
+  padding: 1rem 1rem .75rem;
+  border-bottom: 2px solid var(--r3l-ink);
+  background: transparent;
+}
+body.lodging-booking-ios27 #bookingModal header [rel="prev"] {
+  background: transparent;
+  color: var(--r3l-ink);
+  border-color: var(--r3l-rule);
+}
+body.lodging-booking-ios27 .booking-dialog-intro { display: block; padding-right: 2.25rem; }
+body.lodging-booking-ios27 .booking-dialog-icon { display: none; }
+body.lodging-booking-ios27 .booking-dialog-kicker {
+  color: var(--r3l-muted);
+  letter-spacing: 0;
+  text-transform: none;
+}
+body.lodging-booking-ios27 #bookingModalHeading { color: var(--r3l-ink); font-family: var(--font-serif); }
+body.lodging-booking-ios27 #modalRoomTitle,
+body.lodging-booking-ios27 .booking-dialog-hint { color: var(--r3l-muted); }
+body.lodging-booking-ios27 #bookingModal label { color: var(--r3l-ink); }
+body.lodging-booking-ios27 #bookingModal :is(input, select, textarea) {
+  min-height: 46px;
+  border: 1px solid var(--r3l-rule);
+  border-radius: 0;
+  background: var(--r3l-paper);
+  color: var(--r3l-ink);
+  box-shadow: none;
+}
+body.lodging-booking-ios27 #bookingModal :is(input, select, textarea):focus {
+  border-color: var(--r3l-ink);
+  box-shadow: 0 0 0 2px rgb(31 42 36 / .12);
+}
+body.lodging-booking-ios27 #bookingModal .modal-form-actions { border-color: var(--r3l-rule); }
+body.lodging-booking-ios27 #bookingModal .modal-form-actions .secondary {
+  background: transparent;
+  color: var(--r3l-ink);
+  border-color: var(--r3l-rule);
+}
+body.lodging-booking-ios27 #bookingModal .btn-confirm,
+body.lodging-booking-ios27 #bookingModal .btn-confirm:hover {
+  background: var(--r3l-ink);
+  border-color: var(--r3l-ink);
+  color: var(--r3l-paper);
+  box-shadow: none;
+}
+
+/* Public request + status: one paper sheet, clear primary action. */
+body.lodging-booking-ios27 .r3l-request-sheet,
+body.lodging-booking-ios27 .r3l-status-sheet,
+body.lodging-booking-ios27 .r3l-closed-sheet {
+  padding: 1rem;
+  border: 1px solid var(--r3l-rule);
+  border-top: 2px solid var(--r3l-ink);
+  border-radius: 0;
+  background: var(--r3l-raised);
+  box-shadow: none;
+}
+body.lodging-booking-ios27 .r3l-request-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: .7rem 1rem;
+}
+body.lodging-booking-ios27 .r3l-request-grid label { margin: 0; }
+body.lodging-booking-ios27 .r3l-request-grid .r3l-span-2 { grid-column: 1 / -1; }
+body.lodging-booking-ios27 .r3l-request-grid :is(input, select, textarea) {
+  min-height: 44px;
+  margin-top: .2rem;
+  border-radius: 0;
+  background: var(--r3l-paper);
+}
+body.lodging-booking-ios27 .r3l-request-note {
+  margin: .75rem 0;
+  color: var(--r3l-muted);
+  font-size: .84rem;
+}
+body.lodging-booking-ios27 .r3l-primary-action {
+  min-height: 46px;
+  border-radius: 2px;
+  background: var(--r3l-ink);
+  color: var(--r3l-paper);
+  box-shadow: none;
+}
+body.lodging-booking-ios27 .r3l-field-error { display: block; margin-top: .2rem; color: var(--r3l-stamp); }
+body.lodging-booking-ios27 .r3l-status-list { margin: 0; }
+body.lodging-booking-ios27 .r3l-status-list > div {
+  display: grid;
+  grid-template-columns: 8rem minmax(0, 1fr);
+  gap: .75rem;
+  padding: .5rem 0;
+  border-bottom: 1px solid var(--r3l-rule);
+}
+body.lodging-booking-ios27 .r3l-status-list > div:last-child { border-bottom: 0; }
+body.lodging-booking-ios27 .r3l-status-list dt { color: var(--r3l-muted); }
+body.lodging-booking-ios27 .r3l-status-list dd { margin: 0; }
+body.lodging-booking-ios27 .r3l-back-link { display: inline-flex; min-height: 44px; align-items: center; margin-top: .65rem; }
+
+/* Pass/check-in framing is calm; the keycard flip itself is deliberately retained. */
+body.lodging-booking-ios27 .keycard-actions-bar {
+  gap: .5rem;
+}
+body.lodging-booking-ios27 .keycard-actions-bar :is(button, a[role="button"]) {
+  border-radius: 2px;
+  box-shadow: none;
+}
+body.lodging-booking-ios27 .keycard-roommates-card,
+body.lodging-booking-ios27 .detail-card {
+  border-radius: 0;
+  box-shadow: none;
+}
+body.lodging-booking-ios27 .checkin-card {
+  border-radius: 0;
+  box-shadow: none;
+}
+body.lodging-booking-ios27 .checkin-room-pill,
+body.lodging-booking-ios27 .checkin-authorized-badge,
+body.lodging-booking-ios27 .checkin-public-badge {
+  border-radius: 2px;
+}
+
+@media (max-width: 47.99rem) {
+  body.lodging-booking-ios27 main.container.page-shell { width: min(100% - 1rem, 72rem); }
+  body.lodging-booking-ios27 .lodging-cohort-card { grid-template-columns: 1fr; gap: .65rem; }
+  body.lodging-booking-ios27 .rooms-grid { grid-template-columns: minmax(0, 1fr); gap: 0; }
+  body.lodging-booking-ios27 .room-lodging-card,
+  body.lodging-booking-ios27 .room-lodging-card:not(.is-full):hover {
+    border: 0;
+    border-bottom: 1px solid var(--r3l-rule);
+    background: transparent;
+  }
+  body.lodging-booking-ios27 .room-card-head,
+  body.lodging-booking-ios27 .room-card-body { padding-inline: 0; }
+  body.lodging-booking-ios27 .r3l-request-grid { grid-template-columns: 1fr; }
+  body.lodging-booking-ios27 .r3l-request-grid .r3l-span-2 { grid-column: auto; }
+  body.lodging-booking-ios27 .r3l-status-list > div { grid-template-columns: 1fr; gap: .1rem; }
+  body.lodging-booking-ios27 #bookingModal .modal-form-actions {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body.lodging-booking-ios27 .room-lodging-card,
+  body.lodging-booking-ios27 .bed-select-btn { transition: none !important; }
+}

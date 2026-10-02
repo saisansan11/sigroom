@@ -174,12 +174,12 @@ def test_manage_template_has_direct_student_portal_affordances_on_cards():
     # Primary action
     assert "lodging-card-primary-action" in template
     assert "{% url 'bookings:lodging_cohort_detail' c.slug %}" in template
-    assert "ดูรายชื่อนักเรียน →" in template
+    assert "ดูรายชื่อนักเรียน" in template
     # Direct copy button
     assert "lodging-copy-btn" in template
     assert "data-portal-path=" in template
     assert "onclick=\"copyCohortLink(this)\"" in template
-    assert "📋 คัดลอกลิงก์" in template
+    assert "คัดลอกลิงก์" in template
     # Direct LINE share
     assert "lodging-line-share-btn" in template
     assert "line.me/R/share?" in template
@@ -249,7 +249,7 @@ def test_manage_view_assigned_supervisor_without_create_perm_sees_cohorts_but_no
     html = response.content.decode("utf-8")
     # Supervisor sees their assigned cohort
     assert ux13_setup["cohort"].title in html
-    assert "📋 คัดลอกลิงก์" in html
+    assert "คัดลอกลิงก์" in html
     assert "แชร์ผ่าน LINE ↗" in html
     # But does NOT see create form
     assert "เปิดรอบจองที่พักให้นักเรียน" not in html
@@ -341,9 +341,9 @@ def test_manage_view_renders_line_share_and_copy_affordances_on_cohort_card(clie
     assert cohort.title in html
     assert f'data-portal-path="/lodging/c/{cohort.slug}/"' in html
     assert "https://line.me/R/share?text=" in html
-    assert "📋 คัดลอกลิงก์" in html
+    assert "คัดลอกลิงก์" in html
     assert "แชร์ผ่าน LINE ↗" in html
-    assert "ดูรายชื่อนักเรียน →" in html
+    assert "ดูรายชื่อนักเรียน" in html
 
 
 # ==============================================================================

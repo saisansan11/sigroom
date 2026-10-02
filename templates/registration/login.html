@@ -1,106 +1,35 @@
 {% extends "base.html" %}
-{% load static %}
-{% block html_theme %}light{% endblock %}
-{% block theme_color %}#f4f6fa{% endblock %}
-{% block body_class %}sigroom-login-journey{% endblock %}
-{% block head %}<link rel="stylesheet" href="{% static 'css/lodging_booking_ios27.css' %}?v=1">{% endblock %}
+{% block body_class %}auth-page{% endblock %}
 {% block title %}เข้าสู่ระบบ · SIGROOM{% endblock %}
 {% block content %}
-<div class="auth-stage">
-  <div class="arrival-horizon" aria-hidden="true">
-    <svg class="arrival-illustration" viewBox="0 0 1000 320" role="presentation" focusable="false">
-      <defs>
-        <linearGradient id="arrival-case" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0" stop-color="#2b5962"/>
-          <stop offset="1" stop-color="#183c45"/>
-        </linearGradient>
-        <linearGradient id="arrival-uniform" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0" stop-color="#304a46"/>
-          <stop offset="1" stop-color="#203632"/>
-        </linearGradient>
-      </defs>
-      <ellipse class="arrival-shadow" cx="520" cy="277" rx="116" ry="15" fill="#1f3440"/>
-
-      <g class="arrival-soldier">
-        <circle cx="382" cy="118" r="20" fill="#d5b59a"/>
-        <path d="M360 112 Q380 84 405 108 L402 116 L364 116 Z" fill="#263d3a"/>
-        <rect x="366" y="139" width="35" height="70" rx="12" fill="url(#arrival-uniform)"/>
-        <path d="M366 154 L338 192" fill="none" stroke="#263d3a" stroke-width="13" stroke-linecap="round"/>
-        <path d="M397 154 L434 183" fill="none" stroke="#263d3a" stroke-width="13" stroke-linecap="round"/>
-        <path d="M376 207 L360 266" fill="none" stroke="#253b38" stroke-width="15" stroke-linecap="round"/>
-        <path d="M393 207 L410 266" fill="none" stroke="#253b38" stroke-width="15" stroke-linecap="round"/>
-        <path d="M348 267 L368 267" stroke="#182724" stroke-width="9" stroke-linecap="round"/>
-        <path d="M402 267 L422 267" stroke="#182724" stroke-width="9" stroke-linecap="round"/>
-        <path d="M432 182 L464 171" fill="none" stroke="#304a46" stroke-width="8" stroke-linecap="round"/>
-        <path d="M380 146 L388 178 L380 195 L372 178 Z" fill="#62786c" opacity=".75"/>
-      </g>
-
-      <g class="arrival-suitcase">
-        <path d="M484 156 C484 134 496 122 514 122 C532 122 544 134 544 156" fill="none" stroke="#1d4148" stroke-width="8" stroke-linecap="round"/>
-        <g class="arrival-suitcase-lid">
-          <rect x="463" y="154" width="102" height="28" rx="10" fill="#315f69" stroke="#163a43" stroke-width="3"/>
-          <path d="M477 168 H551" stroke="#8ab2b7" stroke-width="2" opacity=".55"/>
-        </g>
-        <rect x="456" y="176" width="116" height="88" rx="15" fill="url(#arrival-case)" stroke="#153740" stroke-width="3"/>
-        <rect x="475" y="191" width="78" height="51" rx="10" fill="#224a52" stroke="#47757b" stroke-width="2" opacity=".88"/>
-        <path d="M514 194 V239" stroke="#759ca0" stroke-width="2" opacity=".45"/>
-        <circle cx="478" cy="268" r="7" fill="#18363c"/>
-        <circle cx="550" cy="268" r="7" fill="#18363c"/>
-      </g>
-    </svg>
-  </div>
-
-  <section class="login-card" aria-labelledby="login-heading">
-    <header>
-      <p class="eyebrow">โรงเรียนทหารสื่อสาร</p>
-      <h1 id="login-heading">SIG<span class="brand-accent">ROOM</span></h1>
-      <p>ระบบจองและบริหารการใช้ห้อง รร.ส.สส.</p>
-      <div class="sysline">Secure · Authorized Access</div>
+<div class="auth-sheet-wrap">
+  <section class="auth-sheet login-sheet" aria-labelledby="login-heading">
+    <header class="auth-sheet-head">
+      <h1 id="login-heading">เข้าสู่ระบบ SIGROOM</h1>
+      <p class="auth-sheet-sub">ระบบจองห้อง รร.ส.สส.</p>
     </header>
-    <form method="post">
+    <form method="post" class="auth-sheet-form">
       {% csrf_token %}
       {% if form.errors %}<div id="login-error" class="notice error" role="alert">{% if login_throttled %}{{ form.non_field_errors.0 }}{% else %}ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง กรุณาตรวจสอบแล้วลองอีกครั้ง{% endif %}</div>{% endif %}
       <label for="id_username">ชื่อผู้ใช้</label>
-      <input id="id_username" name="username" autocomplete="username" required{% if form.errors %} aria-invalid="true" aria-describedby="login-error"{% endif %}>
+      <input id="id_username" class="ruled-input" name="username" value="{{ form.username.value|default:'' }}" autocomplete="username" autocapitalize="none" spellcheck="false" required autofocus{% if form.errors %} aria-invalid="true" aria-describedby="login-error"{% endif %}>
       <label for="id_password">รหัสผ่าน</label>
-      <input id="id_password" name="password" type="password" autocomplete="current-password" required{% if form.errors %} aria-invalid="true" aria-describedby="login-error"{% endif %}>
+      <input id="id_password" class="ruled-input" name="password" type="password" autocomplete="current-password" required{% if form.errors %} aria-invalid="true" aria-describedby="login-error"{% endif %}>
       <input type="hidden" name="next" value="{{ next }}">
-      <button type="submit">เข้าสู่ระบบ</button>
+      <button type="submit" class="btn-primary auth-submit">เข้าสู่ระบบ</button>
     </form>
-    <p><a href="{% url 'accounts:password_reset' %}">ลืมรหัสผ่าน?</a></p>
-    <small class="muted-text">ระบบจะส่งลิงก์ตั้งรหัสใหม่ไปยังอีเมลหน่วย @signalschool.ac.th ของบัญชีคุณ</small>
+    <ul class="auth-hints">
+      <li><a href="{% url 'accounts:password_reset' %}">ลืมรหัสผ่าน?</a> ระบบจะส่งลิงก์ตั้งรหัสใหม่ไปยังอีเมลหน่วย @signalschool.ac.th ของบัญชีท่าน</li>
+      <li>ยังไม่มีบัญชี หรือบัญชีถูกล็อก — ติดต่อผู้ดูแลระบบ SIGROOM ของโรงเรียน</li>
+    </ul>
+    <div class="auth-public">
+      <p class="auth-public-title">ไม่ต้องเข้าสู่ระบบ</p>
+      <ul>
+        <li><a href="{% url 'bookings:lodging_index' %}">จองห้องพักสำหรับนักเรียนหลักสูตร</a></li>
+        <li><a href="{% url 'bookings:calendar' %}">ดูสถานะห้องวันนี้</a></li>
+        <li><a href="{% url 'bookings:about' %}">รู้จัก SIGROOM / วิธีใช้งาน</a></li>
+      </ul>
+    </div>
   </section>
-  <p class="arrival-caption" aria-hidden="true">Arrive · Check in · Continue mission</p>
 </div>
-<script>
-(function () {
-  const body = document.body;
-  const media = window.matchMedia('(prefers-reduced-motion: reduce)');
-  const hasError = Boolean(document.getElementById('login-error'));
-  let seen = false;
-  try {
-    seen = sessionStorage.getItem('sigroom-login-journey-seen-v1') === '1';
-  } catch (error) {
-    seen = false;
-  }
-
-  const skipJourney = hasError || media.matches || seen;
-  if (skipJourney) {
-    body.classList.add('journey-skip');
-  } else {
-    body.classList.add('journey-play');
-    try { sessionStorage.setItem('sigroom-login-journey-seen-v1', '1'); } catch (error) {}
-  }
-
-  const focusUsername = function () {
-    const username = document.getElementById('id_username');
-    if (!username) return;
-    const active = document.activeElement;
-    if (active === document.body || active === document.documentElement || !active) {
-      username.focus({preventScroll: true});
-    }
-  };
-  window.setTimeout(focusUsername, skipJourney ? 80 : 2700);
-})();
-</script>
 {% endblock %}

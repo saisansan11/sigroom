@@ -1,117 +1,103 @@
-/* Lodging booking + login visual convergence — 2026-09-28
+/* Lodging booking visual convergence — 2026-09-28
    Bright iOS-style hospitality shell aligned with /lodging/about/.
    Booking dialog remains a dark focus layer inspired by the supplied reference.
 */
 
-body.lodging-booking-ios27,
-body.sigroom-login-journey {
+body.lodging-booking-ios27 {
   color-scheme: light;
-  --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Noto Sans Thai", "IBM Plex Sans Thai", Tahoma, sans-serif;
-  --cyan: #138fa8;
-  --cyan-strong: #0b7188;
-  --green: #0f766e;
-  --canvas: #f4f6fa;
-  --canvas-deep: #eef3f8;
-  --surface: #ffffff;
-  --surface-raised: #f8fafc;
-  --surface-soft: #edf3f7;
-  --line: rgba(15, 23, 42, .09);
-  --line-strong: rgba(15, 23, 42, .16);
-  --ink: #111827;
-  --muted: #667085;
-  --dim: #7d8998;
-  --info-bg: #edf8fb;
-  --success-bg: #edf9f5;
-  --warning-bg: #fff7e7;
-  --danger-bg: #fff0f1;
-  --pico-background-color: #f4f6fa;
-  --pico-color: #111827;
-  --pico-muted-color: #667085;
-  --pico-card-background-color: #ffffff;
-  --pico-card-border-color: rgba(15, 23, 42, .10);
-  --pico-form-element-background-color: #ffffff;
-  --pico-form-element-border-color: rgba(15, 23, 42, .14);
-  --pico-form-element-color: #182230;
-  --pico-form-element-placeholder-color: #8a95a4;
-  --pico-form-element-active-background-color: #ffffff;
-  --pico-form-element-active-border-color: #0b8fb0;
-  --pico-primary: #0b7188;
-  --pico-primary-background: #0b8fb0;
-  --pico-primary-border: #0b8fb0;
-  --pico-primary-hover-background: #08728d;
-  --pico-primary-hover-border: #08728d;
+  --font-sans: "Sarabun", Tahoma, sans-serif;
+  --cyan: #1F2A24;
+  --cyan-strong: #1F2A24;
+  --green: #1F2A24;
+  --canvas: #F5F1E6;
+  --canvas-deep: #F5F1E6;
+  --surface: #FBF8F0;
+  --surface-raised: #FBF8F0;
+  --surface-soft: #F5F1E6;
+  --line: rgb(31 42 36 / 0.09);
+  --line-strong: rgb(31 42 36 / 0.16);
+  --ink: #1F2A24;
+  --muted: #5E5D52;
+  --dim: #5E5D52;
+  --info-bg: #F5F1E6;
+  --success-bg: #F5F1E6;
+  --warning-bg: #F5F1E6;
+  --danger-bg: #FBF8F0;
+  --pico-background-color: #F5F1E6;
+  --pico-color: #1F2A24;
+  --pico-muted-color: #5E5D52;
+  --pico-card-background-color: #FBF8F0;
+  --pico-card-border-color: rgb(31 42 36 / 0.1);
+  --pico-form-element-background-color: #FBF8F0;
+  --pico-form-element-border-color: rgb(31 42 36 / 0.14);
+  --pico-form-element-color: #1F2A24;
+  --pico-form-element-placeholder-color: #5E5D52;
+  --pico-form-element-active-background-color: #FBF8F0;
+  --pico-form-element-active-border-color: #1F2A24;
+  --pico-primary: #1F2A24;
+  --pico-primary-background: #1F2A24;
+  --pico-primary-border: #1F2A24;
+  --pico-primary-hover-background: #1F2A24;
+  --pico-primary-hover-border: #1F2A24;
   margin: 0;
   background:
-    radial-gradient(circle at 86% 6%, rgb(199 238 246 / .48), transparent 31rem),
-    radial-gradient(circle at 8% 48%, rgb(203 242 229 / .35), transparent 29rem),
-    #f4f6fa;
+    #F5F1E6;
   color: var(--ink);
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
 }
 
-body.lodging-booking-ios27 .site-header,
-body.sigroom-login-journey .site-header {
-  border-bottom: 1px solid rgba(15, 23, 42, .09);
-  background: rgb(248 250 252 / .82);
-  box-shadow: 0 1px 0 rgb(255 255 255 / .82), 0 8px 28px rgb(15 23 42 / .055);
-  backdrop-filter: saturate(1.35) blur(24px);
-  -webkit-backdrop-filter: saturate(1.35) blur(24px);
+body.lodging-booking-ios27 .site-header {
+  border-bottom: 1px solid rgb(31 42 36 / 0.09);
+  background: rgb(251 248 240 / 0.82);
+  box-shadow: 0 1px 2px rgb(31 42 36 / 0.08);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
 }
 
-body.lodging-booking-ios27 .header-shell,
-body.sigroom-login-journey .header-shell { min-height: 4.5rem; }
-body.lodging-booking-ios27 .brand,
-body.sigroom-login-journey .brand {
-  color: #111827;
-  font-family: var(--font-sans);
+body.lodging-booking-ios27 .header-shell { min-height: 4.5rem; }
+body.lodging-booking-ios27 .brand {
+  color: #1F2A24;
+  font-family: var(--font-serif);
   font-size: 1rem;
   font-weight: 800;
   letter-spacing: .13em;
 }
-body.lodging-booking-ios27 .brand-accent,
-body.sigroom-login-journey .brand-accent { color: #075f75; }
-body.lodging-booking-ios27 .brand .brand-mark g,
-body.sigroom-login-journey .brand .brand-mark g { stroke: #0b8fb0; }
+body.lodging-booking-ios27 .brand-accent { color: #1F2A24; }
+body.lodging-booking-ios27 .brand .brand-mark g { stroke: #1F2A24; }
 body.lodging-booking-ios27 .main-nav a,
-body.lodging-booking-ios27 .mobile-menu > summary,
-body.sigroom-login-journey .main-nav a,
-body.sigroom-login-journey .mobile-menu > summary {
+body.lodging-booking-ios27 .mobile-menu > summary {
   min-height: 3rem;
-  border-radius: 1rem;
-  color: #475467;
+  border-radius: 2px;
+  color: #5E5D52;
   font-size: .92rem;
   font-weight: 700;
 }
 body.lodging-booking-ios27 .main-nav a:hover,
-body.lodging-booking-ios27 .main-nav a[aria-current="page"],
-body.sigroom-login-journey .main-nav a:hover,
-body.sigroom-login-journey .main-nav a[aria-current="page"] {
-  background: rgb(255 255 255 / .84);
-  color: #111827;
-  box-shadow: inset 0 0 0 1px rgba(15, 23, 42, .10);
+body.lodging-booking-ios27 .main-nav a[aria-current="page"] {
+  background: rgb(251 248 240 / 0.84);
+  color: #1F2A24;
+  box-shadow: inset 0 0 0 1px rgb(31 42 36 / 0.1);
 }
-body.lodging-booking-ios27 .main-nav a[aria-current="page"] { box-shadow: inset 0 -2px #0b8fb0, inset 0 0 0 1px rgba(15, 23, 42, .10); }
-body.lodging-booking-ios27 .login-btn-header,
-body.sigroom-login-journey .login-btn-header {
+body.lodging-booking-ios27 .main-nav a[aria-current="page"] { box-shadow: inset 0 -2px #1F2A24, inset 0 0 0 1px rgb(31 42 36 / 0.1); }
+body.lodging-booking-ios27 .login-btn-header {
   min-height: 3rem;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   margin: 0;
   padding: .65rem 1.05rem;
-  border: 1px solid rgb(11 143 176 / .16);
-  border-radius: 1rem;
-  background: linear-gradient(180deg, #35c5df, #22b4cf);
-  color: #062f39;
-  box-shadow: 0 7px 18px rgb(34 180 207 / .19), inset 0 1px rgb(255 255 255 / .5);
+  border: 1px solid rgb(31 42 36 / 0.16);
+  border-radius: 2px;
+  background: linear-gradient(180deg, #1F2A24, #1F2A24);
+  color: #FBF8F0;
+  box-shadow: 0 7px 18px rgb(31 42 36 / 0.19), inset 0 1px rgb(251 248 240 / 0.5);
   font-weight: 800;
 }
-body.lodging-booking-ios27 .mobile-menu-panel,
-body.sigroom-login-journey .mobile-menu-panel {
-  border-color: rgba(15, 23, 42, .10);
-  background: rgb(250 251 253 / .96);
-  color: #344054;
+body.lodging-booking-ios27 .mobile-menu-panel {
+  border-color: rgb(31 42 36 / 0.1);
+  background: rgb(251 248 240 / 0.96);
+  color: #1F2A24;
 }
 
 /* ---------- Student lodging booking surface ---------- */
@@ -122,23 +108,21 @@ body.lodging-booking-ios27 main.container.page-shell {
   padding-bottom: clamp(4rem, 8vw, 6.5rem);
 }
 
-body.lodging-booking-ios27 .student-lodging-portal { color: #263746; }
+body.lodging-booking-ios27 .student-lodging-portal { color: #1F2A24; }
 body.lodging-booking-ios27 .student-lodging-portal h1,
 body.lodging-booking-ios27 .student-lodging-portal h2,
-body.lodging-booking-ios27 .student-lodging-portal h3 { color: #111827; }
-body.lodging-booking-ios27 .student-lodging-portal .muted-text { color: #667085; }
+body.lodging-booking-ios27 .student-lodging-portal h3 { color: #1F2A24; }
+body.lodging-booking-ios27 .student-lodging-portal .muted-text { color: #5E5D52; }
 
 body.lodging-booking-ios27 .lodging-portal-hero {
   position: relative;
   overflow: hidden;
   padding: clamp(1.35rem, 3vw, 2.35rem);
-  border: 1px solid rgba(15, 23, 42, .08);
-  border-radius: 1.7rem;
+  border: 1px solid rgb(31 42 36 / 0.08);
+  border-radius: 2px;
   background:
-    radial-gradient(circle at 88% 4%, rgb(159 225 239 / .55), transparent 17rem),
-    radial-gradient(circle at 12% 96%, rgb(180 235 218 / .42), transparent 18rem),
-    rgba(255, 255, 255, .91);
-  box-shadow: 0 22px 50px -34px rgb(15 23 42 / .34), inset 0 1px rgb(255 255 255 / .95);
+    rgb(251 248 240 / 0.91);
+  box-shadow: 0 22px 50px -34px rgb(31 42 36 / 0.34), inset 0 1px rgb(251 248 240 / 0.95);
 }
 body.lodging-booking-ios27 .lodging-portal-hero::after {
   content: "";
@@ -148,131 +132,131 @@ body.lodging-booking-ios27 .lodging-portal-hero::after {
   right: -3.5rem;
   bottom: -5rem;
   border-radius: 50%;
-  border: 1px solid rgb(11 143 176 / .12);
-  box-shadow: 0 0 0 1.8rem rgb(11 143 176 / .035), 0 0 0 3.8rem rgb(15 118 110 / .025);
+  border: 1px solid rgb(31 42 36 / 0.12);
+  box-shadow: 0 0 0 1.8rem rgb(31 42 36 / 0.035), 0 0 0 3.8rem rgb(31 42 36 / 0.025);
   pointer-events: none;
 }
 body.lodging-booking-ios27 .lodging-cohort-top { position: relative; z-index: 1; }
 body.lodging-booking-ios27 .room-badge-free {
-  border: 1px solid rgb(11 143 176 / .16);
-  background: #eaf7fb;
-  color: #075f75;
+  border: 1px solid rgb(31 42 36 / 0.16);
+  background: #F5F1E6;
+  color: #1F2A24;
   font-weight: 800;
 }
 body.lodging-booking-ios27 .lodging-portal-share-btn {
-  border-color: rgba(15, 23, 42, .11);
-  border-radius: 1rem;
-  background: rgba(255, 255, 255, .75);
-  color: #344054;
+  border-color: rgb(31 42 36 / 0.11);
+  border-radius: 2px;
+  background: rgb(251 248 240 / 0.75);
+  color: #1F2A24;
 }
 body.lodging-booking-ios27 .lodging-stats-strip { position: relative; z-index: 1; }
 body.lodging-booking-ios27 .lodging-stat-pill {
-  border: 1px solid rgba(15, 23, 42, .08);
-  border-radius: 1rem;
-  background: rgba(255, 255, 255, .78);
-  color: #667085;
-  box-shadow: inset 0 1px rgb(255 255 255 / .9);
+  border: 1px solid rgb(31 42 36 / 0.08);
+  border-radius: 2px;
+  background: rgb(251 248 240 / 0.78);
+  color: #5E5D52;
+  box-shadow: inset 0 1px rgb(251 248 240 / 0.9);
 }
-body.lodging-booking-ios27 .lodging-stat-pill strong { color: #182230; }
+body.lodging-booking-ios27 .lodging-stat-pill strong { color: #1F2A24; }
 body.lodging-booking-ios27 .lodging-stat-pill.is-highlight {
-  border-color: rgb(15 118 110 / .16);
-  background: #effaf6;
+  border-color: rgb(31 42 36 / 0.16);
+  background: #F5F1E6;
 }
-body.lodging-booking-ios27 .lodging-stat-pill.is-highlight strong { color: #0f766e; }
+body.lodging-booking-ios27 .lodging-stat-pill.is-highlight strong { color: #1F2A24; }
 body.lodging-booking-ios27 .lodging-privacy-icon,
 body.lodging-booking-ios27 .room-photo-count-icon {
   display: inline-grid;
   place-items: center;
   flex: 0 0 auto;
 }
-body.lodging-booking-ios27 .lodging-privacy-icon .lka-icon { width: 1.05rem; height: 1.05rem; stroke: #0b7188; }
+body.lodging-booking-ios27 .lodging-privacy-icon .lka-icon { width: 1.05rem; height: 1.05rem; stroke: #1F2A24; }
 body.lodging-booking-ios27 .room-photo-count-icon .lka-icon { width: .9rem; height: .9rem; stroke: currentColor; }
 body.lodging-booking-ios27 .room-photo-count { display: inline-flex; align-items: center; gap: .28rem; }
 body.lodging-booking-ios27 .lodging-privacy-callout {
   position: relative;
   z-index: 1;
-  border: 1px solid rgb(11 143 176 / .12);
-  border-left: 3px solid #0b8fb0;
-  border-radius: 1rem;
-  background: rgba(238, 249, 252, .86);
-  color: #536273;
+  border: 1px solid rgb(31 42 36 / 0.12);
+  border-left: 3px solid #1F2A24;
+  border-radius: 2px;
+  background: rgb(245 241 230 / 0.86);
+  color: #5E5D52;
 }
 
 body.lodging-booking-ios27 .section-title { align-items: flex-start; }
-body.lodging-booking-ios27 .section-title .eyebrow { color: #0b7188; letter-spacing: .09em; text-transform: uppercase; }
-body.lodging-booking-ios27 .section-title p { color: #667085; }
+body.lodging-booking-ios27 .section-title .eyebrow { color: #1F2A24; letter-spacing: .09em; text-transform: uppercase; }
+body.lodging-booking-ios27 .section-title p { color: #5E5D52; }
 body.lodging-booking-ios27 .rooms-grid { gap: clamp(.9rem, 2vw, 1.35rem); }
 body.lodging-booking-ios27 .room-lodging-card {
-  border: 1px solid rgba(15, 23, 42, .09);
-  border-radius: 1.45rem;
-  background: rgba(255, 255, 255, .92);
-  box-shadow: 0 16px 38px -30px rgb(15 23 42 / .32), inset 0 1px rgb(255 255 255 / .95);
+  border: 1px solid rgb(31 42 36 / 0.09);
+  border-radius: 2px;
+  background: rgb(251 248 240 / 0.92);
+  box-shadow: 0 16px 38px -30px rgb(31 42 36 / 0.32), inset 0 1px rgb(251 248 240 / 0.95);
   transition: transform 180ms cubic-bezier(.2,.8,.2,1), box-shadow 180ms ease, border-color 180ms ease;
 }
 body.lodging-booking-ios27 .room-lodging-card:not(.is-full):hover {
   transform: translateY(-2px);
-  border-color: rgb(11 143 176 / .22);
-  box-shadow: 0 24px 48px -32px rgb(15 23 42 / .38), inset 0 1px rgb(255 255 255 / .95);
+  border-color: rgb(31 42 36 / 0.22);
+  box-shadow: 0 24px 48px -32px rgb(31 42 36 / 0.38), inset 0 1px rgb(251 248 240 / 0.95);
 }
 body.lodging-booking-ios27 .room-lodging-card.is-full { opacity: .72; }
-body.lodging-booking-ios27 .room-photo-wrap { border-color: rgba(15, 23, 42, .08); background: #edf2f5; }
+body.lodging-booking-ios27 .room-photo-wrap { border-color: rgb(31 42 36 / 0.08); background: #F5F1E6; }
 body.lodging-booking-ios27 .room-photo-cover { filter: saturate(.96) contrast(1.01); }
 body.lodging-booking-ios27 .room-photo-count {
-  border: 1px solid rgb(255 255 255 / .42);
-  background: rgb(17 24 39 / .72);
-  color: #fff;
-  backdrop-filter: blur(10px);
+  border: 1px solid rgb(251 248 240 / 0.42);
+  background: rgb(31 42 36 / 0.72);
+  color: #FBF8F0;
+  backdrop-filter: none;
 }
 body.lodging-booking-ios27 .room-card-head {
   gap: .7rem;
-  border-color: rgba(15, 23, 42, .08);
-  background: rgba(248, 250, 252, .84);
+  border-color: rgb(31 42 36 / 0.08);
+  background: rgb(251 248 240 / 0.84);
 }
-body.lodging-booking-ios27 .room-card-head small { color: #667085; }
-body.lodging-booking-ios27 .room-card-body { background: rgba(255, 255, 255, .94); }
-body.lodging-booking-ios27 .room-equip-note { color: #667085; }
+body.lodging-booking-ios27 .room-card-head small { color: #5E5D52; }
+body.lodging-booking-ios27 .room-card-body { background: rgb(251 248 240 / 0.94); }
+body.lodging-booking-ios27 .room-equip-note { color: #5E5D52; }
 body.lodging-booking-ios27 .bed-row {
   min-height: 3.45rem;
-  border-radius: 1rem;
-  border-color: rgba(15, 23, 42, .08);
-  background: #f7f9fb;
-  color: #344054;
+  border-radius: 2px;
+  border-color: rgb(31 42 36 / 0.08);
+  background: #FBF8F0;
+  color: #1F2A24;
 }
 body.lodging-booking-ios27 .bed-row.free {
-  border-color: rgb(15 118 110 / .15);
-  background: linear-gradient(135deg, #f5fcfa, #f8fbfc);
+  border-color: rgb(31 42 36 / 0.15);
+  background: linear-gradient(135deg, #FBF8F0, #FBF8F0);
 }
-body.lodging-booking-ios27 .bed-row.occupied { background: #f3f5f7; color: #6c7785; }
-body.lodging-booking-ios27 .bed-free-status { color: #0f766e; font-weight: 750; }
-body.lodging-booking-ios27 .bed-occupant-status { color: #7d8998; }
+body.lodging-booking-ios27 .bed-row.occupied { background: #F5F1E6; color: #5E5D52; }
+body.lodging-booking-ios27 .bed-free-status { color: #1F2A24; font-weight: 750; }
+body.lodging-booking-ios27 .bed-occupant-status { color: #5E5D52; }
 body.lodging-booking-ios27 .bed-select-btn {
   min-height: 44px;
-  border: 1px solid rgb(11 143 176 / .16);
-  border-radius: .9rem;
-  background: linear-gradient(180deg, #2fbdd7, #16a8c4);
-  color: #062f39;
-  box-shadow: 0 7px 16px rgb(22 168 196 / .18), inset 0 1px rgb(255 255 255 / .45);
+  border: 1px solid rgb(31 42 36 / 0.16);
+  border-radius: 2px;
+  background: linear-gradient(180deg, #1F2A24, #1F2A24);
+  color: #FBF8F0;
+  box-shadow: 0 7px 16px rgb(31 42 36 / 0.18), inset 0 1px rgb(251 248 240 / 0.45);
 }
 body.lodging-booking-ios27 .bed-select-btn:hover {
-  background: linear-gradient(180deg, #43c6dd, #22afc9);
-  color: #052a33;
+  background: linear-gradient(180deg, #1F2A24, #1F2A24);
+  color: #FBF8F0;
 }
 body.lodging-booking-ios27 .sticky-jump-container .btn-jump-next-bed {
-  border: 1px solid rgb(11 143 176 / .16);
+  border: 1px solid rgb(31 42 36 / 0.16);
   border-radius: 999px;
-  background: rgb(255 255 255 / .88);
-  color: #075f75;
-  box-shadow: 0 14px 34px rgb(15 23 42 / .15);
-  backdrop-filter: blur(18px);
-  -webkit-backdrop-filter: blur(18px);
+  background: rgb(251 248 240 / 0.88);
+  color: #1F2A24;
+  box-shadow: 0 1px 2px rgb(31 42 36 / 0.08);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
 }
 
 /* Dark glass booking dialog — focused decision layer over the bright page. */
 body.lodging-booking-ios27 #bookingModal { color-scheme: dark; }
 body.lodging-booking-ios27 #bookingModal::backdrop {
-  background: radial-gradient(circle at 50% 20%, rgb(34 180 207 / .12), transparent 25rem), rgb(7 12 23 / .58);
-  backdrop-filter: blur(10px) saturate(.85);
-  -webkit-backdrop-filter: blur(10px) saturate(.85);
+  background: rgb(31 42 36 / 0.58);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
 }
 body.lodging-booking-ios27 #bookingModal .booking-dialog-article {
   position: relative;
@@ -280,33 +264,31 @@ body.lodging-booking-ios27 #bookingModal .booking-dialog-article {
   max-width: 34rem;
   margin: auto;
   overflow: hidden;
-  border: 1px solid rgb(255 255 255 / .10);
-  border-radius: 1.65rem;
+  border: 1px solid rgb(251 248 240 / 0.1);
+  border-radius: 2px;
   background:
-    radial-gradient(circle at 16% 3%, rgb(40 99 126 / .28), transparent 16rem),
-    radial-gradient(circle at 92% 90%, rgb(104 51 111 / .20), transparent 18rem),
-    linear-gradient(145deg, #171d2e 0%, #191827 52%, #211925 100%);
-  color: #eef2f7;
-  box-shadow: 0 34px 90px rgb(0 0 0 / .46), inset 0 1px rgb(255 255 255 / .07);
+    linear-gradient(145deg, #1F2A24 0%, #1F2A24 52%, #1F2A24 100%);
+  color: #F5F1E6;
+  box-shadow: 0 34px 90px rgb(31 42 36 / 0.46), inset 0 1px rgb(251 248 240 / 0.07);
 }
 body.lodging-booking-ios27 #bookingModal .booking-dialog-article::before {
   content: "";
   position: absolute;
   inset: 0;
   pointer-events: none;
-  background: linear-gradient(115deg, rgb(255 255 255 / .035), transparent 36%, rgb(255 255 255 / .015));
+  background: linear-gradient(115deg, rgb(251 248 240 / 0.035), transparent 36%, rgb(251 248 240 / 0.015));
 }
 body.lodging-booking-ios27 #bookingModal .booking-dialog-article > * { position: relative; z-index: 1; }
 body.lodging-booking-ios27 #bookingModal header {
   margin: -1rem -1rem 1rem;
   padding: 1.35rem 1.35rem 1rem;
-  border-bottom: 1px solid rgb(255 255 255 / .07);
+  border-bottom: 1px solid rgb(251 248 240 / 0.07);
   background: transparent;
 }
 body.lodging-booking-ios27 #bookingModal header [rel="prev"] {
-  border: 1px solid rgb(255 255 255 / .09);
-  background: rgb(255 255 255 / .055);
-  color: #e7edf5;
+  border: 1px solid rgb(251 248 240 / 0.09);
+  background: rgb(251 248 240 / 0.055);
+  color: #F5F1E6;
 }
 body.lodging-booking-ios27 .booking-dialog-intro {
   display: grid;
@@ -320,260 +302,115 @@ body.lodging-booking-ios27 .booking-dialog-icon {
   height: 3.05rem;
   display: grid;
   place-items: center;
-  border: 1px solid rgb(113 167 255 / .22);
+  border: 1px solid rgb(157 179 201 / 0.22);
   border-radius: 50%;
-  background: linear-gradient(145deg, rgb(45 98 158 / .30), rgb(103 55 160 / .22));
-  color: #a9c9ff;
-  box-shadow: inset 0 1px rgb(255 255 255 / .07);
+  background: linear-gradient(145deg, rgb(31 78 121 / 0.3), rgb(91 74 120 / 0.22));
+  color: #9DB3C9;
+  box-shadow: inset 0 1px rgb(251 248 240 / 0.07);
 }
 body.lodging-booking-ios27 .booking-dialog-icon .lka-icon { width: 1.35rem; height: 1.35rem; }
 body.lodging-booking-ios27 .booking-dialog-kicker {
   display: block;
   margin: 0 0 .12rem;
-  color: #aeb8c8;
+  color: #B9AD8F;
   font-size: .73rem;
   font-weight: 760;
   letter-spacing: .07em;
   text-transform: uppercase;
 }
-body.lodging-booking-ios27 #bookingModalHeading { margin: 0; color: #f8fafc; font-size: 1.18rem; }
-body.lodging-booking-ios27 #modalRoomTitle { margin: .32rem 0 0; color: #c9d7ea; font-size: .92rem; font-weight: 650; }
+body.lodging-booking-ios27 #bookingModalHeading { margin: 0; color: #FBF8F0; font-size: 1.18rem; }
+body.lodging-booking-ios27 #modalRoomTitle { margin: .32rem 0 0; color: #EFE8D6; font-size: .92rem; font-weight: 650; }
 body.lodging-booking-ios27 .booking-dialog-hint {
   margin: .85rem 0 0;
-  color: #aeb8c8;
+  color: #B9AD8F;
   font-size: .88rem;
   line-height: 1.58;
 }
 body.lodging-booking-ios27 #bookingModal form { margin: 0; }
-body.lodging-booking-ios27 #bookingModal label { color: #dfe6ef; font-size: .9rem; }
+body.lodging-booking-ios27 #bookingModal label { color: #EFE8D6; font-size: .9rem; }
 body.lodging-booking-ios27 #bookingModal :is(input, select, textarea) {
   min-height: 46px;
-  border: 1px solid rgb(255 255 255 / .10);
-  border-radius: .9rem;
-  background: rgb(5 10 21 / .36);
-  color: #f6f8fb;
-  box-shadow: inset 0 1px 0 rgb(255 255 255 / .025);
+  border: 1px solid rgb(251 248 240 / 0.1);
+  border-radius: 2px;
+  background: rgb(31 42 36 / 0.36);
+  color: #FBF8F0;
+  box-shadow: inset 0 1px 0 rgb(251 248 240 / 0.025);
 }
-body.lodging-booking-ios27 #bookingModal :is(input, select, textarea)::placeholder { color: #778397; }
+body.lodging-booking-ios27 #bookingModal :is(input, select, textarea)::placeholder { color: #5E5D52; }
 body.lodging-booking-ios27 #bookingModal :is(input, select, textarea):focus {
-  border-color: rgb(87 194 223 / .65);
-  box-shadow: 0 0 0 .2rem rgb(47 189 215 / .12);
+  border-color: rgb(185 173 143 / 0.65);
+  box-shadow: 0 0 0 .2rem rgb(31 42 36 / 0.12);
 }
-body.lodging-booking-ios27 #bookingModal .notice { border-color: rgb(244 114 124 / .3); background: rgb(107 35 51 / .28); color: #ffd5da; }
+body.lodging-booking-ios27 #bookingModal .notice { border-color: rgb(217 149 140 / 0.3); background: rgb(163 36 28 / 0.28); color: #F5E1DC; }
 body.lodging-booking-ios27 #bookingModal .modal-form-actions {
   margin-top: 1.15rem;
   padding-top: 1rem;
-  border-top: 1px solid rgb(255 255 255 / .075);
+  border-top: 1px solid rgb(251 248 240 / 0.075);
 }
 body.lodging-booking-ios27 #bookingModal .modal-form-actions .secondary {
-  border-color: rgb(255 255 255 / .10);
-  background: rgb(255 255 255 / .055);
-  color: #aeb8c8;
+  border-color: rgb(251 248 240 / 0.1);
+  background: rgb(251 248 240 / 0.055);
+  color: #B9AD8F;
 }
 body.lodging-booking-ios27 #bookingModal .btn-confirm {
-  border-color: rgb(63 165 232 / .22);
-  background: linear-gradient(90deg, #278bd2, #6440c9);
-  color: #f7fbff;
-  box-shadow: 0 10px 24px rgb(53 78 195 / .24), inset 0 1px rgb(255 255 255 / .14);
+  border-color: rgb(31 78 121 / 0.22);
+  background: linear-gradient(90deg, #1F4E79, #1F4E79);
+  color: #FBF8F0;
+  box-shadow: 0 10px 24px rgb(31 78 121 / 0.24), inset 0 1px rgb(251 248 240 / 0.14);
 }
-body.lodging-booking-ios27 #bookingModal .btn-confirm:hover { background: linear-gradient(90deg, #3a9be1, #7350d1); color: #fff; }
+body.lodging-booking-ios27 #bookingModal .btn-confirm:hover { background: linear-gradient(90deg, #1F4E79, #1F4E79); color: #FBF8F0; }
 
-body.lodging-booking-ios27 #roomGalleryDialog::backdrop { background: rgb(7 12 23 / .56); backdrop-filter: blur(8px); }
+body.lodging-booking-ios27 #roomGalleryDialog::backdrop { background: rgb(31 42 36 / 0.56); backdrop-filter: none; }
 body.lodging-booking-ios27 #roomGalleryDialog .gallery-dialog-article {
-  border: 1px solid rgba(15, 23, 42, .09);
-  border-radius: 1.5rem;
-  background: #fff;
-  color: #182230;
-  box-shadow: 0 30px 80px rgb(15 23 42 / .28);
+  border: 1px solid rgb(31 42 36 / 0.09);
+  border-radius: 2px;
+  background: #FBF8F0;
+  color: #1F2A24;
+  box-shadow: 0 1px 2px rgb(31 42 36 / 0.08);
 }
-body.lodging-booking-ios27 #roomGalleryDialog h3 { color: #111827; }
-body.lodging-booking-ios27 #roomGalleryDialog header { background: #f8fafc; border-color: rgba(15, 23, 42, .08); }
-body.lodging-booking-ios27 .room-gallery-viewport { background: #edf2f5; }
-body.lodging-booking-ios27 .room-gallery-counter { color: #667085; }
-
-/* ---------- Login arrival journey ---------- */
-body.sigroom-login-journey main.container.page-shell {
-  width: 100%;
-  max-width: none;
-  min-height: calc(100dvh - 4.5rem);
-  margin: 0;
-  padding: 0;
-}
-body.sigroom-login-journey .auth-stage {
-  position: relative;
-  min-height: calc(100dvh - 4.5rem);
-  display: grid;
-  place-items: center;
-  overflow: hidden;
-  padding: clamp(1rem, 4vw, 2.5rem);
-  isolation: isolate;
-}
-body.sigroom-login-journey .auth-stage::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  z-index: -3;
-  background:
-    radial-gradient(circle at 22% 22%, rgb(70 200 223 / .16), transparent 24rem),
-    radial-gradient(circle at 78% 74%, rgb(71 166 143 / .14), transparent 27rem),
-    linear-gradient(180deg, #f7fafc, #eef3f8);
-}
-body.sigroom-login-journey .arrival-horizon {
-  position: absolute;
-  left: 50%;
-  bottom: clamp(1.5rem, 6vh, 4.5rem);
-  width: min(72rem, 94vw);
-  height: 18rem;
-  translate: -50% 0;
-  z-index: -1;
-  pointer-events: none;
-}
-body.sigroom-login-journey .arrival-horizon::after {
-  content: "";
-  position: absolute;
-  left: 8%;
-  right: 8%;
-  bottom: 1.2rem;
-  height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(15, 23, 42, .12) 15%, rgba(15, 23, 42, .12) 85%, transparent);
-}
-body.sigroom-login-journey .arrival-illustration {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  overflow: visible;
-}
-body.sigroom-login-journey .arrival-soldier,
-body.sigroom-login-journey .arrival-suitcase { transform-box: fill-box; transform-origin: center bottom; }
-body.sigroom-login-journey .arrival-soldier { transform: translateX(-430px); opacity: 0; }
-body.sigroom-login-journey .arrival-suitcase { transform: translateX(-390px) translateY(-8px); opacity: 0; }
-body.sigroom-login-journey .arrival-suitcase-lid { transform-box: fill-box; transform-origin: 50% 100%; }
-body.sigroom-login-journey .arrival-shadow { opacity: 0; transform-origin: center; }
-body.sigroom-login-journey:not(.journey-skip) .arrival-soldier { animation: sigroom-soldier-arrive 1.45s cubic-bezier(.22,.75,.18,1) .08s both; }
-body.sigroom-login-journey:not(.journey-skip) .arrival-suitcase { animation: sigroom-suitcase-arrive 1.32s cubic-bezier(.22,.78,.19,1) .18s both, sigroom-suitcase-drop .32s cubic-bezier(.2,.9,.2,1) 1.52s both; }
-body.sigroom-login-journey:not(.journey-skip) .arrival-suitcase-lid { animation: sigroom-suitcase-open .5s cubic-bezier(.2,.85,.2,1) 1.76s both; }
-body.sigroom-login-journey:not(.journey-skip) .arrival-shadow { animation: sigroom-shadow-in .45s ease 1.42s both; }
-body.sigroom-login-journey .login-card {
-  width: min(100%, 32rem);
-  margin: 0;
-  z-index: 2;
-  border: 1px solid rgba(15, 23, 42, .09);
-  border-radius: 1.65rem;
-  background: rgb(255 255 255 / .89);
-  color: #182230;
-  box-shadow: 0 28px 70px -30px rgb(15 23 42 / .35), inset 0 1px rgb(255 255 255 / .94);
-  backdrop-filter: blur(22px) saturate(1.15);
-  -webkit-backdrop-filter: blur(22px) saturate(1.15);
-  transform-origin: 50% 100%;
-}
-body.sigroom-login-journey:not(.journey-skip) .login-card {
-  animation: sigroom-login-rise .78s cubic-bezier(.2,.82,.18,1) 1.92s both;
-}
-body.sigroom-login-journey.journey-skip .arrival-soldier,
-body.sigroom-login-journey.journey-skip .arrival-suitcase,
-body.sigroom-login-journey.journey-skip .arrival-shadow { opacity: .16; transform: none; }
-body.sigroom-login-journey.journey-skip .arrival-suitcase-lid { transform: rotate(-42deg) translateY(-2px); }
-body.sigroom-login-journey.journey-skip .login-card { opacity: 1; transform: none; }
-body.sigroom-login-journey .login-card header { margin-bottom: 1.35rem; }
-body.sigroom-login-journey .login-card .eyebrow { color: #0b7188; }
-body.sigroom-login-journey .login-card h1 { color: #111827; font-family: var(--font-sans); letter-spacing: .12em; }
-body.sigroom-login-journey .login-card > header > p:not(.eyebrow) { color: #667085; }
-body.sigroom-login-journey .login-card .sysline { color: #7d8998; }
-body.sigroom-login-journey .login-card .sysline::after { background: linear-gradient(90deg, rgba(15,23,42,.18), transparent); }
-body.sigroom-login-journey .login-card label { color: #344054; }
-body.sigroom-login-journey .login-card input {
-  border-radius: .95rem;
-  border-color: rgba(15, 23, 42, .13);
-  background: rgba(255, 255, 255, .94);
-  color: #182230;
-}
-body.sigroom-login-journey .login-card button[type="submit"] {
-  min-height: 3rem;
-  border-color: rgb(11 143 176 / .16);
-  border-radius: 1rem;
-  background: linear-gradient(180deg, #31bfd9, #18abc7);
-  color: #052f39;
-  box-shadow: 0 10px 22px rgb(24 171 199 / .18), inset 0 1px rgb(255 255 255 / .46);
-}
-body.sigroom-login-journey .login-card a { color: #08728d; font-weight: 700; }
-body.sigroom-login-journey .login-card .muted-text { color: #667085; }
-body.sigroom-login-journey .login-card .notice.error { border-color: rgb(190 57 76 / .22); background: #fff1f2; color: #8f2436; }
-body.sigroom-login-journey .arrival-caption {
-  position: absolute;
-  left: 50%;
-  bottom: clamp(.35rem, 2vh, 1.1rem);
-  translate: -50% 0;
-  z-index: 1;
-  margin: 0;
-  color: #7b8795;
-  font-size: .76rem;
-  font-weight: 650;
-  letter-spacing: .025em;
-  text-align: center;
-  pointer-events: none;
-}
-
-@keyframes sigroom-soldier-arrive {
-  0% { opacity: 0; transform: translateX(-430px); }
-  12% { opacity: 1; }
-  78% { opacity: 1; transform: translateX(-5px); }
-  100% { opacity: .18; transform: translateX(70px); }
-}
-@keyframes sigroom-suitcase-arrive {
-  0% { opacity: 0; transform: translateX(-390px) translateY(-8px) rotate(-2deg); }
-  10% { opacity: 1; }
-  100% { opacity: 1; transform: translateX(0) translateY(-8px) rotate(0); }
-}
-@keyframes sigroom-suitcase-drop {
-  0% { transform: translateX(0) translateY(-8px); }
-  58% { transform: translateX(0) translateY(9px); }
-  76% { transform: translateX(0) translateY(2px); }
-  100% { transform: translateX(0) translateY(6px); }
-}
-@keyframes sigroom-suitcase-open {
-  0%, 28% { transform: rotate(0deg); }
-  100% { transform: rotate(-48deg) translateY(-2px); }
-}
-@keyframes sigroom-shadow-in { from { opacity: 0; transform: scaleX(.45); } to { opacity: .2; transform: scaleX(1); } }
-@keyframes sigroom-login-rise {
-  0% { opacity: 0; transform: translateY(108px) scale(.84); filter: blur(7px); }
-  56% { opacity: 1; transform: translateY(-8px) scale(1.012); filter: blur(0); }
-  100% { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
-}
+body.lodging-booking-ios27 #roomGalleryDialog h3 { color: #1F2A24; }
+body.lodging-booking-ios27 #roomGalleryDialog header { background: #FBF8F0; border-color: rgb(31 42 36 / 0.08); }
+body.lodging-booking-ios27 .room-gallery-viewport { background: #F5F1E6; }
+body.lodging-booking-ios27 .room-gallery-counter { color: #5E5D52; }
 
 @media (max-width: 47.99rem) {
   body.lodging-booking-ios27 main.container.page-shell { width: min(100% - 1rem, 82rem); padding-top: 1rem; }
-  body.lodging-booking-ios27 .lodging-portal-hero { border-radius: 1.35rem; }
-  body.lodging-booking-ios27 .room-lodging-card { border-radius: 1.25rem; }
+  body.lodging-booking-ios27 .lodging-portal-hero { border-radius: 2px; }
+  body.lodging-booking-ios27 .room-lodging-card { border-radius: 2px; }
   body.lodging-booking-ios27 #bookingModal .booking-dialog-article {
     width: min(calc(100vw - .75rem), 34rem);
     max-height: calc(100dvh - .75rem);
     margin: .375rem auto;
-    border-radius: 1.4rem;
+    border-radius: 2px;
   }
   body.lodging-booking-ios27 #bookingModal .modal-form-actions { display: grid; grid-template-columns: minmax(0, .72fr) minmax(0, 1.28fr); gap: .65rem; }
   body.lodging-booking-ios27 #bookingModal .modal-form-actions > button { width: 100%; min-width: 0; }
-  body.sigroom-login-journey .auth-stage { padding: .75rem; align-items: center; }
-  body.sigroom-login-journey .login-card { width: min(100%, 31rem); padding: 1.15rem; border-radius: 1.4rem; }
-  body.sigroom-login-journey .arrival-horizon { bottom: 1rem; width: 125vw; height: 13.5rem; opacity: .8; }
-  body.sigroom-login-journey .arrival-caption { display: none; }
 }
 
 @media (prefers-reduced-motion: reduce) {
   body.lodging-booking-ios27 .room-lodging-card,
-  body.lodging-booking-ios27 .bed-select-btn,
-  body.sigroom-login-journey .arrival-soldier,
-  body.sigroom-login-journey .arrival-suitcase,
-  body.sigroom-login-journey .arrival-suitcase-lid,
-  body.sigroom-login-journey .arrival-shadow,
-  body.sigroom-login-journey .login-card {
+  body.lodging-booking-ios27 .bed-select-btn {
     animation: none !important;
     transition: none !important;
   }
-  body.sigroom-login-journey .arrival-soldier,
-  body.sigroom-login-journey .arrival-suitcase,
-  body.sigroom-login-journey .arrival-shadow { opacity: .12; transform: none; }
-  body.sigroom-login-journey .arrival-suitcase-lid { transform: rotate(-42deg) translateY(-2px); }
-  body.sigroom-login-journey .login-card { opacity: 1; transform: none; filter: none; }
 }
+
+/* ธีม A Ledger: หัวเว็บหน้าที่พัก/เข้าสู่ระบบ ใช้แบบเดียวกับทั้งระบบ (กระดาษ + เส้นหมึก 2px) */
+body:is(.lodging-about-ios27, .lodging-booking-ios27) .site-header {
+  border-bottom: 2px solid #1F2A24; background: #F5F1E6; box-shadow: none; backdrop-filter: none; -webkit-backdrop-filter: none;
+}
+body:is(.lodging-about-ios27, .lodging-booking-ios27) .brand {
+  color: #1F2A24; font-family: var(--font-serif); font-size: inherit; font-weight: 500; letter-spacing: 0;
+}
+body:is(.lodging-about-ios27, .lodging-booking-ios27) .brand-sub { letter-spacing: 0; color: #5E5D52; }
+body:is(.lodging-about-ios27, .lodging-booking-ios27) .main-nav a {
+  min-height: max(44px, 2.75rem); border: none; border-radius: 0; background: transparent; box-shadow: none;
+  color: #1F2A24; font-size: .95rem; font-weight: 500;
+}
+body:is(.lodging-about-ios27, .lodging-booking-ios27) .main-nav a:hover { background: transparent; box-shadow: none; text-decoration: underline; }
+body:is(.lodging-about-ios27, .lodging-booking-ios27) .main-nav a[aria-current="page"] { background: transparent; box-shadow: inset 0 -2px #1F2A24; }
+body:is(.lodging-about-ios27, .lodging-booking-ios27) .login-btn-header {
+  border: 1px solid #1F2A24; border-radius: 2px; background: #1F2A24; color: #F5F1E6; box-shadow: none; font-weight: 500;
+}
+body:is(.lodging-about-ios27, .lodging-booking-ios27) :is(.account-menu, .mobile-menu) > summary { border-radius: 2px; box-shadow: none; }
+body:is(.lodging-about-ios27, .lodging-booking-ios27) .mobile-menu-panel { border-radius: 0; border: none; border-bottom: 2px solid #1F2A24; background: #FBF8F0; box-shadow: 0 2px 6px rgb(31 42 36 / .12); }

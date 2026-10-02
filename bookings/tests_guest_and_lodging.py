@@ -62,7 +62,7 @@ def test_guest_can_view_calendar_without_login(client, sample_data):
     """ผู้ใช้ทั่วไปที่ไม่ได้ล็อกอิน สามารถเข้าดูหน้าแรกและเห็นสถานะห้องได้ทันที"""
     resp = client.get(reverse("bookings:calendar"))
     assert resp.status_code == 200
-    assert "สถานะห้องและที่พักวันนี้" in resp.content.decode("utf-8")
+    assert "สถานะห้องวันนี้" in resp.content.decode("utf-8")
     assert "เข้าสู่ระบบ" in resp.content.decode("utf-8")
     assert "B1-101" in resp.content.decode("utf-8")
 

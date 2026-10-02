@@ -6,11 +6,11 @@
 
 <div class="page-heading booking-flow-heading">
   <div>
-    <p class="eyebrow">ขั้นที่ 4 จาก 5 · ตรวจสอบก่อนยืนยัน</p>
+    <p class="eyebrow">ขั้น ๓ · ตรวจสอบก่อนยืนยันชุดการจอง</p>
     <h1>{{ booking.title }} — {{ room.code }}</h1>
     <p class="heading-desc">{{ preview.items.0.start_at|date:"H:i" }}–{{ preview.items.0.end_at|date:"H:i" }} น. · รวม {{ preview.items|length }} ครั้ง</p>
   </div>
-  <a class="secondary" role="button" href="{% url 'bookings:book_form' room.code %}">← กลับไปแก้ไขข้อมูล</a>
+  <a class="secondary" role="button" href="{% url 'bookings:book_form' room.code %}">กลับไปแก้ไขข้อมูล</a>
 </div>
 
 <article class="detail-card series-summary-card">

@@ -217,7 +217,7 @@ def test_cohort_edit_supervisor_sees_form_without_danger_zone(client, ux14_setup
     assert "เลือกทั้งหมด" in html
     assert "ยกเลิกทั้งหมด" in html
     # Normal supervisor must NOT see danger zone
-    assert "Danger Zone" not in html
+    assert "เขตการดำเนินการพิเศษ" not in html
     assert 'name="force_release"' not in html
     assert 'name="release_reason"' not in html
 
@@ -229,7 +229,7 @@ def test_cohort_edit_permitted_user_sees_form_without_danger_zone(client, ux14_s
     assert response.status_code == 200
     html = response.content.decode("utf-8")
     assert "แก้ไขรอบที่พัก" in html
-    assert "Danger Zone" not in html
+    assert "เขตการดำเนินการพิเศษ" not in html
     assert 'name="force_release"' not in html
 
 
@@ -239,8 +239,8 @@ def test_cohort_edit_superuser_sees_danger_zone(client, ux14_setup):
     response = client.get(url)
     assert response.status_code == 200
     html = response.content.decode("utf-8")
-    assert "Danger Zone" in html
-    assert "เขตการดำเนินการพิเศษ (Danger Zone) — บังคับปลดการสงวนห้องพัก" in html
+    assert "เขตการดำเนินการพิเศษ" in html
+    assert "เขตการดำเนินการพิเศษ — บังคับปลดการสงวนห้องพัก" in html
     assert 'name="force_release"' in html
     assert 'name="release_reason"' in html
 

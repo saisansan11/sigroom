@@ -59,7 +59,7 @@ def test_guest_home_renders_three_one_stop_cards_and_anchor(client):
     assert resp.status_code == 200
     content = resp.content.decode()
 
-    assert "home-entry-grid" in content
+    assert 'class="room-index"' in content
     assert "ห้องเรียน / ห้องปฏิบัติ" in content
     assert "ห้องประชุม" in content
     assert "ห้องพักหลักสูตร" in content
@@ -83,13 +83,13 @@ def test_authenticated_home_hides_role_router_and_orders_actions(client, v6_a_se
 
     # การ์ดทางเข้าใหม่ต้องแสดงทั้ง guest และผู้ล็อกอิน
     assert "guest-role-router" not in content
-    assert "home-entry-grid" in content
-    assert "ดูห้องว่างตอนนี้" in content
+    assert 'class="room-index"' in content
+    assert 'id="homepage-availability"' in content
     assert cohort.title in content
     assert reverse("bookings:lodging_portal", args=[cohort.slug]) in content
 
-    # ตรวจสอบการแสดงผล role-actions
-    assert "role-actions" in content
+    # ธีม A: งานของผู้ใช้อยู่ในแถบงาน 3 ช่อง
+    assert 'class="task-strip"' in content
 
 
 def test_authenticated_role_actions_priority_ordering(client, v6_a_setup, monkeypatch):
@@ -115,12 +115,10 @@ def test_authenticated_role_actions_priority_ordering(client, v6_a_setup, monkey
     assert resp1.status_code == 200
     content1 = resp1.content.decode()
 
-    # ยืนยันว่างานดูแลห้องมาก่อนงานผู้อนุมัติ
-    assert "วันนี้มี 2 รายการให้ตรวจ" in content1
-    assert "คิวอนุมัติเรียบร้อย" in content1
-    idx_usage_1 = content1.index("วันนี้มี 2 รายการให้ตรวจ")
-    idx_approvals_1 = content1.index("คิวอนุมัติเรียบร้อย")
-    assert idx_usage_1 < idx_approvals_1
+    # R3-0: ช่องงานหลักเลือกงานดูแลห้อง ส่วนคิวอนุมัติยังเข้าถึงได้จาก ดูเพิ่มเติม โดยไม่ซ้ำข้อความบนหน้าแรก
+    assert 'data-task="usage"' in content1
+    assert 'data-task="approvals"' not in content1
+    assert reverse("approvals:queue") in content1
 
     # กรณีที่ 2: nav_pending_approval_count = 3, usage_today_count = 2
     monkeypatch.setattr("notifications.context_processors.pending_for", lambda u: [1, 2, 3])
@@ -129,12 +127,10 @@ def test_authenticated_role_actions_priority_ordering(client, v6_a_setup, monkey
     assert resp2.status_code == 200
     content2 = resp2.content.decode()
 
-    # ยืนยันว่างานผู้อนุมัติขึ้นก่อนงานดูแลห้อง
-    assert "มี 3 รายการรอตัดสิน" in content2
-    assert "วันนี้มี 2 รายการให้ตรวจ" in content2
-    idx_approvals_2 = content2.index("มี 3 รายการรอตัดสิน")
-    idx_usage_2 = content2.index("วันนี้มี 2 รายการให้ตรวจ")
-    assert idx_approvals_2 < idx_usage_2
+    # เมื่อมีคำขอรออนุมัติ ช่องงานหลักต้องสลับเป็น approvals; งานดูแลห้องยังเข้าถึงได้จาก ดูเพิ่มเติม
+    assert 'data-task="approvals"' in content2
+    assert 'data-task="usage"' not in content2
+    assert reverse("usage:list") in content2
 
 
 def test_lodging_portal_sorts_available_rooms_before_full_rooms(client, v6_a_setup):
@@ -171,7 +167,7 @@ def test_lodging_portal_sorts_available_rooms_before_full_rooms(client, v6_a_set
 
 
 def test_lodging_portal_renders_jump_button_and_input_attributes(client, v6_a_setup):
-    """หน้า student portal ต้องมีปุ่มลอยไปเตียงว่าง, inputmode="tel" และ autofocus"""
+    """หน้า student portal ต้องมีปุ่มลอยไปห้องว่าง, inputmode="tel" และ autofocus"""
     _, _, cohort, _, _ = v6_a_setup
 
     resp = client.get(reverse("bookings:lodging_portal", args=[cohort.slug]))
@@ -179,7 +175,7 @@ def test_lodging_portal_renders_jump_button_and_input_attributes(client, v6_a_se
     content = resp.content.decode()
 
     # ปุ่มลอย
-    assert "ไปที่เตียงว่างถัดไป ▾" in content
+    assert "ไปที่ห้องว่างถัดไป" in content
     assert "btn-jump-next-bed" in content
     assert "scrollToNextFreeBed" in content
 

@@ -5,7 +5,7 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.db.models import Q
-from django.http import Http404, JsonResponse
+from django.http import Http404, HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils import timezone
@@ -13,13 +13,15 @@ from django.utils.dateparse import parse_datetime
 from django.views.decorators.http import require_POST
 
 from resources.models import Blackout, Resource, ResourceRule
-from resources.services import active_outages
+from resources.services import active_blackouts, active_outages
 from approvals.services import can_decide, recent_rejection_reasons
 from notifications.services import notify_submitted
 from audit.services import audit, model_snapshot
 from usage.services import can_manage_usage, recent_bookings_for
 
+from .board import free_gaps
 from .amendment_services import amendment_ref, evaluate_amendment_policy, submit_amendment, withdraw_amendment
+from .ics import booking_ics as booking_ics_text
 from .forms import AmendmentForm, BookingForm, BuddhistDateField, PreemptionForm, time_choices
 from .lodging_models import CourseLodgingCohort
 from .models import Booking, BookingAmendment, BookingSeries, Preemption
@@ -40,6 +42,14 @@ from .services import (
     self_service_message,
     submit_booking,
     time_presets,
+    booking_suggestions,
+    booking_ref,
+    last_booking_defaults,
+    resolve_search_selection,
+    room_day_bookings,
+    search_date_choices,
+    search_period_choices,
+    short_thai_date,
 )
 
 
@@ -93,12 +103,44 @@ def _booking_queryset():
     return Booking.objects.select_related("room", "room__rule", "unit", "requester").prefetch_related("equipment")
 
 
+BOARD_START_HOUR = 7
+BOARD_END_HOUR = 21
+
+
+def _board_time_label(dt):
+    return timezone.localtime(dt).strftime("%H.%M")
+
+
+def _board_gap_url(request, room, gap):
+    """ลิงก์ช่วงว่าง → ฟอร์มจองห้องนั้นพร้อมเติมวัน/เวลา (ผู้ไม่ได้เข้าสู่ระบบ → หน้าเข้าสู่ระบบก่อน)"""
+    local_start = timezone.localtime(gap.start)
+    local_end = timezone.localtime(gap.end)
+    query = urlencode({
+        "date": local_start.date().isoformat(),
+        "start": local_start.strftime("%H:%M"),
+        "end": local_end.strftime("%H:%M"),
+    })
+    path = f"{reverse('bookings:book_form', args=[room.code])}?{query}"
+    if request.user.is_authenticated:
+        return path
+    return f"{reverse('login')}?{urlencode({'next': path})}"
+
+
+def _room_gap_bookable(request, room):
+    """ห้องที่ชวนแตะจองจากหน้าแรกได้: ห้องเรียน/ประชุม/ปฏิบัติ ทุกคน, ห้องสอนออนไลน์เฉพาะผู้มีสิทธิ์"""
+    if room.room_category in GENERIC_BOOKING_CATEGORIES:
+        return True
+    if room.room_category == Resource.Category.ONLINE:
+        return request.user.is_authenticated and can_book_online_teaching(request.user)
+    return False
+
+
 def _today_board(request, rooms, now):
-    """แถวเวลารายห้องของวันนี้ (07:00–21:00) พร้อมตัวเลขสรุปสถานการณ์"""
+    """แถวเวลารายห้องของวันนี้ (07:00–21:00) พร้อมช่วงว่างแตะจอง และตัวเลขสรุปสถานการณ์"""
     zone = timezone.get_current_timezone()
     day = timezone.localdate(now)
-    board_start = timezone.make_aware(datetime.combine(day, time(7)), zone)
-    board_end = timezone.make_aware(datetime.combine(day, time(21)), zone)
+    board_start = timezone.make_aware(datetime.combine(day, time(BOARD_START_HOUR)), zone)
+    board_end = timezone.make_aware(datetime.combine(day, time(BOARD_END_HOUR)), zone)
     span = (board_end - board_start).total_seconds()
 
     def pct(dt):
@@ -137,14 +179,29 @@ def _today_board(request, rooms, now):
     rows, in_use, busy_now = [], set(), set()
     for room in rooms:
         blocks = []
+        busy = []
         for outage in active_outages(room, board_start, board_end):
             blocks.append({
                 "cls": "outage",
                 "left": pct(outage.start_at),
                 "width": max(1.5, pct(outage.end_at) - pct(outage.start_at)),
-                "label": f"งดใช้ — {outage.reason}",
+                "label": f"งดใช้ · {outage.reason}",
+                "time_label": f"{_board_time_label(outage.start_at)}–{_board_time_label(outage.end_at)} น.",
             })
+            busy.append((outage.start_at, outage.end_at))
             if outage.start_at <= now < outage.end_at:
+                busy_now.add(room.id)
+        for blackout in active_blackouts(room, board_start, board_end):
+            # ปฏิทินส่วนกลาง (วันหยุด/กิจกรรม) — แสดงลายงดใช้ให้รู้ว่าทำไมไม่มีช่วงว่าง
+            blocks.append({
+                "cls": "outage",
+                "left": pct(blackout.start_at),
+                "width": max(1.5, pct(blackout.end_at) - pct(blackout.start_at)),
+                "label": f"งดใช้ · {blackout.title}",
+                "time_label": f"{_board_time_label(blackout.start_at)}–{_board_time_label(blackout.end_at)} น.",
+            })
+            busy.append((blackout.start_at, blackout.end_at))
+            if blackout.start_at <= now < blackout.end_at:
                 busy_now.add(room.id)
         for booking in bookings_by_room.get(room.id, []):
             if can_view_details(request.user, booking):
@@ -169,25 +226,47 @@ def _today_board(request, rooms, now):
                 "cls": cls,
                 "left": pct(booking.start_at),
                 "width": max(1.5, pct(booking.end_at) - pct(booking.start_at)),
-                "label": label,
+                "label": f"รอพิจารณา · {label}" if cls == "pending" else label,
+                "time_label": f"{_board_time_label(booking.start_at)}–{_board_time_label(booking.end_at)} น.",
             })
+            busy.append((booking.start_at, booking.end_at))
         for cohort in lodging_by_room.get(room.id, []):
             blocks.append({
                 "cls": "lodging-reserved",
                 "left": 0,
                 "width": 100,
                 "label": f"สงวนที่พักหลักสูตร — {cohort.title}",
+                "time_label": "ทั้งวัน",
             })
+            busy.append((board_start, board_end))
             busy_now.add(room.id)
             in_use.add(room.id)
-        rows.append({"room": room, "blocks": blocks})
+        gaps = []
+        if _room_gap_bookable(request, room):
+            rule = getattr(room, "rule", None)
+            window_start, window_end = board_start, board_end
+            pad = timedelta(0)
+            if rule is not None:
+                # เวลาเปิดให้บริการและ buffer ของห้อง ใช้เพื่อ "แสดงผล" เท่านั้น — ฟอร์มตรวจซ้ำเสมอ
+                window_start = max(window_start, timezone.make_aware(datetime.combine(day, rule.service_start), zone))
+                window_end = min(window_end, timezone.make_aware(datetime.combine(day, rule.service_end), zone))
+                pad = timedelta(minutes=rule.buffer_before_min + rule.buffer_after_min)
+            for gap in free_gaps(busy, window_start, window_end, now=now, pad=pad):
+                gaps.append({
+                    "left": pct(gap.start),
+                    "width": pct(gap.end) - pct(gap.start),
+                    "url": _board_gap_url(request, room, gap),
+                    "time_label": f"{_board_time_label(gap.start)}–{_board_time_label(gap.end)} น.",
+                    "whole_day": gap.start <= window_start and gap.end >= window_end,
+                })
+        rows.append({"room": room, "blocks": blocks, "gaps": gaps})
 
     now_pct = pct(now) if board_start <= now <= board_end else None
     total = len(rows)
     return {
         "board_today": day,
         "board_rows": rows,
-        "board_hours": list(range(7, 21)),
+        "board_hours": list(range(BOARD_START_HOUR, BOARD_END_HOUR)),
         "board_now_pct": now_pct,
         "board_now_label": timezone.localtime(now).strftime("%H:%M"),
         "stat_total": total,
@@ -253,6 +332,22 @@ def _homepage_availability_context(request, selected_category=""):
     }
 
 
+def _countdown_label(booking, now):
+    """ข้อความนับถอยหลังแบบอ่านง่าย เช่น "อีก 2 ชม. 18 นาที" / "กำลังใช้อยู่ ถึง 16.00 น." """
+    if booking is None:
+        return ""
+    if booking.start_at <= now:
+        return f"กำลังใช้อยู่ ถึง {_board_time_label(booking.end_at)} น."
+    minutes = int((booking.start_at - now).total_seconds() // 60)
+    days, rem = divmod(minutes, 24 * 60)
+    hours, mins = divmod(rem, 60)
+    if days:
+        return f"อีก {days} วัน" + (f" {hours} ชม." if hours else "")
+    if hours:
+        return f"อีก {hours} ชม." + (f" {mins} นาที" if mins else "")
+    return f"อีก {max(mins, 1)} นาที"
+
+
 def about_view(request):
     """Public, task-first introduction to SIGROOM. No operational data is exposed."""
     return render(request, "bookings/about.html")
@@ -261,7 +356,7 @@ def about_view(request):
 def calendar_view(request):
     rooms = Resource.objects.filter(
         resource_type=Resource.Type.ROOM, status=Resource.Status.ACTIVE
-    ).order_by("code").prefetch_related("photos")
+    ).order_by("code").select_related("rule").prefetch_related("photos")
     selected_category = request.GET.get("category", "").strip()
     if selected_category:
         rooms = rooms.filter(room_category=selected_category)
@@ -313,6 +408,8 @@ def calendar_view(request):
         "selected_category": selected_category,
         "category_choices": category_choices,
         "next_booking": next_booking,
+        "next_booking_countdown": _countdown_label(next_booking, now),
+        "home_now": timezone.localtime(now),
         "usage_today_count": usage_today_count,
         "my_pending_count": my_pending_count,
         "active_lodging_cohorts": active_lodging_cohorts,
@@ -528,11 +625,12 @@ def room_favorite_toggle(request, code):
 
 @login_required
 def book_search(request):
+    """ขั้น ๑ (เมื่อไร และกี่คน) + ขั้น ๒ (ห้องที่ว่าง) ในหน้าเดียว — HTMX ส่งเฉพาะผลกลับมาเมื่อเปลี่ยนชิป"""
     equipment = Resource.objects.filter(resource_type=Resource.Type.EQUIPMENT, status=Resource.Status.ACTIVE)
-    start, end, date_text = _search_values(request)
+    selection = resolve_search_selection(request.GET)
     available = unavailable = []
-    searched = bool(request.GET.get("search") or request.GET.get("date"))
-    error = ""
+    suggestions = []
+    error = selection.error
     equipment_codes = request.GET.getlist("equipment")
     selected_category = request.GET.get("category", "").strip()
     if selected_category not in BOOK_SEARCH_CATEGORY_MAP:
@@ -540,44 +638,146 @@ def book_search(request):
     room_categories = BOOK_SEARCH_CATEGORY_MAP[selected_category]
     try:
         attendees = int(request.GET.get("attendees", "") or 0) or None
+        if attendees is not None and attendees < 1:
+            raise ValueError
     except ValueError:
         attendees = None
-        error = "จำนวนผู้เข้าร่วมต้องเป็นตัวเลข"
-    if searched and start and end and not error:
-        if end <= start:
-            error = "เวลาสิ้นสุดต้องอยู่หลังเวลาเริ่ม"
+        error = error or "จำนวนผู้เข้าร่วมต้องเป็นตัวเลขตั้งแต่ 1 ขึ้นไป"
+    start, end = selection.start_at, selection.end_at
+    if not error:
+        available, unavailable = find_available_rooms(
+            start,
+            end,
+            request.user,
+            attendees=attendees,
+            equipment_codes=equipment_codes,
+            room_categories=room_categories,
+        )
+        suggestions = booking_suggestions(
+            request.user,
+            start,
+            end,
+            available,
+            unavailable,
+            attendees=attendees,
+            equipment_codes=equipment_codes,
+            room_categories=room_categories,
+        )
+
+    # ลิงก์ไปฟอร์มใช้พารามิเตอร์รูปแบบเดิม date/start/end (หน้าแรกและฟอร์มพึ่งรูปแบบนี้)
+    base_params = {}
+    if attendees:
+        base_params["attendees"] = attendees
+    if selected_category:
+        base_params["category"] = selected_category
+
+    def form_query(slot_start, slot_end):
+        local_start = timezone.localtime(slot_start)
+        params = {
+            "date": local_start.date().isoformat(),
+            "start": local_start.strftime("%H:%M"),
+            "end": timezone.localtime(slot_end).strftime("%H:%M"),
+            **base_params,
+        }
+        return urlencode([*params.items(), *(("equipment", code) for code in equipment_codes)])
+
+    query_string = form_query(start, end) if start and end else ""
+    track = _result_rows(available, start, end) if start and end else None
+    suggestion_rows = []
+    for item in suggestions:
+        label = f"{_board_time_label(item.start_at)}–{_board_time_label(item.end_at)} น."
+        if item.kind == "shift":
+            url = f"{reverse('bookings:book_form', args=[item.room.code])}?{form_query(item.start_at, item.end_at)}"
         else:
-            available, unavailable = find_available_rooms(
-                start,
-                end,
-                request.user,
-                attendees=attendees,
-                equipment_codes=equipment_codes,
-                room_categories=room_categories,
-            )
-    elif searched and not start:
-        error = "กรุณาตรวจวันที่และเวลาอีกครั้ง"
+            url = f"{reverse('bookings:book_search')}?{form_query(item.start_at, item.end_at)}"
+        suggestion_rows.append(
+            {
+                "item": item,
+                "time_label": label,
+                "date_label": short_thai_date(timezone.localdate(item.start_at)),
+                "url": url,
+            }
+        )
 
     context = {
         "available": available,
         "unavailable": unavailable,
+        "track": track,
+        "suggestions": suggestion_rows,
         "equipment": equipment,
         "equipment_codes": equipment_codes,
         "attendees": attendees or "",
-        "date_value": date_text,
-        "start_value": request.GET.get("start", "09:00")[:5],
-        "end_value": request.GET.get("end", "10:00")[:5],
+        "selection": selection,
+        "date_choices": search_date_choices(),
+        "period_choices": search_period_choices(),
+        "date_value": selection.date_text,
+        "start_value": selection.start_time,
+        "end_value": selection.end_time,
+        "selection_label": (
+            f"{short_thai_date(selection.date)} · {selection.start_time.replace(':', '.')}–"
+            f"{selection.end_time.replace(':', '.')} น."
+            if selection.date and not error
+            else ""
+        ),
         "time_options": time_choices(),
-        "searched": searched,
+        "searched": True,
         "error": error,
-        "query_string": request.GET.urlencode(),
-        "time_presets": time_presets(),
+        "query_string": query_string,
         "booking_category_choices": BOOK_SEARCH_CATEGORY_CHOICES,
         "selected_booking_category": selected_category,
         "favorite_ids": set(request.user.favorite_resources.values_list("pk", flat=True)),
     }
     template = "bookings/partials/room_list.html" if getattr(request, "htmx", False) else "bookings/book_search.html"
     return render(request, template, context)
+
+
+def _result_rows(available, start, end):
+    """แถวผลค้นหา + แถบเวลาเล็กของวันนั้น (การจองอื่น = เทา, ช่วงที่ขอ = หมึก) — ข้อมูลแสดงผลเท่านั้น"""
+    if not available:
+        return None
+    zone = timezone.get_current_timezone()
+    day = timezone.localdate(start)
+    opens = [getattr(result.room, "rule", None) for result in available]
+    first_hour = min([rule.service_start.hour for rule in opens if rule] or [7])
+    last_hour = max([rule.service_end.hour + (1 if rule.service_end.minute else 0) for rule in opens if rule] or [18])
+    local_start, local_end = timezone.localtime(start), timezone.localtime(end)
+    first_hour = min(first_hour, local_start.hour)
+    last_hour = max(last_hour, local_end.hour + (1 if local_end.minute else 0))
+    last_hour = min(last_hour, 24)
+    track_start = timezone.make_aware(datetime.combine(day, time(first_hour)), zone)
+    track_end = track_start + timedelta(hours=max(1, last_hour - first_hour))
+    span = (track_end - track_start).total_seconds()
+
+    def pct(dt):
+        return round(max(0.0, min(100.0, (dt - track_start).total_seconds() / span * 100)), 2)
+
+    by_room = room_day_bookings([result.room for result in available], day)
+    rows = []
+    for result in available:
+        blocks = [
+            {
+                "left": pct(booking.start_at),
+                "width": max(1.0, round(pct(booking.end_at) - pct(booking.start_at), 2)),
+                "label": f"{_board_time_label(booking.start_at)}–{_board_time_label(booking.end_at)}",
+            }
+            for booking in by_room.get(result.room.pk, [])
+        ]
+        rows.append(
+            {
+                "result": result,
+                "blocks": blocks,
+                "busy_text": ", ".join(block["label"] for block in blocks),
+                "req_left": pct(start),
+                "req_width": max(1.0, round(pct(end) - pct(start), 2)),
+            }
+        )
+    return {
+        "rows": rows,
+        "axis": [
+            {"label": f"{hour:02d}", "left": pct(timezone.make_aware(datetime.combine(day, time(hour)), zone))}
+            for hour in range(first_hour, last_hour, 2)
+        ],
+    }
 
 
 def _rebook_initial(request, room):
@@ -633,11 +833,8 @@ def _initial_from_query(request):
                 "end_time": timezone.localtime(end).strftime("%H:%M"),
             }
         )
-    if request.user.unit_id:
-        initial["unit"] = request.user.unit_id
-    if request.user.phone:
-        initial["responsible_phone"] = request.user.phone
-    initial["responsible_name"] = request.user.display_name
+    # ผู้รับผิดชอบ/โทรศัพท์/หน่วย จากการจองครั้งก่อน (ไม่มี → โปรไฟล์) — ผู้ใช้กด "แก้ไข" เปลี่ยนได้
+    initial.update(last_booking_defaults(request.user))
     if request.GET.get("attendees", "").isdigit():
         initial["attendees"] = int(request.GET["attendees"])
     initial["equipment"] = Resource.objects.filter(code__in=request.GET.getlist("equipment"))
@@ -701,15 +898,26 @@ def book_form(request, code):
                 audit(request.user, "bookings.booking", booking.pk, "booking_created", after=model_snapshot(booking))
                 notify_submitted(booking)
                 messages.success(request, "ส่งคำขอจองห้องแล้ว")
+                # ธงใช้ครั้งเดียว: หน้ารายละเอียดแสดงตราประทับแล้วลบทิ้ง (รีเฟรชไม่เล่นซ้ำ)
+                request.session["just_submitted_booking"] = str(booking.id)
                 return redirect("bookings:booking_detail", id=booking.id)
     else:
         initial = _rebook_initial(request, room) or _initial_from_query(request)
+        prefill_source = initial.pop("source", "rebook" if request.GET.get("rebook") else "profile")
         form = BookingForm(user=request.user, room=room, instance=booking, initial=initial)
+        form.prefill_source = prefill_source
     return render(
         request,
         "bookings/book_form.html",
-        {"form": form, "room": room, "time_presets": time_presets()},
+        {"form": form, "room": room, "time_presets": time_presets(), "search_query": _search_back_query(request)},
     )
+
+
+def _search_back_query(request):
+    """พารามิเตอร์สำหรับลิงก์ "เปลี่ยนเวลาหรือห้อง" กลับไปหน้าค้นหาโดยคงวัน/เวลา/จำนวนคนเดิม"""
+    keep = [(key, value) for key in ("date", "start", "end", "attendees", "category") for value in request.GET.getlist(key)[:1]]
+    keep += [("equipment", value) for value in request.GET.getlist("equipment")]
+    return urlencode(keep)
 
 
 def _series_form_booking(form, room, user):
@@ -850,11 +1058,19 @@ def booking_detail(request, id):
     preemption = booking.preemption_as_displaced.select_related(
         "incoming", "replacement", "replacement__room", "ordered_by"
     ).first()
+    # ตราประทับผลการยื่นคำขอ แสดงครั้งเดียวหลังส่งสำเร็จ (ธงใน session ถูกลบทันที)
+    just_submitted = False
+    if request.session.get("just_submitted_booking") == str(booking.id):
+        del request.session["just_submitted_booking"]
+        just_submitted = booking.request_status in Booking.HOLDING_STATUSES
     return render(
         request,
         "bookings/booking_detail.html",
         {
             "booking": booking,
+            "booking_ref": booking_ref(booking),
+            "just_submitted": just_submitted,
+            "can_add_to_calendar": booking.request_status in Booking.HOLDING_STATUSES,
             # ลิงก์ออนไลน์ใช้สิทธิ์เข้มกว่า can_view_details — คนหน่วยเดียวกันเห็นหน้านี้ได้แต่ต้องไม่เห็นลิงก์
             "show_online_link": bool(booking.online_meeting_url) and can_view_online_link(request.user, booking),
             "can_edit": bool(fields),
@@ -886,6 +1102,19 @@ def booking_detail(request, id):
             "rejection_reasons": recent_rejection_reasons(request.user) if can_approve else [],
         },
     )
+
+
+@login_required
+def booking_ics(request, id):
+    """ดาวน์โหลด .ics ของการจองหนึ่งรายการ — สิทธิ์เดียวกับการเห็นรายละเอียดเต็มในหน้า booking_detail"""
+    booking = get_object_or_404(_booking_queryset(), id=id)
+    if not (can_view_details(request.user, booking) or can_decide(request.user, booking)):
+        raise PermissionDenied("คุณไม่มีสิทธิ์ดูรายละเอียดการจองนี้")
+    detail_url = request.build_absolute_uri(reverse("bookings:booking_detail", args=[booking.id]))
+    response = HttpResponse(booking_ics_text(booking, detail_url), content_type="text/calendar; charset=utf-8")
+    response["Content-Disposition"] = f'attachment; filename="sigroom-{booking_ref(booking)}.ics"'
+    response["Cache-Control"] = "private, no-store"
+    return response
 
 
 @login_required

@@ -16,10 +16,10 @@ def test_manifest_is_public_and_installable(client):
     manifest = json.loads(response.content)
     assert manifest["name"].startswith("SIGROOM")
     assert manifest["short_name"] == "SIGROOM"
-    assert manifest["start_url"] == "/"
+    assert manifest["start_url"] == "/home/"
     assert manifest["display"] == "standalone"
-    assert manifest["background_color"] == "#0b1117"
-    assert manifest["theme_color"] == "#0b1117"
+    assert manifest["background_color"] == "#F5F1E6"
+    assert manifest["theme_color"] == "#F5F1E6"
     assert [icon["sizes"] for icon in manifest["icons"]] == ["192x192", "512x512"]
     assert all(icon["type"] == "image/png" for icon in manifest["icons"])
 
@@ -46,7 +46,7 @@ def test_base_template_links_manifest_and_ios_metadata(client):
     content = response.content.decode()
 
     assert f'<link rel="manifest" href="{reverse("webmanifest")}">' in content
-    assert '<meta name="theme-color" content="#0b1117">' in content
+    assert '<meta name="theme-color" content="#F5F1E6">' in content
     assert '<meta name="apple-mobile-web-app-capable" content="yes">' in content
     assert 'rel="icon" type="image/png" href="/static/img/pwa-icon-192.png"' in content
     assert 'rel="apple-touch-icon"' in content

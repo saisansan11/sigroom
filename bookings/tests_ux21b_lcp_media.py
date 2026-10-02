@@ -44,7 +44,7 @@ def test_ux21b_public_access_200():
 
 
 def test_ux21b_hero_lcp_loading_and_fetchpriority(client):
-    """Hero photo has loading='eager' and fetchpriority='high' to optimize LCP."""
+    """R3-G2: the hero building poster is the LCP image (eager + high priority)."""
     response = client.get(reverse("bookings:lodging_about"))
     html = response.content.decode("utf-8")
 
@@ -53,7 +53,7 @@ def test_ux21b_hero_lcp_loading_and_fetchpriority(client):
     assert hero_img_match is not None, "Hero image with class lka-hero-main-img not found"
     hero_img_tag = hero_img_match.group(0)
 
-    assert "room4p_3421.jpg" in hero_img_tag, "Hero image must reference room4p_3421.jpg"
+    assert "img/hero/sigroom-building-1200.webp" in hero_img_tag, "Hero image must be the building poster"
     assert 'loading="eager"' in hero_img_tag, "Hero image must have loading='eager' for LCP"
     assert 'fetchpriority="high"' in hero_img_tag, "Hero image must have fetchpriority='high'"
     assert 'loading="lazy"' not in hero_img_tag, "Hero image must NOT have loading='lazy'"
@@ -118,22 +118,22 @@ def test_ux21b_no_preload_spam(client):
 
 
 def test_ux21b_same_asset_multi_instance_priority_isolation(client):
-    """room4p_3421.jpg appears exactly twice: in hero as eager/high, and in gallery as lazy."""
+    """R3-G2: room4p_3421.jpg now appears once (gallery, lazy); only the hero poster is eager/high."""
     response = client.get(reverse("bookings:lodging_about"))
     html = response.content.decode("utf-8")
 
     # Find all occurrences of room4p_3421.jpg in <img> tags
     matches = re.findall(r'<img[^>]*room4p_3421\.jpg[^>]*>', html)
-    assert len(matches) == 2, f"Expected exactly 2 occurrences of room4p_3421.jpg, found {len(matches)}"
+    assert len(matches) == 1, f"Expected exactly 1 occurrence of room4p_3421.jpg, found {len(matches)}"
 
-    # First instance is hero
-    hero_instance = matches[0]
-    assert 'loading="eager"' in hero_instance
-    assert 'fetchpriority="high"' in hero_instance
-    assert 'lka-hero-main-img' in hero_instance
+    hero_instances = re.findall(r'<img[^>]*lka-hero-main-img[^>]*>', html)
+    assert len(hero_instances) == 1
+    assert 'loading="eager"' in hero_instances[0]
+    assert 'fetchpriority="high"' in hero_instances[0]
+    assert "room4p_3421.jpg" not in hero_instances[0]
 
-    # Second instance is Stay Gallery
-    gallery_instance = matches[1]
+    # The real room photo lives in the Stay Gallery only
+    gallery_instance = matches[0]
     assert 'loading="lazy"' in gallery_instance
     assert 'loading="eager"' not in gallery_instance
     assert 'fetchpriority="high"' not in gallery_instance

@@ -15,7 +15,7 @@ const PUBLIC_ROUTES = [
 async function ensureExplorerOpen(page) {
   const shell = page.locator('#lka-explorer-shell');
   if (!(await shell.evaluate(el => el.open))) {
-    await page.locator('#lka-hub-action-3d').click();
+    await page.locator('.lka-explorer-shell-trigger').click();
     await expect(shell).toHaveAttribute('open');
   }
 }

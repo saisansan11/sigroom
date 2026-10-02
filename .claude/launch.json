@@ -2,6 +2,12 @@
   "version": "0.0.1",
   "configurations": [
     {
+      "name": "django-worktree",
+      "runtimeExecutable": "uv",
+      "runtimeArgs": ["run", "--env-file", "F:/ogn_ROOM/.env", "manage.py", "runserver", "127.0.0.1:8010"],
+      "port": 8010
+    },
+    {
       "name": "django",
       "runtimeExecutable": "uv",
       "runtimeArgs": ["run", "manage.py", "runserver", "127.0.0.1:8000"],

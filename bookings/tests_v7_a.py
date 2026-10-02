@@ -144,7 +144,7 @@ def test_homepage_book_now_link_prefills_next_slot(client, availability_setup, m
     response = client.get(reverse("bookings:calendar"))
     assert response.status_code == 200
     content = response.content.decode()
-    assert "home-entry-grid" in content
+    assert 'class="room-index"' in content
     assert f"/book/{teaching_rooms[0].code}/?search=1" in content
     assert "start=09%3A00" not in content
 

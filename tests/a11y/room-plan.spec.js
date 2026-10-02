@@ -4,13 +4,10 @@ const AxeBuilder = require('@axe-core/playwright').default;
 test.beforeEach(async ({ page }) => {
   await page.goto('/lodging/about/', { waitUntil: 'networkidle' });
   const shell = page.locator('#lka-explorer-shell');
-  const width = page.viewportSize()?.width || 1280;
-  if (width >= 896) {
-    await expect(shell).toHaveAttribute('open');
-  } else {
-    await page.locator('#lka-hub-action-3d').click();
-    await expect(shell).toHaveAttribute('open');
+  if (!(await shell.evaluate(el => el.open))) {
+    await page.locator('.lka-explorer-shell-trigger').click();
   }
+  await expect(shell).toHaveAttribute('open');
 });
 
 async function rooms(page) {
@@ -20,29 +17,30 @@ async function rooms(page) {
   })));
 }
 
-test('desktop viewport: explorer shell auto-opens by default before interaction', async ({ page }) => {
+test('desktop viewport: explorer starts collapsed and native disclosure opens it', async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 900 });
   await page.reload({ waitUntil: 'networkidle' });
   const shell = page.locator('#lka-explorer-shell');
-  expect(await shell.evaluate(el => el.open)).toBe(true);
+  expect(await shell.evaluate(el => el.open)).toBe(false);
+  await page.locator('.lka-explorer-shell-trigger').click();
   await expect(shell).toHaveAttribute('open');
 });
 
-test('mobile viewport: shell initially closed, 3D hub action opens shell, and document root has no horizontal overflow', async ({ page }) => {
+test('mobile viewport: shell initially closed, native disclosure opens shell, and document root has no horizontal overflow', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.reload({ waitUntil: 'networkidle' });
 
   const shell = page.locator('#lka-explorer-shell');
   expect(await shell.evaluate(el => el.open)).toBe(false);
 
-  await page.locator('#lka-hub-action-3d').click();
+  await page.locator('.lka-explorer-shell-trigger').click();
   expect(await shell.evaluate(el => el.open)).toBe(true);
   await expect(shell).toHaveAttribute('open');
 
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
 });
 
-test('mobile viewport: fallback action opens both explorer shell and fallback text plan', async ({ page }) => {
+test('mobile viewport: fallback action opens the text plan inside the expanded explorer', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.reload({ waitUntil: 'networkidle' });
 
@@ -52,6 +50,8 @@ test('mobile viewport: fallback action opens both explorer shell and fallback te
   expect(await shell.evaluate(el => el.open)).toBe(false);
   expect(await fallback.evaluate(el => el.open)).toBe(false);
 
+  await page.locator('.lka-explorer-shell-trigger').click();
+  await expect(shell).toHaveAttribute('open');
   await page.locator('#lka-hub-action-fallback').click();
 
   expect(await shell.evaluate(el => el.open)).toBe(true);
@@ -195,7 +195,7 @@ test('mobile fit mode keeps the full SVG scene inside the canvas on narrow iPhon
     await page.goto('/lodging/about/', { waitUntil: 'networkidle' });
     const shell = page.locator('#lka-explorer-shell');
     if (!(await shell.evaluate(el => el.open))) {
-      await page.locator('#lka-hub-action-3d').click();
+      await page.locator('.lka-explorer-shell-trigger').click();
     }
     await expect(shell).toHaveAttribute('open');
 
@@ -225,7 +225,7 @@ test('service gateway responsive matrix has no page overflow, 16px body text, an
 
     const metrics = await page.evaluate(() => {
       const bodySize = parseFloat(getComputedStyle(document.querySelector('.lka-page-wrap')).fontSize);
-      const targets = [...document.querySelectorAll('.lka-service-cta, .lka-service-primary, .lka-online-room-card > a')];
+      const targets = [...document.querySelectorAll('.lka-service-cta, .lka-service-primary, a.lka-r3g-service, .lka-online-room-card > a')];
       const smallTargets = targets.filter(el => el.getBoundingClientRect().height < 48).map(el => ({
         text: el.textContent.trim().replace(/\s+/g, ' ').slice(0, 60),
         height: el.getBoundingClientRect().height,
@@ -240,11 +240,14 @@ test('service gateway responsive matrix has no page overflow, 16px body text, an
     expect(metrics.bodySize, `body text below 16px at ${width}px`).toBeGreaterThanOrEqual(16);
     expect(metrics.smallTargets, `touch target below 48px at ${width}px`).toEqual([]);
 
-    const lodging = page.locator('.lka-service-card--lodging .lka-service-primary');
-    const online = page.locator('.lka-service-card--online .lka-service-primary');
-    await expect(lodging).toBeVisible();
-    await expect(online).toBeVisible();
-    await expect(page.locator('.lka-service-card--learning')).toContainText('กำลังพัฒนาระบบ');
+    const activeServices = page.locator('.lka-r3g-service-grid > a.lka-r3g-service');
+    await expect(activeServices).toHaveCount(3);
+    for (let index = 0; index < 3; index += 1) {
+      await expect(activeServices.nth(index)).toBeVisible();
+    }
+    const futureService = page.locator('.lka-r3g-service-grid > .lka-r3g-service--future');
+    await expect(futureService).toBeVisible();
+    await expect(futureService).toHaveAttribute('aria-disabled', 'true');
 
     await page.locator('.lka-rates-disclosure > summary').click();
     if (width <= 768) {
@@ -256,8 +259,15 @@ test('service gateway responsive matrix has no page overflow, 16px body text, an
 });
 
 test('FAQ uses one disclosure indicator and whole summary row is keyboard operable', async ({ page }) => {
+  const faqDisclosure = page.locator('.lka-faq-disclosure');
+  if (!(await faqDisclosure.evaluate(el => el.open))) {
+    await faqDisclosure.locator(':scope > summary').click();
+  }
+  await expect(faqDisclosure).toHaveAttribute('open');
+
   const item = page.locator('.lka-faq-item').first();
   const summary = item.locator('summary');
+  await expect(summary).toBeVisible();
   await expect(summary.locator('.lka-faq-icon')).toHaveCount(0);
   await summary.focus();
   await page.keyboard.press('Enter');
@@ -270,7 +280,7 @@ test('reduced motion mode still opens and operates the 3D explorer', async ({ pa
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/lodging/about/', { waitUntil: 'networkidle' });
-  await page.locator('#lka-hub-action-3d').click();
+  await page.locator('.lka-explorer-shell-trigger').click();
   await expect(page.locator('#lka-explorer-shell')).toHaveAttribute('open');
   await page.locator('#lka-btn-f5').click();
   await expect(page.locator('.lka-room-model')).toHaveCount(30);

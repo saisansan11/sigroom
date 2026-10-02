@@ -1,33 +1,38 @@
 {% extends "base.html" %}
-{% load static %}
+{% load static thaidate %}
 {% block html_theme %}light{% endblock %}
 {% block body_class %}lodging-booking-ios27{% endblock %}
-{% block head %}<link rel="stylesheet" href="{% static 'css/lodging_booking_ios27.css' %}?v=2">{% endblock %}
-{% load thaidate %}
+{% block head %}
+<link rel="stylesheet" href="{% static 'css/lodging_booking_ios27.css' %}?v=2">
+<link rel="stylesheet" href="{% static 'css/lodging_booking_r3l.css' %}?v=1">
+{% endblock %}
 {% block title %}สถานะคำขอที่พัก · SIGROOM{% endblock %}
 {% block content %}
 <div class="page-heading">
   <div>
     <p class="eyebrow">ติดตามคำขอที่พัก</p>
-    <h1>สถานะคำขอของคุณ</h1>
-    <p>เก็บลิงก์หน้านี้ไว้เพื่อตรวจผลการพิจารณา โดยไม่ต้องเข้าสู่ระบบ</p>
+    <h1>{{ booking.get_request_status_display }}</h1>
+    <p>เก็บลิงก์หน้านี้ไว้เพื่อตรวจผล โดยไม่ต้องเข้าสู่ระบบ</p>
   </div>
 </div>
-<article class="detail-card">
-  <p><strong>สถานะ:</strong> {{ booking.get_request_status_display }}</p>
-  <p><strong>ผู้ติดต่อ:</strong> {{ booking.responsible_name }}</p>
-  <p><strong>ห้อง:</strong> {{ booking.room.code }} {{ booking.room.name }}</p>
-  <p><strong>เข้าพัก:</strong> {{ booking.start_at|thai_datetime }} – {{ booking.end_at|thai_datetime }}</p>
+
+<section class="r3l-status-sheet" aria-label="รายละเอียดคำขอที่พัก">
+  <dl class="r3l-status-list">
+    <div><dt>ผู้ติดต่อ</dt><dd>{{ booking.responsible_name }}</dd></div>
+    <div><dt>ห้อง</dt><dd>{{ booking.room.code }} {{ booking.room.name }}</dd></div>
+    <div><dt>เข้าพัก</dt><dd>{{ booking.start_at|thai_datetime }} – {{ booking.end_at|thai_datetime }}</dd></div>
+    <div><dt>เลขอ้างอิง</dt><dd>{{ booking.id|stringformat:"s"|slice:":8"|upper }}</dd></div>
+  </dl>
+
   {% if booking.request_status == 'pending' %}
-    <div class="notice info">คำขอถูกส่งแล้วและกำลังรอเจ้าหน้าที่พิจารณา ยังไม่ถือว่าได้รับสิทธิ์เข้าพัก</div>
+    <div class="notice info">ส่งคำขอแล้ว กำลังรอเจ้าหน้าที่พิจารณา</div>
   {% elif booking.request_status == 'approved' %}
-    <div class="notice success">คำขอได้รับการอนุมัติแล้ว กรุณาใช้ข้อมูลหน้านี้ประกอบการเข้าพัก</div>
+    <div class="notice success">อนุมัติแล้ว กรุณาเก็บข้อมูลหน้านี้ไว้ประกอบการเข้าพัก</div>
   {% elif booking.request_status == 'rejected' %}
-    <div class="notice warning">คำขอไม่ได้รับการอนุมัติ{% if booking.decision_reason %}: {{ booking.decision_reason }}{% endif %}</div>
+    <div class="notice warning">ไม่ได้รับการอนุมัติ{% if booking.decision_reason %}: {{ booking.decision_reason }}{% endif %}</div>
   {% elif booking.request_status == 'cancelled' or booking.request_status == 'expired' %}
     <div class="notice warning">คำขอนี้ไม่อยู่ในสถานะใช้งานแล้ว</div>
   {% endif %}
-  <p><small>เลขอ้างอิง: {{ booking.id|stringformat:"s"|slice:":8"|upper }}</small></p>
-</article>
-<p><a href="{% url 'bookings:lodging_about' %}">← กลับหน้าแนะนำที่พัก</a></p>
+</section>
+<p><a class="r3l-back-link" href="{% url 'bookings:lodging_about' %}">กลับศูนย์จองห้องและที่พัก</a></p>
 {% endblock %}

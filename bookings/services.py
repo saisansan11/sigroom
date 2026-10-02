@@ -5,7 +5,7 @@ M0/M1 ครอบคลุม: คำนวณช่วงถือครอง
 ทรัพยากรภายใต้ exclusion constraint (FR-09) โดยแปลงข้อผิดพลาดของฐานข้อมูลเป็นข้อความไทย
 """
 from dataclasses import dataclass
-from datetime import datetime, time, timedelta
+from datetime import date, datetime, time, timedelta
 
 from django.core.exceptions import ValidationError
 from django.db import IntegrityError, transaction
@@ -34,6 +34,8 @@ class RoomSearchResult:
     room: Resource
     reason: str = ""
     capacity_warning: bool = False
+    # ใช้ไม่ได้ "เพราะชนเวลาเท่านั้น" (ห้อง/อุปกรณ์ถูกถือครอง) — กฎอื่นผ่านหมด จึงเลื่อนเวลาแล้วอาจใช้ได้
+    time_conflict_only: bool = False
 
     @property
     def approval_label(self) -> str:
@@ -72,9 +74,10 @@ NOW_ROOM_GROUPS = (
 
 
 DEFAULT_TIME_PRESETS = (
-    ("08:00", "12:00", "คาบเช้า"),
-    ("13:00", "16:00", "คาบบ่าย"),
-    ("08:00", "16:00", "ทั้งวัน"),
+    ("08:00", "12:00", "เช้า"),
+    ("13:00", "16:00", "บ่าย"),
+    # ห้องส่วนใหญ่เปิด 07:30–17:00 จึงจบ 16:30 เหลือเวลาเก็บห้องก่อนปิด
+    ("08:00", "16:30", "ทั้งวัน"),
 )
 
 
@@ -290,7 +293,8 @@ def find_available_rooms(
     if room_categories:
         rooms = rooms.filter(room_category__in=tuple(room_categories))
     for room in rooms:
-        errors = validate_booking_window(room, start, end, user)
+        rule_errors = validate_booking_window(room, start, end, user)
+        errors = list(rule_errors)
         if not errors and _active_holds_overlapping(room, compute_hold(room, start, end)).exists():
             errors.append("ไม่ว่างในช่วงเวลาที่เลือก (รวมเวลาเตรียม/เก็บห้อง)")
         if not errors and unavailable_equipment:
@@ -300,6 +304,7 @@ def find_available_rooms(
             room=room,
             reason=" · ".join(errors),
             capacity_warning=bool(attendees and room.capacity and attendees > room.capacity),
+            time_conflict_only=bool(errors) and not rule_errors,
         )
         (unavailable if errors else available).append(result)
     # ห้องโปรดขึ้นก่อนเสมอ (งาน C) — stable sort คงลำดับเดิมภายในแต่ละกลุ่ม
@@ -564,3 +569,381 @@ def submit_booking(booking: Booking, equipment: list[Resource] | None = None) ->
     remember_requester_phone(booking)
     audit(booking.requester, "bookings.booking", booking.pk, "booking_submitted", before={"request_status": Booking.RequestStatus.DRAFT}, after={"request_status": booking.request_status})
     return booking
+
+
+# ---------------------------------------------------------------------------
+# หน้าจองแบบ 3 ขั้นในหน้าเดียว (ธีม A): ชิปวัน/ช่วงเวลา, คำแนะนำเวลาอื่น, ค่าผู้รับผิดชอบเดิม
+# ทุกฟังก์ชันใช้ validate_booking_window()/find_available_rooms() ชุดเดียวกับการจองจริง
+# ไม่มีกฎตรวจชนชุดที่สอง — ฐานข้อมูล (ExclusionConstraint) ยังตัดสินสุดท้ายตอนยื่นคำขอ
+# ---------------------------------------------------------------------------
+
+THAI_WEEKDAYS_SHORT = ("จ.", "อ.", "พ.", "พฤ.", "ศ.", "ส.", "อา.")
+THAI_MONTHS_SHORT_NO_YEAR = ("", "ม.ค.", "ก.พ.", "มี.ค.", "เม.ย.", "พ.ค.", "มิ.ย.", "ก.ค.", "ส.ค.", "ก.ย.", "ต.ค.", "พ.ย.", "ธ.ค.")
+DATE_CHOICE_OTHER = "other"
+PERIOD_CHOICE_CUSTOM = "custom"
+FEW_ROOMS_THRESHOLD = 3
+
+
+def short_thai_date(value) -> str:
+    """เช่น "จ. 6 ต.ค." — ใช้บนชิปวันที่"""
+    return f"{THAI_WEEKDAYS_SHORT[value.weekday()]} {value.day} {THAI_MONTHS_SHORT_NO_YEAR[value.month]}"
+
+
+def search_date_choices(today=None, weekdays: int = 4) -> list[dict]:
+    """ชิปวันที่: วันนี้, พรุ่งนี้ แล้ววันทำการ (จ.–ศ.) ถัดไปอีก `weekdays` วัน"""
+    today = today or timezone.localdate()
+    tomorrow = today + timedelta(days=1)
+    choices = [
+        {"value": today.isoformat(), "date": today, "label": "วันนี้", "sub": short_thai_date(today)},
+        {"value": tomorrow.isoformat(), "date": tomorrow, "label": "พรุ่งนี้", "sub": short_thai_date(tomorrow)},
+    ]
+    cursor = tomorrow
+    while len(choices) < 2 + weekdays:
+        cursor += timedelta(days=1)
+        if cursor.weekday() < 5:
+            choices.append({"value": cursor.isoformat(), "date": cursor, "label": short_thai_date(cursor), "sub": ""})
+    return choices
+
+
+def search_period_choices() -> list[dict]:
+    """ชิปช่วงเวลา มาจากช่วงเวลาสำเร็จรูปที่ผู้ดูแลตั้ง (ReferenceValue) หรือค่า default"""
+    return [{"value": f"{preset['start']}-{preset['end']}", **preset} for preset in time_presets()]
+
+
+@dataclass(frozen=True)
+class SearchSelection:
+    """ผลแปลงพารามิเตอร์หน้า /book/ (ชิปหรือค่าเดิม date/start/end) เป็นวัน/เวลาที่ใช้ค้นหา"""
+
+    date: date | None
+    start_time: str
+    end_time: str
+    day_choice: str
+    period_choice: str
+    date_text: str
+    error: str = ""
+
+    def _aware(self, hhmm: str) -> datetime | None:
+        if self.error or self.date is None:
+            return None
+        return timezone.make_aware(
+            datetime.combine(self.date, time.fromisoformat(hhmm)), timezone.get_current_timezone()
+        )
+
+    @property
+    def start_at(self) -> datetime | None:
+        return self._aware(self.start_time)
+
+    @property
+    def end_at(self) -> datetime | None:
+        return self._aware(self.end_time)
+
+
+def _parse_hhmm(value) -> str | None:
+    try:
+        return datetime.strptime(str(value or "")[:5], "%H:%M").strftime("%H:%M")
+    except ValueError:
+        return None
+
+
+def resolve_search_selection(params, today=None) -> SearchSelection:
+    """แปลงพารามิเตอร์ค้นหาเป็นวัน/เวลา
+
+    - ชิปวัน `day` (ISO) ชนะช่อง `date` · `day=other` หรือไม่มีชิป → ใช้ช่อง `date` (พ.ศ. หรือ ISO)
+    - ชิปช่วงเวลา `period=HH:MM-HH:MM` ชนะ `start`/`end` · `period=custom` หรือไม่มี → ใช้ `start`/`end`
+    - ลิงก์เดิม (`?date=&start=&end=` จากหน้าแรก) ใช้ได้เหมือนเดิม และระบบเลือกชิปที่ตรงให้เอง
+    - ไม่มีอะไรเลย → พรุ่งนี้ ช่วงเวลาแรกของรายการ (เช้า)
+    """
+    from .forms import BuddhistDateField
+
+    today = today or timezone.localdate()
+    date_values = {choice["value"] for choice in search_date_choices(today)}
+    periods = {choice["value"]: choice for choice in search_period_choices()}
+
+    error = ""
+    day = (params.get("day") or "").strip()
+    raw_date = (params.get("date") or "").strip()
+    booking_date = None
+    if day and day != DATE_CHOICE_OTHER:
+        try:
+            booking_date = date.fromisoformat(day)
+        except ValueError:
+            booking_date = None
+    if booking_date is None and raw_date:
+        try:
+            booking_date = BuddhistDateField().clean(raw_date)
+        except ValidationError:
+            error = "กรุณาตรวจวันที่อีกครั้ง (วัน/เดือน/ปี พ.ศ.)"
+    if booking_date is None and not error:
+        if day == DATE_CHOICE_OTHER:
+            error = "กรุณาระบุวันที่ (วัน/เดือน/ปี พ.ศ.)"
+        else:
+            booking_date = today + timedelta(days=1)
+
+    period = (params.get("period") or "").strip()
+    start_text = _parse_hhmm(params.get("start"))
+    end_text = _parse_hhmm(params.get("end"))
+    if period in periods:
+        start_text, end_text = periods[period]["start"], periods[period]["end"]
+    elif not params.get("start") and not params.get("end") and period != PERIOD_CHOICE_CUSTOM and periods:
+        first = next(iter(periods.values()))
+        start_text, end_text = first["start"], first["end"]
+    if (start_text is None or end_text is None) and not error:
+        error = "กรุณาตรวจเวลาเริ่มและเวลาสิ้นสุดอีกครั้ง"
+    start_text = start_text or "09:00"
+    end_text = end_text or "10:00"
+    if not error and end_text <= start_text:
+        error = "เวลาสิ้นสุดต้องอยู่หลังเวลาเริ่ม"
+
+    key = f"{start_text}-{end_text}"
+    period_choice = key if key in periods and period != PERIOD_CHOICE_CUSTOM else PERIOD_CHOICE_CUSTOM
+    if booking_date is not None and booking_date.isoformat() in date_values and day != DATE_CHOICE_OTHER:
+        day_choice = booking_date.isoformat()
+    else:
+        day_choice = DATE_CHOICE_OTHER
+    date_text = (
+        f"{booking_date.day:02d}/{booking_date.month:02d}/{booking_date.year + 543}" if booking_date else raw_date
+    )
+    return SearchSelection(
+        date=booking_date,
+        start_time=start_text,
+        end_time=end_text,
+        day_choice=day_choice,
+        period_choice=period_choice,
+        date_text=date_text,
+        error=error,
+    )
+
+
+def room_day_bookings(rooms, day) -> dict[int, list[Booking]]:
+    """การจองที่ถือครองเวลาในวันนั้น แยกตามห้อง (ใช้วาดแถบเวลาเล็กในผลค้นหา)"""
+    zone = timezone.get_current_timezone()
+    day_start = timezone.make_aware(datetime.combine(day, time.min), zone)
+    day_end = day_start + timedelta(days=1)
+    result: dict[int, list[Booking]] = {}
+    queryset = (
+        Booking.objects.filter(
+            room__in=list(rooms),
+            request_status__in=Booking.HOLDING_STATUSES,
+            start_at__lt=day_end,
+            end_at__gt=day_start,
+        )
+        .exclude(usage_status=Booking.UsageStatus.DISPLACED)
+        .only("room_id", "start_at", "end_at", "request_status")
+        .order_by("start_at")
+    )
+    for booking in queryset:
+        result.setdefault(booking.room_id, []).append(booking)
+    return result
+
+
+def frequent_rooms(user, room_categories=None, limit: int = 3) -> list[Resource]:
+    """ห้องที่ผู้ใช้จองบ่อยที่สุด (นับคำขอที่ยื่นแล้วทุกสถานะ ไม่นับร่าง) — ใช้จัดลำดับคำแนะนำ"""
+    from django.db.models import Count, Max
+
+    if not getattr(user, "is_authenticated", False):
+        return []
+    rows = Booking.objects.filter(
+        requester=user, room__resource_type=Resource.Type.ROOM, room__status=Resource.Status.ACTIVE
+    ).exclude(request_status=Booking.RequestStatus.DRAFT)
+    if room_categories:
+        rows = rows.filter(room__room_category__in=tuple(room_categories))
+    ranked = (
+        rows.values("room_id")
+        .annotate(times=Count("id"), last_used=Max("start_at"))
+        .order_by("-times", "-last_used")[:limit]
+    )
+    ids = [row["room_id"] for row in ranked]
+    by_id = Resource.objects.select_related("rule").in_bulk(ids)
+    return [by_id[pk] for pk in ids if pk in by_id]
+
+
+def _slot_is_bookable(room: Resource, start: datetime, end: datetime, user, equipment, now) -> bool:
+    """ตรวจช่วงเวลาหนึ่งด้วยกฎชุดเดียวกับ find_available_rooms() (กฎรายห้อง + ชนเวลา + อุปกรณ์)"""
+    if validate_booking_window(room, start, end, user, now=now):
+        return False
+    if _active_holds_overlapping(room, compute_hold(room, start, end)).exists():
+        return False
+    return not any(_active_holds_overlapping(item, compute_hold(item, start, end)).exists() for item in equipment)
+
+
+def nearest_free_slot(
+    room: Resource,
+    start: datetime,
+    end: datetime,
+    user,
+    equipment=(),
+    now: datetime | None = None,
+    step_minutes: int = 15,
+    max_checks: int = 16,
+) -> tuple[datetime, datetime] | None:
+    """ช่วงว่างที่ใกล้เวลาที่ขอที่สุด ความยาวเท่าเดิม วันเดียวกัน ภายในเวลาให้บริการของห้อง
+
+    เรียงผู้สมัครตามระยะเลื่อน (ระยะเท่ากันเลือกเลื่อนไปข้างหลังก่อน) คัดกรองเบื้องต้นด้วยช่วงถือครอง
+    ที่ดึงมาครั้งเดียว แล้วยืนยันทุกช่วงด้วย _slot_is_bookable() — กฎเดียวกับการค้นหาปกติ
+    (เวลาให้บริการ, ล่วงหน้า, งดใช้/วันหยุด, buffer, สิทธิ์หน่วย, อุปกรณ์ส่วนกลาง)
+    """
+    now = now or timezone.now()
+    duration = end - start
+    if duration <= timedelta(0):
+        return None
+    zone = timezone.get_current_timezone()
+    day = timezone.localtime(start).date()
+    rule = getattr(room, "rule", None)
+    open_at = rule.service_start if rule else time(7, 0)
+    close_at = rule.service_end if rule else time(21, 0)
+    if isinstance(open_at, str):
+        open_at = time.fromisoformat(open_at)
+    if isinstance(close_at, str):
+        close_at = time.fromisoformat(close_at)
+    window_start = timezone.make_aware(datetime.combine(day, open_at), zone)
+    window_end = timezone.make_aware(datetime.combine(day, close_at), zone)
+    if window_start.minute % step_minutes:  # ฟอร์มรับเฉพาะช่วงละ 15 นาที
+        window_start += timedelta(minutes=step_minutes - window_start.minute % step_minutes)
+
+    candidates = []
+    cursor = window_start
+    while cursor + duration <= window_end:
+        if cursor != start and cursor >= now:
+            candidates.append(cursor)
+        cursor += timedelta(minutes=step_minutes)
+    candidates.sort(key=lambda value: (abs(value - start), value < start))
+
+    probe = DateTimeTZRange(window_start - timedelta(hours=3), window_end + timedelta(hours=3), "[)")
+    taken = [
+        (hold.lower, hold.upper)
+        for hold in BookingResource.objects.filter(
+            resource=room, released_at__isnull=True, hold__overlap=probe
+        ).values_list("hold", flat=True)
+    ]
+    checks = 0
+    for candidate_start in candidates:
+        candidate_end = candidate_start + duration
+        hold = compute_hold(room, candidate_start, candidate_end)
+        if any(hold.lower < upper and lower < hold.upper for lower, upper in taken):
+            continue  # คัดออกเร็วเท่านั้น — ช่วงที่ผ่านต้องยืนยันด้วย _slot_is_bookable() เสมอ
+        checks += 1
+        if _slot_is_bookable(room, candidate_start, candidate_end, user, equipment, now):
+            return candidate_start, candidate_end
+        if checks >= max_checks:
+            break
+    return None
+
+
+def next_available_date(
+    start: datetime,
+    end: datetime,
+    user,
+    attendees: int | None = None,
+    equipment_codes=(),
+    room_categories=None,
+    max_days: int = 14,
+) -> tuple[datetime, datetime, int] | None:
+    """วันทำการถัดไป (จ.–ศ.) ที่มีห้องว่างในเวลาเดียวกัน คืน (เริ่ม, สิ้นสุด, จำนวนห้องว่าง)"""
+    zone = timezone.get_current_timezone()
+    local_start = timezone.localtime(start)
+    local_end = timezone.localtime(end)
+    for offset in range(1, max_days + 1):
+        day = local_start.date() + timedelta(days=offset)
+        if day.weekday() >= 5:
+            continue
+        day_start = timezone.make_aware(datetime.combine(day, local_start.time()), zone)
+        day_end = timezone.make_aware(datetime.combine(day, local_end.time()), zone)
+        available, _ = find_available_rooms(
+            day_start,
+            day_end,
+            user,
+            attendees=attendees,
+            equipment_codes=equipment_codes,
+            room_categories=room_categories,
+        )
+        if available:
+            return day_start, day_end, len(available)
+    return None
+
+
+@dataclass(frozen=True)
+class SlotSuggestion:
+    """คำแนะนำเมื่อห้องว่างน้อย: kind="shift" (ห้องเดิม เลื่อนเวลา) หรือ "next_date" (วันอื่น เวลาเดิม)"""
+
+    kind: str
+    start_at: datetime
+    end_at: datetime
+    room: Resource | None = None
+    frequent: bool = False
+    available_count: int = 0
+
+
+def booking_suggestions(
+    user,
+    start: datetime,
+    end: datetime,
+    available: list[RoomSearchResult],
+    unavailable: list[RoomSearchResult],
+    attendees: int | None = None,
+    equipment_codes=(),
+    room_categories=None,
+    now: datetime | None = None,
+    max_shift_rooms: int = 3,
+) -> list[SlotSuggestion]:
+    """คำแนะนำเวลาอื่นสำหรับขั้น ๒ (เลือกห้อง)
+
+    (ก) ห้องที่ผู้ใช้จองบ่อยซึ่งไม่ว่าง "เพราะชนเวลาเท่านั้น" → ช่วงว่างที่ใกล้ที่สุดวันเดียวกัน
+        ถ้าห้องว่างน้อยกว่า FEW_ROOMS_THRESHOLD ห้อง เพิ่มห้องอื่นที่ชนเวลาเท่านั้นด้วย (สูงสุด max_shift_rooms)
+    (ข) ไม่มีห้องว่างเลย → วันทำการถัดไปที่มีห้องว่างในเวลาเดิม
+    """
+    now = now or timezone.now()
+    frequent_ids = [room.pk for room in frequent_rooms(user, room_categories)]
+    conflict_only = {result.room.pk: result.room for result in unavailable if result.time_conflict_only}
+    candidates = [conflict_only[pk] for pk in frequent_ids if pk in conflict_only]
+    if len(available) < FEW_ROOMS_THRESHOLD:
+        candidates += [room for pk, room in conflict_only.items() if pk not in frequent_ids]
+    equipment = list(
+        Resource.objects.filter(
+            resource_type=Resource.Type.EQUIPMENT, status=Resource.Status.ACTIVE, code__in=list(equipment_codes)
+        ).select_related("rule")
+    )
+    suggestions: list[SlotSuggestion] = []
+    for room in candidates:
+        if len(suggestions) >= max_shift_rooms:
+            break
+        slot = nearest_free_slot(room, start, end, user, equipment=equipment, now=now)
+        if slot:
+            suggestions.append(SlotSuggestion("shift", slot[0], slot[1], room=room, frequent=room.pk in frequent_ids))
+    if not available:
+        found = next_available_date(
+            start, end, user, attendees=attendees, equipment_codes=equipment_codes, room_categories=room_categories
+        )
+        if found:
+            suggestions.append(SlotSuggestion("next_date", found[0], found[1], available_count=found[2]))
+    return suggestions
+
+
+def last_booking_defaults(user) -> dict:
+    """ค่าผู้รับผิดชอบ/โทรศัพท์/หน่วย จากการจองล่าสุดของผู้ใช้ (ยังไม่เคยจอง → จากโปรไฟล์)
+
+    คืนเฉพาะค่าที่ไม่ว่าง พร้อมคีย์ "source" = "last_booking" | "profile"
+    """
+    defaults = {
+        "responsible_name": getattr(user, "display_name", "") or "",
+        "responsible_phone": getattr(user, "phone", "") or "",
+        "unit": getattr(user, "unit_id", None),
+        "source": "profile",
+    }
+    last = (
+        Booking.objects.filter(requester=user)
+        .exclude(responsible_name="")
+        .only("responsible_name", "responsible_phone", "unit_id")
+        .order_by("-created_at")
+        .first()
+    )
+    if last is not None:
+        defaults["responsible_name"] = last.responsible_name
+        defaults["responsible_phone"] = last.responsible_phone or defaults["responsible_phone"]
+        defaults["unit"] = last.unit_id or defaults["unit"]
+        defaults["source"] = "last_booking"
+    return {key: value for key, value in defaults.items() if value not in (None, "")}
+
+
+def booking_ref(booking: Booking) -> str:
+    """เลขอ้างอิงสั้นที่แสดงให้ผู้ใช้ (8 ตัวแรกของรหัส — ตรงกับ "รหัสการจอง" ในหน้ารายละเอียด)"""
+    return str(booking.pk)[:8]

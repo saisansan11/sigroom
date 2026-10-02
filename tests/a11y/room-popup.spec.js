@@ -3,7 +3,7 @@ const AxeBuilder=require('@axe-core/playwright').default;
 const room={id:'42',code:'DORM-425',building:'อาคารที่พัก',capacity:2,active:true,status:'ใช้งาน',request_url:'/lodging/request/?room_id=42',cohorts:[{title:'หลักสูตรทดสอบที่มีชื่อยาวเพื่อทดสอบการแสดงผลบนมือถือ',total:2,used:1,free:1,dates:'29/09/2569 – 09/10/2569',url:'/lodging/c/popup-qa/?room_id=42#room-42'}]};
 async function open(page){
  await page.goto('/lodging/about/');
- await page.locator('#lka-hub-action-3d').click();
+ await page.locator('.lka-explorer-shell-trigger').click();
  await page.locator('#lka-room-picker').selectOption('425');
  await expect(page.locator('#lka-room-panel')).toHaveAttribute('open');
 }

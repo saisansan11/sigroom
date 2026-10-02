@@ -1,0 +1,344 @@
+/* R3-G2 — /lodging/about/ เป็นหน้าเชิญชวน (Public Landing / Showcase)
+   Hero หมึกเข้ม + โมเดลอาคาร 3 มิติ → ช่องทางบริการ 4 ช่อง → ชมสถานที่จริง → ข้อมูลประกอบ (พับได้)
+   ยังอยู่ในตระกูล Ledger: Noto Serif Thai / Sarabun, กระดาษ #F5F1E6, หมึก #1F2A24, แดงตรา #A3241C
+   ไม่มี glow/นีออน ไม่มีป้ายภาษาอังกฤษตกแต่ง */
+
+body.lodging-about-ledger-r3g main.page-shell {
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  padding: 0;
+}
+
+.lodging-about-ledger-r3g .lka-page-wrap {
+  --g2-night: #18211D;   /* ต้องตรงกับสีพื้นในโมเดลและภาพนิ่ง */
+  --g2-night-2: #202B26;
+  --g2-paper-ink: #F5F1E6;
+  --g2-paper-muted: #CFC8B4; /* 9.9:1 บน #18211D */
+  --g2-stamp: #A3241C;
+}
+
+/* ---------- 1. HERO ---------- */
+.lodging-about-ledger-r3g .lka-g2-hero {
+  background: var(--g2-night);
+  color: var(--g2-paper-ink);
+  border-bottom: 3px solid var(--g2-stamp);
+}
+
+.lodging-about-ledger-r3g .lka-g2-hero-inner {
+  width: min(100% - 2rem, var(--content-max));
+  margin-inline: auto;
+  padding-block: clamp(1.75rem, 4.5vw, 3.75rem) clamp(1.5rem, 3.5vw, 2.75rem);
+  display: grid;
+  grid-template-columns: minmax(0, .82fr) minmax(0, 1.18fr);
+  gap: clamp(1.25rem, 3.5vw, 3rem);
+  align-items: center;
+}
+
+.lodging-about-ledger-r3g .lka-g2-kicker {
+  margin: 0 0 .5rem;
+  padding-left: .7rem;
+  border-left: 3px solid var(--g2-stamp);
+  color: var(--g2-paper-muted) !important;
+  font-size: .9rem;
+  font-weight: 500;
+  line-height: 1.5;
+}
+
+.lodging-about-ledger-r3g .lka-page-wrap .lka-g2-title {
+  margin: 0;
+  color: var(--g2-paper-ink);
+  font-family: var(--font-serif, "Noto Serif Thai", serif);
+  font-size: clamp(2.6rem, 6.4vw, 4.6rem);
+  font-weight: 600;
+  line-height: 1.05;
+  letter-spacing: .02em;
+}
+
+.lodging-about-ledger-r3g .lka-g2-lede {
+  margin: .7rem 0 0;
+  color: var(--g2-paper-ink) !important;
+  font-family: var(--font-serif, "Noto Serif Thai", serif);
+  font-size: clamp(1.15rem, 2.1vw, 1.5rem);
+  font-weight: 500;
+  line-height: 1.45;
+}
+
+.lodging-about-ledger-r3g .lka-g2-sub {
+  max-width: 40ch;
+  margin: .6rem 0 0;
+  color: var(--g2-paper-muted) !important;
+  font-size: 1rem;
+  line-height: 1.65;
+}
+
+.lodging-about-ledger-r3g .lka-g2-ctas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .65rem;
+  margin-top: 1.35rem;
+}
+
+.lodging-about-ledger-r3g .lka-page-wrap a.lka-g2-cta {
+  min-height: 48px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: .55rem 1.3rem;
+  border: 1px solid var(--g2-paper-ink);
+  border-radius: 2px;
+  font-size: 1rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition: background-color .15s ease, color .15s ease;
+}
+
+.lodging-about-ledger-r3g .lka-page-wrap a.lka-g2-cta--primary {
+  background: var(--g2-paper-ink);
+  color: #1F2A24;
+}
+
+.lodging-about-ledger-r3g .lka-page-wrap a.lka-g2-cta--primary:hover { background: #E6DFCC; }
+
+.lodging-about-ledger-r3g .lka-page-wrap a.lka-g2-cta--ghost {
+  background: transparent;
+  color: var(--g2-paper-ink);
+}
+
+.lodging-about-ledger-r3g .lka-page-wrap a.lka-g2-cta--ghost:hover { background: var(--g2-night-2); }
+
+.lodging-about-ledger-r3g .lka-page-wrap a.lka-g2-cta:focus-visible,
+.lodging-about-ledger-r3g .lka-g2-toggle:focus-visible,
+.lodging-about-ledger-r3g .lka-hero-canvas:focus-visible {
+  outline: 3px solid #E9C47E;
+  outline-offset: 3px;
+}
+
+/* เวที 3 มิติ: กันพื้นที่ไว้ล่วงหน้า (4:3) ภาพนิ่งกับโมเดลใช้มุมกล้องเดียวกัน จึงไม่กระตุก/ไม่เลื่อน */
+.lodging-about-ledger-r3g .lka-g2-figure {
+  margin: 0;
+  min-width: 0;
+}
+
+.lodging-about-ledger-r3g .lka-g2-stage {
+  position: relative;
+  aspect-ratio: 4 / 3;
+  width: 100%;
+  overflow: hidden;
+  background: var(--g2-night);
+  border: 1px solid #34413A;
+}
+
+.lodging-about-ledger-r3g .lka-hero-poster,
+.lodging-about-ledger-r3g .lka-hero-poster img {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.lodging-about-ledger-r3g .lka-hero-poster img { object-fit: cover; }
+
+.lodging-about-ledger-r3g .lka-hero-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+  opacity: 0;
+  transition: opacity .7s ease;
+  cursor: grab;
+  touch-action: pan-y;          /* ปัดแนวตั้ง = เลื่อนหน้า, ลากแนวนอน = หมุน */
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+.lodging-about-ledger-r3g .lka-g2-stage.is-dragging .lka-hero-canvas { cursor: grabbing; }
+.lodging-about-ledger-r3g .lka-g2-stage[data-mode="live"] .lka-hero-canvas { opacity: 1; }
+
+/* ป้ายชั้น: ข้อความ HTML จึงคมชัดทุกขนาดจอ */
+.lodging-about-ledger-r3g .lka-hero-tag {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 2;
+  display: none;
+  padding: .2rem .55rem;
+  background: rgb(24 33 29 / .88);
+  border: 1px solid #5C6A61;
+  color: var(--g2-paper-ink) !important;
+  font-size: .8rem;
+  font-weight: 500;
+  line-height: 1.4;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+.lodging-about-ledger-r3g .lka-hero-tag::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  right: 100%;
+  width: 10px;
+  border-top: 1px solid #8E9A91;
+}
+
+.lodging-about-ledger-r3g .lka-hero-tag.is-flipped::before { right: auto; left: 100%; }
+.lodging-about-ledger-r3g .lka-g2-stage.has-tags .lka-hero-tag { display: block; }
+
+.lodging-about-ledger-r3g .lka-g2-stage-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: .75rem;
+  margin-top: .55rem;
+  color: var(--g2-paper-muted);
+  font-size: .82rem;
+  line-height: 1.5;
+}
+
+.lodging-about-ledger-r3g .lka-g2-stage-foot span { color: var(--g2-paper-muted); }
+/* ข้อความสองแบบซ้อนในช่องเดียว: ความสูงคงที่ ไม่ดันเนื้อหาข้างล่างตอนโมเดลเริ่มทำงาน */
+.lodging-about-ledger-r3g .lka-g2-hint { display: grid; }
+.lodging-about-ledger-r3g .lka-g2-hint > span { grid-area: 1 / 1; }
+.lodging-about-ledger-r3g .lka-g2-hint-live { visibility: hidden; }
+.lodging-about-ledger-r3g .lka-g2-figure.is-live .lka-g2-hint-live { visibility: visible; }
+.lodging-about-ledger-r3g .lka-g2-figure.is-live .lka-g2-hint-poster { visibility: hidden; }
+
+.lodging-about-ledger-r3g .lka-g2-toggle {
+  flex: none;
+  min-height: 44px;
+  min-width: 44px;
+  margin: 0;
+  padding: .3rem .8rem;
+  width: auto;
+  border: 1px solid #5C6A61;
+  border-radius: 2px;
+  background: transparent;
+  color: var(--g2-paper-ink);
+  font: inherit;
+  font-size: .82rem;
+  cursor: pointer;
+}
+
+/* ปุ่มหยุดหมุนจองที่ไว้ตลอด (กันหน้าเลื่อน) แต่จะมองเห็น/กดได้เมื่อโมเดลทำงานแล้วเท่านั้น */
+.lodging-about-ledger-r3g .lka-g2-toggle { visibility: hidden; }
+.lodging-about-ledger-r3g .lka-g2-figure.is-live .lka-g2-toggle { visibility: visible; }
+.lodging-about-ledger-r3g .lka-g2-toggle:hover { background: var(--g2-night-2); }
+
+/* ---------- หัวข้อแต่ละส่วน ---------- */
+.lodging-about-ledger-r3g .lka-g2-heading {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: .25rem 1rem;
+  border-bottom: 2px solid var(--r3g-ink);
+  padding-bottom: .4rem;
+  margin-bottom: .9rem;
+}
+
+.lodging-about-ledger-r3g .lka-g2-heading h2 {
+  margin: 0;
+  font-family: var(--font-serif, "Noto Serif Thai", serif);
+  font-size: clamp(1.3rem, 2.6vw, 1.75rem);
+  font-weight: 600;
+}
+
+.lodging-about-ledger-r3g .lka-g2-heading p {
+  margin: 0;
+  color: var(--r3g-muted);
+  font-size: .9rem;
+}
+
+/* ---------- 2. ช่องทางบริการ ---------- */
+.lodging-about-ledger-r3g .lka-g2-services { padding-block: clamp(1.4rem, 3vw, 2.4rem) .5rem; }
+.lodging-about-ledger-r3g .lka-g2-services .lka-r3g-service { min-height: 150px; padding: 1rem; }
+.lodging-about-ledger-r3g .lka-g2-services .lka-r3g-service strong { font-size: 1.08rem; }
+.lodging-about-ledger-r3g .lka-g2-services .lka-r3g-service small { font-size: .84rem; }
+.lodging-about-ledger-r3g .lka-g2-services .lka-r3g-action { font-size: .86rem; }
+.lodging-about-ledger-r3g .lka-g2-services .lka-r3g-service-icon { width: 1.7rem; height: 1.7rem; }
+.lodging-about-ledger-r3g .lka-g2-services .lka-r3g-service--future { cursor: default; }
+
+/* ---------- 3. Showcase ---------- */
+.lodging-about-ledger-r3g .lka-g2-showcase-head { padding-block: clamp(1.6rem, 3.5vw, 2.6rem) 0; }
+.lodging-about-ledger-r3g .lka-g2-showcase-head .lka-g2-heading { margin-bottom: 0; }
+.lodging-about-ledger-r3g .lka-g2-showcase-head + .lka-gallery-section { padding-top: 1rem; }
+
+.lodging-about-ledger-r3g .lka-facilities-section { padding-block: 1rem 1.5rem; }
+.lodging-about-ledger-r3g .lka-facilities-section > .lka-section-header {
+  display: block;
+  margin-bottom: .75rem;
+  max-width: none;
+}
+.lodging-about-ledger-r3g .lka-facilities-section > .lka-section-header .eyebrow { display: none; }
+.lodging-about-ledger-r3g .lka-facilities-section > .lka-section-header h2 {
+  margin: 0;
+  font-family: var(--font-serif, "Noto Serif Thai", serif);
+  font-size: clamp(1.18rem, 2.2vw, 1.55rem);
+  font-weight: 600;
+}
+.lodging-about-ledger-r3g .lka-facilities-section > .lka-section-header .lka-section-sub {
+  margin-top: .2rem;
+  color: var(--r3g-muted);
+  font-size: .88rem;
+}
+.lodging-about-ledger-r3g .lka-facilities-section > .lka-facilities-cards {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: .75rem;
+  margin-bottom: .5rem;
+}
+
+/* ---------- 4. ข้อมูลประกอบ (พับได้) ---------- */
+.lodging-about-ledger-r3g .lka-g2-info-heading { padding-top: clamp(1.6rem, 3.5vw, 2.6rem); }
+.lodging-about-ledger-r3g .lka-rates-section .lka-rates-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: .6rem;
+  margin: .5rem 0 1rem;
+}
+.lodging-about-ledger-r3g .lka-rates-section .lka-disclosure-body > .lka-section-sub {
+  margin: 0 0 .25rem;
+  color: var(--r3g-muted);
+  font-size: .88rem;
+}
+
+/* ---------- จอแคบ ---------- */
+@media (max-width: 55.99rem) {
+  .lodging-about-ledger-r3g .lka-g2-hero-inner { grid-template-columns: 1fr; }
+  .lodging-about-ledger-r3g .lka-g2-figure { max-width: 40rem; }
+}
+
+@media (max-width: 36rem) {
+  .lodging-about-ledger-r3g .lka-g2-hero-inner {
+    width: calc(100% - 1.5rem);
+    padding-block: 1rem .9rem;
+    gap: .9rem;
+  }
+  .lodging-about-ledger-r3g .lka-g2-kicker { font-size: .8rem; margin-bottom: .35rem; }
+  .lodging-about-ledger-r3g .lka-page-wrap .lka-g2-title { font-size: 2.35rem; }
+  .lodging-about-ledger-r3g .lka-g2-lede { margin-top: .35rem; font-size: 1.08rem; }
+  .lodging-about-ledger-r3g .lka-g2-sub { margin-top: .3rem; font-size: .9rem; line-height: 1.5; }
+  .lodging-about-ledger-r3g .lka-g2-ctas {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: .5rem;
+    margin-top: .8rem;
+  }
+  .lodging-about-ledger-r3g .lka-page-wrap a.lka-g2-cta { padding-inline: .5rem; font-size: .95rem; }
+  .lodging-about-ledger-r3g .lka-hero-tag { font-size: .7rem; padding: .1rem .4rem; }
+  .lodging-about-ledger-r3g .lka-g2-stage-foot { margin-top: .4rem; font-size: .74rem; }
+  .lodging-about-ledger-r3g .lka-g2-services { padding-top: 1rem; }
+  .lodging-about-ledger-r3g .lka-g2-heading { margin-bottom: .6rem; }
+  .lodging-about-ledger-r3g .lka-g2-heading p { font-size: .82rem; }
+  .lodging-about-ledger-r3g .lka-g2-services .lka-r3g-service { min-height: 118px; padding: .65rem .6rem; }
+  .lodging-about-ledger-r3g .lka-g2-services .lka-r3g-service strong { font-size: .95rem; }
+  .lodging-about-ledger-r3g .lka-g2-services .lka-r3g-service small { font-size: .76rem; }
+  .lodging-about-ledger-r3g .lka-g2-services .lka-r3g-action { font-size: .76rem; }
+  .lodging-about-ledger-r3g .lka-facilities-section > .lka-facilities-cards,
+  .lodging-about-ledger-r3g .lka-rates-section .lka-rates-summary-grid { grid-template-columns: 1fr; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lodging-about-ledger-r3g .lka-hero-canvas { transition: none; }
+}

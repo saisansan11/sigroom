@@ -3,6 +3,7 @@
 ค่าที่เปลี่ยนตามเครื่อง/หน่วยงานอ่านจากไฟล์ .env (ดู .env.example) — ห้ามเขียน secret ในไฟล์นี้
 """
 import os
+import sys
 import warnings
 from pathlib import Path
 
@@ -109,7 +110,7 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 AUTH_USER_MODEL = "accounts.User"
 ALLOWED_EMAIL_DOMAIN = os.environ.get("ALLOWED_EMAIL_DOMAIN", "signalschool.ac.th")
 LOGIN_URL = "/accounts/login/"
-LOGIN_REDIRECT_URL = "/"
+LOGIN_REDIRECT_URL = "/home/"
 AUTH_PASSWORD_VALIDATORS = [
     {"NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"},
     {"NAME": "django.contrib.auth.password_validation.MinimumLengthValidator", "OPTIONS": {"min_length": 12}},  # SR-05
@@ -155,10 +156,19 @@ USE_TZ = True
 # --- ไฟล์ static -----------------------------------------------------------
 STATIC_URL = "static/"
 STATICFILES_DIRS = [BASE_DIR / "static"]
-STATIC_ROOT = BASE_DIR / "staticfiles"
+# STATIC_ROOT อยู่ใต้ public/ เพื่อให้ Firebase Hosting (public = "public") อัปโหลดไปไว้ที่ /static/ ของ CDN
+# ตรงกับ STATIC_URL — ลดภาระ Cloud Run ที่ scale-to-zero (เครื่อง LAN ยังใช้ collectstatic + WhiteNoise เหมือนเดิม)
+STATIC_ROOT = BASE_DIR / "public" / "static"
+# ไฟล์ชื่อมี hash (cache ได้ 1 ปี) ใช้เมื่อ collectstatic สร้าง manifest แล้ว หรือกำลังรัน collectstatic อยู่
+# ถ้ายังไม่เคย collectstatic (เครื่อง dev/LAN ที่เพิ่งดึงโค้ด) ใช้แบบเดิมแทน เว็บจะไม่ล้มเป็น 500 ทั้งเว็บ
+_USE_STATIC_MANIFEST = (STATIC_ROOT / "staticfiles.json").exists() or "collectstatic" in sys.argv
 STORAGES = {
     "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},
-    "staticfiles": {"BACKEND": "whitenoise.storage.CompressedStaticFilesStorage"},
+    "staticfiles": {
+        "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage"
+        if _USE_STATIC_MANIFEST
+        else "whitenoise.storage.CompressedStaticFilesStorage"
+    },
 }
 
 # --- ไฟล์ media (รูปห้อง — งาน v6-c) ----------------------------------------

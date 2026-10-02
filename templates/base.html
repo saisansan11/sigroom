@@ -1,32 +1,33 @@
 {% load static %}
 <!doctype html>
-<html lang="th" data-theme="{% block html_theme %}dark{% endblock %}">
+<html lang="th" data-theme="{% block html_theme %}light{% endblock %}">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="{% block theme_color %}#0b1117{% endblock %}">
+  <meta name="theme-color" content="{% block theme_color %}#F5F1E6{% endblock %}">
   <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="SIGROOM">
   <title>{% block title %}SIGROOM{% endblock %}</title>
   <link rel="manifest" href="{% url 'webmanifest' %}">
   <link rel="icon" type="image/png" href="{% static 'img/pwa-icon-192.png' %}">
   <link rel="apple-touch-icon" sizes="192x192" href="{% static 'img/pwa-icon-192.png' %}">
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="{% static 'fonts/sarabun-400-thai.woff2' %}">
   <link rel="stylesheet" href="{% static 'vendor/pico/pico.min.css' %}">
   <link rel="stylesheet" href="{% static 'css/fonts.css' %}">
   <link rel="stylesheet" href="{% static 'css/app.css' %}">
   {% block head %}{% endblock %}
-  {% if request.path|slice:":9" == "/lodging/" or request.GET.next|slice:":9" == "/lodging/" %}<link rel="stylesheet" href="{% static 'css/lodging_theme.css' %}?v=1">{% endif %}
+  {% if request.path|slice:":9" == "/lodging/" or request.GET.next|slice:":9" == "/lodging/" %}<link rel="stylesheet" href="{% static 'css/lodging_theme.css' %}">{% endif %}
 </head>
 <body class="{% block body_class %}{% endblock %}">
   <a class="skip-link" href="#main-content">ข้ามไปเนื้อหาหลัก</a>
   <header class="site-header">
     <div class="header-shell">
-      <a class="brand" href="{% url 'bookings:calendar' %}"><svg class="brand-mark" viewBox="0 0 48 48" aria-hidden="true"><g fill="none" stroke="var(--cyan)" stroke-width="3"><rect x="2" y="2" width="44" height="44"/><path d="M8 30 L15 30 L19 18 L24 36 L29 24 L33 30 L40 30" stroke-linecap="round" stroke-linejoin="round"/></g></svg>SIG<span class="brand-accent">ROOM</span></a>
+      <a class="brand" href="{% url 'bookings:calendar' %}"><span class="brand-name">SIGROOM</span><span class="brand-sub">ระบบจองห้อง รร.ส.สส.</span></a>
       {% if user.is_authenticated %}
         <nav class="desktop-nav" aria-label="เมนูหลัก">
           <ul class="main-nav">
-            <li><a {% if request.resolver_match.url_name == 'calendar' %}aria-current="page"{% endif %} href="{% url 'bookings:calendar' %}">หน้าแรก</a></li>
+            <li><a {% if request.resolver_match.url_name == 'calendar' or request.resolver_match.url_name == 'calendar_root' %}aria-current="page"{% endif %} href="{% url 'bookings:calendar' %}">หน้าแรก</a></li>
             <li><a {% if request.resolver_match.url_name == 'book_search' or request.resolver_match.url_name == 'book_form' %}aria-current="page"{% endif %} href="{% url 'bookings:book_search' %}">จองห้องเรียน</a></li>
             {% if nav_can_book_online %}<li><a {% if request.resolver_match.url_name == 'online_teaching_home' or request.resolver_match.url_name == 'online_teaching_book' %}aria-current="page"{% endif %} href="{% url 'bookings:online_teaching_home' %}">ห้องสอนออนไลน์</a></li>{% endif %}
             <li><a {% if request.resolver_match.url_name == 'my_bookings' %}aria-current="page"{% endif %} href="{% url 'bookings:my_bookings' %}">การจองของฉัน</a></li>
@@ -61,7 +62,7 @@
           </ul>
         </nav>
         <div class="header-tools">
-          <a class="notification-link" href="{% url 'notifications:list' %}" aria-label="การแจ้งเตือน{% if nav_unread_count %}ที่ยังไม่ได้อ่าน {{ nav_unread_count }} รายการ{% endif %}">●{% if nav_unread_count %}<span class="notification-count">{{ nav_unread_count }}</span>{% endif %}</a>
+          <a class="notification-link" href="{% url 'notifications:list' %}" aria-label="การแจ้งเตือน{% if nav_unread_count %}ที่ยังไม่ได้อ่าน {{ nav_unread_count }} รายการ{% endif %}"><span aria-hidden="true">แจ้งเตือน</span>{% if nav_unread_count %}<span class="notification-count" aria-hidden="true">{{ nav_unread_count }}</span>{% endif %}</a>
           <details class="account-menu">
             <summary>{{ user.display_name }}</summary>
             <div class="account-popover">
@@ -78,7 +79,7 @@
             <div class="mobile-menu-panel">
               <nav aria-label="เมนูหลักสำหรับมือถือ">
                 <ul class="main-nav">
-                  <li><a {% if request.resolver_match.url_name == 'calendar' %}aria-current="page"{% endif %} href="{% url 'bookings:calendar' %}">หน้าแรก</a></li>
+                  <li><a {% if request.resolver_match.url_name == 'calendar' or request.resolver_match.url_name == 'calendar_root' %}aria-current="page"{% endif %} href="{% url 'bookings:calendar' %}">หน้าแรก</a></li>
                   <li><a {% if request.resolver_match.url_name == 'book_search' or request.resolver_match.url_name == 'book_form' %}aria-current="page"{% endif %} href="{% url 'bookings:book_search' %}">จองห้องเรียน</a></li>
                   <li><a {% if request.resolver_match.url_name == 'my_bookings' %}aria-current="page"{% endif %} href="{% url 'bookings:my_bookings' %}">การจองของฉัน</a></li>
                   <li><a {% if request.resolver_match.url_name == 'lodging_index' %}aria-current="page"{% endif %} href="{% url 'bookings:lodging_index' %}">จองห้องพัก</a></li>
@@ -116,7 +117,7 @@
       {% else %}
         <nav class="desktop-nav" aria-label="เมนูหลัก">
           <ul class="main-nav">
-            <li><a {% if request.resolver_match.url_name == 'calendar' %}aria-current="page"{% endif %} href="{% url 'bookings:calendar' %}">สถานะห้องวันนี้</a></li>
+            <li><a {% if request.resolver_match.url_name == 'calendar' or request.resolver_match.url_name == 'calendar_root' %}aria-current="page"{% endif %} href="{% url 'bookings:calendar' %}">สถานะห้องวันนี้</a></li>
             <li><a {% if request.resolver_match.url_name == 'lodging_index' or 'lodging' in request.path %}aria-current="page"{% endif %} href="{% url 'bookings:lodging_index' %}">จองห้องพัก</a></li>
             <li><a {% if request.resolver_match.url_name == 'about' %}aria-current="page"{% endif %} href="{% url 'bookings:about' %}">รู้จัก SIGROOM</a></li>
           </ul>
@@ -128,7 +129,7 @@
             <div class="mobile-menu-panel">
               <nav aria-label="เมนูหลักสำหรับมือถือ">
                 <ul class="main-nav">
-                  <li><a {% if request.resolver_match.url_name == 'calendar' %}aria-current="page"{% endif %} href="{% url 'bookings:calendar' %}">สถานะห้องวันนี้</a></li>
+                  <li><a {% if request.resolver_match.url_name == 'calendar' or request.resolver_match.url_name == 'calendar_root' %}aria-current="page"{% endif %} href="{% url 'bookings:calendar' %}">สถานะห้องวันนี้</a></li>
                   <li><a {% if request.resolver_match.url_name == 'lodging_index' or 'lodging' in request.path %}aria-current="page"{% endif %} href="{% url 'bookings:lodging_index' %}">จองห้องพัก</a></li>
                   <li><a {% if request.resolver_match.url_name == 'about' %}aria-current="page"{% endif %} href="{% url 'bookings:about' %}">รู้จัก SIGROOM</a></li>
                 </ul>
@@ -175,7 +176,12 @@
       if (error) {
         const fieldId = error.dataset.fieldId;
         const field = fieldId ? document.getElementById(fieldId) : error.closest('.field')?.querySelector('input, select, textarea');
-        scrollAndFocus(field || error);
+        // ช่องที่ผิดอยู่ในส่วนที่พับไว้ → เปิดส่วนนั้นก่อนแล้วค่อยโฟกัส
+        const target = field || error;
+        const folded = target.closest('details');
+        if (folded) folded.open = true;
+        target.closest('[hidden]')?.removeAttribute('hidden');
+        scrollAndFocus(target);
       }
       document.addEventListener('click', function (event) {
         document.querySelectorAll('.ops-menu[open], .account-menu[open]').forEach(function (el) {

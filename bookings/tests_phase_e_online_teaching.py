@@ -143,7 +143,7 @@ def test_online_hub_requires_login_and_teacher_role(client, online_e_setup):
     html = response.content.decode()
     for code in ONLINE_TEACHING_ROOM_CODES:
         assert code in html
-    assert html.count("ดูรายละเอียดและจอง") == 3
+    assert html.count("จองห้องนี้") == 3
 
 
 def test_online_form_is_focused_and_course_is_strict_dropdown(client, online_e_setup):

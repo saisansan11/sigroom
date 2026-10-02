@@ -1,0 +1,223 @@
+/* R3-L — online teaching booking as a short Ledger journey. */
+body.online-teaching-r3l {
+  color-scheme: light;
+  --ot-paper: #F5F1E6;
+  --ot-raised: #FBF8F0;
+  --ot-sunk: #EFE8D6;
+  --ot-rule: #D8CFB8;
+  --ot-ink: #1F2A24;
+  --ot-muted: #5E5D52;
+  --ot-link: #1F4E79;
+  background: var(--ot-paper);
+  color: var(--ot-ink);
+}
+body.online-teaching-r3l main.container.page-shell {
+  width: min(100% - 2rem, 72rem);
+  max-width: 72rem;
+  padding-top: clamp(1rem, 2.5vw, 2rem);
+  padding-bottom: 3rem;
+}
+body.online-teaching-r3l .site-header {
+  border-bottom: 2px solid var(--ot-ink);
+  background: var(--ot-paper);
+  box-shadow: none;
+}
+body.online-teaching-r3l .online-teaching-shell { gap: 1rem; }
+body.online-teaching-r3l .online-teaching-heading {
+  margin-bottom: 0;
+  padding-bottom: .65rem;
+  border-bottom: 2px solid var(--ot-ink);
+  align-items: flex-end;
+}
+body.online-teaching-r3l .online-teaching-heading .eyebrow {
+  margin-bottom: .2rem;
+  color: var(--ot-muted);
+  letter-spacing: 0;
+  text-transform: none;
+}
+body.online-teaching-r3l .online-teaching-heading h1 {
+  margin: 0;
+  font-family: var(--font-serif);
+  font-size: clamp(1.45rem, 3vw, 2rem);
+  font-weight: 600;
+}
+body.online-teaching-r3l .online-teaching-heading p { margin: .25rem 0 0; color: var(--ot-muted); }
+body.online-teaching-r3l .online-teaching-heading > a {
+  min-height: 44px;
+  border: 0;
+  background: transparent;
+  color: var(--ot-link);
+  box-shadow: none;
+  text-decoration: underline;
+}
+
+/* Room list is three ledger rows rather than three marketing cards. */
+body.online-teaching-r3l .online-room-grid {
+  display: block;
+  border-top: 1px solid var(--ot-rule);
+}
+body.online-teaching-r3l .online-room-card {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: .75rem 1.25rem;
+  align-items: center;
+  margin: 0;
+  padding: .9rem 0;
+  border: 0;
+  border-bottom: 1px solid var(--ot-rule);
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+body.online-teaching-r3l .online-room-card-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: flex-start;
+  gap: .55rem 1rem;
+  flex-wrap: wrap;
+}
+body.online-teaching-r3l .online-room-card-head .eyebrow { display: none; }
+body.online-teaching-r3l .online-room-card h2 {
+  margin: 0;
+  font-family: var(--font-serif);
+  font-size: 1.08rem;
+  font-weight: 600;
+}
+body.online-teaching-r3l .online-room-code,
+body.online-teaching-r3l .online-room-summary {
+  color: var(--ot-muted);
+  font-size: .84rem;
+}
+body.online-teaching-r3l .online-status {
+  min-height: auto;
+  padding: 0;
+  border-radius: 0;
+  background: transparent !important;
+  font-size: .82rem;
+}
+body.online-teaching-r3l .online-status.is-free { color: #2F6B3A; }
+body.online-teaching-r3l .online-status.is-busy { color: var(--ot-muted); }
+body.online-teaching-r3l .online-room-facts { display: none; }
+body.online-teaching-r3l .online-room-equipment {
+  grid-column: 1;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+body.online-teaching-r3l .online-room-equipment summary {
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  color: var(--ot-link);
+  cursor: pointer;
+  font-size: .82rem;
+}
+body.online-teaching-r3l .online-room-equipment p {
+  margin: 0 0 .35rem;
+  color: var(--ot-muted);
+  font-size: .84rem;
+}
+body.online-teaching-r3l .online-room-book {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+  min-width: 9rem;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0;
+  padding: .55rem .8rem;
+  border: 1px solid var(--ot-ink);
+  border-radius: 2px;
+  background: var(--ot-ink);
+  color: var(--ot-paper);
+  box-shadow: none;
+  text-decoration: none;
+}
+body.online-teaching-r3l .online-next-window { margin: 0; color: var(--ot-muted); font-size: .78rem; }
+
+/* Booking page: one compact rule line + one form + one primary action. */
+body.online-teaching-r3l .online-room-detail-strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .2rem .75rem;
+  padding: .55rem 0;
+  border-bottom: 1px solid var(--ot-rule);
+  color: var(--ot-muted);
+  font-size: .84rem;
+}
+body.online-teaching-r3l .online-room-detail-strip div {
+  padding: 0;
+  border-radius: 0;
+  background: transparent;
+}
+body.online-teaching-r3l .online-room-detail-strip div:not(:last-child)::after {
+  content: " ·";
+  color: var(--ot-rule);
+}
+body.online-teaching-r3l .online-room-detail-strip span,
+body.online-teaching-r3l .online-room-detail-strip strong {
+  display: inline;
+  margin: 0;
+  font-size: inherit;
+}
+body.online-teaching-r3l .online-room-detail-strip span::after { content: " "; }
+body.online-teaching-r3l .online-room-equipment-detail {
+  max-width: none;
+  border-bottom: 1px solid var(--ot-rule);
+}
+body.online-teaching-r3l .online-booking-form {
+  gap: 0;
+  border-top: 2px solid var(--ot-ink);
+  background: var(--ot-raised);
+}
+body.online-teaching-r3l .online-booking-step {
+  padding: .9rem 0;
+  border: 0;
+  border-bottom: 1px solid var(--ot-rule);
+  border-radius: 0;
+  background: transparent;
+}
+body.online-teaching-r3l .online-booking-step > div:first-child .eyebrow {
+  margin-bottom: .1rem;
+  color: var(--ot-muted);
+  letter-spacing: 0;
+  text-transform: none;
+}
+body.online-teaching-r3l .online-booking-step h2 {
+  margin: 0 0 .55rem;
+  font-family: var(--font-serif);
+  font-size: 1rem;
+  font-weight: 600;
+}
+body.online-teaching-r3l .online-booking-grid :is(input, select) {
+  min-height: 44px;
+  border-radius: 0;
+  background: var(--ot-paper);
+}
+body.online-teaching-r3l .online-booking-actions {
+  justify-content: flex-end;
+  padding-top: .8rem;
+}
+body.online-teaching-r3l .online-booking-actions button {
+  min-width: 12rem;
+  min-height: 46px;
+  border-radius: 2px;
+  background: var(--ot-ink);
+  border-color: var(--ot-ink);
+  color: var(--ot-paper);
+  box-shadow: none;
+}
+body.online-teaching-r3l .field-error { color: #A3241C; }
+
+@media (max-width: 600px) {
+  body.online-teaching-r3l main.container.page-shell { width: min(100% - 1rem, 72rem); }
+  body.online-teaching-r3l .online-teaching-heading { align-items: flex-start; }
+  body.online-teaching-r3l .online-room-card { grid-template-columns: 1fr; gap: .35rem; }
+  body.online-teaching-r3l .online-room-book { grid-column: 1; grid-row: auto; width: 100%; }
+  body.online-teaching-r3l .online-booking-grid.three,
+  body.online-teaching-r3l .online-booking-grid.two { grid-template-columns: 1fr; }
+  body.online-teaching-r3l .online-booking-actions { display: block; width: 100%; }
+  body.online-teaching-r3l .online-booking-actions button { width: 100%; min-width: 0; }
+}

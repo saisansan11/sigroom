@@ -1,15 +1,13 @@
 {% extends "base.html" %}
-{% block title %}จอง {{ room.code }} · SIGROOM{% endblock %}
+{% block title %}ใบขอใช้ห้อง {{ room.code }} · SIGROOM{% endblock %}
 {% block content %}
-{% include "bookings/partials/booking_stepper.html" with current_step=3 %}
-
-<div class="page-heading booking-flow-heading booking-express-heading">
+<div class="page-heading booking-sheet-heading">
   <div>
-    <p class="eyebrow">ขั้นที่ 3 จาก 5 · Express Booking</p>
-    <h1>กรอกรายละเอียดการใช้ห้อง</h1>
-    <p class="heading-desc">ห้องและเวลาถูกเลือกไว้แล้ว กรอกเฉพาะข้อมูลกิจกรรมที่จำเป็น จากนั้นตรวจสอบและส่งคำขอได้ทันที</p>
+    <h1>ขอใช้ห้อง</h1>
+    <p class="heading-desc">ห้องและเวลาเลือกไว้แล้ว กรอกชื่อกิจกรรมแล้วยื่นได้ทันที</p>
   </div>
 </div>
+{% include "bookings/partials/booking_stepper.html" with current_step=3 %}
 
 {% include "bookings/partials/booking_fields.html" with show_draft=True %}
 {% endblock %}
@@ -17,7 +15,7 @@
 {% block scripts %}
 <script>
 document.addEventListener('DOMContentLoaded', function () {
-  // Series fields toggle
+  // จองเป็นชุด: สลับปุ่มส่งและช่องของชุด
   const toggle = document.getElementById('id_is_series');
   if (toggle) {
     const updateSeries = () => {
@@ -28,62 +26,36 @@ document.addEventListener('DOMContentLoaded', function () {
     updateSeries();
   }
 
-  // Native <summary> supports Space in Chrome, but Enter is not consistently activated.
-  // Keep this presentation-only keyboard bridge so the responsible disclosure meets
-  // the UX-2 keyboard contract without changing form or booking behavior.
-  const responsibleSummary = document.querySelector('.booking-responsible-summary');
-  if (responsibleSummary) {
-    responsibleSummary.addEventListener('keydown', function (event) {
-      if (event.key === 'Enter') {
-        event.preventDefault();
-        responsibleSummary.click();
-      }
-    });
-  }
-
-  // Pre-submit review presentation sync (presentation only, server remains authority)
-  const syncReview = () => {
-    const titleInput = document.getElementById('id_title');
-    const attendeesInput = document.getElementById('id_attendees');
-    const respNameInput = document.getElementById('id_responsible_name');
-    const respPhoneInput = document.getElementById('id_responsible_phone');
-    const unitSelect = document.getElementById('id_unit');
-
-    const reviewTitle = document.getElementById('review-title-display');
-    const reviewAttendees = document.getElementById('review-attendees-display');
-    const reviewResp = document.getElementById('review-resp-display');
-    const summaryResp = document.getElementById('responsible-summary-name');
-    const summaryPhone = document.getElementById('responsible-summary-phone');
-
-    if (reviewTitle && titleInput) {
-      reviewTitle.textContent = titleInput.value.trim() || '— (กรุณาระบุกิจกรรม)';
+  // ผู้รับผิดชอบ: ไม่มี JS → เห็นช่องครบ · มี JS และข้อมูลครบ → ย่อเหลือบรรทัดเดียวพร้อมปุ่ม "แก้ไข"
+  const block = document.querySelector('[data-responsible-block]');
+  if (block) {
+    const line = block.querySelector('.responsible-line');
+    const fields = block.querySelector('.responsible-fields');
+    const edit = block.querySelector('.responsible-edit');
+    if (line && fields && edit && !block.hasAttribute('data-open')) {
+      line.hidden = false;
+      fields.hidden = true;
+      edit.addEventListener('click', function () {
+        fields.hidden = false;
+        edit.setAttribute('aria-expanded', 'true');
+        edit.hidden = true;
+        const first = fields.querySelector('input, select');
+        if (first) first.focus();
+      });
     }
-    if (reviewAttendees && attendeesInput) {
-      reviewAttendees.textContent = attendeesInput.value.trim() ? attendeesInput.value.trim() + ' คน' : '—';
-    }
-    if (summaryResp && respNameInput) {
-      summaryResp.textContent = respNameInput.value.trim() || 'กรุณาระบุผู้รับผิดชอบ';
-    }
-    if (summaryPhone && respPhoneInput) {
-      summaryPhone.textContent = respPhoneInput.value.trim() || 'ยังไม่มีเบอร์โทร';
-    }
-    if (reviewResp && respNameInput) {
-      let text = respNameInput.value.trim() || '—';
-      if (unitSelect && unitSelect.selectedIndex >= 0 && unitSelect.options[unitSelect.selectedIndex].text) {
-        const unitText = unitSelect.options[unitSelect.selectedIndex].text.trim();
-        if (unitText && unitText !== '---------') {
-          text += ' (' + unitText + ')';
-        }
-      }
-      reviewResp.textContent = text;
-    }
-  };
-
-  const form = document.querySelector('.booking-form');
-  if (form) {
-    form.addEventListener('input', syncReview);
-    form.addEventListener('change', syncReview);
-    syncReview();
+    const sync = () => {
+      const name = document.getElementById('id_responsible_name');
+      const phone = document.getElementById('id_responsible_phone');
+      const unit = document.getElementById('id_unit');
+      const nameOut = document.getElementById('responsible-summary-name');
+      const phoneOut = document.getElementById('responsible-summary-phone');
+      const unitOut = document.getElementById('responsible-summary-unit');
+      if (name && nameOut) nameOut.textContent = name.value.trim() || 'ยังไม่ระบุ';
+      if (phone && phoneOut) phoneOut.textContent = phone.value.trim() || 'ยังไม่มีเบอร์โทร';
+      if (unit && unitOut && unit.selectedIndex >= 0) unitOut.textContent = unit.options[unit.selectedIndex].text.trim();
+    };
+    block.addEventListener('input', sync);
+    block.addEventListener('change', sync);
   }
 });
 </script>

@@ -312,7 +312,8 @@ def test_ux4_approved_requester_groups_and_actions(client, ux4_setup):
     # Primary: rebook, edit, amend
     rebook_part = f"rebook={booking.id}"
     assert rebook_part in html
-    assert "จองแบบเดิมอีกครั้ง ↻" in html
+    assert "จองแบบเดิมอีกครั้ง" in html
+    assert "↻" not in html
     assert reverse("bookings:booking_edit", args=[booking.id]) in html
     assert reverse("bookings:booking_amend", args=[booking.id]) in html
 

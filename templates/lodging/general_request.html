@@ -2,10 +2,53 @@
 {% load static %}
 {% block html_theme %}light{% endblock %}
 {% block body_class %}lodging-booking-ios27{% endblock %}
-{% block head %}<link rel="stylesheet" href="{% static 'css/lodging_booking_ios27.css' %}?v=2">{% endblock %}
+{% block head %}
+<link rel="stylesheet" href="{% static 'css/lodging_booking_ios27.css' %}?v=2">
+<link rel="stylesheet" href="{% static 'css/lodging_booking_r3l.css' %}?v=1">
+{% endblock %}
 {% block title %}ส่งคำขอจองที่พักทั่วไป · SIGROOM{% endblock %}
 {% block content %}
-<div class="page-heading"><div><p class="eyebrow">สำหรับบุคคลทั่วไป</p><h1>ส่งคำขอจองที่พัก</h1><p>ไม่ต้องมีบัญชี SIGROOM · เจ้าหน้าที่จะตรวจสอบก่อนอนุมัติ และระบบจะให้ลิงก์สำหรับติดตามสถานะ</p></div></div>
-<form method="post" class="detail-card">{% csrf_token %}{{ form.as_p }}<p>ระบบตรวจห้องว่างและช่วงที่สงวนให้หลักสูตรอีกครั้งตอนส่งคำขอ</p><button type="submit">ส่งคำขอให้เจ้าหน้าที่พิจารณา</button></form>
-<p><a href="{% url 'bookings:lodging_index' %}">เป็นผู้เรียน? จองตามหลักสูตร →</a></p>
+<div class="page-heading">
+  <div>
+    <p class="eyebrow">ห้องพักบุคคลทั่วไป</p>
+    <h1>ขอเข้าพัก</h1>
+    <p>ไม่ต้องมีบัญชี เลือกห้องและวันเข้าพัก แล้วส่งให้เจ้าหน้าที่พิจารณา</p>
+  </div>
+</div>
+
+<form method="post" class="r3l-request-sheet" novalidate>
+  {% csrf_token %}
+  {% if form.non_field_errors %}
+    <div class="notice warning" role="alert">{% for error in form.non_field_errors %}<div>{{ error }}</div>{% endfor %}</div>
+  {% endif %}
+  <div class="r3l-request-grid">
+    <label for="{{ form.guest_name.id_for_label }}">{{ form.guest_name.label }}
+      {{ form.guest_name }}
+      {% for error in form.guest_name.errors %}<small class="r3l-field-error" role="alert">{{ error }}</small>{% endfor %}
+    </label>
+    <label for="{{ form.phone.id_for_label }}">{{ form.phone.label }}
+      {{ form.phone }}
+      {% for error in form.phone.errors %}<small class="r3l-field-error" role="alert">{{ error }}</small>{% endfor %}
+    </label>
+    <label class="r3l-span-2" for="{{ form.room.id_for_label }}">{{ form.room.label }}
+      {{ form.room }}
+      {% for error in form.room.errors %}<small class="r3l-field-error" role="alert">{{ error }}</small>{% endfor %}
+    </label>
+    <label for="{{ form.check_in.id_for_label }}">{{ form.check_in.label }}
+      {{ form.check_in }}
+      {% for error in form.check_in.errors %}<small class="r3l-field-error" role="alert">{{ error }}</small>{% endfor %}
+    </label>
+    <label for="{{ form.check_out.id_for_label }}">{{ form.check_out.label }}
+      {{ form.check_out }}
+      {% for error in form.check_out.errors %}<small class="r3l-field-error" role="alert">{{ error }}</small>{% endfor %}
+    </label>
+    <label class="r3l-span-2" for="{{ form.note.id_for_label }}">{{ form.note.label }}
+      {{ form.note }}
+      {% for error in form.note.errors %}<small class="r3l-field-error" role="alert">{{ error }}</small>{% endfor %}
+    </label>
+  </div>
+  <p class="r3l-request-note">ระบบตรวจห้องว่างและช่วงที่สงวนให้หลักสูตรอีกครั้งตอนส่งคำขอ · วันเสาร์และอาทิตย์เลือกได้</p>
+  <button type="submit" class="r3l-primary-action">ส่งคำขอ</button>
+</form>
+<p><a class="r3l-back-link" href="{% url 'bookings:lodging_index' %}">เป็นผู้เรียนหลักสูตร? เลือกหลักสูตรแทน</a></p>
 {% endblock %}

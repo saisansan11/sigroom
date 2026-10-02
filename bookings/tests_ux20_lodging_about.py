@@ -74,53 +74,50 @@ def test_ux20_lodging_about_public_access():
 # ---------------------------------------------------------------------------
 
 def test_ux20_hero_section_elements(client):
-    """Hero is a Service Gateway with factual stats, service CTAs, and a real photo."""
+    """R3-G2 hero is the public 3D landing; the four service choices follow directly after it."""
     response = client.get(reverse("bookings:lodging_about"))
     html = response.content.decode("utf-8")
 
-    assert "lka-hero" in html, "Missing hero section"
-    assert "จองพื้นที่ของโรงเรียน" in html, "Missing Service Gateway hero headline"
-    assert "จากจุดเดียวใน SIGROOM" in html, "Missing Service Gateway hero emphasis"
-    assert "lka-hero-chips lka-info-chips" in html, "Missing informational hero stats"
-    assert str(TOTAL_ROOMS) in html, "Missing 87-room lodging statistic"
-    assert str(TOTAL_BEDS) in html, "Missing 234-bed lodging statistic"
-    assert "ชั้น 4–5" in html, "Missing lodging floor statistic"
-    assert "lka-hero-photo-card" in html, "Missing real photo card in hero"
-    assert "room4p_3421.jpg" in html, "Missing room4p_3421.jpg in hero"
-    assert "ภาพถ่ายสถานที่จริง" in html, "Missing real photo badge"
-    assert "จองห้องพัก" in html, "Missing lodging CTA"
-    assert "จองห้องสอน" in html, "Missing online teaching CTA"
-    assert "ห้องเรียน / ประชุม" in html, "Missing classroom/meeting service state"
-    assert "กำลังพัฒนาระบบ" in html, "Missing classroom/meeting future state"
-    assert "ดูแผนผัง 3D" in html, "Missing 3D plan action"
+    assert "lka-g2-hero" in html
+    assert "SIGROOM" in html
+    assert "ที่พักและบริการห้องของโรงเรียนทหารสื่อสาร" in html
+    assert 'id="lka-hero-stage"' in html
+    assert "room4p_3421.jpg" in html
+    assert "ห้องพักหลักสูตร" in html
+    assert "ห้องพักบุคคลทั่วไป" in html
+    assert "ห้องสอนออนไลน์" in html
+    assert "ห้องเรียน / ห้องประชุม" in html
+    assert "กำลังพัฒนาระบบ" in html
+    assert reverse("bookings:lodging_index") in html
+    assert reverse("bookings:lodging_general_request") in html
+    assert reverse("bookings:online_teaching_home") in html
+    assert 'aria-disabled="true"' in html
 
-    # Explicitly assert old pseudo-3D hero classes are absent
-    assert "lka-hero-card-3d" not in html, "Old pseudo-3D card class should be absent"
-    assert "lka-iso-dorm-mockup" not in html, "Old pseudo-3D mockup class should be absent"
-    assert "lka-hero-support-3d" not in html, "Old hero supportive 3D container should be absent"
+    # R3-G deliberately removes duplicated hero statistics and old pseudo-3D hero cards.
+    assert "lka-info-chips" not in html
+    assert "lka-hero-card-3d" not in html
+    assert "lka-iso-dorm-mockup" not in html
+    assert "lka-hero-support-3d" not in html
 
 def test_ux20_explorer_non_exact_model_disclaimer(client):
-    """Floor Explorer contains non-exact-model representational disclaimer without obsolete BIM copy."""
+    """Floor Explorer remains clearly schematic and starts as secondary information."""
     response = client.get(reverse("bookings:lodging_about"))
     html = response.content.decode("utf-8")
-    assert "ไม่ใช่แบบวัดขนาดจริง" in html, (
-        "Must clarify explorer diagram is representational and not exact dimensions"
-    )
-    assert "ไม่ใช่แบบสถาปัตยกรรม BIM" not in html, (
-        "Old BIM copy should be removed from hero and template"
-    )
-
+    assert "แบบวัดขนาดจริง" in html
+    assert "BIM" not in html
+    assert 'id="lka-explorer-shell"' in html
+    assert '<details class="lka-explorer-shell" id="lka-explorer-shell" open' not in html
 
 def test_ux20_quick_highlights_section(client):
-    """Former highlights are replaced by non-clickable facts inside the Service Gateway hero."""
+    """R3-G removes duplicated statistics from the first screen while retaining facts below."""
     response = client.get(reverse("bookings:lodging_about"))
     html = response.content.decode("utf-8")
 
-    assert "lka-highlights-section" not in html, "Legacy highlights section should be removed"
-    assert "lka-info-chips" in html, "Missing compact informational facts"
-    assert str(TOTAL_ROOMS) in html, "Missing 87 total rooms"
-    assert str(TOTAL_BEDS) in html, "Missing 234 total beds"
-    assert "pointer-events: none" in _read_file(CSS_PATH), "Hero statistics should not behave like buttons"
+    assert "lka-highlights-section" not in html
+    assert "lka-info-chips" not in html
+    assert str(TOTAL_ROOMS) in html
+    assert str(TOTAL_BEDS) in html
+    assert "lka-r3g-service-grid" in html
 
 def test_ux20_stay_gallery_section(client):
     """Gallery section contains featured and supporting real photos."""
@@ -141,7 +138,7 @@ def test_ux20_preview_hub_and_action_ids(client):
     html = response.content.decode("utf-8")
 
     assert 'id="lka-preview-hub"' in html, "Missing #lka-preview-hub section"
-    assert 'id="lka-hub-action-3d"' in html, "Missing #lka-hub-action-3d"
+    assert 'class="lka-explorer-shell-trigger"' in html, "Missing #lka-hub-action-3d"
     assert 'id="lka-hub-action-fallback"' in html, "Missing #lka-hub-action-fallback"
     assert 'href="#lka-explorer"' in html, "Missing link to explorer"
     assert reverse("bookings:lodging_index") in html, "Missing link to lodging booking"
@@ -226,23 +223,22 @@ def test_ux20_floor_overview_floor_switching_attributes(client):
 
 
 def test_ux20_journey_and_why_sections(client):
-    """Legacy journey/why blocks are replaced by operational service information."""
+    """Legacy promotional blocks are replaced by operational rows and a quiet staff footer."""
     response = client.get(reverse("bookings:lodging_about"))
     html = response.content.decode("utf-8")
 
-    assert "lka-journey-section" not in html, "Legacy journey section should be removed"
-    assert "lka-why-section" not in html, "Legacy why-SIGROOM section should be removed"
-    assert "ทำไมต้อง SIGROOM" not in html, "Legacy why-SIGROOM copy should be removed"
-
-    assert 'id="lka-online-rooms"' in html, "Missing online teaching rooms section"
+    assert "lka-journey-section" not in html
+    assert "lka-why-section" not in html
+    assert "ทำไมต้อง SIGROOM" not in html
+    assert 'id="lka-online-rooms"' in html
     for index in range(1, 4):
         assert f"ห้องสอนออนไลน์ {index}" in html
         assert f"STU-ONLINE-{index}" in html
-    assert "สำหรับครูและอาจารย์" in html
+    assert "สำหรับครูและอาจารย์ผู้สอน" in html
     assert "บก.กศ.รร.ส.สส." in html
     assert "งานห้องพัก" in html
     assert "แผนกสนับสนุนการศึกษา" in html
-    assert "ทางเข้าจัดการงาน" in html
+    assert "lka-r3g-staff-line" in html
 
 def test_ux20_disclosure_classes(client):
     """Facilities, Rates, and Site Map sections use semantic disclosure classes."""
@@ -337,22 +333,19 @@ def test_ux20_faq_section(client):
 
 
 def test_ux20_final_cta_links(client):
-    """Final CTA section links to lodging index, general request, and top explorer."""
+    """R3-G removes the duplicated final CTA; primary booking routes live in the four service choices."""
     response = client.get(reverse("bookings:lodging_about"))
     html = response.content.decode("utf-8")
 
-    assert "lka-cta" in html, "Missing final CTA section"
-    assert 'id="lka-cta-heading"' in html, "Missing CTA heading ID"
-    lodging_url = reverse("bookings:lodging_index")
-    assert lodging_url in html, f"CTA must link to {lodging_url}"
-    general_url = reverse("bookings:lodging_general_request")
-    assert general_url in html, f"CTA must link to {general_url}"
-    assert 'href="#lka-explorer"' in html, "CTA must allow returning to explorer"
-
-
-# ---------------------------------------------------------------------------
-# 3. Performance, Security & Asset Hygiene
-# ---------------------------------------------------------------------------
+    assert 'class="lka-section lka-cta"' not in html
+    assert 'id="lka-cta-heading"' not in html
+    assert reverse("bookings:lodging_index") in html
+    assert reverse("bookings:lodging_general_request") in html
+    assert reverse("bookings:online_teaching_home") in html
+    assert 'class="lka-explorer-shell-trigger"' in html
+    assert 'href="#lka-explorer-fallback"' in html
+    assert "ทางเข้านี้ตั้งใจให้ไม่เด่นกว่า" not in html
+    assert "ไม่ทำให้ข้อมูลสถิติดูเหมือนปุ่ม" not in html
 
 def test_ux20_no_remote_cdn_or_3d_engine():
     """Template must have no external CDNs, Spline, Three.js, or WebGL renderer."""

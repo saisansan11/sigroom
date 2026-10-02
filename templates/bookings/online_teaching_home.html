@@ -1,60 +1,58 @@
 {% extends "base.html" %}
 {% load static thaidate %}
+{% block html_theme %}light{% endblock %}
+{% block body_class %}online-teaching-r3l{% endblock %}
 {% block title %}ห้องสอนออนไลน์ · SIGROOM{% endblock %}
-{% block head %}<link rel="stylesheet" href="{% static 'css/online_teaching.css' %}">{% endblock %}
+{% block head %}
+<link rel="stylesheet" href="{% static 'css/online_teaching.css' %}">
+<link rel="stylesheet" href="{% static 'css/online_teaching_r3l.css' %}?v=1">
+{% endblock %}
 {% block content %}
 <div class="online-teaching-shell">
   <div class="page-heading online-teaching-heading">
     <div>
       <p class="eyebrow">สำหรับครูผู้สอน</p>
       <h1>ห้องสอนออนไลน์</h1>
-      <p>เลือกจาก 3 ห้องของ รร.ส.สส. ดูอุปกรณ์และช่วงว่างก่อนจอง ระบบยืนยันให้ทันทีเมื่อห้องว่างและช่วงเวลาจองได้</p>
+      <p>เลือกห้องที่ต้องการ แล้วระบุวัน เวลา และหลักสูตรเพื่อจอง</p>
     </div>
     <a role="button" class="secondary" href="{% url 'bookings:my_bookings' %}">การจองของฉัน</a>
   </div>
 
   {% if configured_room_count != expected_room_count %}
-    <div class="notice warning" role="status">
-      ตั้งค่าห้องสอนออนไลน์พร้อมใช้งาน {{ configured_room_count }}/{{ expected_room_count }} ห้อง กรุณาแจ้งผู้ดูแลระบบก่อนใช้งานจริง
-    </div>
+    <div class="notice warning" role="status">ห้องพร้อมใช้งาน {{ configured_room_count }}/{{ expected_room_count }} ห้อง กรุณาแจ้งผู้ดูแลระบบ</div>
   {% endif %}
   {% if not course_count %}
-    <div class="notice warning" role="status">ยังไม่มีรายการหลักสูตรที่เปิดใช้ จึงยังจองไม่ได้</div>
+    <div class="notice warning" role="status">ยังไม่มีหลักสูตรที่เปิดใช้ จึงยังจองไม่ได้</div>
   {% endif %}
 
   <section class="online-room-grid" aria-label="ห้องสอนออนไลน์ที่เปิดใช้งาน">
     {% for item in cards %}
       <article class="online-room-card">
-        <div class="online-room-card-head">
-          <div>
-            <p class="eyebrow">{{ item.room.building }}</p>
+        <div>
+          <div class="online-room-card-head">
             <h2>{{ item.room.name }}</h2>
             <p class="online-room-code">{{ item.room.code }}{% if item.room.floor %} · ชั้น {{ item.room.floor }}{% endif %}</p>
+            {% if item.available_now %}
+              <span class="online-status is-free">ว่างช่วงถัดไป</span>
+            {% else %}
+              <span class="online-status is-busy">ไม่ว่างช่วงถัดไป</span>
+            {% endif %}
           </div>
-          {% if item.available_now %}
-            <span class="online-status is-free">ว่างช่วงถัดไป</span>
-          {% else %}
-            <span class="online-status is-busy">ไม่ว่างช่วงถัดไป</span>
+          <p class="online-room-summary">{{ item.room.building }} · รองรับ {{ item.room.capacity }} คน · {{ item.room.rule.service_start|time:'H:i' }}–{{ item.room.rule.service_end|time:'H:i' }} น. · ยืนยันอัตโนมัติเมื่อว่าง</p>
+          {% if item.room.fixed_equipment %}
+            <details class="online-room-equipment">
+              <summary>ดูอุปกรณ์ประจำห้อง</summary>
+              <p>{{ item.room.fixed_equipment|linebreaksbr }}</p>
+            </details>
           {% endif %}
         </div>
-        <dl class="online-room-facts">
-          <div><dt>รองรับ</dt><dd>{{ item.room.capacity }} คน</dd></div>
-          <div><dt>เวลาให้บริการ</dt><dd>{{ item.room.rule.service_start|time:'H:i' }}–{{ item.room.rule.service_end|time:'H:i' }}</dd></div>
-          <div><dt>อนุมัติ</dt><dd>อัตโนมัติเมื่อว่าง</dd></div>
-        </dl>
-        {% if item.room.fixed_equipment %}
-          <div class="online-room-equipment">
-            <strong>อุปกรณ์ประจำห้อง</strong>
-            <p>{{ item.room.fixed_equipment|linebreaksbr }}</p>
-          </div>
-        {% endif %}
-        <a role="button" class="online-room-book" href="{% url 'bookings:online_teaching_book' item.room.code %}">ดูรายละเอียดและจอง</a>
+        <a role="button" class="online-room-book" href="{% url 'bookings:online_teaching_book' item.room.code %}">จองห้องนี้</a>
       </article>
     {% empty %}
       <div class="notice info">ยังไม่มีห้องสอนออนไลน์ที่เปิดใช้งาน</div>
     {% endfor %}
   </section>
 
-  <p class="muted-text online-next-window">สถานะ “ช่วงถัดไป” ตรวจช่วง {{ next_start|thai_datetime }} – {{ next_end|thai_datetime }} โดยตรวจจากตารางการจองเดียวกับปฏิทินหลัก</p>
+  <p class="muted-text online-next-window">สถานะช่วงถัดไปอ้างอิง {{ next_start|thai_datetime }} – {{ next_end|thai_datetime }}</p>
 </div>
 {% endblock %}
