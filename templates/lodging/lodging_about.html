@@ -4,7 +4,7 @@
 {% block html_theme %}light{% endblock %}
 {% block body_class %}lodging-about-ledger-r3g{% endblock %}
 
-{% block title %}ศูนย์บริการห้องและที่พัก · SIGROOM{% endblock %}
+{% block title %}SIGROOM · ที่พักและบริการห้อง โรงเรียนทหารสื่อสาร{% endblock %}
 
 {% block head %}
 <link rel="stylesheet" href="{% static 'css/lodging_about.css' %}?v=31">
@@ -12,30 +12,52 @@
 <link rel="stylesheet" href="{% static 'css/lodging_about_ux24.css' %}">
 <link rel="stylesheet" href="{% static 'css/lodging_about_ux27.css' %}?v=32">
 <link rel="stylesheet" href="{% static 'css/lodging_about_r3g.css' %}?v=1">
+<link rel="stylesheet" href="{% static 'css/lodging_about_r3g2.css' %}">
 {% endblock %}
 
 {% block content %}
 <div class="lka-page-wrap">
 
-  {# ===== R3-G: SINGLE SERVICE GATEWAY + REAL PLACE HERO ===== #}
-  <section class="lka-hero lka-r3g-intro" aria-labelledby="lka-hero-heading">
-    <div class="lka-r3g-hero-grid">
-      <div class="lka-r3g-hero-copy">
-        <p class="lka-r3g-kicker">โรงเรียนทหารสื่อสาร</p>
-        <h1 id="lka-hero-heading">ศูนย์จองห้องและที่พัก รร.ส.สส.</h1>
-        <p>เลือกบริการที่ต้องการจากหน้านี้ แล้วเข้าสู่ขั้นตอนจองที่เกี่ยวข้องได้ทันที</p>
+  {# ===== R3-G2: HERO — โมเดลอาคารที่พักแบบ 3 มิติ (ภาพนิ่งขึ้นก่อน โมเดลโหลดตามหลัง) ===== #}
+  <section class="lka-g2-hero" aria-labelledby="lka-hero-heading">
+    <div class="lka-g2-hero-inner">
+      <div class="lka-g2-hero-copy">
+        <p class="lka-g2-kicker">โรงเรียนทหารสื่อสาร กรมการทหารสื่อสาร</p>
+        <h1 id="lka-hero-heading" class="lka-g2-title">SIGROOM</h1>
+        <p class="lka-g2-lede">ที่พักและบริการห้องของโรงเรียนทหารสื่อสาร</p>
+        <p class="lka-g2-sub">จองห้องพักสำหรับผู้เข้าหลักสูตรและบุคคลทั่วไป และจองห้องสอนออนไลน์ ได้จากหน้านี้</p>
+        <div class="lka-g2-ctas">
+          <a class="lka-g2-cta lka-g2-cta--primary" href="#lka-preview-hub">ดูห้องพัก</a>
+          <a class="lka-g2-cta lka-g2-cta--ghost" href="#lka-explorer">สำรวจแบบ 3 มิติ</a>
+        </div>
       </div>
-      <picture class="lka-r3g-hero-photo">
-        <source type="image/avif" srcset="{% static 'img/showcase/generated/room4p_3421-640.avif' %} 640w, {% static 'img/showcase/generated/room4p_3421-1280.avif' %} 1280w" sizes="(min-width: 56rem) 46vw, 100vw">
-        <source type="image/webp" srcset="{% static 'img/showcase/generated/room4p_3421-640.webp' %} 640w, {% static 'img/showcase/generated/room4p_3421-1280.webp' %} 1280w" sizes="(min-width: 56rem) 46vw, 100vw">
-        <img src="{% static 'img/showcase/room4p_3421.jpg' %}" alt="ห้องพักจริงของอาคารที่พักนักเรียน โรงเรียนทหารสื่อสาร" width="640" height="480" loading="eager" fetchpriority="high" decoding="async" class="lka-hero-main-img">
-      </picture>
-    </div>
 
-    <div class="lka-r3g-service-wrap" id="lka-preview-hub" aria-labelledby="lka-services-heading">
+      <figure class="lka-g2-figure">
+        <div class="lka-g2-stage" id="lka-hero-stage" data-mode="poster"
+             data-model-label="โมเดลสามมิติอาคารที่พักนักเรียน โรงเรียนทหารสื่อสาร สูง 5 ชั้น ห้องพักอยู่ชั้น 4 และ 5 มีบันไดสองแกนด้านหน้า ด้านหลังติดสระว่ายน้ำ ลากซ้ายขวาหรือกดลูกศรเพื่อหมุน">
+          <picture class="lka-hero-poster">
+            <source type="image/avif" srcset="{% static 'img/hero/sigroom-building-640.avif' %} 640w, {% static 'img/hero/sigroom-building-1200.avif' %} 1200w" sizes="(min-width: 56rem) 52vw, 100vw">
+            <img src="{% static 'img/hero/sigroom-building-1200.webp' %}" srcset="{% static 'img/hero/sigroom-building-640.webp' %} 640w, {% static 'img/hero/sigroom-building-1200.webp' %} 1200w" sizes="(min-width: 56rem) 52vw, 100vw" alt="ภาพจำลองสามมิติอาคารที่พักนักเรียน โรงเรียนทหารสื่อสาร สูง 5 ชั้น หน้าต่างที่เปิดไฟคือชั้น 4 และ 5 ซึ่งเป็นชั้นห้องพัก" width="1200" height="900" loading="eager" fetchpriority="high" decoding="async" class="lka-hero-main-img lka-hero-poster-img">
+          </picture>
+          <span class="lka-hero-tag" data-hero-tag="5" aria-hidden="true">ชั้น 5 · ห้องพัก 30 ห้อง</span>
+          <span class="lka-hero-tag" data-hero-tag="4" aria-hidden="true">ชั้น 4 · ห้องพัก 57 ห้อง</span>
+        </div>
+        <figcaption class="lka-g2-stage-foot">
+          <span id="lka-hero-hint" class="lka-g2-hint"><span class="lka-g2-hint-poster">หน้าต่างที่เปิดไฟคือชั้นห้องพัก · ภาพจำลองประกอบ ไม่ใช่แบบวัดขนาดจริง</span><span class="lka-g2-hint-live">ลากซ้าย–ขวาเพื่อหมุนอาคาร · หน้าต่างที่เปิดไฟคือชั้นห้องพัก · ภาพจำลองประกอบ ไม่ใช่แบบวัดขนาดจริง</span></span>
+          <button type="button" id="lka-hero-toggle" class="lka-g2-toggle" aria-pressed="false">หยุดหมุน</button>
+        </figcaption>
+      </figure>
+    </div>
+  </section>
+
+  {# ===== R3-G2: ช่องทางบริการ 4 ช่อง (คงจาก R3-G) ===== #}
+  <section class="lka-section lka-g2-services" id="lka-preview-hub" aria-labelledby="lka-services-heading">
+    <div class="lka-g2-heading">
       <h2 id="lka-services-heading">เลือกบริการ</h2>
-      <div class="lka-r3g-service-grid">
-        <a class="lka-r3g-service" href="{% url 'bookings:lodging_index' %}">
+      <p>เลือกให้ตรงกับผู้เข้าพักหรือผู้ใช้ห้อง แล้วเข้าสู่ขั้นตอนจองได้ทันที</p>
+    </div>
+    <div class="lka-r3g-service-grid">
+      <a class="lka-r3g-service" href="{% url 'bookings:lodging_index' %}">
           <span class="lka-r3g-service-icon">{% include "lodging/partials/gateway_icon.html" with icon="lodging" %}</span>
           <strong>ห้องพักหลักสูตร</strong>
           <small>สำหรับผู้เข้าร่วมหลักสูตรของ รร.ส.สส.</small>
@@ -59,9 +81,16 @@
           <small>ระบบจองส่วนนี้ยังไม่เปิดใช้งาน</small>
           <span class="lka-r3g-action">กำลังพัฒนาระบบ</span>
         </div>
-      </div>
     </div>
   </section>
+
+  {# ===== R3-G2: SHOWCASE — ภาพจริง · ผัง 3 มิติ · ห้องสอนออนไลน์ · สิ่งอำนวยความสะดวก ===== #}
+  <div class="lka-section lka-g2-showcase-head">
+    <div class="lka-g2-heading">
+      <h2>ชมสถานที่จริง</h2>
+      <p>ภาพห้องพัก ผังห้องแบบ 3 มิติ ห้องสอนออนไลน์ และพื้นที่ส่วนกลาง</p>
+    </div>
+  </div>
 
   {# ===== 3. REAL-PHOTO EDITORIAL GALLERY (Positioned Early) ===== #}
   <section class="lka-section lka-gallery-section" id="lka-gallery" aria-labelledby="lka-gallery-heading">
@@ -288,8 +317,6 @@
     </div>
   </section>
 
-  <div class="lka-section lka-r3g-info-heading"><h2>ข้อมูลเพิ่มเติม</h2><p>เปิดดูเฉพาะเรื่องที่ต้องการ</p></div>
-
   {# ===== 8. FACILITIES & SHARED SPACES ===== #}
   <section class="lka-section lka-facilities-section" aria-labelledby="lka-facilities-heading">
     <div class="lka-section-header">
@@ -298,19 +325,6 @@
       <p class="lka-section-sub">พื้นที่ส่วนรวมได้รับการดูแลรักษาความสะอาดอย่างสม่ำเสมอ เพื่อสุขอนามัยที่ดีของผู้พัก</p>
     </div>
 
-    <details class="lka-disclosure lka-facilities-disclosure">
-      <summary class="lka-disclosure-summary">
-        <span class="lka-disclosure-summary-left">
-          <span class="lka-disclosure-icon" aria-hidden="true">{% include "lodging/partials/gateway_icon.html" with icon="bath" %}</span>
-          <span class="lka-disclosure-text">
-            <strong>ดูรายละเอียดสิ่งอำนวยความสะดวกและภาพสุขอนามัย</strong>
-            <small>ห้องน้ำและห้องอาบน้ำส่วนกลาง ชั้น 4 และ 5 พร้อมภาพถ่ายสถานที่จริง (3 ภาพ)</small>
-          </span>
-        </span>
-
-      </summary>
-      <div class="lka-disclosure-body">
-        <div class="lka-facilities-wrap">
           <div class="lka-facilities-cards">
             <div class="lka-fac-card">
               <div class="lka-fac-icon">{% include "lodging/partials/gateway_icon.html" with icon="bath" %}</div>
@@ -330,6 +344,19 @@
             </div>
           </div>
 
+    <details class="lka-disclosure lka-facilities-disclosure">
+      <summary class="lka-disclosure-summary">
+        <span class="lka-disclosure-summary-left">
+          <span class="lka-disclosure-icon" aria-hidden="true">{% include "lodging/partials/gateway_icon.html" with icon="bath" %}</span>
+          <span class="lka-disclosure-text">
+            <strong>ดูภาพห้องน้ำและห้องอาบน้ำส่วนกลาง</strong>
+            <small>ภาพถ่ายสถานที่จริง ชั้น 4 และ 5 (3 ภาพ)</small>
+          </span>
+        </span>
+
+      </summary>
+      <div class="lka-disclosure-body">
+        <div class="lka-facilities-wrap">
           {# Facilities Bath Photos #}
           <div class="lka-bath-gallery">
             <figure class="lka-bath-fig">
@@ -362,14 +389,22 @@
     </details>
   </section>
 
+  <div class="lka-section lka-r3g-info-heading lka-g2-info-heading"><h2>ข้อมูลประกอบ</h2><p>ค่าที่พัก แผนผัง และคำถามพบบ่อย เปิดดูเฉพาะเรื่องที่ต้องการ</p></div>
+
   {# ===== 9. RATES & IMPORTANT NOTES ===== #}
   <section class="lka-section lka-rates-section" id="lka-rates" aria-labelledby="lka-rates-heading">
-    <div class="lka-section-header">
-      <p class="eyebrow">ค่าธรรมเนียมและระเบียบ</p>
-      <h2 id="lka-rates-heading">อัตราค่าที่พัก</h2>
-      <p class="lka-section-sub">ตามประกาศอัตราค่าที่พัก · พักตั้งแต่ {{ monthly_threshold_days }} วันขึ้นไปนับเป็น 1 เดือน</p>
-    </div>
-
+    <details class="lka-disclosure lka-rates-disclosure">
+      <summary class="lka-disclosure-summary">
+        <span class="lka-disclosure-summary-left">
+          <span class="lka-disclosure-icon" aria-hidden="true">{% include "lodging/partials/gateway_icon.html" with icon="document" %}</span>
+          <span class="lka-disclosure-text">
+            <strong id="lka-rates-heading">อัตราค่าที่พัก</strong>
+            <small>ค่าห้องรายวัน/รายเดือนตามสังกัด ค่าไฟฟ้า ประกาศทางการ และผังห้องพักต้นฉบับ</small>
+          </span>
+        </span>
+      </summary>
+      <div class="lka-disclosure-body">
+        <p class="lka-section-sub">ตามประกาศอัตราค่าที่พัก · พักตั้งแต่ {{ monthly_threshold_days }} วันขึ้นไปนับเป็น 1 เดือน</p>
     {# Electricity and calculation rules summary cards #}
     <div class="lka-rates-summary-grid">
       <div class="lka-rsum-card">
@@ -389,19 +424,7 @@
       </div>
     </div>
 
-    {# Collapsed rates detail: full table, notes, official notice image, and original plans #}
-    <details class="lka-disclosure lka-rates-disclosure">
-      <summary class="lka-disclosure-summary">
-        <span class="lka-disclosure-summary-left">
-          <span class="lka-disclosure-icon" aria-hidden="true">{% include "lodging/partials/gateway_icon.html" with icon="document" %}</span>
-          <span class="lka-disclosure-text">
-            <strong>ดูตารางอัตราค่าที่พัก ประกาศทางการ และผังห้องพักต้นฉบับ</strong>
-            <small>อัตราค่าที่พักรายวัน/รายเดือนตามสังกัด หมายเหตุค่าไฟฟ้า และแบบแปลนชั้น 4–5</small>
-          </span>
-        </span>
 
-      </summary>
-      <div class="lka-disclosure-body">
         {# Official Rates Table Wrap #}
         <div class="lka-rates-wrap">
           <div class="lka-rates-table-wrap" role="region" aria-label="ตารางอัตราค่าที่พัก" tabindex="0">
@@ -529,7 +552,7 @@
       <div class="lka-disclosure-body lka-faq-list">
         <details class="lka-faq-item"><summary class="lka-faq-question"><span>ที่พักของนักเรียนตั้งอยู่ชั้นใดของอาคาร?</span></summary><div class="lka-faq-answer"><p>พื้นที่พักอยู่บนชั้น 4 และชั้น 5 ของอาคารที่พักนักเรียน</p></div></details>
         <details class="lka-faq-item"><summary class="lka-faq-question"><span>มีห้องพักรองรับกี่ห้อง?</span></summary><div class="lka-faq-answer"><p>ชั้น 4 มี 57 ห้อง 114 เตียง และชั้น 5 มี 30 ห้อง 120 เตียง รวม 87 ห้อง 234 เตียง</p></div></details>
-        <details class="lka-faq-item"><summary class="lka-faq-question"><span>บุคคลทั่วไปยื่นคำขอพักได้ที่ไหน?</span></summary><div class="lka-faq-answer"><p>เลือก “ห้องพักคนทั่วไป” ด้านบนของหน้านี้ แล้วระบุวันเข้าพักเพื่อให้ระบบตรวจสอบห้องว่าง</p></div></details>
+        <details class="lka-faq-item"><summary class="lka-faq-question"><span>บุคคลทั่วไปยื่นคำขอพักได้ที่ไหน?</span></summary><div class="lka-faq-answer"><p>เลือก “ห้องพักคนทั่วไป” ในส่วนเลือกบริการของหน้านี้ แล้วระบุวันเข้าพักเพื่อให้ระบบตรวจสอบห้องว่าง</p></div></details>
         <details class="lka-faq-item"><summary class="lka-faq-question"><span>ผัง 3 มิติใช้บนโทรศัพท์ได้หรือไม่?</span></summary><div class="lka-faq-answer"><p>ใช้ได้ กด “ดูผัง 3 มิติ” แล้วเลือกชั้นหรือหมายเลขห้องที่ต้องการ</p></div></details>
       </div>
     </details>
@@ -547,5 +570,6 @@
 {% endblock %}
 
 {% block scripts %}
+<script src="{% static 'js/lodging_about_hero3d.js' %}" defer></script>
 <script src="{% static 'js/lodging_about_explorer.js' %}?v=32" defer></script>
 {% endblock %}

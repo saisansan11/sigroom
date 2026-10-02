@@ -74,12 +74,14 @@ def test_ux20_lodging_about_public_access():
 # ---------------------------------------------------------------------------
 
 def test_ux20_hero_section_elements(client):
-    """R3-G hero is one concise gateway with a real photo and four service choices."""
+    """R3-G2 hero is the public 3D landing; the four service choices follow directly after it."""
     response = client.get(reverse("bookings:lodging_about"))
     html = response.content.decode("utf-8")
 
-    assert "lka-r3g-intro" in html
-    assert "ศูนย์จองห้องและที่พัก รร.ส.สส." in html
+    assert "lka-g2-hero" in html
+    assert "SIGROOM" in html
+    assert "ที่พักและบริการห้องของโรงเรียนทหารสื่อสาร" in html
+    assert 'id="lka-hero-stage"' in html
     assert "room4p_3421.jpg" in html
     assert "ห้องพักหลักสูตร" in html
     assert "ห้องพักคนทั่วไป" in html

@@ -45,13 +45,13 @@ def test_ux21a_public_access_200():
 
 
 def test_ux21a_hero_real_photo_card(client):
-    """Hero visual prominently features real room photography card without dark/tech overlay."""
+    """R3-G2: hero shows the building poster first; real room photos open the showcase below."""
     response = client.get(reverse("bookings:lodging_about"))
     html = response.content.decode("utf-8")
 
-    assert "lka-r3g-hero-photo" in html, "Missing R3-G real hero photo"
-    assert "room4p_3421.jpg" in html, "Missing room4p_3421.jpg in hero photo"
-    assert "lka-hero-main-img" in html, "Missing main hero image LCP marker"
+    assert "lka-hero-poster-img" in html, "Missing R3-G2 hero poster (LCP image)"
+    assert "img/hero/sigroom-building-1200.webp" in html
+    assert "room4p_3421.jpg" in html, "Real room photo must remain in the showcase gallery"
     assert "lka-info-chips" not in html, "R3-G must not restore duplicate hero statistics"
 
 
