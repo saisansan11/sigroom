@@ -1,7 +1,6 @@
 {% extends "base.html" %}
 {% load static %}
 {% block html_theme %}light{% endblock %}
-{% block theme_color %}#f4f6fa{% endblock %}
 {% block body_class %}sigroom-login-journey{% endblock %}
 {% block head %}<link rel="stylesheet" href="{% static 'css/lodging_booking_ios27.css' %}?v=1">{% endblock %}
 {% block title %}เข้าสู่ระบบ · SIGROOM{% endblock %}
@@ -53,9 +52,8 @@
   <section class="login-card" aria-labelledby="login-heading">
     <header>
       <p class="eyebrow">โรงเรียนทหารสื่อสาร</p>
-      <h1 id="login-heading">SIG<span class="brand-accent">ROOM</span></h1>
+      <h1 id="login-heading">SIGROOM</h1>
       <p>ระบบจองและบริหารการใช้ห้อง รร.ส.สส.</p>
-      <div class="sysline">Secure · Authorized Access</div>
     </header>
     <form method="post">
       {% csrf_token %}
@@ -70,7 +68,6 @@
     <p><a href="{% url 'accounts:password_reset' %}">ลืมรหัสผ่าน?</a></p>
     <small class="muted-text">ระบบจะส่งลิงก์ตั้งรหัสใหม่ไปยังอีเมลหน่วย @signalschool.ac.th ของบัญชีคุณ</small>
   </section>
-  <p class="arrival-caption" aria-hidden="true">Arrive · Check in · Continue mission</p>
 </div>
 <script>
 (function () {

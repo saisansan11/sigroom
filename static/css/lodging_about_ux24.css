@@ -4,12 +4,12 @@
 
 .lka-explorer-section {
   scroll-margin-top: 6.5rem;
-  --ux24-ink: #102337;
-  --ux24-muted: #55697d;
-  --ux24-line: #d7e4ed;
-  --ux24-sky: #087ea9;
-  --ux24-sky-strong: #075f82;
-  --ux24-surface: #f6fafc;
+  --ux24-ink: #1F4E79;
+  --ux24-muted: #1F4E79;
+  --ux24-line: #EFE8D6;
+  --ux24-sky: #1F2A24;
+  --ux24-sky-strong: #1F2A24;
+  --ux24-surface: #FBF8F0;
   --ux24-ease: cubic-bezier(0.22, 1, 0.36, 1);
 }
 
@@ -20,9 +20,9 @@
   gap: 0.75rem 1rem;
   padding: 0.55rem;
   border: 1px solid var(--ux24-line);
-  border-radius: 1rem;
-  background: #f8fbfd;
-  box-shadow: 0 12px 34px -30px rgb(16 35 55 / 0.45);
+  border-radius: 2px;
+  background: #FBF8F0;
+  box-shadow: 0 1px 2px rgb(31 42 36 / 0.08);
 }
 
 .lka-explorer-section .lka-floor-toggle,
@@ -63,7 +63,7 @@
 .lka-explorer-section .lka-ftoggle[aria-pressed="true"] {
   background: var(--ux24-sky);
   border-color: var(--ux24-sky);
-  box-shadow: 0 8px 20px -14px rgb(8 126 169 / 0.78);
+  box-shadow: 0 1px 2px rgb(31 42 36 / 0.08);
 }
 
 .lka-explorer-section .lka-filter[aria-pressed="true"] {
@@ -75,7 +75,7 @@
 .lka-explorer-section .lka-filter:focus-visible,
 .lka-explorer-section .lka-ctrl-btn:focus-visible,
 .lka-explorer-section .lka-panel-close:focus-visible {
-  outline: 3px solid #22b8e6;
+  outline: 3px solid #1F2A24;
   outline-offset: 2px;
 }
 
@@ -88,20 +88,18 @@
 
 .lka-explorer-section .lka-explorer-wrap {
   min-width: 0;
-  border-color: #cadbe7;
-  border-radius: 1.35rem;
-  background: #fbfdfe;
-  box-shadow:
-    0 30px 70px -46px rgb(16 35 55 / 0.62),
-    0 10px 26px -22px rgb(8 126 169 / 0.3);
+  border-color: #D8CFB8;
+  border-radius: 2px;
+  background: #FBF8F0;
+  box-shadow: 0 1px 2px rgb(31 42 36 / 0.08);
 }
 
 .lka-explorer-section .lka-drag-hint-bar {
   justify-content: flex-start;
   min-height: 48px;
   padding: 0.65rem 1rem;
-  border-bottom-color: #dbe7ee;
-  background: #fbfdfe;
+  border-bottom-color: #EFE8D6;
+  background: #FBF8F0;
 }
 
 .lka-explorer-section .lka-hint-icon {
@@ -109,9 +107,9 @@
   width: 1.8rem;
   height: 1.8rem;
   place-items: center;
-  border: 1px solid #b9d9e8;
+  border: 1px solid #B9AD8F;
   border-radius: 50%;
-  background: #eaf7fc;
+  background: #F5F1E6;
   color: var(--ux24-sky-strong);
   font-size: 0.9rem;
   font-weight: 900;
@@ -127,34 +125,31 @@
   gap: 0.6rem 1.1rem;
   padding: 0.7rem 1rem;
   border-top: 0;
-  border-bottom: 1px solid #dbe7ee;
-  background: #fbfdfe;
+  border-bottom: 1px solid #EFE8D6;
+  background: #FBF8F0;
 }
 
 .lka-explorer-section .lka-legend-item {
-  color: #3f566a;
+  color: #1F4E79;
   font-weight: 650;
 }
 
 .lka-explorer-section .lka-legend-swatch {
-  border-radius: 0.3rem;
-  box-shadow: inset 0 1px rgb(255 255 255 / 0.7);
+  border-radius: 2px;
+  box-shadow: inset 0 1px rgb(251 248 240 / 0.7);
 }
 
 .lka-explorer-section .lka-explorer-canvas {
   height: clamp(430px, 49vw, 575px);
   background:
-    radial-gradient(ellipse at 76% 20%, rgb(184 237 226 / 0.52), transparent 28%),
-    radial-gradient(ellipse at 38% 32%, rgb(189 231 249 / 0.72), transparent 40%),
-    linear-gradient(180deg, #f8fcfe 0%, #edf6fa 64%, #e7f0f4 100%);
+    linear-gradient(180deg, #FBF8F0 0%, #F5F1E6 64%, #F5F1E6 100%);
   touch-action: pan-y pinch-zoom;
 }
 
 .lka-explorer-section .lka-explorer-canvas::before {
   opacity: 1;
   background:
-    radial-gradient(ellipse at 50% 78%, rgb(255 255 255 / 0.78), transparent 46%),
-    linear-gradient(110deg, transparent 0 54%, rgb(255 255 255 / 0.38) 54% 63%, transparent 63%);
+    linear-gradient(110deg, transparent 0 54%, rgb(251 248 240 / 0.38) 54% 63%, transparent 63%);
   mask-image: none;
 }
 
@@ -164,7 +159,7 @@
   inset: 0;
   z-index: 2;
   pointer-events: none;
-  box-shadow: inset 0 -42px 70px -64px rgb(16 35 55 / 0.72);
+  box-shadow: inset 0 -42px 70px -64px rgb(31 78 121 / 0.72);
 }
 
 .lka-explorer-section .lka-model-hud {
@@ -177,17 +172,17 @@
 
 .lka-explorer-section .lka-model-hud span {
   min-height: 2rem;
-  border-color: rgb(181 213 228 / 0.94);
-  background: rgb(249 253 254 / 0.94);
+  border-color: rgb(185 173 143 / 0.94);
+  background: rgb(251 248 240 / 0.94);
   color: var(--ux24-ink);
-  box-shadow: 0 8px 22px -18px rgb(16 35 55 / 0.65);
+  box-shadow: 0 1px 2px rgb(31 42 36 / 0.08);
   backdrop-filter: none;
 }
 
 .lka-explorer-section .lka-model-selection {
-  border-color: #75c8e4;
-  background: #dff5fc;
-  color: #075f82;
+  border-color: #B9AD8F;
+  background: #F5F1E6;
+  color: #1F2A24;
 }
 
 .lka-explorer-section .lka-iso-scene {
@@ -199,39 +194,39 @@
   width: min(99%, 1180px);
   height: 95%;
   filter:
-    drop-shadow(0 24px 24px rgb(16 35 55 / 0.1))
-    drop-shadow(0 4px 4px rgb(16 35 55 / 0.09));
+    drop-shadow(0 24px 24px rgb(31 78 121 / 0.1))
+    drop-shadow(0 4px 4px rgb(31 78 121 / 0.09));
 }
 
 .lka-model-ambient {
-  fill: rgb(255 255 255 / 0.72);
+  fill: rgb(251 248 240 / 0.72);
 }
 
 .lka-model-ground-shadow {
-  fill: rgb(28 55 75 / 0.2);
+  fill: rgb(31 78 121 / 0.2);
   filter: blur(4px);
 }
 
-.lka-base-top { fill: url(#lka-base-top); stroke: #aebfcb; stroke-width: 1.15; }
-.lka-base-face--x { fill: url(#lka-base-x); stroke: #93a7b5; stroke-width: 1; }
-.lka-base-face--y { fill: url(#lka-base-y); stroke: #a8bac6; stroke-width: 1; }
-.lka-corridor-top { fill: url(#lka-corridor-top); stroke: #b4c5d0; stroke-width: 1; }
-.lka-corridor-face--x { fill: #c8d5de; stroke: #aabcc8; }
-.lka-corridor-face--y { fill: #dee8ee; stroke: #bac9d2; }
+.lka-base-top { fill: url(#lka-base-top); stroke: #B9AD8F; stroke-width: 1.15; }
+.lka-base-face--x { fill: url(#lka-base-x); stroke: #9DB3C9; stroke-width: 1; }
+.lka-base-face--y { fill: url(#lka-base-y); stroke: #B9AD8F; stroke-width: 1; }
+.lka-corridor-top { fill: url(#lka-corridor-top); stroke: #D8CFB8; stroke-width: 1; }
+.lka-corridor-face--x { fill: #D8CFB8; stroke: #B9AD8F; }
+.lka-corridor-face--y { fill: #EFE8D6; stroke: #D8CFB8; }
 
 /* UX-26 building-scale cues */
 .lka-building-perimeter { opacity: 0.94; pointer-events: none; }
-.lka-wall-top { fill: url(#lka-wall-top); stroke: #8299a9; stroke-width: 1; }
-.lka-wall-face--x { fill: url(#lka-wall-x); stroke: #718898; stroke-width: 0.9; }
-.lka-wall-face--y { fill: url(#lka-wall-y); stroke: #879dab; stroke-width: 0.9; }
+.lka-wall-top { fill: url(#lka-wall-top); stroke: #1F4E79; stroke-width: 1; }
+.lka-wall-face--x { fill: url(#lka-wall-x); stroke: #1F4E79; stroke-width: 0.9; }
+.lka-wall-face--y { fill: url(#lka-wall-y); stroke: #1F4E79; stroke-width: 0.9; }
 .lka-circulation-spine { pointer-events: none; }
-.lka-spine-top { fill: #d7e7ee; stroke: #8da9b8; stroke-width: 0.8; }
+.lka-spine-top { fill: #EFE8D6; stroke: #9DB3C9; stroke-width: 0.8; }
 .lka-spine-face--x,
-.lka-spine-face--y { fill: #9fb7c3; stroke: #7893a2; stroke-width: 0.7; }
-.lka-core-model { filter: drop-shadow(0 4px 3px rgb(16 35 55 / 0.18)); }
-.lka-core-top { fill: #f8fbfc; stroke: #688493; stroke-width: 1.2; }
-.lka-core-face--x { fill: #91aab6; stroke: #607b89; }
-.lka-core-face--y { fill: #c1d1d8; stroke: #78909d; }
+.lka-spine-face--y { fill: #B9AD8F; stroke: #1F4E79; stroke-width: 0.7; }
+.lka-core-model { filter: drop-shadow(0 4px 3px rgb(31 78 121 / 0.18)); }
+.lka-core-top { fill: #FBF8F0; stroke: #1F4E79; stroke-width: 1.2; }
+.lka-core-face--x { fill: #B9AD8F; stroke: #1F4E79; }
+.lka-core-face--y { fill: #D8CFB8; stroke: #1F4E79; }
 
 .lka-room-model,
 .lka-facility-model {
@@ -248,7 +243,7 @@
 
 .lka-room-model.selected {
   transform: translateY(-10px);
-  filter: drop-shadow(0 12px 7px rgb(3 105 161 / 0.3));
+  filter: drop-shadow(0 12px 7px rgb(31 78 121 / 0.3));
 }
 
 .lka-iso-scene.has-selection .lka-room-model:not(.selected) {
@@ -260,78 +255,78 @@
   opacity: 0.88;
 }
 
-.lka-room-model.air .lka-room-block { fill: url(#lka-air-top); stroke: #278db8; }
-.lka-room-model.air .lka-room-face--x { fill: url(#lka-air-x); stroke: #2e7fa1; }
-.lka-room-model.air .lka-room-face--y { fill: url(#lka-air-y); stroke: #3f91b2; }
-.lka-room-model.fan .lka-room-block { fill: url(#lka-fan-top); stroke: #c68b1c; }
-.lka-room-model.fan .lka-room-face--x { fill: url(#lka-fan-x); stroke: #a66b0d; }
-.lka-room-model.fan .lka-room-face--y { fill: url(#lka-fan-y); stroke: #b98216; }
-.lka-facility-top { fill: url(#lka-facility-top); stroke: #12897f; }
-.lka-facility-face--x { fill: url(#lka-facility-x); stroke: #247c74; }
-.lka-facility-face--y { fill: url(#lka-facility-y); stroke: #2d8b82; }
+.lka-room-model.air .lka-room-block { fill: url(#lka-air-top); stroke: #1F2A24; }
+.lka-room-model.air .lka-room-face--x { fill: url(#lka-air-x); stroke: #1F2A24; }
+.lka-room-model.air .lka-room-face--y { fill: url(#lka-air-y); stroke: #1F2A24; }
+.lka-room-model.fan .lka-room-block { fill: url(#lka-fan-top); stroke: #8A6D1F; }
+.lka-room-model.fan .lka-room-face--x { fill: url(#lka-fan-x); stroke: #8A6D1F; }
+.lka-room-model.fan .lka-room-face--y { fill: url(#lka-fan-y); stroke: #8A6D1F; }
+.lka-facility-top { fill: url(#lka-facility-top); stroke: #1F2A24; }
+.lka-facility-face--x { fill: url(#lka-facility-x); stroke: #1F2A24; }
+.lka-facility-face--y { fill: url(#lka-facility-y); stroke: #1F2A24; }
 
 .lka-room-window {
-  stroke: #eafaff;
+  stroke: #F5F1E6;
   stroke-width: 3.2;
   stroke-linecap: round;
   opacity: 0.95;
   pointer-events: none;
-  filter: drop-shadow(0 1px 1px rgb(7 95 130 / 0.3));
+  filter: drop-shadow(0 1px 1px rgb(31 42 36 / 0.3));
 }
 .lka-room-door {
-  stroke: #38596b;
+  stroke: #1F4E79;
   stroke-width: 2.4;
   stroke-linecap: round;
   opacity: 0.78;
   pointer-events: none;
 }
 .lka-room-service-dot {
-  stroke: #ffffff;
+  stroke: #FBF8F0;
   stroke-width: 1;
   pointer-events: none;
 }
-.lka-room-service-dot.air { fill: #087ea9; }
-.lka-room-service-dot.fan { fill: #a86708; }
+.lka-room-service-dot.air { fill: #1F2A24; }
+.lka-room-service-dot.fan { fill: #8A6D1F; }
 
 .lka-room-model.selected .lka-room-block {
-  fill: #fafdff;
-  stroke: #075f82;
+  fill: #FBF8F0;
+  stroke: #1F2A24;
   stroke-width: 3.2;
 }
 
 .lka-room-model.selected .lka-room-face--x {
-  fill: #46a8d0;
-  stroke: #075f82;
+  fill: #1F2A24;
+  stroke: #1F2A24;
   stroke-width: 1.9;
 }
 
 .lka-room-model.selected .lka-room-face--y {
-  fill: #8fd7ef;
-  stroke: #075f82;
+  fill: #B9AD8F;
+  stroke: #1F2A24;
   stroke-width: 1.9;
 }
 
 .lka-room-block:focus-visible {
-  stroke: #102337;
+  stroke: #1F4E79;
   stroke-width: 3;
 }
 
 .lka-room-model.selected .lka-room-label {
-  fill: #071b2d;
+  fill: #1F4E79;
   font-size: 9.5px;
-  stroke: rgb(255 255 255 / 0.96);
+  stroke: rgb(251 248 240 / 0.96);
   stroke-width: 2.4px;
 }
 
 .lka-room-label {
   font-size: 8.6px;
   letter-spacing: -0.015em;
-  stroke: rgb(255 255 255 / 0.84);
+  stroke: rgb(251 248 240 / 0.84);
   stroke-width: 2px;
 }
 
 .lka-room-accent {
-  stroke: rgb(255 255 255 / 0.72);
+  stroke: rgb(251 248 240 / 0.72);
   stroke-width: 1.25;
 }
 
@@ -349,8 +344,8 @@
   min-height: 60px;
   gap: 0.45rem;
   padding: 0.5rem 0.75rem;
-  border-top-color: #d4e2eb;
-  background: #f7fafc;
+  border-top-color: #EFE8D6;
+  background: #FBF8F0;
 }
 
 .lka-explorer-section .lka-ctrl-btn {
@@ -359,15 +354,15 @@
   min-height: 44px;
   margin: 0;
   padding: 0.45rem 0.8rem;
-  border-color: #cbdbe5;
-  background: #ffffff;
+  border-color: #D8CFB8;
+  background: #FBF8F0;
   color: var(--ux24-ink);
-  box-shadow: 0 8px 18px -16px rgb(16 35 55 / 0.75);
+  box-shadow: 0 1px 2px rgb(31 42 36 / 0.08);
 }
 
 .lka-explorer-section .lka-ctrl-btn:hover {
-  border-color: #79bdd8;
-  background: #eef8fb;
+  border-color: #B9AD8F;
+  background: #F5F1E6;
 }
 
 .lka-explorer-section .lka-ctrl-btn:active {
@@ -375,8 +370,8 @@
 }
 
 .lka-explorer-section .lka-fallback {
-  border-top-color: #dbe7ee;
-  background: #fbfdfe;
+  border-top-color: #EFE8D6;
+  background: #FBF8F0;
 }
 
 .lka-explorer-section .lka-room-panel {
@@ -387,12 +382,11 @@
   padding: 1.25rem;
   flex-direction: column;
   justify-content: center;
-  border: 1px solid #c9dce7;
-  border-radius: 1.35rem;
+  border: 1px solid #D8CFB8;
+  border-radius: 2px;
   background:
-    radial-gradient(circle at 100% 0%, rgb(183 228 244 / 0.46), transparent 38%),
-    #f8fbfd;
-  box-shadow: 0 24px 52px -42px rgb(16 35 55 / 0.65);
+    #FBF8F0;
+  box-shadow: 0 1px 2px rgb(31 42 36 / 0.08);
   animation: none;
 }
 
@@ -414,15 +408,15 @@
   width: 4.7rem;
   aspect-ratio: 1.16;
   place-items: center;
-  border: 1px solid #a9d3e5;
-  border-radius: 0.85rem;
-  background: #e9f7fc;
-  color: #176e90;
-  font-family: var(--font-mono);
+  border: 1px solid #B9AD8F;
+  border-radius: 2px;
+  background: #F5F1E6;
+  color: #1F2A24;
+  font-family: var(--font-sans);
   font-size: 1.05rem;
   font-weight: 800;
   transform: skewY(-8deg);
-  box-shadow: 8px 10px 0 -4px #cde7f1;
+  box-shadow: 0 1px 2px rgb(31 42 36 / 0.08);
 }
 
 .lka-panel-empty h3 {
@@ -444,11 +438,10 @@
 
 .lka-room-panel.has-selection {
   justify-content: flex-start;
-  border-color: #8bc9df;
+  border-color: #B9AD8F;
   background:
-    radial-gradient(circle at 100% 0%, rgb(141 215 239 / 0.52), transparent 42%),
-    #f9fcfd;
-  box-shadow: 0 24px 52px -38px rgb(7 95 130 / 0.56);
+    #FBF8F0;
+  box-shadow: 0 1px 2px rgb(31 42 36 / 0.08);
 }
 
 .lka-room-panel.has-selection .lka-panel-empty {
@@ -463,7 +456,7 @@
   width: 44px;
   height: 44px;
   margin: 0;
-  color: #4b6477;
+  color: #1F4E79;
 }
 
 .lka-explorer-section .lka-panel-header {
@@ -477,7 +470,7 @@
 .lka-explorer-section .lka-panel-pill {
   width: max-content;
   border-radius: 999px;
-  background: #dff4fb;
+  background: #F5F1E6;
   color: var(--ux24-sky-strong);
 }
 
@@ -494,20 +487,20 @@
 
 .lka-explorer-section .lka-panel-dl dt {
   margin-top: 0.65rem;
-  color: #64788a;
+  color: #1F4E79;
   font-size: 0.74rem;
   letter-spacing: 0.02em;
 }
 
 .lka-explorer-section .lka-panel-dl dd {
   padding-bottom: 0.65rem;
-  border-bottom: 1px solid #d9e6ed;
+  border-bottom: 1px solid #EFE8D6;
   color: var(--ux24-ink);
   font-size: 1rem;
 }
 
 .lka-explorer-section .lka-panel-note {
-  color: #65798a;
+  color: #1F4E79;
   line-height: 1.55;
 }
 
@@ -531,8 +524,8 @@
     max-height: min(52vh, 24rem);
     overflow: auto;
     padding: 1rem;
-    border-radius: 1.1rem;
-    box-shadow: 0 26px 70px -24px rgb(16 35 55 / 0.72);
+    border-radius: 2px;
+    box-shadow: 0 1px 2px rgb(31 42 36 / 0.08);
     animation: lkaUx24PanelIn 220ms var(--ux24-ease);
   }
 

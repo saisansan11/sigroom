@@ -18,7 +18,7 @@
 
   {% if has_permission %}
     <div class="checkin-authorized-badge">
-      <span aria-hidden="true">🛡️</span> เจ้าหน้าที่รับรายงานตัว
+      เจ้าหน้าที่รับรายงานตัว
     </div>
     <h1 class="checkin-title">{{ student.rank }} {{ student.full_name }}</h1>
     <p class="muted-text">{{ student.origin_unit }} · {{ cohort.title }}</p>
@@ -74,7 +74,7 @@
     {% endif %}
   {% else %}
     <div class="checkin-public-badge">
-      <span aria-hidden="true">🔒</span> บัตรประจำตัวผู้เข้าพัก (ข้อมูลถูกปกปิด)
+      บัตรประจำตัวผู้เข้าพัก (ข้อมูลถูกปกปิด)
     </div>
     <h1 class="checkin-title">{{ masked_label }}</h1>
     <p class="muted-text">{{ cohort.title }}</p>

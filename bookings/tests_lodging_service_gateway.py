@@ -45,7 +45,7 @@ def test_public_page_is_service_gateway_with_three_clear_entries(client):
     assert response.status_code == 200
     html = response.content.decode("utf-8")
 
-    assert "SIGROOM Service Gateway" in html
+    assert "บริการจองพื้นที่ของ SIGROOM" in html
     assert "จองห้องพัก" in html
     assert "จองห้องสอน" in html
     assert "ห้องเรียน / ประชุม" in html

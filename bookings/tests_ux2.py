@@ -134,10 +134,10 @@ def test_express_form_keeps_primary_draft_and_series_actions(client, ux2_setup):
     assert response.status_code == 200
     html = response.content.decode()
 
-    assert "ขั้นที่ 3 จาก 5 · Express Booking" in html
+    assert "ขั้นที่ 3 จาก 5 · กรอกรายละเอียด" in html
     assert "บันทึกร่าง" in html
     assert "ยืนยันและส่งคำขอ" in html
-    assert "ตรวจสอบชุดการจอง →" in html
+    assert "ตรวจสอบชุดการจอง" in html
     assert "เปลี่ยนเวลา/ห้อง ←" in html
 
 

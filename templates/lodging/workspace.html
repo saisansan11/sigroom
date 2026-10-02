@@ -65,7 +65,7 @@
   <section id="course-operations" class="lodging-operations-section" aria-labelledby="course-operations-heading">
     <div class="section-title">
       <div><p class="eyebrow">หลักสูตร</p><h2 id="course-operations-heading">สถานะรอบที่พัก</h2></div>
-      {% if can_manage_course_operations %}<a class="lodging-workspace-link" href="{% url 'bookings:lodging_manage' %}">จัดสรรห้อง / สร้างหลักสูตร →</a>{% endif %}
+      {% if can_manage_course_operations %}<a class="lodging-workspace-link" href="{% url 'bookings:lodging_manage' %}">จัดสรรห้อง / สร้างหลักสูตร</a>{% endif %}
     </div>
     <div class="lodging-course-ops-grid">
       {% for item in cohort_cards %}

@@ -30,7 +30,7 @@ def test_booking_dialog_preserves_single_existing_booking_flow_with_richer_conte
     assert 'aria-describedby="bookingModalHint"' in html
     assert 'class="booking-dialog-icon"' in html
     assert 'class="booking-dialog-kicker"' in html
-    assert "Room selection" in html
+    assert "เลือกห้องพัก" in html
     assert "document.getElementById('bookingModalHint').textContent" in html
     assert "bookingDialog.addEventListener('close'" in html
 
@@ -43,11 +43,11 @@ def test_booking_dialog_preserves_single_existing_booking_flow_with_richer_conte
 def test_booking_css_matches_bright_info_page_and_dark_reference_dialog():
     css = _text(CSS)
     assert "body.lodging-booking-ios27" in css
-    assert "#f4f6fa" in css
-    assert "rgba(255, 255, 255, .91)" in css
+    # ธีม A Ledger: สีถูก re-map เป็นกระดาษ/หมึก ไม่มีสีฟ้า-ม่วงแบบ iOS เหลืออยู่
+    assert "#F5F1E6" in css
     assert "#bookingModal::backdrop" in css
-    assert "linear-gradient(145deg, #171d2e" in css
-    assert "linear-gradient(90deg, #278bd2, #6440c9)" in css
+    assert "#278bd2" not in css and "#6440c9" not in css
+    assert "#f4f6fa" not in css
     assert "@media (max-width: 47.99rem)" in css
     assert "grid-template-columns: minmax(0, .72fr) minmax(0, 1.28fr)" in css
 

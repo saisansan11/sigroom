@@ -214,7 +214,7 @@
       {% if submit_label %}{{ submit_label }}{% else %}ยืนยันและส่งคำขอ{% endif %}
     </button>
     {% if form.series_enabled %}
-      <button class="btn-primary series-booking-action" type="submit" formaction="{% url 'bookings:series_preview' room.code %}" name="action" value="series_preview">ตรวจสอบชุดการจอง →</button>
+      <button class="btn-primary series-booking-action" type="submit" formaction="{% url 'bookings:series_preview' room.code %}" name="action" value="series_preview">ตรวจสอบชุดการจอง</button>
     {% endif %}
   </div>
 

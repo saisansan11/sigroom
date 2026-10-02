@@ -204,7 +204,7 @@ def test_calendar_view_renders_cover_photo_and_placeholder(client, room):
     resp = client.get(reverse("bookings:calendar"))
     assert resp.status_code == 200
     content = resp.content.decode()
-    assert "tl-room-thumb" in content
+    assert "ledger-thumb" in content
     assert "room-placeholder.svg" in content  # other_room ไม่มีรูป ต้องได้ placeholder
     assert other_room.code in content
 

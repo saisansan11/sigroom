@@ -59,7 +59,7 @@ def test_guest_home_renders_three_one_stop_cards_and_anchor(client):
     assert resp.status_code == 200
     content = resp.content.decode()
 
-    assert "home-entry-grid" in content
+    assert 'class="room-index"' in content
     assert "ห้องเรียน / ห้องปฏิบัติ" in content
     assert "ห้องประชุม" in content
     assert "ห้องพักหลักสูตร" in content
@@ -83,13 +83,13 @@ def test_authenticated_home_hides_role_router_and_orders_actions(client, v6_a_se
 
     # การ์ดทางเข้าใหม่ต้องแสดงทั้ง guest และผู้ล็อกอิน
     assert "guest-role-router" not in content
-    assert "home-entry-grid" in content
-    assert "ดูห้องว่างตอนนี้" in content
+    assert 'class="room-index"' in content
+    assert 'id="homepage-availability"' in content
     assert cohort.title in content
     assert reverse("bookings:lodging_portal", args=[cohort.slug]) in content
 
-    # ตรวจสอบการแสดงผล role-actions
-    assert "role-actions" in content
+    # ธีม A: งานของผู้ใช้อยู่ในแถบงาน 3 ช่อง
+    assert 'class="task-strip"' in content
 
 
 def test_authenticated_role_actions_priority_ordering(client, v6_a_setup, monkeypatch):
@@ -115,10 +115,10 @@ def test_authenticated_role_actions_priority_ordering(client, v6_a_setup, monkey
     assert resp1.status_code == 200
     content1 = resp1.content.decode()
 
-    # ยืนยันว่างานดูแลห้องมาก่อนงานผู้อนุมัติ
-    assert "วันนี้มี 2 รายการให้ตรวจ" in content1
+    # ยืนยันว่างานดูแลห้อง (มีรายการ) ขึ้นช่องแรก ส่วนคิวอนุมัติที่ว่างไปอยู่ในทางลัด
+    assert 'data-task="usage"' in content1
     assert "คิวอนุมัติเรียบร้อย" in content1
-    idx_usage_1 = content1.index("วันนี้มี 2 รายการให้ตรวจ")
+    idx_usage_1 = content1.index('data-task="usage"')
     idx_approvals_1 = content1.index("คิวอนุมัติเรียบร้อย")
     assert idx_usage_1 < idx_approvals_1
 
@@ -129,11 +129,11 @@ def test_authenticated_role_actions_priority_ordering(client, v6_a_setup, monkey
     assert resp2.status_code == 200
     content2 = resp2.content.decode()
 
-    # ยืนยันว่างานผู้อนุมัติขึ้นก่อนงานดูแลห้อง
-    assert "มี 3 รายการรอตัดสิน" in content2
-    assert "วันนี้มี 2 รายการให้ตรวจ" in content2
-    idx_approvals_2 = content2.index("มี 3 รายการรอตัดสิน")
-    idx_usage_2 = content2.index("วันนี้มี 2 รายการให้ตรวจ")
+    # ยืนยันว่างานผู้อนุมัติ (มีรายการ) ขึ้นช่องแรก งานดูแลห้องไปอยู่ในทางลัด
+    assert 'data-task="approvals"' in content2
+    assert "การใช้งานห้องวันนี้ 2 รายการ" in content2
+    idx_approvals_2 = content2.index('data-task="approvals"')
+    idx_usage_2 = content2.index("การใช้งานห้องวันนี้ 2 รายการ")
     assert idx_approvals_2 < idx_usage_2
 
 

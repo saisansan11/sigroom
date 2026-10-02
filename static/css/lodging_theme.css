@@ -1,69 +1,69 @@
-/* Shared lodging palette. Loaded after legacy page styles; no global admin changes. */
+/* Shared lodging palette — re-mapped to theme A Ledger (docs/theme-a-ledger.md). Loaded after legacy page styles; no global admin changes. */
 body:is(.lodging-about-ios27, .lodging-booking-ios27, .sigroom-login-journey) {
-  --canvas: #f6f4ed; --surface: #fffdf7; --surface-raised: #fffdf7;
-  --surface-soft: #eeeee5; --ink: #263d3c; --muted: #536764; --dim: #536764;
-  --cyan: #286962; --cyan-strong: #205750; --line: #cdd5cb;
-  --pico-background-color: #f6f4ed; --pico-color: #263d3c;
-  --pico-muted-color: #536764; --pico-primary: #286962;
-  --pico-primary-background: #286962; --pico-primary-border: #286962;
-  --pico-primary-hover-background: #205750; --pico-primary-hover-border: #205750;
-  --pico-form-element-background-color: #fffdf7; --pico-form-element-color: #263d3c;
-  --pico-form-element-border-color: #9fab9f;
+  --canvas: #F5F1E6; --surface: #FBF8F0; --surface-raised: #FBF8F0;
+  --surface-soft: #EFE8D6; --ink: #1F2A24; --muted: #5E5D52; --dim: #5E5D52;
+  --cyan: #1F4E79; --cyan-strong: #1F4E79; --line: #D8CFB8;
+  --pico-background-color: #F5F1E6; --pico-color: #1F2A24;
+  --pico-muted-color: #5E5D52; --pico-primary: #1F4E79;
+  --pico-primary-background: #1F2A24; --pico-primary-border: #1F2A24;
+  --pico-primary-hover-background: #1F2A24; --pico-primary-hover-border: #1F2A24;
+  --pico-form-element-background-color: #FBF8F0; --pico-form-element-color: #1F2A24;
+  --pico-form-element-border-color: #B9AD8F;
   background: var(--canvas); color: var(--ink);
 }
 body.lodging-about-ios27 .lka-page-wrap {
-  --lka-canvas: #f6f4ed; --lka-surface: #fffdf7; --lka-mint: #286962;
-  --lka-sky: #286962; --lka-border: #cdd5cb; background: #f6f4ed;
+  --lka-canvas: #F5F1E6; --lka-surface: #FBF8F0; --lka-mint: #1F2A24;
+  --lka-sky: #1F2A24; --lka-border: #D8CFB8; background: #F5F1E6;
 }
 body:is(.lodging-about-ios27, .lodging-booking-ios27, .sigroom-login-journey) .site-header {
-  background: #fffdf7; backdrop-filter: none; box-shadow: 0 1px 0 #cdd5cb;
+  background: #F5F1E6; backdrop-filter: none; box-shadow: none; border-bottom: 2px solid #1F2A24;
 }
-body.lodging-about-ios27 :is(.lka-hero, .lka-explorer-section, .lka-explorer-canvas) { background: #f6f4ed; }
-body.lodging-about-ios27 :is(.lka-hero-title, .lka-text-gradient) { color: #263d3c; background: none; -webkit-text-fill-color: currentColor; }
+body.lodging-about-ios27 :is(.lka-hero, .lka-explorer-section, .lka-explorer-canvas) { background: #F5F1E6; }
+body.lodging-about-ios27 :is(.lka-hero-title, .lka-text-gradient) { color: #1F2A24; background: none; -webkit-text-fill-color: currentColor; }
 body.lodging-about-ios27 :is(.lka-btn-glow, .btn-primary), body.lodging-booking-ios27 :is(.btn-primary, .bed-select-btn) {
-  background: #286962; border-color: #286962; color: #fff; box-shadow: none;
+  background: #1F2A24; border-color: #1F2A24; color: #FBF8F0; box-shadow: none;
 }
 body.lodging-about-ios27 .lka-explorer-layout { display: block; }
 body.lodging-about-ios27 .lka-explorer-section .lka-room-model.selected { transform: none; filter: none; animation: none; }
-body.lodging-about-ios27 .lka-explorer-section .lka-room-model.selected .lka-room-block { fill: #e0eadd; stroke: #205750; stroke-width: 3; }
-body.lodging-about-ios27 .lka-room-block:focus-visible { outline: 3px solid #205750; outline-offset: 3px; }
+body.lodging-about-ios27 .lka-explorer-section .lka-room-model.selected .lka-room-block { fill: #EFE8D6; stroke: #1F2A24; stroke-width: 3; }
+body.lodging-about-ios27 .lka-room-block:focus-visible { outline: 3px solid #1F2A24; outline-offset: 3px; }
 .lodging-dialog-open { overflow: hidden; }
 body.lodging-about-ios27 dialog#lka-room-panel {
   position: fixed; inset: 0; margin: auto; width: min(34rem, calc(100% - 2rem));
   height: fit-content; max-height: calc(100dvh - 2rem); min-height: 0;
-  padding: 1.5rem; overflow-y: auto; border: 1px solid #b6c3b9; border-radius: 1rem;
-  background: #fffdf7; color: #263d3c; box-shadow: 0 12px 40px #243d3926;
+  padding: 1.5rem; overflow-y: auto; border: 1px solid #B9AD8F; border-radius: 2px;
+  background: #FBF8F0; color: #1F2A24; box-shadow: 0 1px 2px rgb(31 42 36 / 0.08);
   backdrop-filter: none; transform: none; visibility: visible; opacity: 1;
 }
 body.lodging-about-ios27 dialog#lka-room-panel:not([open]) { display: none; }
 body.lodging-about-ios27 dialog#lka-room-panel[open] { display: block; animation: lodging-dialog-in .14s ease-out; }
-body.lodging-about-ios27 dialog#lka-room-panel::backdrop { background: #243d3933; backdrop-filter: none; }
+body.lodging-about-ios27 dialog#lka-room-panel::backdrop { background: rgb(31 42 36 / 0.2); backdrop-filter: none; }
 body.lodging-about-ios27 #lka-room-panel .lka-panel-empty { display: none; }
 body.lodging-about-ios27 #lka-room-panel .lka-panel-content { display: block; }
-body.lodging-about-ios27 #lka-room-panel :is(h3,h4,dt,dd,p,label,.lka-panel-pill) { color: #263d3c; }
+body.lodging-about-ios27 #lka-room-panel :is(h3,h4,dt,dd,p,label,.lka-panel-pill) { color: #1F2A24; }
 body.lodging-about-ios27 #lka-room-panel .lka-panel-number { font-size: 2rem; margin: .5rem 3rem 1rem 0; }
-body.lodging-about-ios27 #lka-room-panel .lka-facing-card { background: #edf0e5; border: 1px solid #cdd5cb; box-shadow: none; padding: 1rem; }
+body.lodging-about-ios27 #lka-room-panel .lka-facing-card { background: #EFE8D6; border: 1px solid #D8CFB8; box-shadow: none; padding: 1rem; }
 body.lodging-about-ios27 #lka-room-panel .lka-facing-symbol { display: none; }
-body.lodging-about-ios27 #lka-panel-close { position: absolute; top: .75rem; right: .75rem; width: 44px; height: 44px; background: #edf0e5; color: #263d3c; border: 1px solid #cdd5cb; }
-body.lodging-about-ios27 #lka-room-panel select { width: 100%; min-height: 44px; margin-bottom: .5rem; background-color: #fffdf7; color: #263d3c; border: 1px solid #9fab9f; }
-body.lodging-about-ios27 #lka-room-panel a { color: #205750; }
-body.lodging-about-ios27 #lka-room-panel .lka-room-next { display: block; padding: .8rem; background: #286962; color: #fff; border-radius: .65rem; text-align: center; min-height: 44px; }
+body.lodging-about-ios27 #lka-panel-close { position: absolute; top: .75rem; right: .75rem; width: 44px; height: 44px; background: #EFE8D6; color: #1F2A24; border: 1px solid #D8CFB8; }
+body.lodging-about-ios27 #lka-room-panel select { width: 100%; min-height: 44px; margin-bottom: .5rem; background-color: #FBF8F0; color: #1F2A24; border: 1px solid #B9AD8F; }
+body.lodging-about-ios27 #lka-room-panel a { color: #1F2A24; }
+body.lodging-about-ios27 #lka-room-panel .lka-room-next { display: block; padding: .8rem; background: #1F2A24; color: #FBF8F0; border-radius: 2px; text-align: center; min-height: 44px; }
 body.lodging-about-ios27 #lka-room-panel [hidden] { display: none; }
-body.lodging-about-ios27 #lka-room-panel .lka-room-actions { background: #fffdf7; margin-top: 1rem; padding-top: 1rem; border-top: 1px solid #cdd5cb; }
+body.lodging-about-ios27 #lka-room-panel .lka-room-actions { background: #FBF8F0; margin-top: 1rem; padding-top: 1rem; border-top: 1px solid #D8CFB8; }
 body.lodging-about-ios27 #lka-room-request { display: block; padding: .75rem 0; min-height: 44px; }
-body.lodging-booking-ios27 :is(.detail-card,.lodging-cohort-card,.room-lodging-card,.lodging-portal-hero) { background: #fffdf7; border: 1px solid #cdd5cb; box-shadow: 0 2px 8px #243d3908; border-radius: 1rem; }
-body.lodging-booking-ios27 .room-lodging-card[data-selected] { outline: 3px solid #286962; outline-offset: 3px; }
-body.lodging-booking-ios27 #bookingModal::backdrop { background: #243d3933; backdrop-filter: none; }
-body.lodging-booking-ios27 #bookingModal .booking-dialog-article { background: #fffdf7; color: #263d3c; border: 1px solid #b6c3b9; box-shadow: 0 12px 40px #243d3926; }
-body.lodging-booking-ios27 #bookingModal :is(header,footer) { background: #fffdf7; border-color: #cdd5cb; }
-body.lodging-booking-ios27 #bookingModal :is(h2,h3,p,label,.booking-dialog-kicker,.modal-room-info) { color: #263d3c; }
-body.lodging-booking-ios27 #bookingModal :is(input,select,textarea) { color: #263d3c; background: #fffdf7; border: 1px solid #9fab9f; box-shadow: none; }
-body.lodging-booking-ios27 #bookingModal .btn-confirm { background: #286962; border-color: #286962; color: #fff; box-shadow: none; }
-body.lodging-booking-ios27 #bookingModal .modal-form-actions .secondary { background: #edf0e5; color: #263d3c; border-color: #b6c3b9; }
-body.lodging-booking-ios27 #bookingModal .notice { background: #fff0e9; color: #783920; border-color: #bd8064; }
+body.lodging-booking-ios27 :is(.detail-card,.lodging-cohort-card,.room-lodging-card,.lodging-portal-hero) { background: #FBF8F0; border: 1px solid #D8CFB8; box-shadow: 0 1px 2px rgb(31 42 36 / 0.08); border-radius: 2px; }
+body.lodging-booking-ios27 .room-lodging-card[data-selected] { outline: 3px solid #1F2A24; outline-offset: 3px; }
+body.lodging-booking-ios27 #bookingModal::backdrop { background: rgb(31 42 36 / 0.2); backdrop-filter: none; }
+body.lodging-booking-ios27 #bookingModal .booking-dialog-article { background: #FBF8F0; color: #1F2A24; border: 1px solid #B9AD8F; box-shadow: 0 1px 2px rgb(31 42 36 / 0.08); }
+body.lodging-booking-ios27 #bookingModal :is(header,footer) { background: #FBF8F0; border-color: #D8CFB8; }
+body.lodging-booking-ios27 #bookingModal :is(h2,h3,p,label,.booking-dialog-kicker,.modal-room-info) { color: #1F2A24; }
+body.lodging-booking-ios27 #bookingModal :is(input,select,textarea) { color: #1F2A24; background: #FBF8F0; border: 1px solid #B9AD8F; box-shadow: none; }
+body.lodging-booking-ios27 #bookingModal .btn-confirm { background: #1F2A24; border-color: #1F2A24; color: #FBF8F0; box-shadow: none; }
+body.lodging-booking-ios27 #bookingModal .modal-form-actions .secondary { background: #EFE8D6; color: #1F2A24; border-color: #B9AD8F; }
+body.lodging-booking-ios27 #bookingModal .notice { background: #F5F1E6; color: #A3241C; border-color: #A3241C; }
 @keyframes lodging-dialog-in { from { opacity: 0; transform: scale(.98); } to { opacity: 1; transform: scale(1); } }
 @media (max-width: 47.99rem) {
-  body.lodging-about-ios27 dialog#lka-room-panel { inset: auto 0 0; width: 100%; max-width: 100%; max-height: 90dvh; margin: 0; border-radius: 1rem 1rem 0 0; padding: 1rem 1rem max(1rem, env(safe-area-inset-bottom)); }
+  body.lodging-about-ios27 dialog#lka-room-panel { inset: auto 0 0; width: 100%; max-width: 100%; max-height: 90dvh; margin: 0; border-radius: 2px 2px 0 0; padding: 1rem 1rem max(1rem, env(safe-area-inset-bottom)); }
   body.lodging-about-ios27 #lka-room-panel .lka-room-actions { position: sticky; bottom: -1rem; padding-bottom: max(1rem, env(safe-area-inset-bottom)); }
   body.lodging-booking-ios27 #bookingModal { padding: .5rem; }
   body.lodging-booking-ios27 #bookingModal .booking-dialog-article { max-height: 92dvh; overflow-y: auto; }
@@ -78,21 +78,41 @@ body.lodging-about-ios27 #lka-room-panel .lka-panel-dl { margin: .5rem 0; }
 body.lodging-about-ios27 #lka-room-panel .lka-panel-dl :is(dt,dd) { padding-block: .35rem; }
 body.lodging-about-ios27 #lka-room-availability { margin: .5rem 0; font-size: .9rem; }
 body.lodging-booking-ios27 #bookingModal { backdrop-filter: none; -webkit-backdrop-filter: none; }
-body.lodging-booking-ios27 #bookingModal .booking-dialog-icon { background: #e0eadd; color: #286962; box-shadow: none; }
-body.lodging-booking-ios27 #bookingModal .booking-dialog-icon svg { color: #286962; }
-body.lodging-booking-ios27 #bookingModal .modal-form-actions { position: sticky; bottom: -1rem; padding: .8rem 0 max(.8rem,env(safe-area-inset-bottom)); background: #fffdf7; }
+body.lodging-booking-ios27 #bookingModal .booking-dialog-icon { background: #EFE8D6; color: #1F2A24; box-shadow: none; }
+body.lodging-booking-ios27 #bookingModal .booking-dialog-icon svg { color: #1F2A24; }
+body.lodging-booking-ios27 #bookingModal .modal-form-actions { position: sticky; bottom: -1rem; padding: .8rem 0 max(.8rem,env(safe-area-inset-bottom)); background: #FBF8F0; }
 
-body.lodging-booking-ios27 .keycard-face { background: #e6ecdf; color: #263d3c; border: 1px solid #a6b6a8; box-shadow: 0 4px 12px #243d3912; }
-body.lodging-booking-ios27 .keycard-face :is(p,span,strong,.keycard-brand) { color: #263d3c; }
+body.lodging-booking-ios27 .keycard-face { background: #EFE8D6; color: #1F2A24; border: 1px solid #B9AD8F; box-shadow: 0 1px 2px rgb(31 42 36 / 0.08); }
+body.lodging-booking-ios27 .keycard-face :is(p,span,strong,.keycard-brand) { color: #1F2A24; }
 body.lodging-booking-ios27 .keycard-face::before, body.lodging-booking-ios27 .keycard-face::after { display: none; }
 
 /* Only loaded for a lodging return URL; other service login journeys keep their styles. */
 body.sigroom-login-journey :is(.arrival-horizon,.arrival-caption) { display: none; }
-body.sigroom-login-journey .auth-stage::before { background: #f6f4ed; }
-body.sigroom-login-journey .login-card { animation: none; opacity: 1; transform: none; background: #fffdf7; border: 1px solid #cdd5cb; box-shadow: 0 6px 20px #243d3912; }
-body.sigroom-login-journey .login-card button { background: #286962; border-color: #286962; box-shadow: none; }
+body.sigroom-login-journey .auth-stage::before { background: #F5F1E6; }
+body.sigroom-login-journey .login-card { animation: none; opacity: 1; transform: none; background: #FBF8F0; border: 1px solid #D8CFB8; box-shadow: 0 1px 2px rgb(31 42 36 / 0.08); }
+body.sigroom-login-journey .login-card button { background: #1F2A24; border-color: #1F2A24; box-shadow: none; }
 /* Staff scope is limited to the existing room board and assignment panel. */
-.lodging-workspace-main { --surface: #fffdf7; --surface-soft: #edf0e5; --ink: #263d3c; --muted: #536764; --line: #cdd5cb; --cyan: #286962; --pico-color: #263d3c; --pico-primary: #286962; }
-.lodging-workspace-main :is(.lodging-room-board details,.lodging-assignment-panel) { color: #263d3c; background: #fffdf7; border-color: #cdd5cb; }
-.lodging-workspace-main :is(h2,h3,summary,label,legend) { color: #263d3c; }
-.lodging-workspace-main :is(input,select,textarea) { background-color: #fffdf7; color: #263d3c; border-color: #9fab9f; }
+.lodging-workspace-main { --surface: #FBF8F0; --surface-soft: #EFE8D6; --ink: #1F2A24; --muted: #5E5D52; --line: #D8CFB8; --cyan: #1F2A24; --pico-color: #1F2A24; --pico-primary: #1F2A24; }
+.lodging-workspace-main :is(.lodging-room-board details,.lodging-assignment-panel) { color: #1F2A24; background: #FBF8F0; border-color: #D8CFB8; }
+.lodging-workspace-main :is(h2,h3,summary,label,legend) { color: #1F2A24; }
+.lodging-workspace-main :is(input,select,textarea) { background-color: #FBF8F0; color: #1F2A24; border-color: #B9AD8F; }
+
+/* ธีม A Ledger: หัวเว็บหน้าที่พัก/เข้าสู่ระบบ ใช้แบบเดียวกับทั้งระบบ (กระดาษ + เส้นหมึก 2px) */
+body:is(.lodging-about-ios27, .lodging-booking-ios27, .sigroom-login-journey) .site-header {
+  border-bottom: 2px solid #1F2A24; background: #F5F1E6; box-shadow: none; backdrop-filter: none; -webkit-backdrop-filter: none;
+}
+body:is(.lodging-about-ios27, .lodging-booking-ios27, .sigroom-login-journey) .brand {
+  color: #1F2A24; font-family: var(--font-serif); font-size: inherit; font-weight: 500; letter-spacing: 0;
+}
+body:is(.lodging-about-ios27, .lodging-booking-ios27, .sigroom-login-journey) .brand-sub { letter-spacing: 0; color: #5E5D52; }
+body:is(.lodging-about-ios27, .lodging-booking-ios27, .sigroom-login-journey) .main-nav a {
+  min-height: max(44px, 2.75rem); border: none; border-radius: 0; background: transparent; box-shadow: none;
+  color: #1F2A24; font-size: .95rem; font-weight: 500;
+}
+body:is(.lodging-about-ios27, .lodging-booking-ios27, .sigroom-login-journey) .main-nav a:hover { background: transparent; box-shadow: none; text-decoration: underline; }
+body:is(.lodging-about-ios27, .lodging-booking-ios27, .sigroom-login-journey) .main-nav a[aria-current="page"] { background: transparent; box-shadow: inset 0 -2px #1F2A24; }
+body:is(.lodging-about-ios27, .lodging-booking-ios27, .sigroom-login-journey) .login-btn-header {
+  border: 1px solid #1F2A24; border-radius: 2px; background: #1F2A24; color: #F5F1E6; box-shadow: none; font-weight: 500;
+}
+body:is(.lodging-about-ios27, .lodging-booking-ios27, .sigroom-login-journey) :is(.account-menu, .mobile-menu) > summary { border-radius: 2px; box-shadow: none; }
+body:is(.lodging-about-ios27, .lodging-booking-ios27, .sigroom-login-journey) .mobile-menu-panel { border-radius: 0; border: none; border-bottom: 2px solid #1F2A24; background: #FBF8F0; box-shadow: 0 2px 6px rgb(31 42 36 / .12); }

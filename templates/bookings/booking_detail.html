@@ -84,7 +84,7 @@
       {% endif %}
 
       {% if can_amend %}
-        <a role="button" class="secondary" href="{% url 'bookings:booking_amend' booking.id %}">ขอแก้ไขเวลา/ห้อง/อุปกรณ์ →</a>
+        <a role="button" class="secondary" href="{% url 'bookings:booking_amend' booking.id %}">ขอแก้ไขเวลา/ห้อง/อุปกรณ์</a>
       {% endif %}
 
       {% if booking.request_status == 'approved' %}
@@ -164,7 +164,7 @@
 
 {% if pending_amendment %}
 <article class="detail-card amendment-card">
-  <h2>✏ คำขอแก้ไข {{ pending_amendment.display_ref }} รออนุมัติ</h2>
+  <h2>คำขอแก้ไข {{ pending_amendment.display_ref }} รออนุมัติ</h2>
   <div class="comparison-grid">
     <div>
       <strong>เดิม</strong>

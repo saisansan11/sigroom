@@ -113,10 +113,10 @@ def test_app_css_touch_targets_meet_wcag():
     assert ".compact-button" in css_text
     assert "min-height: max(44px, 2.75rem)" in css_text
 
-    # .category-pill has min-height: max(44px, 2.75rem)
-    cat_pill_match = re.search(r"\.category-pill\s*\{([^}]+)\}", css_text)
-    assert cat_pill_match is not None
-    assert "min-height: max(44px, 2.75rem)" in cat_pill_match.group(1)
+    # ชิปเลือกหมวดห้องหน้าแรก (ธีม A) สูงอย่างน้อย 44px
+    cat_chip_match = re.search(r"\.category-chip\s*\{([^}]+)\}", css_text)
+    assert cat_chip_match is not None
+    assert "min-height: 44px" in cat_chip_match.group(1)
 
 
 

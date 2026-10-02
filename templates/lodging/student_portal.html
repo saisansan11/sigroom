@@ -3,7 +3,6 @@
 {% load thaidate %}
 
 {% block html_theme %}light{% endblock %}
-{% block theme_color %}#f4f6fa{% endblock %}
 {% block body_class %}lodging-booking-ios27{% endblock %}
 {% block head %}<link rel="stylesheet" href="{% static 'css/lodging_booking_ios27.css' %}?v=2">{% endblock %}
 
@@ -142,7 +141,7 @@
       <div class="booking-dialog-intro">
         <span class="booking-dialog-icon" aria-hidden="true">{% include "lodging/partials/gateway_icon.html" with icon="lodging" %}</span>
         <div>
-          <span class="booking-dialog-kicker">Room selection</span>
+          <span class="booking-dialog-kicker">เลือกห้องพัก</span>
           <h3 id="bookingModalHeading">ลงทะเบียนเข้าพัก</h3>
           <p id="modalRoomTitle" class="lodging-accent-text">
             {% if modal_data.room_code %}

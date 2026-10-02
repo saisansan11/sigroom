@@ -168,14 +168,14 @@ def test_force_release_danger_zone_is_superuser_only(client, ui4_setup):
     client.force_login(ui4_setup["supervisor"])
     normal = client.get(url)
     assert normal.status_code == 200
-    assert "Danger Zone" not in normal.content.decode()
+    assert "เขตการดำเนินการพิเศษ" not in normal.content.decode()
     assert 'name="force_release"' not in normal.content.decode()
 
     client.force_login(ui4_setup["superuser"])
     admin = client.get(url)
     assert admin.status_code == 200
     admin_content = admin.content.decode()
-    assert "Danger Zone" in admin_content
+    assert "เขตการดำเนินการพิเศษ" in admin_content
     assert 'name="force_release"' in admin_content
     assert 'name="release_reason"' in admin_content
 

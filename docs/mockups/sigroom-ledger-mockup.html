@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="th"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SIGROOM ธีม A — ร่างหน้าแรกและหน้าจอง (อนุมัติ 2 ต.ค. 2569)</title>
+<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500&family=Noto+Serif+Thai:wght@500&display=swap" rel="stylesheet">
+<style>
+body{background:#e9e4d6;margin:0;padding:24px;font-family:'Sarabun',sans-serif}
+.pa,.pb{max-width:860px;margin:0 auto 32px;background:#F5F1E6;color:#1F2A24;border:1px solid #D8CFB8;overflow:hidden;position:relative}
+.sf{font-family:'Noto Serif Thai',serif;font-weight:500}
+a{color:#1F4E79}
+.tr{display:grid;grid-template-columns:110px minmax(0,1fr);align-items:center;border-bottom:1px solid #D8CFB8;padding:7px 0;font-size:14px}
+.trk{position:relative;height:24px;background:repeating-linear-gradient(90deg,transparent 0 calc(10% - 1px),#E3DBC6 calc(10% - 1px) 10%)}
+.bk{position:absolute;top:3px;height:18px;font-size:12px;line-height:18px;padding:0 4px;white-space:nowrap;overflow:hidden}
+.fr{position:absolute;top:3px;height:18px;font-size:12px;line-height:16px;border:1px dashed #1F4E79;color:#1F4E79;text-align:center;cursor:pointer}
+.now{position:absolute;left:27%;top:-4px;bottom:-4px;border-left:2px solid #A3241C}
+.pb{padding:16px 22px}
+.st{display:flex;gap:10px;align-items:baseline;border-bottom:2px solid #1F2A24;margin:18px 0 8px;padding-bottom:3px}
+.ch{display:inline-block;border:1px solid #1F2A24;padding:5px 14px;margin:0 6px 6px 0;font-size:14px;cursor:pointer}
+.ch.on{background:#1F2A24;color:#F5F1E6}
+.rm{display:grid;grid-template-columns:minmax(0,1fr) 160px 100px;gap:12px;align-items:center;border-bottom:1px solid #D8CFB8;padding:8px 0;font-size:14px}
+.mt{position:relative;height:12px;background:#E9E2CF}
+.pk{border:1px solid #1F2A24;background:#1F2A24;color:#F5F1E6;font-size:13px;padding:4px 0;text-align:center}
+.in{border:none;border-bottom:1px solid #1F2A24;background:transparent;font:inherit;font-size:16px;width:100%;padding:4px 0}
+#stamp{position:absolute;right:50px;top:60%;border:4px double #A3241C;color:#A3241C;font-family:'Noto Serif Thai',serif;font-size:32px;padding:4px 20px;transform:rotate(-12deg) scale(3);opacity:0;pointer-events:none;transition:transform .25s cubic-bezier(.3,1.6,.6,1),opacity .15s}
+#stamp.go{transform:rotate(-12deg) scale(1);opacity:.92}
+</style></head><body>
+
+<!-- หน้าแรก (ผู้ใช้ที่เข้าสู่ระบบ) -->
+<div class="pa">
+  <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 22px;border-bottom:2px solid #1F2A24">
+    <span class="sf" style="font-size:20px">SIGROOM <span style="font-family:Sarabun;font-weight:400;font-size:13px;color:#5E5D52">ระบบจองห้อง รร.ส.สส.</span></span>
+    <span style="font-size:14px;display:flex;gap:16px"><b style="font-weight:500;border-bottom:2px solid #1F2A24">หน้าแรก</b><span>จองห้อง</span><span>การจองของฉัน</span><span>รออนุมัติ (3)</span><span style="color:#5E5D52">ร.ท.วสันต์</span></span>
+  </div>
+  <div style="padding:16px 22px">
+    <div style="font-size:14px;color:#5E5D52">วันพฤหัสบดีที่ ๒ ตุลาคม พ.ศ. ๒๕๖๙ · เวลา 10.42 น.</div>
+    <div class="sf" style="font-size:24px;margin:2px 0 14px">สวัสดีครับ ร.ท.วสันต์</div>
+    <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));border:1px solid #1F2A24">
+      <div style="padding:12px 14px;border-right:1px solid #D8CFB8"><div style="font-size:13px;color:#5E5D52">รอท่านพิจารณา</div><div class="sf" style="font-size:24px">3 <span style="font-size:14px;font-family:Sarabun;font-weight:400">รายการ</span></div><a style="font-size:13px">เปิดคิวอนุมัติ</a></div>
+      <div style="padding:12px 14px;border-right:1px solid #D8CFB8"><div style="font-size:13px;color:#5E5D52">การจองถัดไปของท่าน</div><div class="sf" style="font-size:17px;margin:4px 0">ก.201 · 13.00 น.</div><div style="font-size:13px">อีก 2 ชม. 18 นาที</div></div>
+      <div style="padding:12px 14px;background:#1F2A24;color:#F5F1E6"><div class="sf" style="font-size:18px">จองห้อง</div><div style="font-size:13px">เลือกเวลา ระบบหาห้องว่างให้</div></div>
+    </div>
+    <div style="display:flex;justify-content:space-between;align-items:baseline;margin:20px 0 0;border-bottom:2px solid #1F2A24;padding-bottom:4px">
+      <span class="sf" style="font-size:18px">ทะเบียนห้องวันนี้</span>
+      <span style="font-size:13px;color:#5E5D52">ว่างตอนนี้ 4 จาก 9 ห้อง · <span style="border:1px dashed #1F4E79;color:#1F4E79;padding:0 4px">ช่องประ</span> คือช่วงว่าง แตะเพื่อจอง</span>
+    </div>
+    <div class="tr" style="font-size:12px;color:#5E5D52;padding:4px 0"><span></span><span style="display:flex;justify-content:space-between"><span>08</span><span>10</span><span>12</span><span>14</span><span>16</span><span>18</span></span></div>
+    <div class="tr"><span><b style="font-weight:500">ก.201</b><br><span style="font-size:12px;color:#5E5D52">ห้องเรียนรวม 60</span></span><div class="trk"><span class="bk" style="left:10%;width:30%;background:#1F2A24;color:#F5F1E6">ประชุมแผนกวิชา</span><span class="fr" style="left:40%;width:10%">ว่าง</span><span class="bk" style="left:50%;width:30%;background:#1F2A24;color:#F5F1E6">สอน นสส.</span><span class="now"></span></div></div>
+    <div class="tr"><span><b style="font-weight:500">ก.102</b><br><span style="font-size:12px;color:#5E5D52">ประชุมเล็ก 20</span></span><div class="trk"><span class="fr" style="left:0;width:100%">ว่างทั้งวัน · แตะเพื่อจอง</span><span class="now"></span></div></div>
+    <div class="tr"><span><b style="font-weight:500">ข.305</b><br><span style="font-size:12px;color:#5E5D52">ห้องปฏิบัติการ 30</span></span><div class="trk"><span class="fr" style="left:0;width:50%">ว่าง</span><span class="bk" style="left:50%;width:30%;border:1.5px dashed #8A6D1F;color:#8A6D1F;background:#F3E9CC">รอพิจารณา · ฝึก นนส.</span><span class="now"></span></div></div>
+    <div class="tr" style="border-bottom:none"><span><b style="font-weight:500">ข.110</b><br><span style="font-size:12px;color:#5E5D52">ห้องประชุมใหญ่</span></span><div class="trk" style="background:repeating-linear-gradient(45deg,#E9DFC7 0 6px,#F5F1E6 6px 12px)"><span class="bk" style="left:0;width:100%;color:#A3241C">งดใช้ · ซ่อมเครื่องปรับอากาศ</span></div></div>
+  </div>
+</div>
+
+<!-- หน้าจอง 3 ขั้นในหน้าเดียว -->
+<div class="pb">
+  <div class="sf" style="font-size:24px">ขอใช้ห้อง</div>
+  <div style="font-size:14px;color:#5E5D52">สามขั้นในหน้าเดียว ไม่ต้องกดค้นหา ผลเปลี่ยนตามที่เลือก</div>
+  <div class="st"><span class="sf" style="font-size:22px">๑</span><span class="sf" style="font-size:17px">เมื่อไร และกี่คน</span></div>
+  <div><span class="ch">วันนี้</span><span class="ch on">พรุ่งนี้ 3 ต.ค.</span><span class="ch">จันทร์ 6 ต.ค.</span><span class="ch">เลือกจากปฏิทิน</span></div>
+  <div><span class="ch">เช้า 08–12</span><span class="ch on">บ่าย 13–16</span><span class="ch">ทั้งวัน</span><span class="ch">กำหนดเอง</span> จำนวน <b style="border-bottom:1px solid #1F2A24;padding:0 10px">25</b> คน</div>
+  <div class="st"><span class="sf" style="font-size:22px">๒</span><span class="sf" style="font-size:17px">ห้องที่ว่าง 3 ห้อง</span><span style="font-size:13px;color:#5E5D52;margin-left:auto">แถบดำ = ช่วงที่ท่านขอ</span></div>
+  <div class="rm"><span><b style="font-weight:500">ก.102</b> ห้องประชุมเล็ก · จุ 30<br><span style="font-size:13px;color:#5E5D52">โปรเจกเตอร์ · อนุมัติทันที</span></span><div class="mt"><span style="position:absolute;left:50%;width:30%;top:0;bottom:0;background:#1F2A24"></span></div><span class="pk">เลือกห้องนี้</span></div>
+  <div class="rm"><span><b style="font-weight:500">ข.305</b> ห้องปฏิบัติการ · จุ 30<br><span style="font-size:13px;color:#5E5D52">ต้องผ่านผู้อนุมัติ</span></span><div class="mt"><span style="position:absolute;left:10%;width:25%;top:0;bottom:0;background:#C9BFA4"></span><span style="position:absolute;left:50%;width:30%;top:0;bottom:0;background:#1F2A24"></span></div><span class="pk" style="background:transparent;color:#1F2A24">เลือกห้องนี้</span></div>
+  <div style="font-size:14px;padding:8px 10px;margin-top:8px;border-left:3px solid #8A6D1F;background:#EFE6CC">ก.201 ที่ท่านใช้บ่อยไม่ว่างช่วงนี้ แต่ว่างถ้าเลื่อนเป็น 14.00–17.00 · <a>ใช้เวลานี้แทน</a></div>
+  <div class="st"><span class="sf" style="font-size:22px">๓</span><span class="sf" style="font-size:17px">ใบขอใช้ห้อง ก.102</span><span style="font-size:13px;color:#5E5D52;margin-left:auto">ศ. 3 ต.ค. 69 · 13.00–16.00 น.</span></div>
+  <label style="font-size:13px;color:#5E5D52">ชื่อกิจกรรม (ช่องเดียวที่ต้องกรอก)</label>
+  <input class="in" value="ประชุมเตรียมการฝึกภาคสนาม นสส.">
+  <div style="font-size:14px;margin:10px 0">ผู้รับผิดชอบ ร.ท.วสันต์ · 081-xxx-xxxx · แผนกวิชาการสื่อสาร <a>แก้ไข</a><br><span style="font-size:13px;color:#5E5D52">ดึงจากการจองครั้งก่อนให้แล้ว · ตัวเลือกเพิ่มเติม (อุปกรณ์ จัดห้อง จองซ้ำ) ซ่อนไว้</span></div>
+  <button id="sub" style="background:#1F2A24;color:#F5F1E6;border:none;font-family:'Noto Serif Thai',serif;font-size:17px;padding:9px 30px">ยื่นขอใช้ห้อง</button>
+  <span id="msg" style="font-size:14px;margin-left:10px;color:#2F6B3A"></span>
+  <div id="stamp">อนุมัติ</div>
+</div>
+<script>
+document.getElementById('sub').addEventListener('click',()=>{const s=document.getElementById('stamp');s.classList.remove('go');void s.offsetWidth;s.classList.add('go');document.getElementById('msg').textContent='บันทึกแล้ว เลขที่ 69/0412 · เพิ่มลงปฏิทินมือถือ';});
+</script>
+</body></html>

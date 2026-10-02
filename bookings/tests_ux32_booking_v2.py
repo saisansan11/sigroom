@@ -76,9 +76,9 @@ def test_authenticated_home_has_two_primary_task_cards(client, ux32_setup):
     response = client.get(reverse("bookings:calendar"))
     assert response.status_code == 200
     html = response.content.decode()
-    assert "home-primary-actions" in html
-    assert "จองห้องเรียนหรือห้องประชุม" in html
-    assert "จองห้องพัก / ดูรอบหลักสูตร" in html
+    # ธีม A: งานหลักสองทาง = ช่อง "จองห้อง" ในแถบงาน + ลิงก์ "จองห้องพัก"
+    assert 'class="task-cell task-cell-primary"' in html
+    assert "เลือกเวลา ระบบหาห้องว่างให้" in html
     assert reverse("bookings:book_search") in html
     assert reverse("bookings:lodging_index") in html
 
@@ -145,4 +145,4 @@ def test_ux32_css_has_mobile_single_column_contract():
     assert "/* UX-32 Task-first intro, booking flow V2, navigation cleanup */" in css
     ux32 = css.split("/* UX-32 Task-first intro, booking flow V2, navigation cleanup */", 1)[1]
     assert "@media (max-width: 50rem)" in ux32
-    assert ".home-primary-actions, .booking-path-switcher, .sigroom-howto-list { grid-template-columns: 1fr; }" in ux32
+    assert ".booking-path-switcher, .sigroom-howto-list { grid-template-columns: 1fr; }" in ux32

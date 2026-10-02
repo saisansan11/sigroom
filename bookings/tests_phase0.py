@@ -34,7 +34,7 @@ def test_fullcalendar_scripts_are_deferred(client):
 
 def test_thai_body_font_preload_present(client):
     html = client.get("/home/").content.decode("utf-8")
-    assert re.search(r'<link rel="preload" as="font" type="font/woff2" crossorigin href="[^"]*ibm-plex-sans-thai-400-thai[^"]*\.woff2">', html)
+    assert re.search(r'<link rel="preload" as="font" type="font/woff2" crossorigin href="[^"]*sarabun-400-thai[^"]*\.woff2">', html)
 
 
 def test_manifest_starts_at_home(client):

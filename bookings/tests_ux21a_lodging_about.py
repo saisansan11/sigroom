@@ -83,13 +83,12 @@ def test_ux21a_bright_hospitality_tokens_in_css():
     """CSS defines bright hospitality tokens and eliminates dark cyber grid."""
     css = _read_file(CSS_PATH)
 
-    # Required bright tokens
-    assert "--lka-canvas: #f8fafc" in css, "Missing bright canvas token"
-    assert "--lka-surface: #ffffff" in css, "Missing white surface token"
-    assert "--lka-sky: #0369a1" in css, "Missing accessible sky blue accent"
-    assert "--lka-mint: #0f766e" in css, "Missing accessible mint accent"
-    assert "--lka-amber: #b45309" in css, "Missing accessible warm amber accent"
-    assert "--lka-navy-900: #0f172a" in css, "Missing deep navy heading token"
+    # ธีม A Ledger: โทเคนเดิมถูก re-map เป็นสีกระดาษ/หมึกของทั้งระบบ
+    assert "--lka-canvas: #F5F1E6" in css, "Canvas must be ledger paper"
+    assert "--lka-surface: #FBF8F0" in css, "Surface must be ledger paper-raised"
+    assert "--lka-sky: #1F4E79" in css, "Accent must be ledger link blue"
+    assert "--lka-amber: #8A6D1F" in css, "Warm accent must be ledger pending brown"
+    assert "--lka-navy-900: #1F2A24" in css, "Heading token must be ledger ink"
 
     # Dark cyber grid must be removed
     assert "background-size: 32px 32px" not in css, "Dark tech 32px grid pattern must be eliminated"
@@ -128,14 +127,14 @@ def test_ios27_lodging_theme_is_scoped_to_about_page(client):
     html = client.get(reverse("bookings:lodging_about")).content.decode("utf-8")
     assert '<html lang="th" data-theme="light">' in html
     assert '<body class="lodging-about-ios27">' in html
-    assert '<meta name="theme-color" content="#f6f7fb">' in html
+    assert '<meta name="theme-color" content="#F5F1E6">' in html
 
 
 def test_ios27_visual_system_tokens_and_header_convergence():
     css = _read_file(CSS_PATH)
     assert "iOS 27-inspired unified lodging surface" in css
     assert "body.lodging-about-ios27 .site-header" in css
-    assert "backdrop-filter: saturate(1.35) blur(24px)" in css
+    assert "blur(24px)" not in css  # ธีม A: ไม่มี glass/blur
     assert "body.lodging-about-ios27 .mobile-menu-panel" in css
     assert "grid-template-columns: repeat(2, minmax(0, 1fr))" in css
 
