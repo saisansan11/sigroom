@@ -2,7 +2,7 @@
 {% load static %}
 {% load thaidate %}
 {% block title %}ปฏิทินห้อง · SIGROOM{% endblock %}
-{% block head %}<script src="{% static 'vendor/fullcalendar/index.global.min.js' %}"></script><script src="{% static 'vendor/fullcalendar/locales-all.global.min.js' %}"></script>{% endblock %}
+{% block head %}<script defer src="{% static 'vendor/fullcalendar/index.global.min.js' %}"></script><script defer src="{% static 'vendor/fullcalendar/locales-all.global.min.js' %}"></script>{% endblock %}
 {% block content %}
 {% if user.is_authenticated %}
   <section class="hero-section task-home-hero" aria-label="ศูนย์งานและการจองห้อง">

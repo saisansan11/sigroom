@@ -1,9 +1,10 @@
 from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib import admin
+from django.http import HttpResponseRedirect
 from django.templatetags.static import static as static_url
 from django.urls import include, path
-from django.views.generic import RedirectView, TemplateView
+from django.views.generic import TemplateView
 
 from audit.views import client_ip_diagnostics
 
@@ -11,12 +12,16 @@ admin.site.site_header = "SIGROOM — ผู้ดูแลระบบ"
 admin.site.site_title = "SIGROOM"
 admin.site.index_title = "ทะเบียนและการตั้งค่า"
 
+
+
+def favicon_redirect(request):
+    # คำนวณตอนรับคำขอ (ไม่ใช่ตอน import urls) เพราะ Manifest storage ต้องมี collectstatic ก่อนจึงหา URL แบบ hash ได้
+    # ไม่เช่นนั้น migrate/check ก่อน collectstatic จะล้มบนเครื่องที่ DEBUG=0
+    return HttpResponseRedirect(static_url("img/pwa-icon-192.png"))
+
+
 urlpatterns = [
-    path(
-        "favicon.ico",
-        RedirectView.as_view(url=static_url("img/pwa-icon-192.png"), permanent=False),
-        name="favicon",
-    ),
+    path("favicon.ico", favicon_redirect, name="favicon"),
     path(
         "manifest.webmanifest",
         TemplateView.as_view(template_name="manifest.webmanifest", content_type="application/manifest+json"),

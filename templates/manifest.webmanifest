@@ -3,7 +3,7 @@
   "short_name": "SIGROOM",
   "description": "ระบบจองและบริหารการใช้ห้อง โรงเรียนทหารสื่อสาร",
   "lang": "th",
-  "start_url": "/",
+  "start_url": "/home/",
   "scope": "/",
   "display": "standalone",
   "background_color": "#0b1117",

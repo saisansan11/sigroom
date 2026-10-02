@@ -7,7 +7,10 @@ from .lodging_operations import lodging_workspace, general_request
 app_name = "bookings"
 
 urlpatterns = [
-    path("", views.calendar_view, name="calendar"),
+    # หน้าแรกจริงอยู่ที่ /home/ (Firebase เสิร์ฟ splash ที่ "/" ระหว่าง Cloud Run cold start)
+    # "/" ยังเรียก view เดียวกันได้โดยไม่ redirect เพื่อให้เครื่อง LAN ใช้ที่อยู่เดิมได้
+    path("home/", views.calendar_view, name="calendar"),
+    path("", views.calendar_view, name="calendar_root"),
     path("about/", views.about_view, name="about"),
     path("api/calendar/events/", views.calendar_events, name="calendar_events"),
     path("book/", views.book_search, name="book_search"),

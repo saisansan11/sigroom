@@ -12,11 +12,12 @@
   <link rel="manifest" href="{% url 'webmanifest' %}">
   <link rel="icon" type="image/png" href="{% static 'img/pwa-icon-192.png' %}">
   <link rel="apple-touch-icon" sizes="192x192" href="{% static 'img/pwa-icon-192.png' %}">
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="{% static 'fonts/ibm-plex-sans-thai-400-thai.woff2' %}">
   <link rel="stylesheet" href="{% static 'vendor/pico/pico.min.css' %}">
   <link rel="stylesheet" href="{% static 'css/fonts.css' %}">
   <link rel="stylesheet" href="{% static 'css/app.css' %}">
   {% block head %}{% endblock %}
-  {% if request.path|slice:":9" == "/lodging/" or request.GET.next|slice:":9" == "/lodging/" %}<link rel="stylesheet" href="{% static 'css/lodging_theme.css' %}?v=1">{% endif %}
+  {% if request.path|slice:":9" == "/lodging/" or request.GET.next|slice:":9" == "/lodging/" %}<link rel="stylesheet" href="{% static 'css/lodging_theme.css' %}">{% endif %}
 </head>
 <body class="{% block body_class %}{% endblock %}">
   <a class="skip-link" href="#main-content">ข้ามไปเนื้อหาหลัก</a>
@@ -26,7 +27,7 @@
       {% if user.is_authenticated %}
         <nav class="desktop-nav" aria-label="เมนูหลัก">
           <ul class="main-nav">
-            <li><a {% if request.resolver_match.url_name == 'calendar' %}aria-current="page"{% endif %} href="{% url 'bookings:calendar' %}">หน้าแรก</a></li>
+            <li><a {% if request.resolver_match.url_name == 'calendar' or request.resolver_match.url_name == 'calendar_root' %}aria-current="page"{% endif %} href="{% url 'bookings:calendar' %}">หน้าแรก</a></li>
             <li><a {% if request.resolver_match.url_name == 'book_search' or request.resolver_match.url_name == 'book_form' %}aria-current="page"{% endif %} href="{% url 'bookings:book_search' %}">จองห้องเรียน</a></li>
             {% if nav_can_book_online %}<li><a {% if request.resolver_match.url_name == 'online_teaching_home' or request.resolver_match.url_name == 'online_teaching_book' %}aria-current="page"{% endif %} href="{% url 'bookings:online_teaching_home' %}">ห้องสอนออนไลน์</a></li>{% endif %}
             <li><a {% if request.resolver_match.url_name == 'my_bookings' %}aria-current="page"{% endif %} href="{% url 'bookings:my_bookings' %}">การจองของฉัน</a></li>
@@ -78,7 +79,7 @@
             <div class="mobile-menu-panel">
               <nav aria-label="เมนูหลักสำหรับมือถือ">
                 <ul class="main-nav">
-                  <li><a {% if request.resolver_match.url_name == 'calendar' %}aria-current="page"{% endif %} href="{% url 'bookings:calendar' %}">หน้าแรก</a></li>
+                  <li><a {% if request.resolver_match.url_name == 'calendar' or request.resolver_match.url_name == 'calendar_root' %}aria-current="page"{% endif %} href="{% url 'bookings:calendar' %}">หน้าแรก</a></li>
                   <li><a {% if request.resolver_match.url_name == 'book_search' or request.resolver_match.url_name == 'book_form' %}aria-current="page"{% endif %} href="{% url 'bookings:book_search' %}">จองห้องเรียน</a></li>
                   <li><a {% if request.resolver_match.url_name == 'my_bookings' %}aria-current="page"{% endif %} href="{% url 'bookings:my_bookings' %}">การจองของฉัน</a></li>
                   <li><a {% if request.resolver_match.url_name == 'lodging_index' %}aria-current="page"{% endif %} href="{% url 'bookings:lodging_index' %}">จองห้องพัก</a></li>
@@ -116,7 +117,7 @@
       {% else %}
         <nav class="desktop-nav" aria-label="เมนูหลัก">
           <ul class="main-nav">
-            <li><a {% if request.resolver_match.url_name == 'calendar' %}aria-current="page"{% endif %} href="{% url 'bookings:calendar' %}">สถานะห้องวันนี้</a></li>
+            <li><a {% if request.resolver_match.url_name == 'calendar' or request.resolver_match.url_name == 'calendar_root' %}aria-current="page"{% endif %} href="{% url 'bookings:calendar' %}">สถานะห้องวันนี้</a></li>
             <li><a {% if request.resolver_match.url_name == 'lodging_index' or 'lodging' in request.path %}aria-current="page"{% endif %} href="{% url 'bookings:lodging_index' %}">จองห้องพัก</a></li>
             <li><a {% if request.resolver_match.url_name == 'about' %}aria-current="page"{% endif %} href="{% url 'bookings:about' %}">รู้จัก SIGROOM</a></li>
           </ul>
@@ -128,7 +129,7 @@
             <div class="mobile-menu-panel">
               <nav aria-label="เมนูหลักสำหรับมือถือ">
                 <ul class="main-nav">
-                  <li><a {% if request.resolver_match.url_name == 'calendar' %}aria-current="page"{% endif %} href="{% url 'bookings:calendar' %}">สถานะห้องวันนี้</a></li>
+                  <li><a {% if request.resolver_match.url_name == 'calendar' or request.resolver_match.url_name == 'calendar_root' %}aria-current="page"{% endif %} href="{% url 'bookings:calendar' %}">สถานะห้องวันนี้</a></li>
                   <li><a {% if request.resolver_match.url_name == 'lodging_index' or 'lodging' in request.path %}aria-current="page"{% endif %} href="{% url 'bookings:lodging_index' %}">จองห้องพัก</a></li>
                   <li><a {% if request.resolver_match.url_name == 'about' %}aria-current="page"{% endif %} href="{% url 'bookings:about' %}">รู้จัก SIGROOM</a></li>
                 </ul>

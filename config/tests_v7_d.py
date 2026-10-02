@@ -16,7 +16,7 @@ def test_manifest_is_public_and_installable(client):
     manifest = json.loads(response.content)
     assert manifest["name"].startswith("SIGROOM")
     assert manifest["short_name"] == "SIGROOM"
-    assert manifest["start_url"] == "/"
+    assert manifest["start_url"] == "/home/"
     assert manifest["display"] == "standalone"
     assert manifest["background_color"] == "#0b1117"
     assert manifest["theme_color"] == "#0b1117"
