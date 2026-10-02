@@ -225,7 +225,7 @@ test('service gateway responsive matrix has no page overflow, 16px body text, an
 
     const metrics = await page.evaluate(() => {
       const bodySize = parseFloat(getComputedStyle(document.querySelector('.lka-page-wrap')).fontSize);
-      const targets = [...document.querySelectorAll('.lka-service-cta, .lka-service-primary, .lka-online-room-card > a')];
+      const targets = [...document.querySelectorAll('.lka-service-cta, .lka-service-primary, a.lka-r3g-service, .lka-online-room-card > a')];
       const smallTargets = targets.filter(el => el.getBoundingClientRect().height < 48).map(el => ({
         text: el.textContent.trim().replace(/\s+/g, ' ').slice(0, 60),
         height: el.getBoundingClientRect().height,
@@ -240,11 +240,14 @@ test('service gateway responsive matrix has no page overflow, 16px body text, an
     expect(metrics.bodySize, `body text below 16px at ${width}px`).toBeGreaterThanOrEqual(16);
     expect(metrics.smallTargets, `touch target below 48px at ${width}px`).toEqual([]);
 
-    const lodging = page.locator('.lka-service-card--lodging .lka-service-primary');
-    const online = page.locator('.lka-service-card--online .lka-service-primary');
-    await expect(lodging).toBeVisible();
-    await expect(online).toBeVisible();
-    await expect(page.locator('.lka-service-card--learning')).toContainText('กำลังพัฒนาระบบ');
+    const activeServices = page.locator('.lka-r3g-service-grid > a.lka-r3g-service');
+    await expect(activeServices).toHaveCount(3);
+    for (let index = 0; index < 3; index += 1) {
+      await expect(activeServices.nth(index)).toBeVisible();
+    }
+    const futureService = page.locator('.lka-r3g-service-grid > .lka-r3g-service--future');
+    await expect(futureService).toBeVisible();
+    await expect(futureService).toHaveAttribute('aria-disabled', 'true');
 
     await page.locator('.lka-rates-disclosure > summary').click();
     if (width <= 768) {
@@ -256,8 +259,15 @@ test('service gateway responsive matrix has no page overflow, 16px body text, an
 });
 
 test('FAQ uses one disclosure indicator and whole summary row is keyboard operable', async ({ page }) => {
+  const faqDisclosure = page.locator('.lka-faq-disclosure');
+  if (!(await faqDisclosure.evaluate(el => el.open))) {
+    await faqDisclosure.locator(':scope > summary').click();
+  }
+  await expect(faqDisclosure).toHaveAttribute('open');
+
   const item = page.locator('.lka-faq-item').first();
   const summary = item.locator('summary');
+  await expect(summary).toBeVisible();
   await expect(summary.locator('.lka-faq-icon')).toHaveCount(0);
   await summary.focus();
   await page.keyboard.press('Enter');
