@@ -55,6 +55,22 @@ body.lodging-about-ledger-r3g main.page-shell {
   letter-spacing: .02em;
 }
 
+.lodging-about-ledger-r3g .lka-g2-logo-plate {
+  display: inline-block;
+  margin-top: .5rem;
+  padding: .7rem 1rem .6rem;
+  background: var(--g2-paper-ink);
+  border: 1px solid #D8CFB8;
+  border-radius: 2px;
+  line-height: 0;
+}
+
+.lodging-about-ledger-r3g .lka-g2-logo-plate img {
+  display: block;
+  width: min(15rem, 62vw);
+  height: auto;
+}
+
 .lodging-about-ledger-r3g .lka-g2-lede {
   margin: .7rem 0 0;
   color: var(--g2-paper-ink) !important;
@@ -317,6 +333,8 @@ body.lodging-about-ledger-r3g main.page-shell {
   }
   .lodging-about-ledger-r3g .lka-g2-kicker { font-size: .8rem; margin-bottom: .35rem; }
   .lodging-about-ledger-r3g .lka-page-wrap .lka-g2-title { font-size: 2.35rem; }
+  .lodging-about-ledger-r3g .lka-g2-logo-plate { padding: .45rem .7rem .4rem; }
+  .lodging-about-ledger-r3g .lka-g2-logo-plate img { width: 9.5rem; }
   .lodging-about-ledger-r3g .lka-g2-lede { margin-top: .35rem; font-size: 1.08rem; }
   .lodging-about-ledger-r3g .lka-g2-sub { margin-top: .3rem; font-size: .9rem; line-height: 1.5; }
   .lodging-about-ledger-r3g .lka-g2-ctas {

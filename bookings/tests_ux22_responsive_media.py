@@ -66,7 +66,7 @@ def test_ux22_photo_picture_source_order_and_original_fallback(client):
 
 def test_ux22_png_diagrams_use_lossless_webp_with_original_fallback(client):
     html = _about_html(client)
-    picture_blocks = _picture_blocks(html)
+    picture_blocks = [b for b in _picture_blocks(html) if "img/brand/" not in b]  # ไม่นับโลโก้แบรนด์
     assert len(picture_blocks) == 11
 
     for filename in PNG_FALLBACKS:
@@ -151,7 +151,7 @@ def test_ux22_hero_fallback_attributes_retained(client):
 
 def test_ux22_below_fold_lazy_discipline(client):
     html = _about_html(client)
-    img_tags = re.findall(r'<img\b[^>]+>', html)
+    img_tags = [t for t in re.findall(r'<img\b[^>]+>', html) if "img/brand/" not in t]  # ไม่นับโลโก้แบรนด์
     assert len(img_tags) == 11
     eager_tags = [tag for tag in img_tags if 'loading="eager"' in tag]
     assert len(eager_tags) == 1

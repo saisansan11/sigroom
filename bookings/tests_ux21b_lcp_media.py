@@ -68,7 +68,7 @@ def test_ux21b_image_dimensions_and_decoding_contract(client):
     page_wrap_match = re.search(r'<div class="lka-page-wrap">(.*?)</div>\s*\{% endblock %\}', html, re.DOTALL)
     content_to_scan = page_wrap_match.group(1) if page_wrap_match else html
 
-    img_tags = re.findall(r'<img\s+[^>]+>', content_to_scan)
+    img_tags = [t for t in re.findall(r'<img\s+[^>]+>', content_to_scan) if "img/brand/" not in t]  # ไม่นับโลโก้แบรนด์
     assert len(img_tags) == 11, f"Expected 11 showcase images in lodging_about, found {len(img_tags)}"
 
     for tag in img_tags:
