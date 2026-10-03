@@ -21,8 +21,18 @@ def test_home_ok_for_anonymous_and_logged_in(client):
     assert client.get("/home/").status_code == 200
 
 
-def test_root_still_serves_home_without_redirect(client):
-    assert client.get("/").status_code == 200
+def test_root_redirects_to_gateway():
+    # A1 makes the Service Gateway the canonical entry point; /home/ remains the status dashboard.
+    from django.urls import resolve
+
+    match = resolve("/")
+    assert match.url_name == "calendar_root"
+
+
+def test_root_redirect_response_targets_gateway(client):
+    response = client.get("/")
+    assert response.status_code == 302
+    assert response.url == "/lodging/about/"
 
 
 def test_fullcalendar_scripts_are_deferred(client):

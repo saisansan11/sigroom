@@ -116,6 +116,16 @@ class GeneralRequestForm(forms.Form):
         raw_check_in = source.get("check_in") or initial.get("check_in")
         raw_check_out = source.get("check_out") or initial.get("check_out")
         raw_attendees = source.get("attendees") or initial.get("attendees") or 1
+
+        # Preserve the historical form contract for registry/admin callers that
+        # instantiate the form only to inspect the public lodging inventory.
+        # The public request view always supplies dates, so the task-first flow
+        # still filters rooms by the requested stay before presenting choices.
+        if not raw_check_in or not raw_check_out:
+            self.fields["room"].queryset = public_lodging_rooms()
+            self.fields["room"].attendees = 1
+            return
+
         try:
             check_in = forms.DateField().clean(raw_check_in)
             check_out = forms.DateField().clean(raw_check_out)
