@@ -125,7 +125,7 @@ def lodging_general_request_status(request, token):
     response = render(
         request,
         "lodging/general_request_status.html",
-        {"access": access, "booking": booking, "booking_ref": booking_ref(booking).upper()},
+        {"access": access, "booking": booking, "booking_ref": booking_ref(booking)},
     )
     response["Cache-Control"] = "private, no-store, must-revalidate"
     response["X-Robots-Tag"] = "noindex, nofollow"
