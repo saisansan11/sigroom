@@ -5,7 +5,7 @@
 {% block title %}จอง {{ room.name }} · SIGROOM{% endblock %}
 {% block head %}
 <link rel="stylesheet" href="{% static 'css/online_teaching.css' %}">
-<link rel="stylesheet" href="{% static 'css/online_teaching_r3l.css' %}?v=1">
+<link rel="stylesheet" href="{% static 'css/online_teaching_r3l.css' %}?v=3">
 {% endblock %}
 {% block content %}
 <div class="online-teaching-shell">
@@ -13,7 +13,7 @@
     <div>
       <p class="eyebrow">สำหรับครูผู้สอน</p>
       <h1>{{ room.name }}</h1>
-      <p>{{ room.building }}{% if room.floor %} · ชั้น {{ room.floor }}{% endif %} · รองรับ {{ room.capacity }} คน</p>
+      <p>{{ room.building }}{% if room.floor %} · ชั้น {{ room.floor }}{% endif %}</p>
     </div>
     <a role="button" class="secondary" href="{% url 'bookings:online_teaching_home' %}">เลือกห้องอื่น</a>
   </div>

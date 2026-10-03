@@ -21,7 +21,7 @@
               <span>{{ room.name }}</span>
               {% if forloop.first %}<small>แนะนำ</small>{% endif %}
             </div>
-            <p>{{ room.building }}{% if room.floor %} · ชั้น {{ room.floor }}{% endif %} · รองรับ {{ room.capacity }} คน · ว่างช่วงนี้</p>
+            <p>{{ room.building }}{% if room.floor %} · ชั้น {{ room.floor }}{% endif %} · ว่างช่วงนี้</p>
           </div>
           {% if profile_complete %}
             <form method="post" action="{% url 'bookings:online_teaching_quick_book' %}" class="online-quick-book-form">

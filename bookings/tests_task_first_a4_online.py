@@ -305,3 +305,60 @@ def test_task_first_journey_gateway_online_quick_confirm(client, a4_setup):
     assert confirmed.status_code == 302
     assert confirmed.url == reverse("bookings:my_bookings")
     assert Booking.objects.filter(room=room, requester=a4_setup["teacher"]).count() == 1
+
+
+def test_filter_is_one_tap_chips_without_typing_or_apply_buttons(client, a4_setup):
+    client.force_login(a4_setup["teacher"])
+    html = client.get(reverse("bookings:online_teaching_home")).content.decode()
+    assert 'name="start" value="07:00"' in html
+    assert 'name="start" value="17:30"' in html
+    assert 'name="start" value="18:00"' not in html
+    assert 'hx-trigger="change"' in html
+    assert "ใช้วันที่นี้" not in html
+    assert "ใช้เวลานี้" not in html
+    assert 'id="online-custom-date"' not in html
+    assert "รองรับ" not in html
+
+
+def test_calendar_offers_only_bookable_days_and_marks_selected_day(client, a4_setup):
+    today = timezone.localdate()
+    far_day = today + timedelta(days=20)
+    client.force_login(a4_setup["teacher"])
+    response = client.get(
+        reverse("bookings:online_teaching_home"),
+        {"day": far_day.isoformat(), "start": "09:00", "dur": "60"},
+    )
+    calendar = response.context["calendar"]
+    days = [day for week in calendar["weeks"] for day in week]
+    assert str(far_day.year + 543) in calendar["title"]
+    assert [day["value"] for day in days if day["selected"]] == [far_day.isoformat()]
+    assert all(day["date"] >= today for day in days if day["enabled"])
+    assert response.context["calendar_open"] is True
+    assert f'name="day" value="{far_day.isoformat()}" checked' in response.content.decode()
+
+
+def test_htmx_swaps_only_results_or_only_calendar(client, a4_setup):
+    client.force_login(a4_setup["teacher"])
+    url = reverse("bookings:online_teaching_home")
+    results = client.get(url, {"start": "09:00", "dur": "60"}, HTTP_HX_REQUEST="true", HTTP_HX_TARGET="online-results")
+    assert results.content.decode().lstrip().startswith('<div id="online-results"')
+    next_month = (timezone.localdate().replace(day=1) + timedelta(days=31)).replace(day=1)
+    calendar = client.get(
+        url,
+        {"cal": f"{next_month.year:04d}-{next_month.month:02d}"},
+        HTTP_HX_REQUEST="true",
+        HTTP_HX_TARGET="online-calendar",
+    )
+    html = calendar.content.decode()
+    assert html.lstrip().startswith('<div id="online-calendar"')
+    assert str(next_month.year + 543) in html
+    assert 'id="online-results"' not in html
+
+
+def test_teacher_lands_on_online_booking_after_login_but_superuser_keeps_gateway(client, a4_setup):
+    client.force_login(a4_setup["teacher"])
+    assert client.get(reverse("bookings:role_home")).url == reverse("bookings:online_teaching_home")
+
+    admin = User.objects.create_superuser(username="a4-admin", email="a4-admin@signalschool.ac.th", password="Password-2569")
+    client.force_login(admin)
+    assert client.get(reverse("bookings:role_home")).url == reverse("bookings:lodging_about")
