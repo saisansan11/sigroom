@@ -20,6 +20,8 @@ from django.utils import timezone
 from audit.services import audit
 from resources.models import Resource
 
+from .lodging_about_data import FLOOR4_LODGING_ROOMS, FLOOR5_LODGING_ROOMS, TOTAL_ROOMS
+
 from .lodging_models import (
     CourseLodgingAccess,
     CourseLodgingCohort,
@@ -452,8 +454,107 @@ def set_cohort_self_booking(*, cohort: CourseLodgingCohort, actor, enabled: bool
     )
 
 
+
+def public_lodging_rooms():
+    """Public lodging inventory, preferring the complete authoritative 401–530 registry."""
+    base = Resource.objects.filter(
+        resource_type=Resource.Type.ROOM,
+        room_category=Resource.Category.LODGING,
+        status=Resource.Status.ACTIVE,
+    )
+    plan_numbers = FLOOR4_LODGING_ROOMS + FLOOR5_LODGING_ROOMS
+    plan_codes = [code for number in plan_numbers for code in (str(number), f"DORM-{number}")]
+    authoritative = base.filter(code__in=plan_codes)
+    existing_codes = set(authoritative.values_list("code", flat=True))
+    complete_inventory = (
+        len(existing_codes) == TOTAL_ROOMS
+        and all(
+            sum(alias in existing_codes for alias in (str(number), f"DORM-{number}")) == 1
+            for number in plan_numbers
+        )
+    )
+    if complete_inventory:
+        return authoritative.order_by("floor", "code")
+    return base.order_by("code")
+
+
+def available_public_lodging_rooms(*, check_in: date, check_out: date, attendees: int) -> list[Resource]:
+    """Return public lodging rooms free for the whole 14:00→12:00 stay.
+
+    Availability mirrors the database hold rule (including room buffers), course
+    allocations, blackouts and outages. Capacity is advisory: undersized rooms stay
+    selectable but sort last, matching the existing Booking capacity-warning policy.
+    """
+    try:
+        attendees = int(attendees)
+    except (TypeError, ValueError):
+        return []
+    if attendees < 1 or not check_in or not check_out or check_out <= check_in:
+        return []
+
+    from resources.services import active_blackouts, active_outages
+    from .services import compute_hold
+
+    zone = timezone.get_current_timezone()
+    start_at = timezone.make_aware(datetime.combine(check_in, time(14)), zone)
+    end_at = timezone.make_aware(datetime.combine(check_out, time(12)), zone)
+    available = []
+    for room in public_lodging_rooms().select_related("rule"):
+        if cohort_conflict_for_resource(room, start_at, end_at):
+            continue
+        hold = compute_hold(room, start_at, end_at)
+        if BookingResource.objects.filter(
+            resource=room,
+            released_at__isnull=True,
+            hold__overlap=hold,
+        ).exists():
+            continue
+        if active_blackouts(room, start_at, end_at) or active_outages(room, start_at, end_at):
+            continue
+        available.append(room)
+
+    def capacity_key(room):
+        capacity = int(room.capacity or 0)
+        if capacity >= attendees and capacity > 0:
+            return (0, capacity - attendees, room.code)
+        if capacity == 0:
+            return (1, 0, room.code)
+        return (2, attendees - capacity, room.code)
+
+    return sorted(available, key=capacity_key)
+
+
+def nearby_public_lodging_dates(*, check_in: date, check_out: date, attendees: int, limit: int = 3) -> list[dict]:
+    """Nearest alternative stay dates within ±7 days that have at least one room."""
+    if not check_in or not check_out or check_out <= check_in or limit < 1:
+        return []
+    nights = (check_out - check_in).days
+    today = timezone.localdate()
+    results = []
+    for distance in range(1, 8):
+        for offset in (distance, -distance):
+            candidate_in = check_in + timedelta(days=offset)
+            candidate_out = candidate_in + timedelta(days=nights)
+            if candidate_in < today:
+                continue
+            rooms = available_public_lodging_rooms(
+                check_in=candidate_in,
+                check_out=candidate_out,
+                attendees=attendees,
+            )
+            if rooms:
+                results.append({
+                    "check_in": candidate_in,
+                    "check_out": candidate_out,
+                    "available_count": len(rooms),
+                })
+                if len(results) >= limit:
+                    return results
+    return results
+
+
 def request_general_lodging(
-    *, actor=None, room, check_in, check_out, phone, note="", guest_name="", client_key=""
+    *, actor=None, room, check_in, check_out, attendees=1, phone, note="", guest_name="", client_key=""
 ):
     """Create an idempotent general/public lodging request on Booking Core."""
     from .models import Booking
@@ -470,6 +571,12 @@ def request_general_lodging(
         if not responsible_name:
             raise ValidationError("กรุณาระบุชื่อผู้เข้าพัก")
         requester = _public_lodging_principal()
+    try:
+        attendees = int(attendees)
+    except (TypeError, ValueError) as exc:
+        raise ValidationError("จำนวนผู้พักต้องเป็นตัวเลขตั้งแต่ 1 ขึ้นไป") from exc
+    if attendees < 1:
+        raise ValidationError("จำนวนผู้พักต้องเป็นตัวเลขตั้งแต่ 1 ขึ้นไป")
     phone = normalize_phone(phone)
     if not phone:
         raise ValidationError("กรุณาระบุเบอร์โทรศัพท์ที่ถูกต้อง")
@@ -515,6 +622,7 @@ def request_general_lodging(
             room=room, requester=requester, unit=requester.unit,
             title="คำขอเข้าพักทั่วไป", purpose=Booking.Purpose.OTHER,
             responsible_name=responsible_name, responsible_phone=phone,
+            attendees=attendees,
             start_at=start_at, end_at=end_at,
             visibility=Booking.Visibility.RESTRICTED, note=note,
         )

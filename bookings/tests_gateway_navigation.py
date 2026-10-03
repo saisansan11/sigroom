@@ -15,7 +15,7 @@ def test_guest_brand_and_gateway_navigation_point_to_service_gateway(client):
 
     gateway = reverse("bookings:lodging_about")
     calendar = reverse("bookings:calendar")
-    lodging = reverse("bookings:lodging_index")
+    lodging = reverse("bookings:lodging_start")
 
     assert f'class="brand" href="{gateway}"' in header
     assert f'href="{gateway}">หน้าแรก</a>' in header

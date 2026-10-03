@@ -402,7 +402,8 @@ def test_lodging_index_and_supervisor_isolation(client, lodging_data):
     )
     other_cohort.save()
     public = client.get(reverse("bookings:lodging_index"))
-    assert cohort.title in public.content.decode()
+    assert public.status_code == 302
+    assert public.url == reverse("bookings:lodging_portal", args=[cohort.slug])  # A5: single open cohort skips the list
     client.force_login(lodging_data["user"])
     assert client.get(reverse("bookings:lodging_cohort_detail", args=[cohort.slug])).status_code == 200
     assert client.get(reverse("bookings:lodging_cohort_detail", args=[other_cohort.slug])).status_code == 403

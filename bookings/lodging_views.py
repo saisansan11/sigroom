@@ -361,13 +361,21 @@ def lodging_pass(request, slug, student_id):
     return _student_pass_response(request, _student_pass_context(request, cohort, student))
 
 
+def lodging_start(request):
+    """Public split between course lodging and general lodging requests."""
+    return render(request, "lodging/lodging_start.html")
+
+
 def lodging_index(request):
-    """หน้ารวมลิงก์รอบที่พักที่เปิดอยู่ตาม booking window จริง."""
+    """หน้ารวมรอบที่พัก; รอบเดียวข้ามไปเลือกเตียงทันทีสำหรับผู้เรียน."""
     candidates = CourseLodgingCohort.objects.filter(
         allocation_status=CourseLodgingCohort.AllocationStatus.ALLOCATED,
         is_active=True,
     ).prefetch_related("rooms").order_by("check_in_date", "title")
     cohorts = [cohort for cohort in candidates if cohort_self_booking_status(cohort)[0] == "open"]
+    is_manager = can_access_lodging_management(request.user)
+    if len(cohorts) == 1 and not is_manager:
+        return redirect("bookings:lodging_portal", slug=cohorts[0].slug)
     return render(request, "lodging/lodging_index.html", {"cohorts": cohorts})
 
 

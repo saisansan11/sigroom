@@ -11,30 +11,23 @@
 <div class="page-heading">
   <div>
     <p class="eyebrow">ห้องพักบุคคลทั่วไป</p>
-    <h1>ขอเข้าพัก</h1>
-    <p>ไม่ต้องมีบัญชี เลือกห้องและวันเข้าพัก แล้วส่งให้เจ้าหน้าที่พิจารณา</p>
+    <h1>ขอใช้ห้องพัก</h1>
+    <p>เลือกวันเข้า–ออกและจำนวนผู้พักก่อน ระบบจะเสนอห้องที่ว่างตลอดช่วงให้</p>
   </div>
 </div>
 
-<form method="post" class="r3l-request-sheet" novalidate>
+<form method="post" class="r3l-request-sheet" novalidate
+      hx-get="{% url 'bookings:lodging_general_request_rooms' %}"
+      hx-trigger="change from:#id_check_in, change from:#id_check_out, change from:#id_attendees"
+      hx-include="#id_check_in,#id_check_out,#id_attendees,#id_room"
+      hx-target="#public-room-picker" hx-swap="innerHTML">
   {% csrf_token %}
   {% if form.non_field_errors %}
     <div class="notice warning" role="alert">{% for error in form.non_field_errors %}<div>{{ error }}</div>{% endfor %}</div>
   {% endif %}
+
   <div class="r3l-request-grid">
-    <label for="{{ form.guest_name.id_for_label }}">{{ form.guest_name.label }}
-      {{ form.guest_name }}
-      {% for error in form.guest_name.errors %}<small class="r3l-field-error" role="alert">{{ error }}</small>{% endfor %}
-    </label>
-    <label for="{{ form.phone.id_for_label }}">{{ form.phone.label }}
-      {{ form.phone }}
-      {% for error in form.phone.errors %}<small class="r3l-field-error" role="alert">{{ error }}</small>{% endfor %}
-    </label>
-    <label class="r3l-span-2" for="{{ form.room.id_for_label }}">{{ form.room.label }}
-      {{ form.room }}
-      {% for error in form.room.errors %}<small class="r3l-field-error" role="alert">{{ error }}</small>{% endfor %}
-    </label>
-    <label for="{{ form.check_in.id_for_label }}">{{ form.check_in.label }}
+    <label for="{{ form.check_in.id_for_label }}">① {{ form.check_in.label }}
       {{ form.check_in }}
       {% for error in form.check_in.errors %}<small class="r3l-field-error" role="alert">{{ error }}</small>{% endfor %}
     </label>
@@ -42,13 +35,38 @@
       {{ form.check_out }}
       {% for error in form.check_out.errors %}<small class="r3l-field-error" role="alert">{{ error }}</small>{% endfor %}
     </label>
+
+    <div class="r3l-span-2">
+      <label for="{{ form.attendees.id_for_label }}">② {{ form.attendees.label }}</label>
+      <div class="r3l-attendee-stepper">
+        <button type="submit" formmethod="get" formnovalidate name="attendees_delta" value="-1" aria-label="ลดจำนวนผู้พัก 1 คน">−</button>
+        {{ form.attendees }}
+        <button type="submit" formmethod="get" formnovalidate name="attendees_delta" value="1" aria-label="เพิ่มจำนวนผู้พัก 1 คน">+</button>
+      </div>
+      {% for error in form.attendees.errors %}<small class="r3l-field-error" role="alert">{{ error }}</small>{% endfor %}
+      {% if nights %}<small>{{ nights }} คืน</small>{% endif %}
+      <button type="submit" formmethod="get" formnovalidate class="secondary">ค้นหาห้อง</button>
+    </div>
+
+    <div id="public-room-picker" class="r3l-span-2" data-scroll-on-swap>
+      {% include "lodging/partials/general_request_rooms.html" %}
+    </div>
+
+    <label for="{{ form.guest_name.id_for_label }}">③ {{ form.guest_name.label }}
+      {{ form.guest_name }}
+      {% for error in form.guest_name.errors %}<small class="r3l-field-error" role="alert">{{ error }}</small>{% endfor %}
+    </label>
+    <label for="{{ form.phone.id_for_label }}">{{ form.phone.label }}
+      {{ form.phone }}
+      {% for error in form.phone.errors %}<small class="r3l-field-error" role="alert">{{ error }}</small>{% endfor %}
+    </label>
     <label class="r3l-span-2" for="{{ form.note.id_for_label }}">{{ form.note.label }}
       {{ form.note }}
       {% for error in form.note.errors %}<small class="r3l-field-error" role="alert">{{ error }}</small>{% endfor %}
     </label>
   </div>
-  <p class="r3l-request-note">ระบบตรวจห้องว่างและช่วงที่สงวนให้หลักสูตรอีกครั้งตอนส่งคำขอ · วันเสาร์และอาทิตย์เลือกได้</p>
-  <button type="submit" class="r3l-primary-action">ส่งคำขอ</button>
+  <p class="r3l-request-note">ระบบตรวจห้องว่าง ช่วงสงวนหลักสูตร และการจองซ้อนอีกครั้งตอนส่งคำขอ · วันเสาร์และอาทิตย์เลือกได้</p>
+  <button type="submit" class="r3l-primary-action"{% if not available_room_count %} disabled aria-disabled="true"{% endif %}>ส่งคำขอ</button>
 </form>
-<p><a class="r3l-back-link" href="{% url 'bookings:lodging_index' %}">เป็นผู้เรียนหลักสูตร? เลือกหลักสูตรแทน</a></p>
+<p><a class="r3l-back-link" href="{% url 'bookings:lodging_start' %}">กลับไปเลือกประเภทการเข้าพัก</a></p>
 {% endblock %}

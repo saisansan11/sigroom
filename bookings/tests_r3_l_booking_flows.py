@@ -17,13 +17,15 @@ def test_general_lodging_request_is_one_short_public_form(client):
     assert response.status_code == 200
     html = response.content.decode("utf-8")
 
-    assert "ขอเข้าพัก" in html
-    assert "ไม่ต้องมีบัญชี" in html
+    assert "ขอใช้ห้องพัก" in html
+    assert "เลือกวันเข้า–ออกและจำนวนผู้พักก่อน" in html
     assert "วันเสาร์และอาทิตย์เลือกได้" in html
     assert 'class="r3l-request-sheet"' in html
-    for field in ("guest_name", "phone", "room", "check_in", "check_out", "note"):
+    for field in ("check_in", "check_out", "attendees", "guest_name", "phone", "note"):
         assert f'name="{field}"' in html
-    assert html.count('type="submit"') == 1
+    assert 'formmethod="get"' in html  # A5: no-JS room refresh and attendee +/- fallback
+    assert 'id="public-room-picker"' in html
+    assert "ช่วงนี้ห้องเต็ม" in html  # no room select is rendered when the inventory is empty
     assert "ส่งคำขอ" in html
 
 

@@ -4,7 +4,7 @@ from django.views.generic import RedirectView
 from . import course_views, lodging_views, views
 from .role_home import role_home
 from .online_teaching import online_teaching_book, online_teaching_home
-from .lodging_operations import lodging_workspace, general_request
+from .lodging_operations import lodging_workspace, general_request, general_request_rooms
 
 app_name = "bookings"
 
@@ -41,6 +41,7 @@ urlpatterns = [
     path("amendments/<uuid:id>/withdraw/", views.amendment_withdraw, name="amendment_withdraw"),
     path("preemptions/<uuid:id>/acknowledge/", views.preemption_acknowledge, name="preemption_acknowledge"),
     # ที่พักหลักสูตร
+    path("lodging/start/", lodging_views.lodging_start, name="lodging_start"),
     path("lodging/", lodging_views.lodging_index, name="lodging_index"),
     path("lodging/rooms/<int:number>/", lodging_views.lodging_room_detail, name="lodging_room_detail"),
     path("lodging/about/", lodging_views.lodging_about, name="lodging_about"),  # UX-17 public showcase
@@ -48,6 +49,7 @@ urlpatterns = [
     path("lodging/manage/", lodging_views.lodging_manage, name="lodging_manage"),
     path("lodging/workspace/", lodging_workspace, name="lodging_workspace"),
     path("lodging/request/", general_request, name="lodging_general_request"),
+    path("lodging/request/rooms/", general_request_rooms, name="lodging_general_request_rooms"),
     path("lodging/request/status/<uuid:token>/", lodging_views.lodging_general_request_status, name="lodging_general_request_status"),
     path("lodging/cohorts/<slug:slug>/", lodging_views.lodging_cohort_detail, name="lodging_cohort_detail"),
     path("lodging/cohorts/<slug:slug>/edit/", lodging_views.lodging_cohort_edit, name="lodging_cohort_edit"),

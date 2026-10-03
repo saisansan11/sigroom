@@ -1,0 +1,25 @@
+{% if room_error %}
+  <div class="notice warning" role="alert">{{ room_error }}</div>
+{% elif available_room_count %}
+  <div class="r3l-room-suggestion">
+    <p><strong>ระบบเลือกห้องให้</strong>{% if suggested_room %} — ห้อง {{ suggested_room.code }} ว่างตลอดช่วงนี้{% endif %}</p>
+    {% if suggested_room and suggested_room.capacity %}<p>รองรับ {{ suggested_room.capacity }} คน{% if form.attendees.value|add:'0' > suggested_room.capacity %} · <strong>จำนวนผู้พักเกินความจุที่ระบุ</strong>{% endif %}</p>{% endif %}
+    <label for="{{ form.room.id_for_label }}">{{ form.room.label }}
+      {{ form.room }}
+      {% for error in form.room.errors %}<small class="r3l-field-error" role="alert">{{ error }}</small>{% endfor %}
+    </label>
+    <small>แสดงเฉพาะรหัสห้อง ความจุ และสถานะว่าง ไม่แสดงข้อมูลผู้เข้าพักรายอื่น</small>
+  </div>
+{% else %}
+  <div class="notice warning" role="status">
+    <p><strong>ช่วงนี้ห้องเต็ม</strong></p>
+    {% if nearby_dates %}
+      <p>ลองวันใกล้เคียง:</p>
+      <div class="r3l-nearby-dates">
+        {% for item in nearby_dates %}
+          <a href="?check_in={{ item.check_in|date:'Y-m-d' }}&check_out={{ item.check_out|date:'Y-m-d' }}&attendees={{ form.attendees.value|default:1 }}">{{ item.check_in|date:'d/m/Y' }} – {{ item.check_out|date:'d/m/Y' }} · ว่าง {{ item.available_count }} ห้อง</a>
+        {% endfor %}
+      </div>
+    {% endif %}
+  </div>
+{% endif %}
