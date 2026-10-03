@@ -23,3 +23,37 @@
     transform: none !important;
   }
 }
+
+/* B2 — แฟ้มบริการบน Gateway */
+.lka-r3g-service-grid .lka-r3g-service {
+  position: relative;
+  overflow: visible;
+  margin-top: 10px;
+  border-radius: 2px;
+  transition: transform 150ms ease;
+}
+.lka-r3g-service-grid .lka-r3g-service::before {
+  content: "";
+  position: absolute;
+  left: -1px;
+  top: -10px;
+  width: 38%;
+  height: 10px;
+  border: 1px solid var(--rule-strong);
+  border-bottom: 0;
+  border-radius: 2px 2px 0 0;
+  background: var(--folder-tab, var(--ink));
+}
+.lka-r3g-service--lodging { --folder-tab: var(--tab-lodging); }
+.lka-r3g-service--online { --folder-tab: var(--tab-online); }
+.lka-r3g-service--classroom { --folder-tab: var(--tab-classroom); }
+.lka-r3g-service--meeting { --folder-tab: var(--tab-meeting); }
+.lka-r3g-service-grid a.lka-r3g-service:hover,
+.lka-r3g-service-grid a.lka-r3g-service:focus-visible {
+  transform: translateY(-2px);
+}
+@media (prefers-reduced-motion: reduce) {
+  .lka-r3g-service-grid .lka-r3g-service { transition: none; }
+  .lka-r3g-service-grid a.lka-r3g-service:hover,
+  .lka-r3g-service-grid a.lka-r3g-service:focus-visible { transform: none; }
+}
