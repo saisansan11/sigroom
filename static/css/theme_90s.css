@@ -1,3 +1,5 @@
+/* PR-B B1 — ชั้นตกแต่งสำนักงานไทยยุค 90 บน Theme A
+   ลบไฟล์นี้ออกได้โดยไม่กระทบโครงสร้างหรือกฎธุรกิจของหน้า */
 :root {
   --tab-lodging: #2F6B3A;
   --tab-online: #1F4E79;
@@ -10,86 +12,62 @@
   --hub: #ECE6D6;
 }
 
-/* ชั้นตกแต่งยุค 90: ใช้บนธีม A เดิมเท่านั้น และไม่เปลี่ยน token หลัก */
-.typewriter-num {
-  font-variant-numeric: tabular-nums;
-  letter-spacing: .04em;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .theme-90s-motion {
-    animation: none !important;
-    transition: none !important;
-    transform: none !important;
-  }
-}
-
-/* B2 — แฟ้มบริการบน Gateway */
-.lka-r3g-service-grid .lka-r3g-service {
+/* B2 — การ์ดบริการเหมือนแฟ้มเอกสาร มีข้อความกำกับอยู่แล้วจึงไม่ใช้สีอย่างเดียว */
+.lka-r3g-service {
   position: relative;
-  overflow: visible;
-  margin-top: 10px;
-  border-radius: 2px;
-  transition: transform 150ms ease;
+  transition: transform 160ms ease;
 }
-.lka-r3g-service-grid .lka-r3g-service::before {
+.lka-r3g-service::before {
   content: "";
   position: absolute;
-  left: -1px;
-  top: -10px;
+  left: 0;
+  top: -1px;
   width: 38%;
   height: 10px;
-  border: 1px solid var(--rule-strong);
-  border-bottom: 0;
   border-radius: 2px 2px 0 0;
-  background: var(--folder-tab, var(--ink));
+  background: var(--tab-classroom);
+  pointer-events: none;
 }
-.lka-r3g-service--lodging { --folder-tab: var(--tab-lodging); }
-.lka-r3g-service--online { --folder-tab: var(--tab-online); }
-.lka-r3g-service--classroom { --folder-tab: var(--tab-classroom); }
-.lka-r3g-service--meeting { --folder-tab: var(--tab-meeting); }
-.lka-r3g-service-grid a.lka-r3g-service:hover,
-.lka-r3g-service-grid a.lka-r3g-service:focus-visible {
-  transform: translateY(-2px);
-}
-@media (prefers-reduced-motion: reduce) {
-  .lka-r3g-service-grid .lka-r3g-service { transition: none; }
-  .lka-r3g-service-grid a.lka-r3g-service:hover,
-  .lka-r3g-service-grid a.lka-r3g-service:focus-visible { transform: none; }
-}
+.lka-r3g-service.service--lodging::before { background: var(--tab-lodging); }
+.lka-r3g-service.service--online::before { background: var(--tab-online); }
+.lka-r3g-service.service--classroom::before { background: var(--tab-classroom); }
+.lka-r3g-service.service--meeting::before { background: var(--tab-meeting); }
+.lka-r3g-service:hover,
+.lka-r3g-service:focus-within { transform: translateY(-2px); }
 
-/* B3 — ชิปตัวเลือกแบบแป้นเครื่องคิดเลข */
+/* B3 — ชิปแบบปุ่มกดเครื่องคิดเลขตั้งโต๊ะ */
 .chip > span,
-.chip-group .chip > span,
 .category-chip {
   min-height: 44px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
   border: 1px solid var(--ink);
-  border-bottom: 3px solid var(--rule-strong);
+  border-bottom-width: 3px;
+  border-bottom-color: var(--rule-strong);
   border-radius: 2px;
-  background: var(--paper-raised);
-  color: var(--ink);
-  transition: transform 80ms ease, border-bottom-width 80ms ease, background 80ms ease;
+  transition: transform 90ms ease, border-bottom-width 90ms ease;
+}
+.chip input:checked + span,
+.category-chip[aria-current="true"] {
+  border-bottom-width: 1px;
+  transform: translateY(2px);
 }
 .chip:active > span,
 .category-chip:active {
-  transform: translateY(2px);
   border-bottom-width: 1px;
+  transform: translateY(2px);
 }
-.chip input:checked + span,
-.chip-input:checked + .chip > span,
-.category-chip.is-on {
-  border-color: var(--ink);
-  border-bottom-color: var(--ink);
-  background: var(--ink);
-  color: var(--paper);
+.chip input:focus-visible + span,
+.category-chip:focus-visible {
+  outline: 2px solid var(--link);
+  outline-offset: 2px;
 }
 @media (prefers-reduced-motion: reduce) {
+  .lka-r3g-service,
   .chip > span,
-  .chip-group .chip > span,
   .category-chip { transition: none; }
+  .lka-r3g-service:hover,
+  .lka-r3g-service:focus-within,
+  .chip input:checked + span,
+  .category-chip[aria-current="true"],
   .chip:active > span,
   .category-chip:active { transform: none; }
 }
@@ -130,4 +108,16 @@
 }
 @media (prefers-reduced-motion: reduce) {
   .slip { animation: none; }
+}
+
+/* B5 — เลขอ้างอิงแบบเครื่องพิมพ์ดีด */
+.booking-ref-typewriter {
+  display: inline-block;
+  padding: .08rem .3rem;
+  border: 1px solid var(--rule);
+  background: var(--paper-sunk);
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: .08em;
+  font-weight: 600;
 }
