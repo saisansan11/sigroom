@@ -1,0 +1,138 @@
+<title>เข้าสู่ระบบ SIGROOM ยุค 90</title>
+<!-- mockup เท่านั้น: ของจริงใช้ฟอนต์ self-host ใน static/fonts -->
+<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;600&family=Noto+Serif+Thai:wght@500;600&display=swap" rel="stylesheet">
+<style>
+/* หน้า login เป็น "บัตรตอกเวลา" เสียบในเครื่องตอกบัตรสำนักงานยุค 90 */
+:root{
+  color-scheme:light;
+  --paper:#F5F1E6; --paper-raised:#FBF8F0; --rule:#D8CFB8; --rule-strong:#B9AD8F;
+  --ink:#1F2A24; --ink-muted:#5E5D52; --link:#1F4E79; --stamp:#A3241C;
+  --manila:#EFE3C2; --manila-line:#D9C89A; --clock-ink:#5B3F8C;
+  --machine:#C9C3B2; --machine-hi:#DDD8C9; --slot:#2B2B28; --lcd:#A7B293; --lcd-ink:#1C2419;
+  --font-sans:"Sarabun",Tahoma,"Leelawadee UI",sans-serif;
+  --font-serif:"Noto Serif Thai","Sarabun",Tahoma,serif;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--font-sans);font-size:16px;line-height:1.55}
+.wrap{max-width:440px;margin:0 auto;padding-inline:16px;padding-block:18px 48px}
+.mock-note{font-size:13px;color:var(--ink-muted);border:1px dashed var(--rule);padding:8px 10px;background:var(--paper-raised);margin:0 0 18px}
+
+/* เครื่องตอกบัตร */
+.machine{background:linear-gradient(var(--machine-hi),var(--machine));border:1px solid #9E9784;border-radius:10px 10px 4px 4px;padding:12px 14px 0;
+  box-shadow:0 3px 0 #9E9784}
+.machine-top{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.machine-brand{font-family:var(--font-serif);font-weight:600;letter-spacing:.12em;font-size:15px}
+.machine-brand small{display:block;font-family:var(--font-sans);font-weight:400;letter-spacing:0;font-size:11.5px;color:var(--ink-muted)}
+.clock{background:var(--lcd);color:var(--lcd-ink);border-radius:3px;padding:3px 10px;font-variant-numeric:tabular-nums;font-weight:600;
+  box-shadow:inset 0 2px 0 rgba(0,0,0,.18);text-align:right;line-height:1.2}
+.clock b{font-size:22px;letter-spacing:.06em}
+.clock span{display:block;font-size:11px;font-weight:500}
+.slot{height:12px;background:var(--slot);border-radius:3px 3px 0 0;margin:12px 6% 0;box-shadow:inset 0 3px 0 #000}
+
+/* บัตรตอกเวลา */
+.card{position:relative;background:var(--manila);margin:0 6%;padding:16px 16px 18px;border:1px solid var(--manila-line);border-top:0}
+.card-head{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;border-bottom:2px solid var(--ink);padding-bottom:6px;background:var(--manila)}
+.card-head h1{font-family:var(--font-serif);font-weight:600;font-size:19px;margin:0;line-height:1.3}
+.card-head .no{font-size:12px;color:var(--ink-muted);text-align:right;font-variant-numeric:tabular-nums}
+.punch{position:absolute;right:14px;top:66px;color:var(--clock-ink);font-weight:600;font-variant-numeric:tabular-nums;letter-spacing:.08em;font-size:13px;
+  transform:rotate(-3deg);opacity:.85;border:1.5px solid var(--clock-ink);padding:0 6px}
+form{display:grid;gap:4px;margin-top:14px}
+label{font-size:14px;color:var(--ink-muted);margin-top:8px}
+input[type=text],input[type=password]{font:inherit;font-size:17px;border:0;border-bottom:1.5px solid var(--ink);background:transparent;padding:6px 2px;border-radius:0;color:var(--ink)}
+input:focus{outline:none;border-bottom-width:3px;background:rgba(251,248,240,.6)}
+.hint{font-size:12.5px;color:var(--ink-muted);margin:2px 0 0}
+.submit{margin-top:18px;font:inherit;font-weight:600;font-size:17px;padding:13px;border:0;border-radius:3px;cursor:pointer;
+  background:var(--ink);color:var(--paper-raised);box-shadow:0 4px 0 #0e1411;display:flex;justify-content:center;gap:10px;align-items:center}
+.submit:active{transform:translateY(3px);box-shadow:0 1px 0 #0e1411}
+.submit i{display:inline-block;width:18px;height:10px;border:2px solid currentColor;border-top:0;border-radius:0 0 3px 3px}
+.or{display:flex;align-items:center;gap:10px;color:var(--ink-muted);font-size:13px;margin:16px 0 10px}
+.or::before,.or::after{content:"";flex:1;border-top:1px dashed var(--rule-strong)}
+
+/* ปุ่ม Google ตามแบบมาตรฐานของ Google (ห้ามดัดแปลงให้เป็นยุค 90) */
+.gbtn{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;height:44px;border:1px solid #747775;border-radius:4px;background:#fff;color:#1F1F1F;
+  font-family:Roboto,Arial,sans-serif;font-size:14px;font-weight:500;cursor:pointer;text-decoration:none}
+.gbtn svg{width:18px;height:18px}
+.gnote{font-size:12.5px;color:var(--ink-muted);margin:6px 0 0;text-align:center}
+
+.links{margin-top:16px;font-size:14px;display:flex;justify-content:space-between;flex-wrap:wrap;gap:6px}
+.public{margin-top:26px}
+.public h2{font-family:var(--font-serif);font-weight:600;font-size:16px;margin:0 0 4px;border-bottom:2px solid var(--ink);padding-bottom:3px}
+.public ul{list-style:none;margin:0;padding:0}
+.public li{border-bottom:1px solid var(--rule);padding:8px 0;font-size:15px}
+.err{display:none;margin-top:10px;background:#F5E1DC;border-left:3px solid var(--stamp);padding:8px 10px;font-size:14px}
+.sim{margin-top:22px;border:1px dashed var(--rule);background:var(--paper-raised);padding:10px 12px;font-size:14px;display:grid;gap:6px}
+.sim label{display:flex;gap:8px;align-items:center;color:var(--ink);margin:0}
+:focus-visible{outline:3px solid var(--link);outline-offset:2px}
+[hidden]{display:none!important}
+@media (prefers-reduced-motion: reduce){.submit:active{transform:none}}
+</style>
+
+<div class="wrap">
+  <p class="mock-note">ตัวอย่างหน้าเข้าสู่ระบบ (mockup) ไม่ได้เชื่อมระบบจริง</p>
+
+  <div class="machine" aria-hidden="true">
+    <div class="machine-top">
+      <div class="machine-brand">SIGROOM<small>ระบบจองห้อง รร.ส.สส.</small></div>
+      <div class="clock"><b id="clockT">08:12</b><span id="clockD">ส. ๓ ต.ค. ๒๕๖๙</span></div>
+    </div>
+    <div class="slot"></div>
+  </div>
+
+  <section class="card" aria-labelledby="h">
+    <div class="card-head">
+      <h1 id="h">บัตรลงเวลาเข้าระบบ</h1>
+      <div class="no">แผ่นที่ ๑<br>ใช้ได้ทุกวัน</div>
+    </div>
+    <span class="punch" aria-hidden="true" id="punch">เข้า 08:12</span>
+
+    <form id="f" novalidate>
+      <label for="id_username">ชื่อผู้ใช้ หรืออีเมลหน่วย</label>
+      <input type="text" id="id_username" autocomplete="username" autocapitalize="none" spellcheck="false" placeholder="เช่น somchai หรืออีเมลหน่วย">
+      <label for="id_password">รหัสผ่าน</label>
+      <input type="password" id="id_password" autocomplete="current-password">
+      <div class="err" id="err" role="alert">ชื่อผู้ใช้/อีเมล หรือรหัสผ่านไม่ถูกต้อง</div>
+      <button class="submit" type="submit"><i aria-hidden="true"></i>ตอกบัตรเข้าระบบ</button>
+    </form>
+
+    <div id="gArea">
+      <div class="or">หรือ</div>
+      <a class="gbtn" href="#" onclick="return false">
+        <svg viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
+        เข้าสู่ระบบด้วย Google
+      </a>
+      <p class="gnote">ใช้ได้เฉพาะบัญชี @signalschool.ac.th ที่ลงทะเบียนในระบบแล้ว</p>
+    </div>
+
+    <div class="links"><a href="#">ลืมรหัสผ่าน?</a><a href="#">วิธีใช้งาน</a></div>
+  </section>
+
+  <section class="public">
+    <h2>ไม่ต้องเข้าสู่ระบบ</h2>
+    <ul>
+      <li><a href="#">จองห้องพัก (นักเรียนหลักสูตร / บุคคลทั่วไป)</a></li>
+      <li><a href="#">ดูสถานะห้องวันนี้</a></li>
+    </ul>
+  </section>
+
+  <div class="sim" aria-label="ตัวควบคุมจำลอง (เฉพาะ mockup)">
+    <strong>จำลอง (เฉพาะ mockup)</strong>
+    <label><input type="checkbox" id="simG" checked> ตั้งค่า Google แล้ว (แสดงปุ่ม Google)</label>
+    <label><input type="checkbox" id="simErr"> แสดงข้อความรหัสผิด</label>
+  </div>
+</div>
+
+<script>
+(function(){
+  try{
+    const now=new Date(), tz='Asia/Bangkok';
+    const hm=new Intl.DateTimeFormat('th-TH',{timeZone:tz,hour:'2-digit',minute:'2-digit',hour12:false}).format(now);
+    const d=new Intl.DateTimeFormat('th-TH-u-nu-thai',{timeZone:tz,weekday:'short',day:'numeric',month:'short',year:'numeric'}).format(now);
+    document.getElementById('clockT').textContent=hm;
+    document.getElementById('clockD').textContent=d.replace('พ.ศ. ','');
+    document.getElementById('punch').textContent='เข้า '+hm;
+  }catch(e){}
+  document.getElementById('simG').addEventListener('change',e=>{document.getElementById('gArea').hidden=!e.target.checked;});
+  document.getElementById('simErr').addEventListener('change',e=>{document.getElementById('err').style.display=e.target.checked?'block':'none';});
+  document.getElementById('f').addEventListener('submit',e=>e.preventDefault());
+})();
+</script>
