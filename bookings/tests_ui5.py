@@ -157,6 +157,7 @@ def test_image_performance_attributes_in_templates():
             # Only the primary above-the-fold hero image ('lka-hero-main-img') is permitted
             # to be eager, and MUST have BOTH loading="eager" and fetchpriority="high".
             is_lcp_hero = "lka-hero-main-img" in img
+            is_checkin_qr = html_file.name == "student_pass.html" and "lodging_checkin_qr_svg" in img
             if "img/brand/" in img:
                 # โลโก้แบรนด์อยู่เหนือรอยพับ (หัวเว็บ/แผ่นเข้าสู่ระบบ): ต้องไม่ lazy แต่ต้องมีขนาดชัดเจนกัน layout shift
                 assert 'loading="lazy"' not in img and 'loading="eager"' not in img
@@ -165,6 +166,11 @@ def test_image_performance_attributes_in_templates():
                 assert 'loading="eager"' in img, f"LCP hero must have loading='eager' in {html_file.name}: {img}"
                 assert 'fetchpriority="high"' in img, f"LCP hero must have fetchpriority='high' in {html_file.name}: {img}"
                 assert 'loading="lazy"' not in img, f"LCP hero must not have loading='lazy' in {html_file.name}: {img}"
+            elif is_checkin_qr:
+                # B6: QR is immediately needed after flipping the pass, so both pass/dialog copies are eager.
+                assert 'loading="eager"' in img, f"Check-in QR must be eager in {html_file.name}: {img}"
+                assert 'loading="lazy"' not in img
+                assert 'fetchpriority="high"' not in img
             else:
                 # All other images across templates MUST remain loading="lazy" and NOT eager
                 assert 'loading="lazy"' in img, f"Missing loading='lazy' in {html_file.name}: {img}"
