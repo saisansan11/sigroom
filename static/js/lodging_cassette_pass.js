@@ -37,6 +37,8 @@
   var rotateY = 0;
   var pointerState = null;
   var ignoreSyntheticClick = false;
+  var inViewport = !("IntersectionObserver" in window);
+  var qrOpen = false;
 
   function clamp(value, min, max) {
     return Math.max(min, Math.min(max, value));
@@ -60,10 +62,12 @@
   function applyCassetteTransform() {
     var baseY = flipped ? 180 : 0;
     cassette.style.transform = "rotateX(" + rotateX.toFixed(2) + "deg) rotateY(" + (baseY + rotateY).toFixed(2) + "deg)";
+    card.style.setProperty("--light-x", (30 + rotateY * .65).toFixed(2) + "%");
+    card.style.setProperty("--shadow-x", (rotateY * -.15).toFixed(2) + "px");
   }
 
   function shouldAnimate() {
-    return !reducedMotion && !flipped && !document.hidden;
+    return !reducedMotion && !flipped && !qrOpen && inViewport && !document.hidden;
   }
 
   function stopLoop() {
@@ -137,6 +141,7 @@
   }
 
   function pointerDown(event) {
+    if (event.isPrimary === false || event.button !== 0) return;
     pointerState = { x: event.clientX, y: event.clientY, moved: false, pointerId: event.pointerId };
     cassette.classList.add("is-dragging");
     if (card.setPointerCapture) {
@@ -150,14 +155,14 @@
     var dy = event.clientY - pointerState.y;
     if (Math.abs(dx) + Math.abs(dy) > 6) pointerState.moved = true;
     if (flipped || reducedMotion) return;
-    rotateY = clamp(dx * 0.35, -38, 38);
-    rotateX = clamp(-dy * 0.3, -24, 24);
+    rotateY = clamp(dx * 0.25, -26, 26);
+    rotateX = clamp(-dy * 0.2, -16, 16);
     applyCassetteTransform();
   }
 
   function pointerEnd(event) {
     if (!pointerState || pointerState.pointerId !== event.pointerId) return;
-    var wasTap = !pointerState.moved;
+    var wasTap = event.type === "pointerup" && !pointerState.moved;
     pointerState = null;
     cassette.classList.remove("is-dragging");
     rotateX = 0;
@@ -174,6 +179,7 @@
   card.addEventListener("pointermove", pointerMove);
   card.addEventListener("pointerup", pointerEnd);
   card.addEventListener("pointercancel", pointerEnd);
+  card.addEventListener("lostpointercapture", pointerEnd);
   card.addEventListener("click", function (event) {
     if (ignoreSyntheticClick) return;
     if (event.detail === 0) toggleFlip();
@@ -193,8 +199,14 @@
     qrOpenButton.addEventListener("click", function () {
       if (typeof qrDialog.showModal === "function") qrDialog.showModal();
       else qrDialog.setAttribute("open", "");
+      qrOpen = true;
+      stopLoop();
     });
-    qrDialog.addEventListener("close", function () { qrOpenButton.focus(); });
+    qrDialog.addEventListener("close", function () {
+      qrOpen = false;
+      qrOpenButton.focus();
+      startLoop();
+    });
   }
   if (qrDialog && qrCloseButton) {
     qrCloseButton.addEventListener("click", function () { qrDialog.close(); });
@@ -236,6 +248,14 @@
     }
   }
   if (motionQuery.addEventListener) motionQuery.addEventListener("change", handleMotionPreference);
+
+  if ("IntersectionObserver" in window) {
+    new IntersectionObserver(function (entries) {
+      inViewport = entries[0].isIntersecting;
+      if (inViewport) startLoop();
+      else stopLoop();
+    }).observe(card);
+  }
 
   syncFlipUi();
   if (reducedMotion) {
