@@ -38,11 +38,11 @@ a{color:var(--stamp)}
 <p class="sub">ระบบจองห้องและที่พัก รร.ส.สส.</p>
 <p class="status" role="status">กำลังเปิดระบบ…</p>
 <p class="hint" id="hint">เซิร์ฟเวอร์กำลังเริ่มทำงาน อาจใช้เวลาสักครู่ (ไม่เกินประมาณ 15 วินาที)</p>
-<noscript><p><a href="/home/">เข้าสู่ระบบ SIGROOM</a></p></noscript>
+<noscript><p><a href="/lodging/about/">เข้าสู่ SIGROOM</a></p></noscript>
 </main>
 <script>
 setTimeout(function(){document.getElementById('hint').className='hint show'},8000);
-requestAnimationFrame(function(){setTimeout(function(){location.replace('/home/'+location.search+location.hash)},0)});
+requestAnimationFrame(function(){setTimeout(function(){location.replace('/lodging/about/'+location.search+location.hash)},0)});
 </script>
 </body>
 </html>

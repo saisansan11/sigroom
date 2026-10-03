@@ -1,4 +1,5 @@
 from django.urls import path
+from django.views.generic import RedirectView
 
 from . import course_views, lodging_views, views
 from .online_teaching import online_teaching_book, online_teaching_home
@@ -7,10 +8,13 @@ from .lodging_operations import lodging_workspace, general_request
 app_name = "bookings"
 
 urlpatterns = [
-    # หน้าแรกจริงอยู่ที่ /home/ (Firebase เสิร์ฟ splash ที่ "/" ระหว่าง Cloud Run cold start)
-    # "/" ยังเรียก view เดียวกันได้โดยไม่ redirect เพื่อให้เครื่อง LAN ใช้ที่อยู่เดิมได้
+    # หน้า Gateway เป็นทางเข้าหลัก ส่วน /home/ เป็นหน้าสถานะห้องเมนูรอง
     path("home/", views.calendar_view, name="calendar"),
-    path("", views.calendar_view, name="calendar_root"),
+    path(
+        "",
+        RedirectView.as_view(pattern_name="bookings:lodging_about", query_string=True, permanent=False),
+        name="calendar_root",
+    ),
     path("about/", views.about_view, name="about"),
     path("api/calendar/events/", views.calendar_events, name="calendar_events"),
     path("book/", views.book_search, name="book_search"),
