@@ -1,8 +1,8 @@
 {% if room_error %}
   <div class="notice warning" role="alert">{{ room_error }}</div>
 {% elif available_room_count %}
-  <div class="r3l-room-suggestion">
-    <p><strong>ระบบเลือกห้องให้</strong>{% if suggested_room %} — ห้อง {{ suggested_room.code }} ว่างตลอดช่วงนี้{% endif %}</p>
+  <div class="r3l-room-suggestion slip">
+    <p><strong>ระบบเลือกห้องให้</strong>{% if suggested_room %} — ห้อง <span class="r3l-room-code">{{ suggested_room.code }}</span> ว่างตลอดช่วงนี้{% endif %}</p>
     {% if suggested_room and suggested_room.capacity %}<p>รองรับ {{ suggested_room.capacity }} คน{% if form.attendees.value|add:'0' > suggested_room.capacity %} · <strong>จำนวนผู้พักเกินความจุที่ระบุ</strong>{% endif %}</p>{% endif %}
     <label for="{{ form.room.id_for_label }}">{{ form.room.label }}
       {{ form.room }}

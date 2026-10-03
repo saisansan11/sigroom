@@ -17,6 +17,7 @@
   <link rel="stylesheet" href="{% static 'vendor/pico/pico.min.css' %}">
   <link rel="stylesheet" href="{% static 'css/fonts.css' %}">
   <link rel="stylesheet" href="{% static 'css/app.css' %}">
+  <link rel="stylesheet" href="{% static 'css/theme_90s.css' %}">
   {% block head %}{% endblock %}
   {% if request.path|slice:":9" == "/lodging/" or request.GET.next|slice:":9" == "/lodging/" %}<link rel="stylesheet" href="{% static 'css/lodging_theme.css' %}">{% endif %}
 </head>

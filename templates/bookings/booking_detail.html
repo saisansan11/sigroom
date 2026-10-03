@@ -4,7 +4,7 @@
 {% block content %}
 <div class="page-heading booking-flow-heading">
   <div>
-    <p class="eyebrow">รายละเอียดการจอง · เลขที่ <span class="tabular">{{ booking_ref }}</span></p>
+    <p class="eyebrow">รายละเอียดการจอง · เลขที่ <span class="tabular booking-ref-typewriter">{{ booking_ref }}</span></p>
     <h1>{{ booking.title }}</h1>
     <p class="heading-desc">{{ booking.room.code }} · {{ booking.room.name }} ({{ booking.room.building }}{% if booking.room.floor %} ชั้น {{ booking.room.floor }}{% endif %})</p>
   </div>
@@ -18,7 +18,7 @@
   </div>
   <div class="booking-result-body">
     <h2 id="booking-result-title">{% if booking.request_status == 'approved' %}อนุมัติแล้ว ห้องเป็นของท่านตามเวลานี้{% else %}ยื่นคำขอแล้ว รอผู้อนุมัติพิจารณา{% endif %}</h2>
-    <p class="booking-result-ref">เลขที่ <b class="tabular">{{ booking_ref }}</b> · {{ booking.room.code }} · {{ booking.start_at|thai_date }} {{ booking.start_at|time:"H:i" }}–{{ booking.end_at|time:"H:i" }} น.</p>
+    <p class="booking-result-ref">เลขที่ <b class="tabular booking-ref-typewriter">{{ booking_ref }}</b> · {{ booking.room.code }} · {{ booking.start_at|thai_date }} {{ booking.start_at|time:"H:i" }}–{{ booking.end_at|time:"H:i" }} น.</p>
     {% if booking.request_status != 'approved' %}<p class="booking-result-note">ระบบจะแจ้งเตือนที่กระดิ่งเมื่อมีผลการพิจารณา ระหว่างนี้ช่วงเวลานี้ถูกกันไว้ให้ท่านแล้ว</p>{% endif %}
     <p class="booking-result-actions"><a href="{% url 'bookings:booking_ics' booking.id %}" download>เพิ่มลงปฏิทิน</a> · <a href="{% url 'bookings:book_search' %}">จองห้องอื่นต่อ</a></p>
   </div>

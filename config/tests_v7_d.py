@@ -84,10 +84,14 @@ def test_splash_embeds_mark_without_external_requests():
 
 
 @pytest.mark.django_db
-def test_login_sheet_shows_stacked_logo(client):
+def test_login_sheet_uses_approved_punch_clock_branding(client):
     content = client.get(reverse("login")).content.decode()
 
-    assert "sigroom-logo-stacked-480.webp" in content
+    assert 'class="login-punch-clock"' in content
+    assert 'aria-hidden="true"' in content
+    assert "SIGROOM" in content
+    assert "ระบบจองห้อง รร.ส.สส." in content
+    assert "ตอกบัตรเข้าระบบ" in content
 
 
 @pytest.mark.django_db

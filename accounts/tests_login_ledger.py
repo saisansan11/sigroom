@@ -20,13 +20,13 @@ def test_login_page_is_plain_form_sheet(client):
     html = response.content.decode()
     assert "เข้าสู่ระบบ SIGROOM" in html
     assert "ระบบจองห้อง รร.ส.สส." in html
-    assert 'class="auth-sheet login-sheet"' in html
+    assert 'class="auth-sheet login-sheet timecard-sheet"' in html
     for leftover in ("arrival-soldier", "arrival-suitcase", "<svg class=\"arrival", "sigroom-login-journey", "lodging_booking_ios27.css"):
         assert leftover not in html
     assert 'id="id_username"' in html and 'id="id_password"' in html
     assert 'href="/accounts/password-reset/"' in html
     assert "ติดต่อผู้ดูแลระบบ" in html
-    assert reverse("bookings:lodging_index") in html  # ทางเข้าที่พักสาธารณะยังอยู่
+    assert reverse("bookings:lodging_start") in html  # B9/A1: ทางเข้าที่พักสาธารณะผ่านตัวเลือกประเภทผู้พัก
     assert "csrfmiddlewaretoken" in html
 
 
@@ -50,5 +50,5 @@ def test_login_error_keeps_username_and_thai_message(client, user):
 def test_auth_pages_share_sheet_layout(client):
     for name in ("accounts:password_reset", "accounts:password_reset_done"):
         html = client.get(reverse(name)).content.decode()
-        assert 'class="auth-sheet"' in html
+        assert 'class="auth-sheet timecard-sheet auth-manila-card"' in html
         assert "auth-card" not in html

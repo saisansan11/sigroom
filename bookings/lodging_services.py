@@ -4,9 +4,11 @@
 (หน้าจัดการ, Django admin และคำสั่ง seed) ใช้ transaction และกติกาชุดเดียวกัน.
 """
 
+from dataclasses import dataclass
 from datetime import date, datetime, time, timedelta
 import hashlib
 import hmac
+import math
 from typing import Sequence
 from urllib.parse import urlencode
 
@@ -32,6 +34,77 @@ from .lodging_models import (
 )
 from .models import BookingResource
 from .phone_utils import normalize_phone  # noqa: F401 (re-exported for bookings.lodging_views)
+
+
+@dataclass(frozen=True)
+class StayProgress:
+    nights_total: int
+    nights_elapsed: int
+    remaining: int
+    fraction: float
+    state: str
+    status_text: str
+
+    @staticmethod
+    def _radius(fraction: float) -> float:
+        min_radius, max_radius = 12.0, 40.0
+        fraction = min(1.0, max(0.0, fraction))
+        return math.sqrt(min_radius ** 2 + (max_radius ** 2 - min_radius ** 2) * fraction)
+
+    @property
+    def left_reel_scale(self) -> str:
+        return f"{self._radius(1.0 - self.fraction) / 40.0:.4f}"
+
+    @property
+    def right_reel_scale(self) -> str:
+        return f"{self._radius(self.fraction) / 40.0:.4f}"
+
+    @property
+    def window_text(self) -> str:
+        if self.state == "upcoming":
+            return f"{self.nights_total} คืน"
+        if self.state in {"checkout_day", "ended"}:
+            return "ครบ"
+        return f"เหลือ {self.remaining}"
+
+
+def stay_progress(
+    check_in_date: date,
+    check_out_date: date,
+    current_date: date | None = None,
+) -> StayProgress:
+    """คำนวณความคืบหน้าการเข้าพักจากวันที่ฝั่ง server โดยไม่พึ่งเวลาบน browser."""
+    current_date = current_date or timezone.localdate()
+    nights_total = max(1, (check_out_date - check_in_date).days)
+
+    if current_date < check_in_date:
+        nights_elapsed = 0
+        state = "upcoming"
+        status_text = f"ยังไม่ถึงวันเข้าพัก · {nights_total} คืน"
+    elif current_date == check_out_date:
+        nights_elapsed = nights_total
+        state = "checkout_day"
+        status_text = "วันออก · คืนห้องภายใน 12.00 น."
+    elif current_date > check_out_date:
+        nights_elapsed = nights_total
+        state = "ended"
+        status_text = "สิ้นสุดการเข้าพัก"
+    else:
+        nights_elapsed = min(nights_total, max(0, (current_date - check_in_date).days))
+        state = "staying"
+        remaining = max(0, nights_total - nights_elapsed)
+        status_text = f"เข้าพักแล้ว · เหลือ {remaining} คืน"
+
+    remaining = max(0, nights_total - nights_elapsed)
+    fraction = min(1.0, max(0.0, nights_elapsed / nights_total))
+    return StayProgress(
+        nights_total=nights_total,
+        nights_elapsed=nights_elapsed,
+        remaining=remaining,
+        fraction=fraction,
+        state=state,
+        status_text=status_text,
+    )
 
 
 def cohort_hold_range(check_in_date: date, check_out_date: date) -> DateTimeTZRange:

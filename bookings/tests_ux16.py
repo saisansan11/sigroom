@@ -1,4 +1,4 @@
-﻿"""UX-16 Student Digital Pass Mobile Clarity tests and contracts."""
+"""UX-16 Student Digital Pass Mobile Clarity tests and contracts."""
 from datetime import timedelta
 from pathlib import Path
 import re
@@ -32,6 +32,16 @@ def _read_css() -> str:
         / "app.css"
     )
     return css_path.read_text(encoding="utf-8")
+
+
+def _read_cassette_js() -> str:
+    js_path = (
+        Path(__file__).resolve().parent.parent
+        / "static"
+        / "js"
+        / "lodging_cassette_pass.js"
+    )
+    return js_path.read_text(encoding="utf-8")
 
 
 def _ux16_section(css: str) -> str:
@@ -259,24 +269,26 @@ def test_keycard_and_actions_visible_focus_styles():
 
 
 def test_keycard_flip_script_and_keyboard_aria_contract():
-    """7. Keycard flip script: click and Enter/Space keyboard navigation with ARIA toggle."""
+    """7. Keycard flip remains keyboard accessible; interaction moved to external JS in B6."""
     template = _read_template()
+    js = _read_cassette_js()
 
-    # Retains single interactive card button with ARIA semantics
     assert template.count('id="keycard"') == 1
     assert 'role="button"' in template
     assert 'tabindex="0"' in template
     assert 'aria-pressed="false"' in template
+    assert "lodging_cassette_pass.js" in template
+    assert "<script>" not in template
 
-    # Inline script event listeners and keyboard controls
-    assert "toggleFlip" in template
-    assert "is-flipped" in template
-    assert "aria-pressed" in template
-    assert "aria-label" in template
-    assert "click" in template
-    assert "keydown" in template
-    assert "Enter" in template
-    assert ("' '" in template or '" "' in template or "Space" in template or "Spacebar" in template)
+    assert "toggleFlip" in js
+    assert "is-flipped" in js
+    assert "aria-pressed" in js
+    assert "aria-label" in js
+    assert "keydown" in js
+    assert "Enter" in js
+    assert ("event.key === \" \"" in js or "Spacebar" in js)
+    assert "pointerdown" in js and "pointermove" in js and "pointerup" in js
+    assert "deviceorientation" not in js.lower()
 
 
 def test_student_pass_privacy_and_security_headers_regression(client, ux16_setup):

@@ -17,11 +17,12 @@
 </div>
 
 <section class="r3l-status-sheet" aria-label="รายละเอียดคำขอที่พัก">
+  {% if booking.request_status == 'pending' %}<div class="stamp stamp-pending" aria-hidden="true">รับเรื่องแล้ว</div>{% elif booking.request_status == 'approved' %}<div class="stamp stamp-approved" aria-hidden="true">อนุมัติ</div>{% endif %}
   <dl class="r3l-status-list">
     <div><dt>ผู้ติดต่อ</dt><dd>{{ booking.responsible_name }}</dd></div>
     <div><dt>ห้อง</dt><dd>{{ booking.room.code }} {{ booking.room.name }}</dd></div>
     <div><dt>เข้าพัก</dt><dd>{{ booking.start_at|thai_datetime }} – {{ booking.end_at|thai_datetime }}</dd></div>
-    <div><dt>เลขอ้างอิง</dt><dd>{{ booking.id|stringformat:"s"|slice:":8"|upper }}</dd></div>
+    <div><dt>เลขอ้างอิง</dt><dd><span class="booking-ref-typewriter">{{ booking_ref }}</span></dd></div>
   </dl>
 
   {% if booking.request_status == 'pending' %}

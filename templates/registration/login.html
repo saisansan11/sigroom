@@ -1,14 +1,29 @@
 {% extends "base.html" %}
-{% block body_class %}auth-page{% endblock %}
+{% load thaidate %}
+{% block body_class %}auth-page auth-page-90s{% endblock %}
 {% block title %}เข้าสู่ระบบ · SIGROOM{% endblock %}
 {% block content %}
-<div class="auth-sheet-wrap">
-  <section class="auth-sheet login-sheet" aria-labelledby="login-heading">
-    <header class="auth-sheet-head">
-      <div class="auth-sheet-logo">{% include "partials/brand_stacked.html" with alt="" %}</div>
-      <h1 id="login-heading">เข้าสู่ระบบ SIGROOM</h1>
-      <p class="auth-sheet-sub">ระบบจองห้อง รร.ส.สส.</p>
+<div class="auth-sheet-wrap timecard-login-wrap">
+  <div class="login-punch-clock" aria-hidden="true">
+    <div class="punch-clock-brand"><strong>SIGROOM</strong><span>ระบบจองห้อง รร.ส.สส.</span></div>
+    <div class="punch-clock-lcd">
+      <time>{{ login_now|date:"H:i" }}</time>
+      <span>{{ login_now.day|thai_digits }} {{ login_now|thai_month_year_short }}</span>
+    </div>
+    <div class="punch-clock-slot"><span></span></div>
+  </div>
+
+  <section class="auth-sheet login-sheet timecard-sheet" aria-labelledby="login-heading">
+    <header class="auth-sheet-head timecard-sheet-head">
+      <div>
+        <p class="auth-sheet-kicker">บัตรลงเวลาเข้าระบบ</p>
+        <h1 id="login-heading">เข้าสู่ระบบ SIGROOM</h1>
+        <p class="auth-sheet-sub">ระบบจองห้อง รร.ส.สส.</p>
+      </div>
+      <div class="timecard-sheet-number" aria-hidden="true">แผ่นที่ ๑<br><small>ใช้ได้ทุกวัน</small></div>
     </header>
+    <div class="timecard-entry-stamp" aria-hidden="true">เข้า {{ login_now|date:"H:i" }}</div>
+
     <form method="post" class="auth-sheet-form">
       {% csrf_token %}
       {% if form.errors %}<div id="login-error" class="notice error" role="alert">{% if login_throttled %}{{ form.non_field_errors.0 }}{% else %}ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง กรุณาตรวจสอบแล้วลองอีกครั้ง{% endif %}</div>{% endif %}
@@ -17,8 +32,17 @@
       <label for="id_password">รหัสผ่าน</label>
       <input id="id_password" class="ruled-input" name="password" type="password" autocomplete="current-password" required{% if form.errors %} aria-invalid="true" aria-describedby="login-error"{% endif %}>
       <input type="hidden" name="next" value="{{ next }}">
-      <button type="submit" class="btn-primary auth-submit">เข้าสู่ระบบ</button>
+      <button type="submit" class="btn-primary auth-submit timecard-submit">ตอกบัตรเข้าระบบ</button>
     </form>
+
+    {% if google_login_enabled and google_login_url %}
+      <div class="google-login-separator"><span>หรือ</span></div>
+      <a class="google-login-standard" href="{{ google_login_url }}">
+        <svg viewBox="0 0 18 18" aria-hidden="true"><path fill="#4285F4" d="M17.6 9.2c0-.6-.1-1.2-.2-1.7H9v3.3h4.8c-.2 1.1-.8 2-1.8 2.6v2.2h2.9c1.7-1.6 2.7-3.8 2.7-6.4z"/><path fill="#34A853" d="M9 18c2.4 0 4.5-.8 6-2.2l-2.9-2.2c-.8.5-1.8.9-3.1.9-2.3 0-4.3-1.6-5-3.7H1v2.3C2.5 16 5.5 18 9 18z"/><path fill="#FBBC05" d="M4 10.8c-.2-.5-.3-1.1-.3-1.8s.1-1.2.3-1.8V4.9H1C.4 6.1 0 7.5 0 9s.4 2.9 1 4.1l3-2.3z"/><path fill="#EA4335" d="M9 3.5c1.3 0 2.5.5 3.4 1.3L15 2.3C13.4.8 11.4 0 9 0 5.5 0 2.5 2 1 4.9l3 2.3c.7-2.1 2.7-3.7 5-3.7z"/></svg>
+        <span>เข้าสู่ระบบด้วย Google</span>
+      </a>
+    {% endif %}
+
     <ul class="auth-hints">
       <li><a href="{% url 'accounts:password_reset' %}">ลืมรหัสผ่าน?</a> ระบบจะส่งลิงก์ตั้งรหัสใหม่ไปยังอีเมลหน่วย @signalschool.ac.th ของบัญชีท่าน</li>
       <li>ยังไม่มีบัญชี หรือบัญชีถูกล็อก — ติดต่อผู้ดูแลระบบ SIGROOM ของโรงเรียน</li>
@@ -26,7 +50,7 @@
     <div class="auth-public">
       <p class="auth-public-title">ไม่ต้องเข้าสู่ระบบ</p>
       <ul>
-        <li><a href="{% url 'bookings:lodging_index' %}">จองห้องพักสำหรับนักเรียนหลักสูตร</a></li>
+        <li><a href="{% url 'bookings:lodging_start' %}">จองห้องพัก</a></li>
         <li><a href="{% url 'bookings:calendar' %}">ดูสถานะห้องวันนี้</a></li>
         <li><a href="{% url 'bookings:about' %}">รู้จัก SIGROOM / วิธีใช้งาน</a></li>
       </ul>

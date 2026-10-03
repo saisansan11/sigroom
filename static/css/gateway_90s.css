@@ -1,0 +1,203 @@
+/* B8 — Gateway แบบโต๊ะทำงานสำนักงานยุค 90 (เฉพาะ lodging/about) */
+.lodging-about-ledger-r3g {
+  --pager: #26292A;
+  --pager-edge: #141616;
+  --lcd: #A7B293;
+  --lcd-ink: #1C2419;
+  --cork: #B88955;
+  --cork-dark: #8C6139;
+  --wood: #6F4930;
+}
+
+.gateway-90s-heading-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 1rem;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.gateway-tear-calendar {
+  position: relative;
+  width: 6.7rem;
+  border: 1px solid var(--ink);
+  background: var(--paper-raised);
+  color: var(--ink);
+  text-align: center;
+  box-shadow: 0 2px 0 var(--rule-strong);
+}
+.gateway-tear-calendar::after {
+  content: "";
+  position: absolute;
+  left: .25rem;
+  right: .25rem;
+  bottom: -.28rem;
+  height: 0;
+  border-bottom: .3rem dotted var(--paper-raised);
+}
+.gateway-tear-calendar > strong {
+  display: block;
+  padding: .18rem .25rem;
+  background: var(--stamp);
+  color: #fff;
+  font-size: .72rem;
+  font-weight: 600;
+}
+.gateway-calendar-ring {
+  position: absolute;
+  z-index: 2;
+  top: -.42rem;
+  left: 50%;
+  width: 1.25rem;
+  height: .68rem;
+  border: 2px solid var(--ink-muted);
+  border-bottom: 0;
+  border-radius: .7rem .7rem 0 0;
+  transform: translateX(-50%);
+}
+.gateway-calendar-day {
+  display: block;
+  padding-top: .2rem;
+  font-family: var(--font-serif);
+  font-size: 2.4rem;
+  font-weight: 600;
+  line-height: 1;
+}
+.gateway-calendar-weekday {
+  display: block;
+  padding: .15rem .25rem .38rem;
+  color: var(--ink-muted);
+  font-size: .78rem;
+}
+
+.gateway-pager {
+  width: min(100%, 31rem);
+  min-height: 4.5rem;
+  display: flex;
+  align-items: center;
+  gap: .65rem;
+  margin: 0 0 1rem;
+  padding: .55rem .65rem;
+  border: 2px solid var(--pager-edge);
+  border-radius: 5px;
+  background: var(--pager);
+  color: var(--lcd-ink);
+  text-decoration: none;
+  box-shadow: inset 0 0 0 1px #3b3f40;
+}
+.gateway-pager:hover { color: var(--lcd-ink); }
+.gateway-pager:focus-visible { outline: 3px solid var(--link); outline-offset: 3px; }
+.gateway-pager-brand {
+  flex: 0 0 auto;
+  color: #d7d6ce;
+  font-size: .68rem;
+  font-weight: 700;
+  letter-spacing: .06em;
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+}
+.gateway-pager-lcd {
+  min-width: 0;
+  flex: 1;
+  display: grid;
+  gap: .16rem;
+  padding: .38rem .55rem;
+  border: 1px solid #6f7961;
+  border-radius: 2px;
+  background: var(--lcd);
+  color: var(--lcd-ink);
+  font-variant-numeric: tabular-nums;
+}
+.gateway-pager-line { min-width: 0; display: flex; align-items: center; gap: .5rem; }
+.gateway-pager-meta { justify-content: space-between; font-size: .72rem; }
+.gateway-pager-meta strong { font-weight: 700; }
+.gateway-pager-messages { min-height: 1.35rem; font-size: .82rem; }
+.gateway-pager-messages > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.gateway-folder-index {
+  position: absolute;
+  z-index: 2;
+  top: .45rem;
+  right: .55rem;
+  color: var(--ink-muted);
+  font-size: .72rem;
+  font-weight: 600;
+}
+.lka-r3g-service--lodging .lka-r3g-service-actions a {
+  border-bottom: 3px solid var(--rule-strong);
+  border-radius: 2px;
+  background: var(--paper-raised);
+}
+.lka-r3g-service--lodging .lka-r3g-service-actions a:active {
+  border-bottom-width: 1px;
+  transform: translateY(2px);
+}
+
+.gateway-corkboard {
+  margin-top: 1.35rem;
+  padding: .8rem;
+  border: .55rem solid var(--wood);
+  border-radius: 2px;
+  background-color: var(--cork);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12'%3E%3Ccircle cx='2' cy='3' r='1' fill='%2363452c' fill-opacity='.18'/%3E%3Ccircle cx='9' cy='8' r='.8' fill='%2363452c' fill-opacity='.14'/%3E%3C/svg%3E");
+  background-size: 12px 12px;
+  box-shadow: inset 0 0 0 1px var(--cork-dark);
+}
+.gateway-corkboard h3 {
+  display: inline-block;
+  margin: 0 0 .65rem;
+  padding: .1rem .45rem;
+  background: var(--paper-raised);
+  font-family: var(--font-serif);
+  font-size: 1rem;
+}
+.gateway-notice-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: .7rem;
+}
+.gateway-note,
+.gateway-notice-empty {
+  position: relative;
+  min-width: 0;
+  margin: 0;
+  padding: .72rem .8rem .65rem;
+  border: 1px solid #cfc4aa;
+  background: #fff9dd;
+  color: var(--ink);
+  text-decoration: none;
+  box-shadow: 1px 2px 0 rgb(77 52 29 / .18);
+}
+.gateway-note:nth-child(2n) { transform: rotate(.8deg); }
+.gateway-note:nth-child(2n+1) { transform: rotate(-.7deg); }
+.gateway-note:hover { color: var(--ink); text-decoration: underline; }
+.gateway-note strong { display: block; margin-bottom: .15rem; font-family: var(--font-serif); }
+.gateway-note > span:not(.gateway-note-pin) { display: block; color: var(--ink-muted); font-size: .84rem; line-height: 1.45; }
+.gateway-note--closed strong { color: var(--stamp); }
+.gateway-note--lodging_open strong { color: var(--ok); }
+.gateway-note-pin {
+  position: absolute;
+  top: -.28rem;
+  left: 50%;
+  width: .62rem;
+  height: .62rem;
+  border: 1px solid #6e1d18;
+  border-radius: 50%;
+  background: var(--stamp);
+  box-shadow: 0 2px 0 rgb(0 0 0 / .16);
+  transform: translateX(-50%);
+}
+.gateway-notice-empty { grid-column: 1 / -1; text-align: center; }
+
+@media (max-width: 42rem) {
+  .gateway-90s-heading-row { grid-template-columns: minmax(0, 1fr) 5.9rem; }
+  .gateway-tear-calendar { width: 5.9rem; }
+  .gateway-calendar-day { font-size: 2rem; }
+  .gateway-notice-grid { grid-template-columns: 1fr; }
+  .gateway-note:nth-child(n) { transform: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gateway-note:nth-child(n),
+  .lka-r3g-service--lodging .lka-r3g-service-actions a:active { transform: none; }
+}

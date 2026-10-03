@@ -1,0 +1,283 @@
+:root {
+  --tab-lodging: #2F6B3A;
+  --tab-online: #1F4E79;
+  --tab-classroom: #C98A1B;
+  --tab-meeting: #A3241C;
+  --shell: #2A2E2B;
+  --shell-edge: #1A1D1B;
+  --shell-side: #121413;
+  --tape: #4A2F22;
+  --hub: #ECE6D6;
+}
+
+/* ชั้นตกแต่งยุค 90: ใช้บนธีม A เดิมเท่านั้น และไม่เปลี่ยน token หลัก */
+.typewriter-num {
+  font-variant-numeric: tabular-nums;
+  letter-spacing: .04em;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .theme-90s-motion {
+    animation: none !important;
+    transition: none !important;
+    transform: none !important;
+  }
+}
+
+/* B2 — แฟ้มบริการบน Gateway */
+.lka-r3g-service-grid .lka-r3g-service {
+  position: relative;
+  overflow: visible;
+  margin-top: 10px;
+  border-radius: 2px;
+  transition: transform 150ms ease;
+}
+.lka-r3g-service-grid .lka-r3g-service::before {
+  content: "";
+  position: absolute;
+  left: -1px;
+  top: -10px;
+  width: 38%;
+  height: 10px;
+  border: 1px solid var(--rule-strong);
+  border-bottom: 0;
+  border-radius: 2px 2px 0 0;
+  background: var(--folder-tab, var(--ink));
+}
+.lka-r3g-service--lodging { --folder-tab: var(--tab-lodging); }
+.lka-r3g-service--online { --folder-tab: var(--tab-online); }
+.lka-r3g-service--classroom { --folder-tab: var(--tab-classroom); }
+.lka-r3g-service--meeting { --folder-tab: var(--tab-meeting); }
+.lka-r3g-service-grid a.lka-r3g-service:hover,
+.lka-r3g-service-grid a.lka-r3g-service:focus-visible {
+  transform: translateY(-2px);
+}
+@media (prefers-reduced-motion: reduce) {
+  .lka-r3g-service-grid .lka-r3g-service { transition: none; }
+  .lka-r3g-service-grid a.lka-r3g-service:hover,
+  .lka-r3g-service-grid a.lka-r3g-service:focus-visible { transform: none; }
+}
+
+/* B3 — ชิปตัวเลือกแบบแป้นเครื่องคิดเลข */
+.chip > span,
+.chip-group .chip > span,
+.category-chip {
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--ink);
+  border-bottom: 3px solid var(--rule-strong);
+  border-radius: 2px;
+  background: var(--paper-raised);
+  color: var(--ink);
+  transition: transform 80ms ease, border-bottom-width 80ms ease, background 80ms ease;
+}
+.chip:active > span,
+.category-chip:active {
+  transform: translateY(2px);
+  border-bottom-width: 1px;
+}
+.chip input:checked + span,
+.chip-input:checked + .chip > span,
+.category-chip.is-on {
+  border-color: var(--ink);
+  border-bottom-color: var(--ink);
+  background: var(--ink);
+  color: var(--paper);
+}
+@media (prefers-reduced-motion: reduce) {
+  .chip > span,
+  .chip-group .chip > span,
+  .category-chip { transition: none; }
+  .chip:active > span,
+  .category-chip:active { transform: none; }
+}
+
+/* B4 — สลิปกระดาษ dot-matrix สำหรับผลค้นหา/ห้องที่เสนอ */
+.slip {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid var(--rule-strong);
+  border-radius: 0;
+  background-color: var(--paper-raised);
+  background-image:
+    radial-gradient(circle at 0 8px, var(--paper) 0 3px, transparent 3.2px),
+    radial-gradient(circle at 100% 8px, var(--paper) 0 3px, transparent 3.2px);
+  background-size: 100% 16px;
+  font-variant-numeric: tabular-nums;
+  animation: slip-in 180ms ease-out both;
+}
+.slip::after {
+  content: "";
+  position: absolute;
+  left: .7rem;
+  right: .7rem;
+  bottom: .35rem;
+  border-bottom: 1px dashed var(--rule);
+  pointer-events: none;
+}
+.slip .online-result-title strong,
+.slip .r3l-room-code,
+.slip code,
+.slip .typewriter-num {
+  font-variant-numeric: tabular-nums;
+  letter-spacing: .04em;
+}
+@keyframes slip-in {
+  from { transform: translateY(-8px); opacity: .72; }
+  to { transform: translateY(0); opacity: 1; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .slip { animation: none; }
+}
+
+/* B5 — เลขอ้างอิงแบบเครื่องพิมพ์ดีด */
+.booking-ref-typewriter {
+  display: inline-block;
+  padding: .08rem .3rem;
+  border: 1px solid var(--rule);
+  background: var(--paper-sunk);
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: .08em;
+  font-weight: 600;
+}
+
+/* B9 — หน้าเข้าสู่ระบบแบบเครื่องตอกบัตร + บัตรมะนิลา */
+.auth-page-90s .timecard-login-wrap {
+  width: min(100%, 31rem);
+  display: grid;
+  justify-items: center;
+  gap: 0;
+}
+.login-punch-clock {
+  width: min(100%, 27rem);
+  padding: .8rem .9rem .65rem;
+  border: 2px solid #5f5b50;
+  border-bottom-width: 4px;
+  border-radius: 4px 4px 2px 2px;
+  background: #d8d1bd;
+  color: #242822;
+}
+.punch-clock-brand {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: .75rem;
+  margin-bottom: .55rem;
+}
+.punch-clock-brand strong { font-family: var(--font-serif); letter-spacing: .06em; }
+.punch-clock-brand span { color: #555347; font-size: .72rem; }
+.punch-clock-lcd {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: .8rem;
+  padding: .4rem .6rem;
+  border: 2px inset #777767;
+  border-radius: 2px;
+  background: #a7b293;
+  color: #1c2419;
+  font-variant-numeric: tabular-nums;
+}
+.punch-clock-lcd time { font-size: 1.35rem; font-weight: 700; }
+.punch-clock-lcd span { font-size: .78rem; font-weight: 600; }
+.punch-clock-slot {
+  width: 72%;
+  height: .75rem;
+  margin: .7rem auto 0;
+  padding: .14rem;
+  border: 1px solid #090a09;
+  border-radius: 2px;
+  background: #1a1c1b;
+}
+.punch-clock-slot span { display: block; width: 80%; height: 100%; margin: 0 auto; background: #090a09; }
+
+.timecard-sheet,
+.auth-manila-card {
+  position: relative;
+  border-color: #a69776;
+  border-top-color: #443f34;
+  background: #f0e4c7;
+}
+.auth-page-90s .timecard-sheet {
+  width: min(100%, 28rem);
+  margin-top: -.1rem;
+  border-top-width: 1px;
+}
+.timecard-sheet-head {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 1rem;
+  align-items: start;
+}
+.timecard-sheet-number {
+  padding-left: .75rem;
+  border-left: 1px solid #a69776;
+  color: var(--ink-muted);
+  font-size: .78rem;
+  line-height: 1.35;
+  text-align: right;
+  white-space: nowrap;
+}
+.timecard-sheet-number small { font-size: .7rem; }
+.timecard-entry-stamp {
+  width: max-content;
+  margin: -.25rem .2rem .9rem auto;
+  padding: .12rem .75rem;
+  border: 3px double #67406e;
+  color: #67406e;
+  font-family: var(--font-serif);
+  font-weight: 600;
+  transform: rotate(-7deg);
+}
+.timecard-submit {
+  border-bottom: 4px solid #0e1410 !important;
+}
+.timecard-submit:active {
+  border-bottom-width: 1px !important;
+  transform: translateY(3px) !important;
+}
+.auth-page-90s .notice[role="alert"] { border-color: var(--stamp); background: #f3ddd5; }
+
+.google-login-separator {
+  display: flex;
+  align-items: center;
+  gap: .6rem;
+  margin: 1rem 0 .75rem;
+  color: #5f6368;
+  font-size: .8rem;
+}
+.google-login-separator::before,
+.google-login-separator::after { content: ""; flex: 1; border-top: 1px solid #dadce0; }
+.google-login-standard {
+  width: 100%;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: .65rem;
+  padding: .55rem .9rem;
+  border: 1px solid #dadce0;
+  border-radius: 4px;
+  background: #fff;
+  color: #3c4043;
+  font-family: Arial, sans-serif;
+  font-size: .9rem;
+  font-weight: 500;
+  text-decoration: none;
+}
+.google-login-standard:hover { background: #f8f9fa; color: #202124; }
+.google-login-standard svg { width: 18px; height: 18px; flex: 0 0 18px; }
+
+@media (max-width: 30rem) {
+  .timecard-sheet-head { grid-template-columns: 1fr; }
+  .timecard-sheet-number { padding: 0; border-left: 0; text-align: left; }
+  .punch-clock-brand { align-items: flex-start; flex-direction: column; gap: .1rem; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .timecard-entry-stamp { animation: none; }
+  .timecard-submit:active { transform: none !important; }
+}

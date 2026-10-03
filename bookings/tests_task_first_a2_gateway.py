@@ -125,7 +125,7 @@ def test_every_service_card_has_a_real_link_and_none_points_to_calendar(client):
         assert calendar_url not in card["links"]
 
 
-def test_authenticated_user_sees_only_own_active_booking_count(client):
+def test_authenticated_gateway_replaces_private_count_row_with_pager(client):
     user = _user("a2-owner")
     other = _user("a2-other")
     room1 = _room("A2-C1")
@@ -139,7 +139,10 @@ def test_authenticated_user_sees_only_own_active_booking_count(client):
     response = client.get(reverse("bookings:lodging_about"))
     assert response.status_code == 200
     html = response.content.decode("utf-8")
-    assert "การจองของฉัน (2)" in html
+    assert 'class="gateway-pager"' in html
+    assert "มีข้อความ 0" in html
+    assert "A2-C1" in html  # earliest active booking belongs to the signed-in user
+    assert "A2-C2" not in html.split('class="gateway-pager"', 1)[1].split('</a>', 1)[0]
     assert reverse("bookings:my_bookings") in html
     cache_control = response.get("Cache-Control", "")
     assert "private" in cache_control

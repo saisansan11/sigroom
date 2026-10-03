@@ -29,6 +29,7 @@ from .lodging_models import (
 )
 from .course_catalog import selectable_course_runs
 from .models import Booking
+from .services import gateway_notices, gateway_user_pager
 from .lodging_services import (
     assign_lodging_bed,
     can_access_lodging_management,
@@ -41,6 +42,7 @@ from .lodging_services import (
     get_canonical_public_url,
     normalize_phone,
     release_lodging_reservation,
+    stay_progress,
     update_cohort_allocation,
 )
 
@@ -68,23 +70,28 @@ def lodging_room_detail(request, number):
 
 # UX-17: Public dormitory showcase — no login required.
 def lodging_about(request):
-    """Public service gateway, with a small private booking summary after login.
+    """Public service gateway with public notices and a private pager after login.
 
-    The showcase remains public. Authenticated responses also include the current
-    user's active booking count, so those responses must never be shared by a CDN.
+    Public notices contain only public-safe operational scope/time. Authenticated
+    responses also include user-specific notification/booking summaries, so those
+    responses must never be shared by a CDN.
     """
+    now = timezone.now()
+    today = timezone.localdate(now)
     context = {
         "rates": RATES,
         "electricity_air_baht_per_unit": ELECTRICITY_AIR_BAHT_PER_UNIT,
         "electricity_fan_flat_baht_per_month": ELECTRICITY_FAN_FLAT_BAHT_PER_MONTH,
         "monthly_threshold_days": MONTHLY_THRESHOLD_DAYS,
+        "gateway_now": timezone.localtime(now),
+        "gateway_today": today,
+        "gateway_notices": gateway_notices(today=today, now=now),
     }
     if request.user.is_authenticated:
-        context["my_pending_count"] = Booking.objects.filter(
-            requester=request.user,
-            request_status__in=Booking.HOLDING_STATUSES,
-            end_at__gt=timezone.now(),
-        ).count()
+        pager = gateway_user_pager(request.user, now=now)
+        context["gateway_pager"] = pager
+        # Reuse the pager's one-query unread count in the navigation context processor.
+        request._nav_unread_count = pager["unread_count"] if pager else 0
 
     response = render(request, "lodging/lodging_about.html", context)
     if request.user.is_authenticated:
@@ -119,10 +126,12 @@ def lodging_general_request_status(request, token):
         pk=token,
     )
     booking = access.booking
+    from .services import booking_ref
+
     response = render(
         request,
         "lodging/general_request_status.html",
-        {"access": access, "booking": booking},
+        {"access": access, "booking": booking, "booking_ref": booking_ref(booking)},
     )
     response["Cache-Control"] = "private, no-store, must-revalidate"
     response["X-Robots-Tag"] = "noindex, nofollow"
@@ -311,6 +320,7 @@ def _student_pass_context(request, cohort, student):
             f"บัตรรายงานตัวเข้าที่พัก {student.room.code} (เตียง {student.bed_number}) - {cohort.title}",
             pass_url,
         ),
+        "stay": stay_progress(cohort.check_in_date, cohort.check_out_date),
     }
 
 
