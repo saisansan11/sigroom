@@ -119,10 +119,12 @@ def lodging_general_request_status(request, token):
         pk=token,
     )
     booking = access.booking
+    from .services import booking_ref
+
     response = render(
         request,
         "lodging/general_request_status.html",
-        {"access": access, "booking": booking},
+        {"access": access, "booking": booking, "booking_ref": booking_ref(booking).upper()},
     )
     response["Cache-Control"] = "private, no-store, must-revalidate"
     response["X-Robots-Tag"] = "noindex, nofollow"

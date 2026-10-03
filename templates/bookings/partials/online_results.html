@@ -14,7 +14,7 @@
     </div>
     <div class="online-result-list">
       {% for room in rooms %}
-        <article class="online-result-row{% if forloop.first %} is-recommended{% endif %}">
+        <article class="online-result-row slip{% if forloop.first %} is-recommended{% endif %}">
           <div>
             <div class="online-result-title">
               <strong>{{ room.code }}</strong>
