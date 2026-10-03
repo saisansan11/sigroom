@@ -52,13 +52,22 @@ def test_student_lodging_portal_has_compact_summary_and_preserves_bed_flow():
 
 def test_keycard_flip_is_explicitly_preserved_in_r3_l():
     template = _read("templates/lodging/student_pass.html")
+    cassette_js = _read("static/js/lodging_cassette_pass.js")
 
     assert template.count('id="keycard"') == 1
     assert "keycard-front" in template
     assert "keycard-back" in template
-    assert "toggleFlip" in template
-    assert "is-flipped" in template
-    assert "แตะบัตรหรือกด Space เพื่อดู QR รายงานตัว" in template
+    assert "lodging_cassette_pass.js" in template
+    assert "<script>" not in template
+    assert "แตะบัตรหรือกด Enter / Space เพื่อพลิกดู QR" in template
+
+    # B6 keeps the same flip/keyboard contract, but moves behavior out of the template.
+    assert "toggleFlip" in cassette_js
+    assert "is-flipped" in cassette_js
+    assert "keydown" in cassette_js
+    assert "Enter" in cassette_js
+    assert "Spacebar" in cassette_js
+    assert "aria-pressed" in cassette_js
 
 
 def test_r3_l_overlays_do_not_reintroduce_decorative_gradients():

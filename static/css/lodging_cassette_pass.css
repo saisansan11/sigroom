@@ -1,0 +1,314 @@
+/* SIGROOM B6 — บัตรเข้าพักตลับเทป 3D (scoped to the student pass page) */
+.cassette-pass-page .cassette-pass-shell {
+  width: min(100%, 32rem);
+  margin-inline: auto;
+}
+
+.cassette-pass-page .cassette-pass-heading {
+  max-width: 40rem;
+  margin-inline: auto;
+}
+
+.cassette-pass-page .keycard--cassette {
+  width: min(100%, 26rem);
+  max-width: 100%;
+  height: auto;
+  min-height: 0;
+  aspect-ratio: auto;
+  margin-inline: auto;
+  perspective: 1100px;
+  cursor: grab;
+  touch-action: pan-y;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.cassette-pass-page .keycard--cassette:active { cursor: grabbing; }
+.cassette-pass-page .keycard--cassette:focus-visible {
+  outline: 3px solid var(--link);
+  outline-offset: 4px;
+  border-radius: 3px;
+}
+
+.cassette-pass-page .cassette-stage {
+  --t: 3.6cqw;
+  container-type: inline-size;
+  position: relative;
+  width: 100%;
+  padding: .75rem 0 1.25rem;
+  transform-style: preserve-3d;
+}
+
+.cassette-pass-page .cassette-stage::after {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  left: 12%;
+  right: 12%;
+  bottom: .35rem;
+  height: .85rem;
+  border-radius: 50%;
+  background: rgb(31 42 36 / .18);
+  filter: blur(7px);
+  pointer-events: none;
+}
+
+.cassette-pass-page .cassette {
+  --t: 3.6cqw;
+  position: relative;
+  width: 100%;
+  aspect-ratio: 100 / 64;
+  transform-style: preserve-3d;
+  transition: transform .7s cubic-bezier(.2, .8, .2, 1);
+  will-change: transform;
+}
+
+.cassette-pass-page .cassette.is-dragging { transition: none; }
+.cassette-pass-page .cassette-face,
+.cassette-pass-page .cassette-side {
+  position: absolute;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+
+.cassette-pass-page .cassette-face {
+  inset: 0;
+  min-height: 0;
+  border: 1px solid #151816;
+  border-radius: 3.2cqw;
+  overflow: hidden;
+  background: #2a2e2b;
+  box-shadow: inset 0 0 0 1px rgb(255 255 255 / .03);
+}
+
+.cassette-pass-page .cassette-face--front {
+  display: block;
+  padding: 0;
+  color: var(--ink);
+  transform: translateZ(calc(var(--t) / 2));
+}
+
+.cassette-pass-page .cassette-face--back {
+  display: grid;
+  place-items: center;
+  padding: 0;
+  background: #242825;
+  transform: rotateY(180deg) translateZ(calc(var(--t) / 2));
+}
+
+.cassette-pass-page .cassette-side { background: #121413; }
+.cassette-pass-page .cassette-side--top,
+.cassette-pass-page .cassette-side--bottom {
+  left: 2.5cqw;
+  right: 2.5cqw;
+  height: var(--t);
+}
+.cassette-pass-page .cassette-side--top { top: 0; transform: translateY(-50%) rotateX(90deg); }
+.cassette-pass-page .cassette-side--bottom { top: 100%; transform: translateY(-50%) rotateX(-90deg); }
+.cassette-pass-page .cassette-side--left,
+.cassette-pass-page .cassette-side--right {
+  top: 2.5cqw;
+  bottom: 2.5cqw;
+  width: var(--t);
+}
+.cassette-pass-page .cassette-side--left { left: 0; transform: translateX(-50%) rotateY(-90deg); }
+.cassette-pass-page .cassette-side--right { left: 100%; transform: translateX(-50%) rotateY(90deg); }
+
+.cassette-pass-page .cassette-label {
+  position: absolute;
+  left: 6.5%;
+  right: 6.5%;
+  top: 5.5%;
+  height: 67%;
+  padding: 2.1cqw 3cqw 0;
+  border-radius: 1.6cqw;
+  background-color: var(--paper-raised);
+  background-image: repeating-linear-gradient(to bottom, transparent 0, transparent calc(5.6cqw - 1px), #e3dcc8 calc(5.6cqw - 1px), #e3dcc8 5.6cqw);
+}
+
+.cassette-pass-page .cassette-label-head {
+  height: 5cqw;
+  display: flex;
+  align-items: center;
+  gap: 2cqw;
+  color: var(--ink-muted);
+  font-size: 2.9cqw;
+  line-height: 1;
+  white-space: nowrap;
+}
+.cassette-pass-page .cassette-label-head strong { color: var(--ink); font-family: var(--font-serif); letter-spacing: .05em; }
+.cassette-pass-page .cassette-side-mark {
+  display: inline-block;
+  padding: .35cqw 1.3cqw;
+  border: .35cqw solid var(--ink);
+  color: var(--ink);
+  font-family: var(--font-serif);
+  font-size: 3.1cqw;
+  font-weight: 600;
+  line-height: 1;
+}
+
+.cassette-pass-page .cassette-room-line {
+  height: 8.6cqw;
+  display: flex;
+  align-items: baseline;
+  gap: 3cqw;
+  margin-top: .8cqw;
+  white-space: nowrap;
+}
+.cassette-pass-page .cassette-room-code {
+  color: var(--ink);
+  font-size: 7.4cqw;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: .04em;
+  line-height: 1;
+}
+.cassette-pass-page .cassette-room-code small { margin-right: 1cqw; color: var(--ink-muted); font-size: 3.2cqw; font-weight: 500; letter-spacing: 0; }
+.cassette-pass-page .cassette-bed { font-size: 4.4cqw; font-weight: 600; }
+
+.cassette-pass-page .cassette-stripes {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 26.6cqw;
+  height: 7.6cqw;
+  background: linear-gradient(to bottom, #a3241c 0 33.33%, #c98a1b 33.33% 66.66%, #1f4e79 66.66%);
+}
+.cassette-pass-page .cassette-window {
+  position: absolute;
+  z-index: 2;
+  left: 19%;
+  right: 19%;
+  top: 22.2cqw;
+  height: 16.5cqw;
+  overflow: hidden;
+  border: .4cqw solid var(--ink);
+  border-radius: 8cqw;
+  background: #211e1b;
+}
+.cassette-pass-page .cassette-tape-display { display: block; width: 100%; height: 100%; }
+.cassette-pass-page .cassette-name,
+.cassette-pass-page .cassette-meta {
+  position: absolute;
+  left: 3cqw;
+  right: 3cqw;
+  margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.cassette-pass-page .cassette-name { bottom: 7.1cqw; font-size: 3.5cqw; font-weight: 500; }
+.cassette-pass-page .cassette-meta { bottom: 3.1cqw; color: var(--ink-muted); font-size: 2.8cqw; }
+
+.cassette-pass-page .cassette-stamp {
+  position: absolute;
+  z-index: 3;
+  top: 7.6cqw;
+  right: 3cqw;
+  padding: .2cqw 1.2cqw;
+  border-width: .45cqw;
+  outline: .22cqw solid var(--stamp);
+  outline-offset: .35cqw;
+  background: rgb(251 248 240 / .72);
+  font-size: 3.1cqw;
+  line-height: 1.25;
+  transform: rotate(-9deg);
+}
+
+.cassette-pass-page .cassette-screw {
+  position: absolute;
+  z-index: 4;
+  width: 3.4cqw;
+  height: 3.4cqw;
+  border-radius: 50%;
+  background: #3b403d;
+  box-shadow: inset 0 0 0 .5cqw #2a2e2b;
+}
+.cassette-pass-page .cassette-screw::after {
+  content: "";
+  position: absolute;
+  left: 20%; right: 20%; top: 46%; height: 8%;
+  background: #1a1d1b;
+  transform: rotate(35deg);
+}
+.cassette-pass-page .cassette-screw--1 { left: 2.4cqw; top: 2.4cqw; }
+.cassette-pass-page .cassette-screw--2 { right: 2.4cqw; top: 2.4cqw; }
+.cassette-pass-page .cassette-screw--3 { left: 2.4cqw; bottom: 2.4cqw; }
+.cassette-pass-page .cassette-screw--4 { right: 2.4cqw; bottom: 2.4cqw; }
+.cassette-pass-page .cassette-screw--5 { left: 50%; bottom: 3.2cqw; transform: translateX(-50%); }
+
+.cassette-pass-page .cassette-lip {
+  position: absolute;
+  left: 19%;
+  right: 19%;
+  bottom: 0;
+  height: 20%;
+  background: #1a1d1b;
+  clip-path: polygon(8% 0, 92% 0, 100% 100%, 0 100%);
+}
+.cassette-pass-page .cassette-lip span { position: absolute; left: 5%; right: 5%; bottom: 5%; height: 6%; background: #4a2f22; }
+.cassette-pass-page .cassette-lip i { position: absolute; bottom: 22%; width: 4.6%; aspect-ratio: 1; border-radius: 50%; background: #0c0d0c; }
+.cassette-pass-page .cassette-lip i:nth-of-type(1) { left: 14%; }
+.cassette-pass-page .cassette-lip i:nth-of-type(2) { left: 30%; }
+.cassette-pass-page .cassette-lip i:nth-of-type(3) { left: 47.7%; }
+.cassette-pass-page .cassette-lip i:nth-of-type(4) { right: 30%; }
+.cassette-pass-page .cassette-lip i:nth-of-type(5) { right: 14%; }
+
+.cassette-pass-page .cassette-qr-sticker {
+  width: 86%;
+  height: 84%;
+  display: flex;
+  align-items: center;
+  gap: 4cqw;
+  padding: 3cqw 4cqw;
+  border-radius: 1.6cqw;
+  background: #fff;
+  color: #1f2a24;
+}
+.cassette-pass-page .cassette-qr {
+  width: auto;
+  height: 100%;
+  max-width: 58%;
+  padding: 0;
+  border-radius: 0;
+  background: #fff;
+  object-fit: contain;
+}
+.cassette-pass-page .cassette-back-info { min-width: 0; display: grid; gap: .7cqw; font-size: 3cqw; line-height: 1.3; }
+.cassette-pass-page .cassette-back-info strong { font-size: 3.8cqw; overflow-wrap: anywhere; }
+.cassette-pass-page .cassette-back-info small { color: #5e5d52; font-size: 2.5cqw; overflow-wrap: anywhere; }
+
+.cassette-pass-page .cassette-hint { margin: .25rem 0 1rem; color: var(--ink-muted); font-size: .84rem; text-align: center; }
+.cassette-pass-page .keycard-actions-bar { max-width: 26rem; margin-inline: auto; }
+.cassette-pass-page .cassette-copy-status { min-height: 1.6rem; max-width: 26rem; margin: -.4rem auto 1rem; color: var(--ink-muted); font-size: .85rem; text-align: center; }
+.cassette-pass-page .cassette-ledger { margin: 1.4rem auto 0; border-top: 2px solid var(--ink); }
+.cassette-pass-page .cassette-ledger h2 { margin: .55rem 0 .25rem; font-size: 1.1rem; }
+.cassette-pass-page .cassette-ledger dl { margin: 0; }
+.cassette-pass-page .cassette-ledger dl > div { display: grid; grid-template-columns: 7.5rem minmax(0, 1fr); gap: .75rem; padding: .45rem 0; border-bottom: 1px solid var(--rule); }
+.cassette-pass-page .cassette-ledger dt { color: var(--ink-muted); }
+.cassette-pass-page .cassette-ledger dd { min-width: 0; margin: 0; overflow-wrap: anywhere; }
+
+.cassette-pass-page .cassette-qr-dialog { width: min(94vw, 42rem); max-width: 42rem; padding: 0; border: 1px solid var(--ink); border-radius: 2px; background: #fff; color: #1f2a24; }
+.cassette-pass-page .cassette-qr-dialog::backdrop { background: rgb(15 18 16 / .72); }
+.cassette-pass-page .cassette-qr-dialog-inner { display: grid; justify-items: center; gap: .75rem; padding: 1rem; text-align: center; }
+.cassette-pass-page .cassette-qr-dialog-inner h2 { margin: 0; color: #1f2a24; }
+.cassette-pass-page .cassette-qr-dialog-inner img { width: min(78vw, 60vh); height: auto; max-width: 100%; background: #fff; }
+.cassette-pass-page .cassette-qr-dialog-inner p { margin: 0; color: #1f2a24; }
+
+@supports not (width: 1cqw) {
+  .cassette-pass-page .cassette-stage,
+  .cassette-pass-page .cassette { --t: 14px; }
+}
+
+@media (max-width: 30rem) {
+  .cassette-pass-page .cassette-pass-heading h1 { font-size: 1.25rem; }
+  .cassette-pass-page .cassette-ledger dl > div { grid-template-columns: 1fr; gap: .05rem; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cassette-pass-page .cassette,
+  .cassette-pass-page .cassette.is-dragging { transition: none; }
+  .cassette-pass-page .cassette-stamp { animation: none; }
+}

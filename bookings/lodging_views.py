@@ -41,6 +41,7 @@ from .lodging_services import (
     get_canonical_public_url,
     normalize_phone,
     release_lodging_reservation,
+    stay_progress,
     update_cohort_allocation,
 )
 
@@ -313,6 +314,7 @@ def _student_pass_context(request, cohort, student):
             f"บัตรรายงานตัวเข้าที่พัก {student.room.code} (เตียง {student.bed_number}) - {cohort.title}",
             pass_url,
         ),
+        "stay": stay_progress(cohort.check_in_date, cohort.check_out_date),
     }
 
 
