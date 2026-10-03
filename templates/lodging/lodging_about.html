@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% load static %}
+{% load static thaidate %}
 
 {% block html_theme %}light{% endblock %}
 {% block body_class %}lodging-about-ledger-r3g{% endblock %}
@@ -13,6 +13,7 @@
 <link rel="stylesheet" href="{% static 'css/lodging_about_ux27.css' %}?v=32">
 <link rel="stylesheet" href="{% static 'css/lodging_about_r3g.css' %}?v=1">
 <link rel="stylesheet" href="{% static 'css/lodging_about_r3g2.css' %}">
+<link rel="stylesheet" href="{% static 'css/gateway_90s.css' %}?v=1">
 {% endblock %}
 
 {% block content %}
@@ -50,14 +51,36 @@
     </div>
   </section>
 
-  {# ===== A2: TASK-FIRST SERVICE GATEWAY ===== #}
+  {# ===== A2/B8: TASK-FIRST SERVICE GATEWAY + 90s OFFICE LAYER ===== #}
   <section class="lka-section lka-g2-services" id="lka-preview-hub" aria-labelledby="lka-services-heading">
-    <div class="lka-g2-heading">
-      <h2 id="lka-services-heading">วันนี้ต้องการทำอะไร</h2>
-      <p>เลือกงานที่ต้องการ ระบบจะพาไปขั้นตอนจองโดยตรง</p>
+    <div class="gateway-90s-heading-row">
+      <div class="lka-g2-heading">
+        <h2 id="lka-services-heading">วันนี้ต้องการทำอะไร</h2>
+        <p>เลือกงานที่ต้องการ ระบบจะพาไปขั้นตอนจองโดยตรง</p>
+      </div>
+      <div class="gateway-tear-calendar" role="img" aria-label="{{ gateway_today|thai_date_full }}">
+        <span class="gateway-calendar-ring" aria-hidden="true"></span>
+        <strong>{{ gateway_today|thai_month_year_short }}</strong>
+        <span class="gateway-calendar-day">{{ gateway_today.day|thai_digits }}</span>
+        <span class="gateway-calendar-weekday">{{ gateway_today|thai_weekday }}</span>
+      </div>
     </div>
+
+    {% if user.is_authenticated and gateway_pager %}
+      <a class="gateway-pager" href="{% url 'bookings:my_bookings' %}" aria-label="การจองของฉัน มีข้อความ {{ gateway_pager.unread_count }} รายการ">
+        <span class="gateway-pager-brand" aria-hidden="true">SIGROOM</span>
+        <span class="gateway-pager-lcd">
+          <span class="gateway-pager-line gateway-pager-meta"><strong>มีข้อความ {{ gateway_pager.unread_count }}</strong><time>{{ gateway_pager.time_text }}</time></span>
+          <span class="gateway-pager-line gateway-pager-messages" aria-live="polite">
+            {% for message in gateway_pager.messages %}<span data-pager-message{% if not forloop.first %} hidden{% endif %}>{{ message }}</span>{% endfor %}
+          </span>
+        </span>
+      </a>
+    {% endif %}
+
     <div class="lka-r3g-service-grid">
       <div class="lka-r3g-service lka-r3g-service--lodging">
+        <span class="gateway-folder-index">แฟ้ม ๑</span>
         <span class="lka-r3g-service-icon">{% include "lodging/partials/gateway_icon.html" with icon="lodging" %}</span>
         <strong><a class="lka-r3g-service-main-link" href="{% url 'bookings:lodging_start' %}">จองห้องพัก</a></strong>
         <small>เลือกเส้นทางตามประเภทผู้เข้าพัก</small>
@@ -67,30 +90,43 @@
         </span>
       </div>
       <a class="lka-r3g-service lka-r3g-service--online" href="{% url 'bookings:online_teaching_home' %}">
+        <span class="gateway-folder-index">แฟ้ม ๒</span>
         <span class="lka-r3g-service-icon">{% include "lodging/partials/gateway_icon.html" with icon="online" %}</span>
         <strong>จองห้องสอนออนไลน์</strong>
         <small>เลือกเวลา ระบบหาห้องว่างให้</small>
         <span class="lka-r3g-action">เริ่มจอง</span>
       </a>
       <a class="lka-r3g-service lka-r3g-service--classroom" href="{% url 'bookings:book_search' %}?category=classroom">
+        <span class="gateway-folder-index">แฟ้ม ๓</span>
         <span class="lka-r3g-service-icon">{% include "lodging/partials/gateway_icon.html" with icon="learning" %}</span>
         <strong>จองห้องเรียน</strong>
         <small>บอกวัน เวลา จำนวนคน</small>
         <span class="lka-r3g-action">เริ่มจอง</span>
       </a>
       <a class="lka-r3g-service lka-r3g-service--meeting" href="{% url 'bookings:book_search' %}?category=meeting">
+        <span class="gateway-folder-index">แฟ้ม ๔</span>
         <span class="lka-r3g-service-icon">{% include "lodging/partials/gateway_icon.html" with icon="learning" %}</span>
         <strong>จองห้องประชุม</strong>
         <small>บอกวัน เวลา จำนวนคน</small>
         <span class="lka-r3g-action">เริ่มจอง</span>
       </a>
     </div>
-    <div class="lka-r3g-task-links">
-      <a href="{% url 'bookings:calendar' %}">ดูสถานะห้องทั้งหมด</a>
-      {% if user.is_authenticated and my_pending_count %}
-        <a href="{% url 'bookings:my_bookings' %}">การจองของฉัน ({{ my_pending_count }})</a>
-      {% endif %}
-    </div>
+
+    <section class="gateway-corkboard" aria-labelledby="gateway-notices-heading">
+      <h3 id="gateway-notices-heading">ประกาศวันนี้</h3>
+      <div class="gateway-notice-grid">
+        {% for notice in gateway_notices %}
+          <a class="gateway-note gateway-note--{{ notice.kind }}" href="{{ notice.url }}">
+            <span class="gateway-note-pin" aria-hidden="true"></span>
+            <strong>{{ notice.title }}</strong>
+            <span>{{ notice.body }}</span>
+          </a>
+        {% empty %}
+          <p class="gateway-notice-empty">วันนี้ไม่มีประกาศ</p>
+        {% endfor %}
+      </div>
+    </section>
+    <div class="lka-r3g-task-links"><a href="{% url 'bookings:calendar' %}">ดูสถานะห้องทั้งหมด</a></div>
   </section>
 
   {# ===== R3-G2: SHOWCASE — ภาพจริง · ผัง 3 มิติ · ห้องสอนออนไลน์ · สิ่งอำนวยความสะดวก ===== #}
@@ -538,4 +574,5 @@
 {% block scripts %}
 <script src="{% static 'js/lodging_about_hero3d.js' %}" defer></script>
 <script src="{% static 'js/lodging_about_explorer.js' %}?v=32" defer></script>
+<script src="{% static 'js/gateway_90s.js' %}?v=1" defer></script>
 {% endblock %}

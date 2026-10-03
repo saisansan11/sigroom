@@ -81,6 +81,136 @@ DEFAULT_TIME_PRESETS = (
 )
 
 
+
+def gateway_notices(today: date | None = None, now: datetime | None = None) -> list[dict]:
+    """Return at most four public-safe notices for the SIGROOM gateway.
+
+    Blackout/outage reasons are intentionally not exposed because those models have
+    no public-visibility field. Closed-room rows are combined with SQL UNION so
+    closed notices cost one query; open lodging cohorts cost one more.
+    """
+    from django.db.models import Case, CharField, F, Q, Value, When
+    from django.db.models.functions import Concat
+    from django.urls import reverse
+    from resources.models import Blackout, ResourceOutage
+    from .lodging_models import CourseLodgingCohort
+
+    now = now or timezone.now()
+    today = today or timezone.localdate(now)
+    zone = timezone.get_current_timezone()
+    day_start = timezone.make_aware(datetime.combine(today, time.min), zone)
+    day_end = day_start + timedelta(days=1)
+
+    blackout_target = Case(
+        When(scope=Blackout.Scope.ALL, then=Value("ทุกห้อง")),
+        When(scope=Blackout.Scope.BUILDING, then=Concat(Value("อาคาร "), F("building"))),
+        When(scope=Blackout.Scope.CATEGORY, then=Value("ประเภทห้องที่กำหนด")),
+        default=Value("ห้องที่กำหนด"),
+        output_field=CharField(),
+    )
+    blackout_rows = (
+        Blackout.objects.filter(start_at__lt=day_end, end_at__gt=day_start)
+        .annotate(notice_kind=Value("blackout"), target_label=blackout_target)
+        .values_list("notice_kind", "target_label", "start_at", "end_at")
+    )
+    outage_rows = (
+        ResourceOutage.objects.annotate(
+            effective_end=Case(
+                When(ended_early_at__isnull=False, then=F("ended_early_at")),
+                default=F("end_at"),
+            )
+        )
+        .filter(start_at__lt=day_end, effective_end__gt=day_start)
+        .annotate(
+            notice_kind=Value("outage"),
+            target_label=Concat(Value("ห้อง "), F("resource__code")),
+        )
+        .values_list("notice_kind", "target_label", "start_at", "effective_end")
+    )
+
+    closed_rows = list(blackout_rows.union(outage_rows, all=True).order_by("start_at")[:4])
+    notices: list[dict] = []
+    for _kind, target, start_at, end_at in closed_rows:
+        local_start = timezone.localtime(start_at)
+        local_end = timezone.localtime(end_at)
+        notices.append({
+            "kind": "closed",
+            "title": "งดใช้ห้อง",
+            "body": f"{target} · {local_start:%H:%M}–{local_end:%H:%M} น. · ปิดปรับปรุง",
+            "url": reverse("bookings:calendar"),
+            "sort_at": start_at,
+        })
+
+    open_cohorts = (
+        CourseLodgingCohort.objects.filter(
+            allocation_status=CourseLodgingCohort.AllocationStatus.ALLOCATED,
+            is_active=True,
+            check_out_date__gte=today,
+        )
+        .filter(Q(booking_open_at__isnull=True) | Q(booking_open_at__lte=now))
+        .filter(Q(booking_close_at__isnull=True) | Q(booking_close_at__gte=now))
+        .order_by("check_in_date", "title")[:4]
+    )
+    for cohort in open_cohorts:
+        buddhist_year = cohort.check_in_date.year + 543
+        notices.append({
+            "kind": "lodging_open",
+            "title": "เปิดจองที่พัก",
+            "body": f"{cohort.title} · เข้าพัก {cohort.check_in_date.day}/{cohort.check_in_date.month}/{buddhist_year}",
+            "url": reverse("bookings:lodging_portal", args=[cohort.slug]),
+            "sort_at": timezone.make_aware(datetime.combine(cohort.check_in_date, time.min), zone),
+        })
+
+    notices.sort(key=lambda item: (0 if item["kind"] == "closed" else 1, item["sort_at"]))
+    return notices[:4]
+
+
+def gateway_user_pager(user, now: datetime | None = None) -> dict | None:
+    """Build the authenticated gateway pager in two queries at most."""
+    if not getattr(user, "is_authenticated", False):
+        return None
+
+    from django.db.models import Count, Window
+    from notifications.models import Notification
+
+    now = now or timezone.now()
+    latest_unread = (
+        Notification.objects.filter(user=user, read_at__isnull=True)
+        .annotate(unread_total=Window(expression=Count("pk")))
+        .order_by("-created_at", "-pk")
+        .first()
+    )
+    unread_total = int(getattr(latest_unread, "unread_total", 0) or 0)
+
+    next_booking = (
+        Booking.objects.select_related("room")
+        .filter(
+            requester=user,
+            request_status__in=Booking.HOLDING_STATUSES,
+            end_at__gt=now,
+        )
+        .exclude(usage_status=Booking.UsageStatus.DISPLACED)
+        .order_by("start_at")
+        .first()
+    )
+
+    messages: list[str] = []
+    if latest_unread:
+        messages.append(latest_unread.text)
+    if next_booking:
+        local_start = timezone.localtime(next_booking.start_at)
+        messages.append(f"การจองถัดไป {local_start:%d/%m %H:%M} น. {next_booking.room.code}")
+    if not messages:
+        messages.append("ไม่มีข้อความใหม่")
+
+    local_now = timezone.localtime(now)
+    return {
+        "unread_count": unread_total,
+        "time_text": local_now.strftime("%H:%M"),
+        "messages": messages[:2],
+    }
+
+
 def time_presets() -> list[dict]:
     """ปุ่มช่วงเวลาสำเร็จรูป (งาน C) — อ่านจาก ReferenceValue field=time_preset, ว่างเมื่อไม่มีใช้ค่า default"""
     from .models import ReferenceValue, parse_time_preset

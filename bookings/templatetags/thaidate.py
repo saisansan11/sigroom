@@ -49,3 +49,23 @@ def thai_date_full(value):
         value = timezone.localtime(value).date()
     text = f"วัน{THAI_WEEKDAYS[value.weekday()]}ที่ {value.day} {THAI_MONTHS_FULL[value.month]} พ.ศ. {value.year + 543}"
     return thai_digits(text)
+
+
+@register.filter
+def thai_month_year_short(value):
+    """เดือนย่อ + ปี พ.ศ. เลขไทย เช่น "ต.ค. ๒๕๖๙"."""
+    if not value:
+        return "—"
+    if hasattr(value, "hour"):
+        value = timezone.localtime(value).date()
+    return f"{THAI_MONTHS_SHORT[value.month]} {thai_digits(value.year + 543)}"
+
+
+@register.filter
+def thai_weekday(value):
+    """ชื่อวันภาษาไทย เช่น "วันจันทร์"."""
+    if not value:
+        return "—"
+    if hasattr(value, "hour"):
+        value = timezone.localtime(value).date()
+    return f"วัน{THAI_WEEKDAYS[value.weekday()]}"

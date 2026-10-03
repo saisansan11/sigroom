@@ -1,4 +1,4 @@
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta
 from pathlib import Path
 import math
 import re
@@ -172,3 +172,126 @@ def test_theme_assets_are_local_and_theme_layer_loads_after_app_css():
         assert "fonts.googleapis" not in css
         assert "http://" not in css and "https://" not in css
     assert base.index("css/app.css") < base.index("css/theme_90s.css")
+
+
+
+def _gateway_user(username="gateway-90s-user"):
+    unit = Unit.objects.create(code=username[:20].upper(), name=f"หน่วย {username}")
+    return User.objects.create_user(
+        username=username,
+        email=f"{username}@signalschool.ac.th",
+        password="Password-2569",
+        unit=unit,
+    )
+
+
+def test_gateway_calendar_renders_thai_date_server_side(client, monkeypatch):
+    fixed = timezone.make_aware(datetime(2026, 10, 5, 9, 30), timezone.get_current_timezone())
+    monkeypatch.setattr("bookings.lodging_views.timezone.now", lambda: fixed)
+    response = client.get(reverse("bookings:lodging_about"))
+    assert response.status_code == 200
+    html = response.content.decode("utf-8")
+    assert "๕" in html
+    assert "ต.ค. ๒๕๖๙" in html
+    assert "วันจันทร์" in html
+    assert 'class="gateway-tear-calendar"' in html
+    assert 'role="img"' in html
+
+
+def test_gateway_pager_uses_unread_notifications_and_private_cache(client):
+    from notifications.models import Notification
+
+    user = _gateway_user("gateway-pager")
+    Notification.objects.create(user=user, text="ข้อความเก่า")
+    Notification.objects.create(user=user, text="ข้อความล่าสุด")
+    client.force_login(user)
+
+    response = client.get(reverse("bookings:lodging_about"))
+    html = response.content.decode("utf-8")
+    assert 'class="gateway-pager"' in html
+    assert "มีข้อความ 2" in html
+    assert "ข้อความล่าสุด" in html
+    assert reverse("bookings:my_bookings") in html
+    assert "private" in response.get("Cache-Control", "")
+    assert "no-store" in response.get("Cache-Control", "")
+
+
+def test_gateway_pager_empty_and_anonymous_privacy_contract(client):
+    user = _gateway_user("gateway-empty")
+    client.force_login(user)
+    authenticated = client.get(reverse("bookings:lodging_about"))
+    assert "ไม่มีข้อความใหม่" in authenticated.content.decode("utf-8")
+
+    client.logout()
+    anonymous = client.get(reverse("bookings:lodging_about"))
+    html = anonymous.content.decode("utf-8")
+    assert 'class="gateway-pager"' not in html
+    assert "no-store" not in anonymous.get("Cache-Control", "")
+
+
+def test_gateway_notice_board_hides_internal_blackout_title(client):
+    from resources.models import Blackout
+
+    now = timezone.now()
+    Blackout.objects.create(
+        title="เหตุผลภายในห้ามเผยแพร่",
+        start_at=now - timedelta(hours=1),
+        end_at=now + timedelta(hours=2),
+        scope=Blackout.Scope.ALL,
+    )
+    response = client.get(reverse("bookings:lodging_about"))
+    html = response.content.decode("utf-8")
+    assert "ประกาศวันนี้" in html
+    assert "งดใช้ห้อง" in html
+    assert "ปิดปรับปรุง" in html
+    assert "เหตุผลภายในห้ามเผยแพร่" not in html
+
+
+def test_gateway_notice_board_shows_open_lodging_cohort(client):
+    user = _gateway_user("gateway-cohort")
+    today = timezone.localdate()
+    cohort = CourseLodgingCohort.objects.create(
+        title="หลักสูตรเปิดจองทดสอบ",
+        slug="gateway-open-cohort",
+        supervisor=user,
+        unit=user.unit,
+        check_in_date=today + timedelta(days=1),
+        check_out_date=today + timedelta(days=3),
+        allocation_status=CourseLodgingCohort.AllocationStatus.ALLOCATED,
+        is_active=True,
+    )
+    response = client.get(reverse("bookings:lodging_about"))
+    html = response.content.decode("utf-8")
+    assert "เปิดจองที่พัก" in html
+    assert cohort.title in html
+    assert reverse("bookings:lodging_portal", args=[cohort.slug]) in html
+
+
+def test_gateway_notice_board_empty_state(client):
+    response = client.get(reverse("bookings:lodging_about"))
+    assert "วันนี้ไม่มีประกาศ" in response.content.decode("utf-8")
+
+
+def test_gateway_new_data_services_stay_within_four_queries(django_assert_num_queries):
+    from bookings.services import gateway_notices, gateway_user_pager
+
+    user = _gateway_user("gateway-query-budget")
+    now = timezone.now()
+    today = timezone.localdate(now)
+    with django_assert_num_queries(4):
+        gateway_notices(today=today, now=now)
+        gateway_user_pager(user, now=now)
+
+
+def test_gateway_90s_assets_reduce_motion_and_stay_local():
+    css = (ROOT / "static" / "css" / "gateway_90s.css").read_text(encoding="utf-8")
+    js = (ROOT / "static" / "js" / "gateway_90s.js").read_text(encoding="utf-8")
+    template = (ROOT / "templates" / "lodging" / "lodging_about.html").read_text(encoding="utf-8")
+    assert "prefers-reduced-motion: reduce" in css
+    assert "prefers-reduced-motion: reduce" in js
+    assert "3500" in js
+    assert "visibilitychange" in js
+    assert "fonts.googleapis" not in css
+    assert not re.search(r"url\([\"\']?https?://", css)
+    assert "gradient" not in css.lower()
+    assert "gateway_90s.css" in template and "gateway_90s.js" in template

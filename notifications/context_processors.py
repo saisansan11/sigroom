@@ -20,7 +20,7 @@ def navigation_counts(request):
         for slug in services
     ]
     return {
-        "nav_unread_count": unread_count(request.user),
+        "nav_unread_count": getattr(request, "_nav_unread_count", None) if getattr(request, "_nav_unread_count", None) is not None else unread_count(request.user),
         "nav_can_access_approvals": can_access,
         "nav_pending_approval_count": len(pending_for(request.user)) if can_access else 0,
         "nav_can_manage_usage": can_manage_usage(request.user),
