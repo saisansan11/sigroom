@@ -1,0 +1,357 @@
+<!doctype html>
+<html lang="th">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ต้นแบบ 3D · นกพิราบสื่อสารของครู</title>
+<link href="../../static/css/fonts.css" rel="stylesheet">
+<style>
+/* อุปกรณ์รูปไข่สีเขียวทหาร จอ LCD ขาวดำ บนพื้นกระดาษธีม A */
+:root{
+  color-scheme:light;
+  --paper:#F5F1E6; --paper-raised:#FBF8F0; --paper-sunk:#EFE8D6; --rule:#D8CFB8; --rule-strong:#B9AD8F;
+  --ink:#1F2A24; --ink-muted:#5E5D52; --link:#1F4E79; --stamp:#A3241C; --ok:#2F6B3A;
+  --shell:#5B6B4A; --shell-hi:#71825D; --shell-lo:#3F4B33; --bezel:#2A2E25;
+  --lcd:#A7B293; --lcd-on:#1C2419; --lcd-ghost:#9AA588;
+  --btn:#C9B88A; --btn-lo:#8E7F57;
+  --font-sans:"Sarabun",Tahoma,"Leelawadee UI",sans-serif;
+  --font-serif:"Noto Serif Thai","Sarabun",Tahoma,serif;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--font-sans);font-size:16px;line-height:1.55}
+.wrap{max-width:440px;margin:0 auto;padding-inline:16px;padding-block:20px 48px}
+h1{font-family:var(--font-serif);font-weight:600;font-size:22px;margin:0;border-bottom:2px solid var(--ink);padding-bottom:6px}
+h2{font-family:var(--font-serif);font-weight:600;font-size:17px;margin:28px 0 10px;border-bottom:2px solid var(--ink);padding-bottom:4px}
+.sub{color:var(--ink-muted);font-size:14px;margin:6px 0 14px}
+.mock-note{font-size:13px;color:var(--ink-muted);border:1px dashed var(--rule);padding:8px 10px;background:var(--paper-raised);margin:0 0 18px}
+
+/* อุปกรณ์รูปไข่ */
+.device-stage{display:flex;justify-content:center;padding:26px 0 8px}
+.device{position:relative;width:min(300px,100%);aspect-ratio:300/350;
+  background:radial-gradient(120% 90% at 30% 22%,var(--shell-hi) 0,var(--shell) 45%,var(--shell-lo) 100%);
+  border-radius:50% 50% 46% 46% / 58% 58% 42% 42%;
+  box-shadow:inset 0 -8px 0 rgba(0,0,0,.18),0 10px 18px -8px rgba(31,42,36,.45)}
+.ring{position:absolute;left:50%;top:-22px;width:34px;height:34px;margin-left:-17px;border:5px solid #9b9f97;border-radius:50%;
+  border-bottom-color:transparent;transform:rotate(45deg)}
+.loop{position:absolute;left:50%;top:-4px;width:20px;height:12px;margin-left:-10px;background:var(--shell-lo);border-radius:6px 6px 2px 2px}
+.brandmark{position:absolute;left:0;right:0;top:11%;text-align:center;color:#E8E2CC;font-family:var(--font-serif);font-weight:600;font-size:13px;letter-spacing:.14em;opacity:.9}
+.bezel{position:absolute;left:17%;right:17%;top:17%;background:var(--bezel);border-radius:14px;padding:6% 7% 4%;
+  box-shadow:inset 0 3px 0 rgba(0,0,0,.35)}
+.icons{display:flex;justify-content:space-between;font-size:10.5px;color:#8f9585;margin:0 0 4%;line-height:1}
+.icons span.on{color:#E8E2CC}
+canvas{display:block;width:100%;aspect-ratio:32/24;background:var(--lcd);border-radius:3px;image-rendering:pixelated;image-rendering:crisp-edges;
+  box-shadow:inset 0 2px 0 rgba(0,0,0,.2)}
+.lcd-text{margin-top:4%;color:#E8E2CC;font-size:11px;text-align:center;line-height:1.3;min-height:2.6em}
+.btns{position:absolute;left:0;right:0;bottom:6%;display:flex;justify-content:center;gap:9%}
+.btns button{width:44px;height:44px;border-radius:50%;border:0;background:var(--btn);box-shadow:inset 0 -4px 0 var(--btn-lo),0 2px 0 rgba(0,0,0,.25);
+  font:inherit;font-size:12px;font-weight:600;color:var(--ink);cursor:pointer}
+.btns button:active{box-shadow:inset 0 -1px 0 var(--btn-lo);transform:translateY(2px)}
+.btns button:nth-child(2){margin-top:12px}
+.btn-labels{display:flex;justify-content:center;gap:24px;font-size:13px;color:var(--ink-muted);margin-top:6px}
+
+/* ข้อมูลนก */
+.ledger div{display:grid;grid-template-columns:120px minmax(0,1fr);border-bottom:1px solid var(--rule);padding:7px 0;font-size:15px}
+.ledger dt{color:var(--ink-muted)}.ledger dd{margin:0}
+.ledger dl{margin:0}
+.bar{height:10px;border:1px solid var(--ink);background:var(--paper-raised);margin-top:6px}
+.bar i{display:block;height:100%;background:var(--ink)}
+.stages{display:flex;gap:4px;margin-top:6px;flex-wrap:wrap;font-size:12.5px}
+.stages span{border:1px solid var(--rule-strong);padding:1px 7px;color:var(--ink-muted)}
+.stages span.done{border-color:var(--ink);color:var(--ink)}
+.stages span.now{background:var(--ink);color:var(--paper-raised);border-color:var(--ink)}
+
+/* ใบยืนยันจองครั้งแรก */
+.slip{position:relative;background:var(--paper-raised);border:1px solid var(--rule-strong);padding:14px 30px 14px;
+  background-image:radial-gradient(circle at 7px 50%,var(--paper) 0 3.5px,transparent 4px),radial-gradient(circle at calc(100% - 7px) 50%,var(--paper) 0 3.5px,transparent 4px);
+  background-size:100% 14px;background-repeat:repeat-y}
+.slip .ref{font-variant-numeric:tabular-nums;letter-spacing:.04em;font-size:13.5px;color:var(--ink-muted)}
+.slip .room{font-weight:600;font-size:18px;font-variant-numeric:tabular-nums}
+.slip .egg-row{display:flex;gap:12px;align-items:center;margin-top:10px;border-top:1px dashed var(--rule-strong);padding-top:10px}
+.slip canvas{width:64px;flex:0 0 64px;aspect-ratio:1}
+.slip .egg-row p{margin:0;font-size:14px}
+.stamp{position:absolute;right:16px;top:14px;color:var(--stamp);border:4px double var(--stamp);font-family:var(--font-serif);font-weight:600;
+  padding:0 10px;transform:rotate(-10deg);font-size:15px}
+
+/* ตั้งค่า */
+.settings{display:grid;gap:12px}
+.settings label{display:grid;gap:4px;font-size:14px}
+.settings input[type=text]{font:inherit;padding:9px 10px;border:1px solid var(--ink);background:var(--paper-raised);border-radius:2px}
+.settings .check{display:flex;align-items:center;gap:8px}
+
+/* ตัวควบคุมจำลอง */
+.sim{margin-top:26px;border:1px dashed var(--rule);background:var(--paper-raised);padding:10px 12px;font-size:14px;display:grid;gap:8px}
+.sim .row{display:flex;flex-wrap:wrap;gap:6px}
+.sim button{font:inherit;font-size:13.5px;border:1px solid var(--ink);background:var(--paper);padding:6px 10px;border-radius:2px;cursor:pointer;box-shadow:0 2px 0 var(--rule-strong)}
+.sim button[aria-pressed=true]{background:var(--ink);color:var(--paper-raised)}
+.sim .hatch{border-color:var(--stamp);color:var(--stamp);font-weight:600}
+:focus-visible{outline:3px solid var(--link);outline-offset:2px}
+[hidden]{display:none!important}
+/* ตัวเครื่อง 3D: แยกระนาบของฝา ขอบจอ และปุ่ม โดยไม่เพิ่มไลบรารี */
+.device-stage{perspective:1000px;padding-block:40px 28px}
+.device{transform-style:preserve-3d;transform:rotateY(var(--angle,0deg));transition:transform .3s ease;
+  background:radial-gradient(ellipse at 30% 12%,#889774,transparent 58%),repeating-linear-gradient(0deg,transparent 0 3px,#00000005 3px 4px),#5b6b4a;
+  box-shadow:inset 0 2px 2px #d3dab27a,inset 0 -6px 3px #26361db3,inset 0 0 0 2px #35462c}
+.device::before,.device::after{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none}
+.device::before{background:#39482e;transform:translateZ(-14px);box-shadow:0 18px 22px -12px #1f2a2470}
+.device::after{inset:3px;transform:translateZ(-7px);border:5px solid #283622;background:#46583a}
+.bezel{transform:translateZ(2px);border:1px solid #1e291a;
+  background:linear-gradient(140deg,#353e2f,#1c2518);box-shadow:inset 0 4px 6px #0009,0 1px 0 #c3cf9959;}
+.bezel canvas{border:2px solid #647452;box-shadow:0 0 0 1px #10190b}
+.btns{transform:translateZ(8px)}
+.btns button{background:radial-gradient(circle at 35% 20%,#e1d6b1,#c9b88a 65%,#a18c5b);
+  border:1px solid #887648;box-shadow:inset 0 1px 1px #fff8,0 4px 0 #6c5e3f,0 5px 3px #15220da6;transition:transform .1s ease,box-shadow .1s ease}
+.btns button:active{transform:translateY(3px);box-shadow:inset 0 1px 1px #fff5,0 1px 0 #6c5e3f}
+.ring{transform:translateZ(-2px) rotate(45deg);border-color:#afb8a5 #626b5b transparent #c6cdbc;box-shadow:inset 0 1px 1px #fff8}
+.brandmark{transform:translateZ(2px);text-shadow:0 1px 1px #26331c}
+.device-screw{position:absolute;top:70%;width:9px;height:9px;border-radius:50%;background:radial-gradient(circle at 30% 20%,#c2cbb8,#526047 60%,#1f2c18);box-shadow:0 0 0 2px #39492f}
+.device-screw.left{left:12%}.device-screw.right{right:12%}
+.view-controls{display:grid;gap:8px;margin-block:14px 22px;font-size:14px}
+.view-controls input{width:100%;min-height:44px;accent-color:var(--shell-lo)}
+.view-controls button,.sim button{min-height:44px}
+.view-controls button{font:inherit;background:var(--paper-raised);border:1px solid var(--ink);color:var(--ink);cursor:pointer}
+.ledger dd{overflow-wrap:anywhere}
+@media(prefers-reduced-motion:reduce){.device{transform:none;transition:none}.btns button{transition:none}.view-controls{display:none}}
+</style>
+
+<div class="wrap">
+  <h1>นกพิราบสื่อสารของฉัน</h1>
+  <p class="sub">นกโตขึ้นทุกครั้งที่สอนจริงจนจบคาบ ไม่ต้องเข้ามาให้อาหารทุกวัน และนกไม่ตาย</p>
+  <p class="mock-note">ต้นแบบรูปลักษณ์ 3D · ข้อมูลสมมติทั้งหมด ปุ่มท้ายหน้าใช้จำลองขั้นของนก ยังไม่เชื่อมบัญชีหรือการจองจริง</p>
+
+  <div class="device-stage">
+    <div class="device" id="device">
+      <span class="loop"></span><span class="ring"></span>
+      <span class="device-screw left" aria-hidden="true"></span><span class="device-screw right" aria-hidden="true"></span>
+      <div class="brandmark">พิราบสื่อสาร</div>
+      <div class="bezel">
+        <div class="icons" aria-hidden="true"><span id="icFeed">อาหาร</span><span id="icPlay">เล่น</span><span id="icStat">สถิติ</span></div>
+        <canvas id="lcd" width="32" height="24" role="img" aria-label="หน้าจอนกพิราบ"></canvas>
+        <div class="lcd-text" id="lcdText" aria-live="polite">ไข่จะฟัก จ. 5 ต.ค. 10.00 น.</div>
+      </div>
+      <div class="btns">
+        <button type="button" id="bA" aria-label="ให้อาหาร">A</button>
+        <button type="button" id="bB" aria-label="ลูบหัว">B</button>
+        <button type="button" id="bC" aria-label="ดูสถิติ">C</button>
+      </div>
+    </div>
+  </div>
+  <div class="btn-labels" aria-hidden="true"><span>A ให้อาหาร</span><span>B ลูบหัว</span><span>C สถิติ</span></div>
+  <div class="view-controls">
+    <label for="deviceTilt">มุมมองตัวเครื่อง · เอียงเพื่อดูความหนา</label>
+    <input id="deviceTilt" type="range" min="-24" max="24" value="0" step="1">
+    <button id="resetTilt" type="button">มองด้านหน้าตรง</button>
+  </div>
+
+  <h2>ข้อมูลนก</h2>
+  <section class="ledger">
+    <dl>
+      <div><dt>ชื่อ</dt><dd id="petName">น้องสาส์น</dd></div>
+      <div><dt>ขั้น</dt><dd><span id="stageName">ไข่</span>
+        <div class="stages" id="stages"></div></dd></div>
+      <div><dt>สอนจบแล้ว</dt><dd><span id="taught">0</span> ครั้ง · <span id="nextText">ไข่จะฟักเมื่อถึงเวลาสอน</span>
+        <div class="bar" aria-hidden="true"><i id="barFill" style="width:0"></i></div></dd></div>
+      <div><dt>อารมณ์</dt><dd id="moodText">รอคุณสอน</dd></div>
+      <div><dt>สอนครั้งถัดไป</dt><dd>จ. 5 ต.ค. 2569 · 10.00–11.00 น. · STU-ONLINE-2</dd></div>
+    </dl>
+  </section>
+
+  <h2>หลังจองห้องสอนออนไลน์ครั้งแรก</h2>
+  <div class="slip">
+    <span class="stamp" aria-hidden="true">จองแล้ว</span>
+    <div class="ref">เลขที่ 7F3A9C1E</div>
+    <div class="room">STU-ONLINE-2</div>
+    <div>จ. 5 ต.ค. 2569 · 10.00–11.00 น.</div>
+    <div class="egg-row">
+      <canvas id="eggMini" width="16" height="16" role="img" aria-label="ไข่นกพิราบ"></canvas>
+      <p><strong>คุณได้ไข่นกพิราบสื่อสาร 1 ฟอง</strong><br>ไข่จะฟักเมื่อถึงเวลาสอน จ. 5 ต.ค. 10.00 น.</p>
+    </div>
+  </div>
+
+  <h2>ตั้งค่า</h2>
+  <div class="settings">
+    <label for="nameInput">ตั้งชื่อนก
+      <input type="text" id="nameInput" value="น้องสาส์น" maxlength="20" list="nameList">
+      <datalist id="nameList"><option value="น้องสาส์น"><option value="จ่าพิราบ"><option value="สื่อสารน้อย"><option value="ไปรษณีย์"></datalist>
+    </label>
+    <label class="check"><input type="checkbox" id="petOff"> ไม่ต้องแสดงนกพิราบในบัญชีของฉัน</label>
+  </div>
+
+  <div class="sim" aria-label="ตัวควบคุมจำลอง (เฉพาะ mockup)">
+    <strong>จำลอง (เฉพาะ mockup)</strong>
+    <div class="row" id="simStage"></div>
+    <div class="row"><button type="button" class="hatch" id="simHatch">ถึงเวลาสอน: ฟักไข่</button></div>
+    <div class="row" id="simMood"></div>
+  </div>
+</div>
+
+<script>
+(function(){
+  const motion = matchMedia('(prefers-reduced-motion: reduce)');
+  let reduce = motion.matches;
+  const $ = id => document.getElementById(id);
+
+  // ---------- ภาพพิกเซล (วาดเอง) ----------
+  const EGG = [
+    "....####....","..##....##..",".#........#.",".#..#.....#.","#..........#","#....#.....#","#..........#",
+    "#.#......#.#","#..........#","#....#.....#",".#........#.",".#........#.","..##....##..","....####...."];
+  const EGG_CRACK = EGG.slice(); EGG_CRACK[6]="#.#.#.#.#.##"; EGG_CRACK[7]="##.#.#.#.#.#";
+  const CHICK = [
+    "................","................","......####......","....##....##....","...#........#...","..#......##..#..",
+    "..#......##..###","..#..........##.","..#.##.......#..","..#...##.....#..","...#.........#..","....##....###...",
+    "......####......","......#..#......",".....##..##.....","................"];
+  const BIRD = [
+    "................","...........###..","..........#####.","..........##.###","..........####..","...........###..",
+    "......########..","....###########.","##.##.#########.",".####.....#####.","..#####....####.","...###########..",
+    ".....#######....","......#...#.....",".....##..##.....","................"];
+  const BIRD_BLINK = BIRD.slice(); BIRD_BLINK[3]="..........######";
+  const TUBE = [[7,13],[8,13],[7,14],[8,14]];                    // กระบอกสาส์นที่ขา
+  const CHEVRON = [[7,7],[8,6],[9,7],[10,7],[11,6],[12,7]];      // บั้งยศบนตัว (เจาะเป็นช่องว่าง)
+  const HEART = [".#.#.","#####","#####",".###.","..#.."];
+  const NOTE = ["..##.","..#.#","..#..","###..","##..."];
+  const RAIN = [".###.","#####","#.#.#",".#.#.","#.#.."];
+  const GRAIN = [[0,0]];
+
+  const STAGES = [
+    {key:'egg',   name:'ไข่',            need:0},
+    {key:'chick', name:'ลูกนก',          need:1},
+    {key:'young', name:'นกรุ่น',          need:5},
+    {key:'adult', name:'นกสื่อสาร',      need:15},
+    {key:'rank',  name:'นกสื่อสารติดยศ', need:30},
+  ];
+  const sampleTaught = {egg:0, chick:2, young:8, adult:18, rank:31};
+  let stage='egg', mood='normal', taught=0, frame=0, effect=null, effectT=0, hatching=null;
+
+  const lcd = $('lcd'), ctx = lcd.getContext('2d');
+  const pal = { on:'#1C2419', ghost:'#9AA588', bg:'#A7B293' };
+
+  function plot(c, map, ox, oy){
+    c.fillStyle = pal.on;
+    map.forEach((row,y)=>{ for(let x=0;x<row.length;x++) if(row[x]==='#') c.fillRect(ox+x, oy+y, 1, 1); });
+  }
+  function dots(c, list, ox, oy){ c.fillStyle = pal.on; list.forEach(([x,y])=>c.fillRect(ox+x, oy+y, 1, 1)); }
+  function ghost(c, w, h){
+    c.fillStyle = pal.bg; c.fillRect(0,0,w,h);
+    c.fillStyle = pal.ghost;
+    for(let y=0;y<h;y++) for(let x=0;x<w;x++) if((x+y)%2===0) c.fillRect(x,y,1,1);
+    c.fillStyle = 'rgba(167,178,147,.55)'; c.fillRect(0,0,w,h);
+  }
+
+  function draw(){
+    ghost(ctx, 32, 24);
+    const bob = (!reduce && frame%2) ? 1 : 0;
+    if(hatching){
+      const t = hatching.t;
+      if(t < 18){ const dx = reduce?0:((t%4<2)?-1:1); plot(ctx, EGG, 10+dx, 6); }
+      else if(t < 30){ plot(ctx, EGG_CRACK, 10, 6); }
+      else {
+        const lift = Math.min(6, t-30);
+        plot(ctx, EGG_CRACK.slice(0,7), 10+Math.floor(lift/2), 6-lift);
+        plot(ctx, EGG_CRACK.slice(7), 10, 13);
+        if(t > 36) plot(ctx, CHICK, 8, 6-(t>40?2:0));
+        if(t > 40 && (t%4<2)) dots(ctx, [[3,3],[27,4],[4,18],[28,17]], 0, 0);
+      }
+    } else if(stage==='egg'){
+      const dx = (!reduce && frame%6===0) ? 1 : 0;
+      plot(ctx, EGG, 10+dx, 6);
+    } else if(stage==='chick'){
+      plot(ctx, CHICK, 8, 5+bob);
+    } else {
+      const sprite = (!reduce && frame%7===3) ? BIRD_BLINK : BIRD;
+      plot(ctx, sprite, 8, 5+bob);
+      if(stage==='adult'||stage==='rank') dots(ctx, TUBE, 8, 5+bob);
+      if(stage==='rank'){ ctx.fillStyle=pal.bg; CHEVRON.forEach(([x,y])=>ctx.fillRect(8+x,5+bob+y,1,1)); }
+    }
+    // อารมณ์และเอฟเฟกต์
+    if(!hatching && stage!=='egg'){
+      if(effect==='feed'){ for(let i=0;i<3;i++) dots(ctx, GRAIN, 25+i, Math.min(19, 4+effectT+i*2)); }
+      const icon = effect==='pat' ? HEART : (mood==='happy' ? NOTE : (mood==='sad' ? RAIN : null));
+      if(icon) plot(ctx, icon, 2, 1 + ((!reduce && frame%2)?1:0));
+    }
+  }
+
+  function setText(t){ $('lcdText').textContent = t; }
+  function idleText(){
+    const name = $('nameInput').value.trim() || 'นกของคุณ';
+    if(stage==='egg') return 'ไข่จะฟัก จ. 5 ต.ค. 10.00 น.';
+    if(mood==='sad') return name+' เหงา เมื่อวานไม่มีคนมา';
+    if(mood==='happy') return name+' ดีใจ ขอบคุณที่คืนห้องล่วงหน้า';
+    return name+' รอคุณสอน จ. 10.00 น.';
+  }
+
+  function updateInfo(){
+    const idx = STAGES.findIndex(s=>s.key===stage);
+    $('stageName').textContent = STAGES[idx].name;
+    $('taught').textContent = taught;
+    const next = STAGES[idx+1];
+    if(stage==='egg'){ $('nextText').textContent='ไข่จะฟักเมื่อถึงเวลาสอน'; $('barFill').style.width='0'; }
+    else if(next){
+      const span = next.need - STAGES[idx].need, got = taught - STAGES[idx].need;
+      $('nextText').textContent = 'อีก '+(next.need-taught)+' ครั้งโตเป็น'+next.name;
+      $('barFill').style.width = Math.max(0,Math.min(100, got/span*100))+'%';
+    } else { $('nextText').textContent='โตเต็มที่แล้ว'; $('barFill').style.width='100%'; }
+    $('stages').innerHTML = STAGES.map((s,i)=>'<span class="'+(i<idx?'done':i===idx?'now':'')+'">'+s.name+'</span>').join('');
+    $('moodText').textContent = stage==='egg' ? 'รอฟัก' : mood==='happy' ? 'ดีใจ (ยกเลิกล่วงหน้า คืนห้องให้คนอื่น)'
+      : mood==='sad' ? 'เศร้า 1 วัน (จองแล้วไม่ได้มาใช้ห้อง) · ไม่ถอยขั้น' : 'ปกติ';
+    $('petName').textContent = $('nameInput').value.trim() || 'นกของคุณ';
+    if(!effect && !hatching) setText(idleText());
+    document.querySelectorAll('#simStage button').forEach(b=>b.setAttribute('aria-pressed', b.dataset.k===stage));
+    document.querySelectorAll('#simMood button').forEach(b=>b.setAttribute('aria-pressed', b.dataset.m===mood));
+    draw();
+  }
+
+  // ปุ่มบนตัวเครื่อง: เป็นของเล่น ไม่มีผลกับการเติบโต
+  function flash(id){ const el=$(id); el.classList.add('on'); setTimeout(()=>el.classList.remove('on'),900); }
+  $('bA').onclick = ()=>{ if(stage==='egg'||hatching) return setText('ไข่ยังไม่ฟัก รอถึงเวลาสอน');
+    flash('icFeed'); effect='feed'; effectT=0; setText('ง่ำ ๆ อิ่มแล้ว'); };
+  $('bB').onclick = ()=>{ if(stage==='egg'||hatching) return setText('ไข่อุ่น ๆ');
+    flash('icPlay'); effect='pat'; effectT=0; setText('กุ๊ก กุ๊ก ชอบจัง'); };
+  $('bC').onclick = ()=>{ flash('icStat'); setText('สอนจบแล้ว '+taught+' ครั้ง'); effect='stat'; effectT=0; };
+
+  // ไข่ในใบยืนยันจอง
+  const mini = $('eggMini').getContext('2d'); ghost(mini,16,16); plot(mini, EGG, 2, 1);
+
+  // ตัวควบคุมจำลอง
+  $('simStage').innerHTML = STAGES.map(s=>'<button type="button" data-k="'+s.key+'">'+s.name+'</button>').join('');
+  $('simStage').onclick = e=>{ const k=e.target.dataset&&e.target.dataset.k; if(!k) return;
+    hatching=null; stage=k; taught=sampleTaught[k]; if(k==='egg') mood='normal'; effect=null; updateInfo(); };
+  $('simMood').innerHTML = [['normal','อารมณ์ปกติ'],['happy','ยกเลิกล่วงหน้า (ดีใจ)'],['sad','ไม่มาใช้ห้อง (เศร้า)']]
+    .map(([m,l])=>'<button type="button" data-m="'+m+'">'+l+'</button>').join('');
+  $('simMood').onclick = e=>{ const m=e.target.dataset&&e.target.dataset.m; if(!m) return; mood=m; effect=null; updateInfo(); };
+  $('simHatch').onclick = ()=>{
+    stage='egg'; taught=0; mood='normal'; effect=null; updateInfo();
+    if(reduce){ stage='chick'; taught=0; setText('ไข่ฟักแล้ว ได้ลูกนก'); updateInfo(); return; }
+    hatching={t:0}; setText('ถึงเวลาสอนแล้ว ไข่กำลังฟัก…');
+  };
+  $('nameInput').addEventListener('input', updateInfo);
+  $('petOff').addEventListener('change', e=>{ $('device').style.opacity = e.target.checked ? .35 : 1;
+    setText(e.target.checked ? 'ปิดการแสดงนกแล้ว' : idleText()); });
+
+  // จังหวะเวลา: เฟรมนิ่ง 2 ครั้ง/วินาที แบบของเล่น LCD
+  let timer;
+  function tick(){
+    if(hatching){ hatching.t += 2;
+      if(hatching.t > 52){ hatching=null; stage='chick'; taught=0; setText('ไข่ฟักแล้ว ได้ลูกนก ตั้งชื่อได้ด้านล่าง'); updateInfo(); return; } }
+    if(effect){ effectT++; if(effectT>8){ effect=null; setText(idleText()); } }
+    if(!reduce || hatching) frame++;
+    draw();
+  }
+  function syncTimer(){
+    clearInterval(timer);
+    if(!document.hidden && !reduce && !$('petOff').checked) timer=setInterval(tick,250);
+    draw();
+  }
+  document.addEventListener('visibilitychange',syncTimer);
+  motion.addEventListener('change',e=>{
+    reduce=e.matches;
+    if(reduce && hatching){hatching=null;stage='chick';taught=0;updateInfo();}
+    syncTimer();
+  });
+  $('petOff').addEventListener('change',syncTimer);
+  $('deviceTilt').addEventListener('input',e=>$('device').style.setProperty('--angle',e.target.value+'deg'));
+  $('resetTilt').addEventListener('click',()=>{$('deviceTilt').value='0';$('device').style.setProperty('--angle','0deg');});
+  ['bA','bB','bC'].forEach(id=>$(id).addEventListener('click',draw));
+
+  updateInfo();
+  syncTimer();
+})();
+</script>
+</html>
