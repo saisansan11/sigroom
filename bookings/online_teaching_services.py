@@ -94,7 +94,7 @@ def suggest_online_rooms(*, user, start_at, end_at) -> tuple[list[Resource], lis
     """คืนห้องว่างและช่วงใกล้เคียงสูงสุด 3 ช่วง (ทีละ 30 นาที ภายในวันเดียวกัน)."""
     rooms = _bookable_online_rooms(user, start_at, end_at)
     duration = end_at - start_at
-    if duration <= timedelta(0):
+    if rooms or duration <= timedelta(0):
         return rooms, []
 
     local_start = timezone.localtime(start_at)

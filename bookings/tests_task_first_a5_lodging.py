@@ -1,4 +1,4 @@
-from datetime import timedelta
+from datetime import datetime, time, timedelta
 
 import pytest
 from django.contrib.auth.models import Permission
@@ -6,10 +6,11 @@ from django.urls import reverse
 from django.utils import timezone
 
 from accounts.models import Unit, User
+from bookings.lodging_about_data import FLOOR4_LODGING_ROOMS, FLOOR5_LODGING_ROOMS, TOTAL_ROOMS
 from bookings.lodging_models import CourseLodgingCohort
 from bookings.lodging_services import available_public_lodging_rooms, request_general_lodging
 from bookings.models import Booking
-from resources.models import Resource, ResourceRule
+from resources.models import Blackout, Resource, ResourceRule
 
 pytestmark = pytest.mark.django_db
 
@@ -29,6 +30,33 @@ def _room(code, capacity=2):
     )
     ResourceRule.objects.create(resource=room, approval_policy=ResourceRule.ApprovalPolicy.REQUIRED)
     return room
+
+
+def _authoritative_rooms():
+    rooms = []
+    for number in FLOOR4_LODGING_ROOMS + FLOOR5_LODGING_ROOMS:
+        rooms.append(
+            Resource(
+                code=str(number),
+                name=f"ห้อง {number}",
+                building="อาคารที่พักทดสอบ",
+                floor=str(number)[0],
+                resource_type=Resource.Type.ROOM,
+                room_category=Resource.Category.LODGING,
+                capacity=2 if number in FLOOR4_LODGING_ROOMS else 4,
+                status=Resource.Status.ACTIVE,
+            )
+        )
+    Resource.objects.bulk_create(rooms)
+    created = list(Resource.objects.filter(code__in=[str(n) for n in FLOOR4_LODGING_ROOMS + FLOOR5_LODGING_ROOMS]))
+    ResourceRule.objects.bulk_create(
+        [
+            ResourceRule(resource=room, approval_policy=ResourceRule.ApprovalPolicy.REQUIRED)
+            for room in created
+        ]
+    )
+    assert len(created) == TOTAL_ROOMS
+    return created
 
 
 def _user(username="a5-staff"):
@@ -272,3 +300,36 @@ def test_attendee_plus_button_has_server_side_fallback(client):
     assert response.status_code == 200
     assert str(response.context["form"].initial["attendees"]) == "2"
     assert room in list(response.context["form"].fields["room"].queryset)
+
+
+@pytest.mark.parametrize(
+    "route_name",
+    ["bookings:lodging_general_request_rooms", "bookings:lodging_general_request"],
+)
+@pytest.mark.parametrize("all_blocked", [False, True], ids=["available", "full"])
+def test_public_lodging_search_query_budget_87_rooms(
+    client, django_assert_max_num_queries, route_name, all_blocked
+):
+    _authoritative_rooms()
+    check_in = timezone.localdate() + timedelta(days=20)
+    check_out = check_in + timedelta(days=2)
+    if all_blocked:
+        zone = timezone.get_current_timezone()
+        Blackout.objects.create(
+            title="ปิดทดสอบ query budget",
+            start_at=timezone.make_aware(datetime.combine(check_in - timedelta(days=7), time.min), zone),
+            end_at=timezone.make_aware(datetime.combine(check_out + timedelta(days=8), time.min), zone),
+            scope=Blackout.Scope.ALL,
+        )
+
+    params = {
+        "check_in": check_in.isoformat(),
+        "check_out": check_out.isoformat(),
+        "attendees": "1",
+    }
+    with django_assert_max_num_queries(25):
+        response = client.get(reverse(route_name), params)
+
+    assert response.status_code == 200
+    expected_count = 0 if all_blocked else TOTAL_ROOMS
+    assert response.context["available_room_count"] == expected_count
