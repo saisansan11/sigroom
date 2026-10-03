@@ -20,6 +20,8 @@ from django.utils import timezone
 from audit.services import audit
 from resources.models import Resource
 
+from .lodging_about_data import FLOOR4_LODGING_ROOMS, FLOOR5_LODGING_ROOMS, TOTAL_ROOMS
+
 from .lodging_models import (
     CourseLodgingAccess,
     CourseLodgingCohort,
@@ -452,8 +454,207 @@ def set_cohort_self_booking(*, cohort: CourseLodgingCohort, actor, enabled: bool
     )
 
 
+
+def public_lodging_rooms():
+    """Public lodging inventory, preferring the complete authoritative 401–530 registry."""
+    base = Resource.objects.filter(
+        resource_type=Resource.Type.ROOM,
+        room_category=Resource.Category.LODGING,
+        status=Resource.Status.ACTIVE,
+    )
+    plan_numbers = FLOOR4_LODGING_ROOMS + FLOOR5_LODGING_ROOMS
+    plan_codes = [code for number in plan_numbers for code in (str(number), f"DORM-{number}")]
+    authoritative = base.filter(code__in=plan_codes)
+    existing_codes = set(authoritative.values_list("code", flat=True))
+    complete_inventory = (
+        len(existing_codes) == TOTAL_ROOMS
+        and all(
+            sum(alias in existing_codes for alias in (str(number), f"DORM-{number}")) == 1
+            for number in plan_numbers
+        )
+    )
+    if complete_inventory:
+        return authoritative.order_by("floor", "code")
+    return base.order_by("code")
+
+
+def _ranges_overlap(left: DateTimeTZRange, right: DateTimeTZRange) -> bool:
+    return left.lower < right.upper and left.upper > right.lower
+
+
+class _PublicLodgingAvailabilitySnapshot:
+    """Bulk-loaded public lodging conflicts for a bounded date window."""
+
+    def __init__(self, *, window_check_in: date, window_check_out: date):
+        from resources.models import Blackout, ResourceOutage
+
+        self.rooms = list(public_lodging_rooms().select_related("rule"))
+        self.room_ids = {room.pk for room in self.rooms}
+        self.cohorts_by_room = {room.pk: [] for room in self.rooms}
+        self.holds_by_room = {room.pk: [] for room in self.rooms}
+        self.outages_by_room = {room.pk: [] for room in self.rooms}
+        self.blackouts = []
+        self.blackout_room_ids = {}
+        if not self.rooms:
+            return
+
+        max_before = max(
+            (getattr(getattr(room, "rule", None), "buffer_before_min", 0) or 0 for room in self.rooms),
+            default=0,
+        )
+        max_after = max(
+            (getattr(getattr(room, "rule", None), "buffer_after_min", 0) or 0 for room in self.rooms),
+            default=0,
+        )
+        zone = timezone.get_current_timezone()
+        broad_start = timezone.make_aware(datetime.combine(window_check_in, time(14)), zone) - timedelta(minutes=max_before)
+        broad_end = timezone.make_aware(datetime.combine(window_check_out, time(12)), zone) + timedelta(minutes=max_after)
+        broad_hold = DateTimeTZRange(broad_start, broad_end, "[)")
+        local_start = timezone.localtime(broad_start).date()
+        local_end = timezone.localtime(broad_end - timedelta(microseconds=1)).date()
+
+        cohort_rows = CourseLodgingCohort.objects.filter(
+            allocation_status=CourseLodgingCohort.AllocationStatus.ALLOCATED,
+            rooms__in=self.room_ids,
+            check_in_date__lte=local_end,
+            check_out_date__gte=local_start,
+        ).values_list("rooms", "check_in_date", "check_out_date")
+        for room_id, cohort_start, cohort_end in cohort_rows:
+            self.cohorts_by_room.setdefault(room_id, []).append((cohort_start, cohort_end))
+
+        hold_rows = BookingResource.objects.filter(
+            resource_id__in=self.room_ids,
+            released_at__isnull=True,
+            hold__overlap=broad_hold,
+        ).values_list("resource_id", "hold")
+        for room_id, hold in hold_rows:
+            self.holds_by_room.setdefault(room_id, []).append(hold)
+
+        self.blackouts = list(
+            Blackout.objects.filter(start_at__lt=broad_end, end_at__gt=broad_start).prefetch_related("rooms")
+        )
+        self.blackout_room_ids = {
+            blackout.pk: {room.pk for room in blackout.rooms.all()}
+            for blackout in self.blackouts
+        }
+
+        outage_rows = ResourceOutage.objects.filter(
+            resource_id__in=self.room_ids,
+            ended_early_at__isnull=True,
+            start_at__lt=broad_end,
+            end_at__gt=broad_start,
+        ).values_list("resource_id", "start_at", "end_at")
+        for room_id, outage_start, outage_end in outage_rows:
+            self.outages_by_room.setdefault(room_id, []).append((outage_start, outage_end))
+
+    def _blackout_applies(self, blackout, room: Resource, start_at: datetime, end_at: datetime) -> bool:
+        if not (blackout.start_at < end_at and blackout.end_at > start_at):
+            return False
+        if blackout.scope == blackout.Scope.ALL:
+            return True
+        if blackout.scope == blackout.Scope.BUILDING:
+            return bool(blackout.building and room.building == blackout.building)
+        if blackout.scope == blackout.Scope.CATEGORY:
+            return bool(blackout.room_category and room.room_category == blackout.room_category)
+        return room.pk in self.blackout_room_ids.get(blackout.pk, set())
+
+    def available_rooms(self, *, check_in: date, check_out: date, attendees: int) -> list[Resource]:
+        from .services import compute_hold
+
+        zone = timezone.get_current_timezone()
+        start_at = timezone.make_aware(datetime.combine(check_in, time(14)), zone)
+        end_at = timezone.make_aware(datetime.combine(check_out, time(12)), zone)
+        available = []
+        for room in self.rooms:
+            hold = compute_hold(room, start_at, end_at)
+            local_start = timezone.localtime(hold.lower).date()
+            local_end = timezone.localtime(hold.upper - timedelta(microseconds=1)).date()
+            if any(
+                cohort_start <= local_end and cohort_end >= local_start
+                for cohort_start, cohort_end in self.cohorts_by_room.get(room.pk, ())
+            ):
+                continue
+            if any(_ranges_overlap(existing, hold) for existing in self.holds_by_room.get(room.pk, ())):
+                continue
+            if any(self._blackout_applies(item, room, start_at, end_at) for item in self.blackouts):
+                continue
+            if any(
+                outage_start < end_at and outage_end > start_at
+                for outage_start, outage_end in self.outages_by_room.get(room.pk, ())
+            ):
+                continue
+            available.append(room)
+
+        def capacity_key(room):
+            capacity = int(room.capacity or 0)
+            if capacity >= attendees and capacity > 0:
+                return (0, capacity - attendees, room.code)
+            if capacity == 0:
+                return (1, 0, room.code)
+            return (2, attendees - capacity, room.code)
+
+        return sorted(available, key=capacity_key)
+
+
+def available_public_lodging_rooms(*, check_in: date, check_out: date, attendees: int) -> list[Resource]:
+    """Return public lodging rooms free for the whole 14:00→12:00 stay.
+
+    Conflict data is loaded in bulk so query count stays bounded as the room registry grows.
+    """
+    try:
+        attendees = int(attendees)
+    except (TypeError, ValueError):
+        return []
+    if attendees < 1 or not check_in or not check_out or check_out <= check_in:
+        return []
+    snapshot = _PublicLodgingAvailabilitySnapshot(
+        window_check_in=check_in,
+        window_check_out=check_out,
+    )
+    return snapshot.available_rooms(check_in=check_in, check_out=check_out, attendees=attendees)
+
+
+def nearby_public_lodging_dates(*, check_in: date, check_out: date, attendees: int, limit: int = 3) -> list[dict]:
+    """Nearest alternative stay dates within ±7 days using one bulk conflict snapshot."""
+    try:
+        attendees = int(attendees)
+    except (TypeError, ValueError):
+        return []
+    if attendees < 1 or not check_in or not check_out or check_out <= check_in or limit < 1:
+        return []
+    nights = (check_out - check_in).days
+    today = timezone.localdate()
+    window_check_in = max(today, check_in - timedelta(days=7))
+    window_check_out = check_out + timedelta(days=7)
+    snapshot = _PublicLodgingAvailabilitySnapshot(
+        window_check_in=window_check_in,
+        window_check_out=window_check_out,
+    )
+    results = []
+    for distance in range(1, 8):
+        for offset in (distance, -distance):
+            candidate_in = check_in + timedelta(days=offset)
+            candidate_out = candidate_in + timedelta(days=nights)
+            if candidate_in < today:
+                continue
+            rooms = snapshot.available_rooms(
+                check_in=candidate_in,
+                check_out=candidate_out,
+                attendees=attendees,
+            )
+            if rooms:
+                results.append({
+                    "check_in": candidate_in,
+                    "check_out": candidate_out,
+                    "available_count": len(rooms),
+                })
+                if len(results) >= limit:
+                    return results
+    return results
+
+
 def request_general_lodging(
-    *, actor=None, room, check_in, check_out, phone, note="", guest_name="", client_key=""
+    *, actor=None, room, check_in, check_out, attendees=1, phone, note="", guest_name="", client_key=""
 ):
     """Create an idempotent general/public lodging request on Booking Core."""
     from .models import Booking
@@ -470,6 +671,12 @@ def request_general_lodging(
         if not responsible_name:
             raise ValidationError("กรุณาระบุชื่อผู้เข้าพัก")
         requester = _public_lodging_principal()
+    try:
+        attendees = int(attendees)
+    except (TypeError, ValueError) as exc:
+        raise ValidationError("จำนวนผู้พักต้องเป็นตัวเลขตั้งแต่ 1 ขึ้นไป") from exc
+    if attendees < 1:
+        raise ValidationError("จำนวนผู้พักต้องเป็นตัวเลขตั้งแต่ 1 ขึ้นไป")
     phone = normalize_phone(phone)
     if not phone:
         raise ValidationError("กรุณาระบุเบอร์โทรศัพท์ที่ถูกต้อง")
@@ -515,6 +722,7 @@ def request_general_lodging(
             room=room, requester=requester, unit=requester.unit,
             title="คำขอเข้าพักทั่วไป", purpose=Booking.Purpose.OTHER,
             responsible_name=responsible_name, responsible_phone=phone,
+            attendees=attendees,
             start_at=start_at, end_at=end_at,
             visibility=Booking.Visibility.RESTRICTED, note=note,
         )

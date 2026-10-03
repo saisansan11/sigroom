@@ -50,37 +50,46 @@
     </div>
   </section>
 
-  {# ===== R3-G2: ช่องทางบริการ 4 ช่อง (คงจาก R3-G) ===== #}
+  {# ===== A2: TASK-FIRST SERVICE GATEWAY ===== #}
   <section class="lka-section lka-g2-services" id="lka-preview-hub" aria-labelledby="lka-services-heading">
     <div class="lka-g2-heading">
-      <h2 id="lka-services-heading">เลือกบริการ</h2>
-      <p>เลือกให้ตรงกับผู้เข้าพักหรือผู้ใช้ห้อง แล้วเข้าสู่ขั้นตอนจองได้ทันที</p>
+      <h2 id="lka-services-heading">วันนี้ต้องการทำอะไร</h2>
+      <p>เลือกงานที่ต้องการ ระบบจะพาไปขั้นตอนจองโดยตรง</p>
     </div>
     <div class="lka-r3g-service-grid">
-      <a class="lka-r3g-service" href="{% url 'bookings:lodging_index' %}">
-          <span class="lka-r3g-service-icon">{% include "lodging/partials/gateway_icon.html" with icon="lodging" %}</span>
-          <strong>ห้องพักหลักสูตร</strong>
-          <small>สำหรับผู้เข้าร่วมหลักสูตรของ รร.ส.สส.</small>
-          <span class="lka-r3g-action">เลือกหลักสูตรและห้องพัก</span>
-        </a>
-        <a class="lka-r3g-service" href="{% url 'bookings:lodging_general_request' %}">
-          <span class="lka-r3g-service-icon">{% include "lodging/partials/gateway_icon.html" with icon="people" %}</span>
-          <strong>ห้องพักบุคคลทั่วไป</strong>
-          <small>สำหรับบุคคลทั่วไปและผู้มาติดต่อ</small>
-          <span class="lka-r3g-action">ยื่นคำขอเข้าพัก</span>
-        </a>
-        <a class="lka-r3g-service" href="{% url 'bookings:online_teaching_home' %}">
-          <span class="lka-r3g-service-icon">{% include "lodging/partials/gateway_icon.html" with icon="online" %}</span>
-          <strong>ห้องสอนออนไลน์</strong>
-          <small>สำหรับครูและอาจารย์ผู้สอน</small>
-          <span class="lka-r3g-action">เลือกห้องและเวลา</span>
-        </a>
-        <div class="lka-r3g-service lka-r3g-service--future" aria-disabled="true">
-          <span class="lka-r3g-service-icon">{% include "lodging/partials/gateway_icon.html" with icon="learning" %}</span>
-          <strong>ห้องเรียน / ห้องประชุม</strong>
-          <small>ระบบจองส่วนนี้ยังไม่เปิดใช้งาน</small>
-          <span class="lka-r3g-action">กำลังพัฒนาระบบ</span>
-        </div>
+      <div class="lka-r3g-service lka-r3g-service--lodging">
+        <span class="lka-r3g-service-icon">{% include "lodging/partials/gateway_icon.html" with icon="lodging" %}</span>
+        <strong><a class="lka-r3g-service-main-link" href="{% url 'bookings:lodging_start' %}">จองห้องพัก</a></strong>
+        <small>เลือกเส้นทางตามประเภทผู้เข้าพัก</small>
+        <span class="lka-r3g-service-actions">
+          <a href="{% url 'bookings:lodging_index' %}">นักเรียนหลักสูตร</a>
+          <a href="{% url 'bookings:lodging_general_request' %}">บุคคลทั่วไป</a>
+        </span>
+      </div>
+      <a class="lka-r3g-service lka-r3g-service--online" href="{% url 'bookings:online_teaching_home' %}">
+        <span class="lka-r3g-service-icon">{% include "lodging/partials/gateway_icon.html" with icon="online" %}</span>
+        <strong>จองห้องสอนออนไลน์</strong>
+        <small>เลือกเวลา ระบบหาห้องว่างให้</small>
+        <span class="lka-r3g-action">เริ่มจอง</span>
+      </a>
+      <a class="lka-r3g-service lka-r3g-service--classroom" href="{% url 'bookings:book_search' %}?category=classroom">
+        <span class="lka-r3g-service-icon">{% include "lodging/partials/gateway_icon.html" with icon="learning" %}</span>
+        <strong>จองห้องเรียน</strong>
+        <small>บอกวัน เวลา จำนวนคน</small>
+        <span class="lka-r3g-action">เริ่มจอง</span>
+      </a>
+      <a class="lka-r3g-service lka-r3g-service--meeting" href="{% url 'bookings:book_search' %}?category=meeting">
+        <span class="lka-r3g-service-icon">{% include "lodging/partials/gateway_icon.html" with icon="learning" %}</span>
+        <strong>จองห้องประชุม</strong>
+        <small>บอกวัน เวลา จำนวนคน</small>
+        <span class="lka-r3g-action">เริ่มจอง</span>
+      </a>
+    </div>
+    <div class="lka-r3g-task-links">
+      <a href="{% url 'bookings:calendar' %}">ดูสถานะห้องทั้งหมด</a>
+      {% if user.is_authenticated and my_pending_count %}
+        <a href="{% url 'bookings:my_bookings' %}">การจองของฉัน ({{ my_pending_count }})</a>
+      {% endif %}
     </div>
   </section>
 
@@ -200,7 +209,7 @@
         <div class="lka-zone-legend" aria-label="สีโซนบริการ SIGROOM">
           <span><i class="zone-lodging"></i>ห้องพัก</span>
           <span><i class="zone-online"></i>ห้องสอนออนไลน์ <small>อาคาร บก.กศ.</small></span>
-          <span><i class="zone-learning"></i>ห้องเรียน/ประชุม <small>กำลังพัฒนา</small></span>
+          <span><i class="zone-learning"></i>ห้องเรียน/ประชุม</span>
           <span><i class="zone-service"></i>ส่วนบริการ</span>
           <span><i class="zone-future"></i>ยังไม่เปิดใช้</span>
         </div>

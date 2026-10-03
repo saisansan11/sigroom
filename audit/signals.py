@@ -4,6 +4,7 @@ from django.db.models.signals import m2m_changed, post_delete, post_save, pre_sa
 from django.dispatch import receiver
 
 from accounts.models import Unit
+from accounts.services import login_identity_key
 from resources.models import Blackout, Resource, ResourceApprover, ResourceRule
 
 from .context import request_ip
@@ -100,5 +101,15 @@ def logged_out(sender, request, user, **kwargs):
 
 @receiver(user_login_failed)
 def login_failed(sender, credentials, request, **kwargs):
-    username = credentials.get("username") or credentials.get("email") or ""
-    audit(None, "accounts.user", username, "login_failed", after={"username": username}, ip=request_ip(request))
+    raw_identity = credentials.get("username") or credentials.get("email") or ""
+    identity_key = login_identity_key(raw_identity)
+    # เก็บ audit ภายใต้ canonical identity เพื่อให้ username/email alias แชร์ throttle เดียวกัน
+    # และไม่ต้องเก็บ raw email ซ้ำใน payload โดยไม่จำเป็น
+    audit(
+        None,
+        "accounts.user",
+        identity_key,
+        "login_failed",
+        after={"username": identity_key},
+        ip=request_ip(request),
+    )

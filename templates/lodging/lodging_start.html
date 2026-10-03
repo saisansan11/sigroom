@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% load static %}
+{% block html_theme %}light{% endblock %}
+{% block body_class %}lodging-booking-ios27{% endblock %}
+{% block head %}
+<link rel="stylesheet" href="{% static 'css/lodging_booking_ios27.css' %}?v=2">
+<link rel="stylesheet" href="{% static 'css/lodging_booking_r3l.css' %}?v=1">
+{% endblock %}
+{% block title %}จองห้องพัก · SIGROOM{% endblock %}
+{% block content %}
+<div class="page-heading">
+  <div>
+    <p class="eyebrow">จองห้องพัก</p>
+    <h1>คุณเข้าพักแบบใด</h1>
+    <p>เลือกเส้นทางที่ตรงกับการเข้าพัก ระบบจะพาไปเฉพาะขั้นตอนที่จำเป็น</p>
+  </div>
+</div>
+<div class="lodging-cohort-grid" aria-label="เลือกประเภทการเข้าพัก">
+  <article class="lodging-cohort-card">
+    <div>
+      <span class="room-badge-free">นักเรียนหลักสูตร</span>
+      <h2 class="lodging-cohort-title">วันเข้าพักกำหนดตามรอบหลักสูตร</h2>
+      <p>เลือกรอบของท่าน แล้วเลือกห้องและเตียงที่ว่างได้เลย</p>
+    </div>
+    <div class="lodging-cohort-actions"><a role="button" class="btn-primary lodging-select-btn" href="{% url 'bookings:lodging_index' %}">นักเรียนหลักสูตร</a></div>
+  </article>
+  <article class="lodging-cohort-card">
+    <div>
+      <span class="room-badge-free">บุคคลทั่วไป</span>
+      <h2 class="lodging-cohort-title">เลือกวันเข้า–ออกก่อน</h2>
+      <p>ระบบตรวจห้องว่างให้ แล้วส่งคำขอให้เจ้าหน้าที่พิจารณา</p>
+    </div>
+    <div class="lodging-cohort-actions"><a role="button" class="btn-primary lodging-select-btn" href="{% url 'bookings:lodging_general_request' %}">บุคคลทั่วไป</a></div>
+  </article>
+</div>
+<p><a class="r3l-back-link" href="{% url 'bookings:lodging_about' %}">กลับหน้าบริการ SIGROOM</a></p>
+{% endblock %}

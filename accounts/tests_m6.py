@@ -43,7 +43,7 @@ def test_must_change_password_redirects_then_clears_flag_and_audits(client):
         "new_password1": "New-Sigroom-Password-2570!",
         "new_password2": "New-Sigroom-Password-2570!",
     })
-    assert response.status_code == 302 and response.url == "/home/"
+    assert response.status_code == 302 and response.url == "/start/"  # A3: route through role-aware home after first password change
     user.refresh_from_db()
     assert user.must_change_password is False
     assert AuditLog.objects.filter(actor=user, action="initial_password_changed").exists()

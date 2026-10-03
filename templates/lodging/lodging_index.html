@@ -49,10 +49,12 @@
     </article>
   {% empty %}
     <div class="notice info">
-      <p><strong>ขณะนี้ยังไม่มีหลักสูตรที่เปิดรับจอง</strong></p>
-      <p>หากเป็นผู้เข้ารับการอบรม กรุณาขอลิงก์จากผู้กำกับหลักสูตร</p>
+      <p><strong>ยังไม่มีรอบที่เปิดจอง</strong></p>
+      <p>ขอลิงก์หรือ QR จากผู้กำกับหลักสูตร หรือกลับไปเลือกประเภทการเข้าพัก</p>
+      <p><a href="{% url 'bookings:lodging_start' %}">กลับไปเลือกประเภทการเข้าพัก</a></p>
     </div>
   {% endfor %}
 </div>
+<p><a class="r3l-back-link" href="{% url 'bookings:lodging_start' %}">กลับไปเลือกประเภทการเข้าพัก</a></p>
 <p><a class="r3l-back-link" href="{% url 'bookings:lodging_about' %}">ดูข้อมูลที่พักและบริการอื่น</a></p>
 {% endblock %}

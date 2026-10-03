@@ -74,7 +74,8 @@ def test_homepage_board_counts_and_blocks(client, user, unit, rooms):
         reason="ซ่อมเครื่องปรับอากาศ", created_by=user,
     )
     client.force_login(user)
-    response = client.get("/")
+    # A1 เปลี่ยน "/" เป็น Gateway; dashboard/command board ยังคงอยู่ที่ /home/.
+    response = client.get("/home/")
     assert response.status_code == 200
     ctx = response.context
     assert ctx["stat_total"] == 4
@@ -102,6 +103,6 @@ def test_homepage_board_masks_restricted_titles(client, unit, rooms):
     _booking(owner, other_unit, rooms[0], now - timedelta(minutes=30), hours=2,
              request_status=Booking.RequestStatus.APPROVED, visibility=Booking.Visibility.RESTRICTED)
     client.force_login(viewer)
-    ctx = client.get("/").context
+    ctx = client.get("/home/").context
     blocks_by_room = {row["room"].code: row["blocks"] for row in ctx["board_rows"]}
     assert blocks_by_room["MTG-1"][0]["label"] == "ไม่ว่าง"

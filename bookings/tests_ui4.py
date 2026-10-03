@@ -181,6 +181,7 @@ def test_force_release_danger_zone_is_superuser_only(client, ui4_setup):
 
 
 def test_lodging_index_uses_semantic_progress_without_inline_capacity_width(client, ui4_setup):
+    client.force_login(ui4_setup["supervisor"])  # A5: lodging managers keep the list even when one cohort is open
     response = client.get(reverse("bookings:lodging_index"))
     assert response.status_code == 200
     content = response.content.decode()

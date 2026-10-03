@@ -1,0 +1,60 @@
+{% load thaidate %}
+<div id="online-results" class="online-quick-results" aria-live="polite">
+  {% if selection.error %}
+    <div class="notice warning" role="alert">{{ selection.error }}</div>
+  {% elif not selection.course %}
+    <div class="notice warning" role="alert">ยังไม่มีหลักสูตร/รุ่นที่เปิดใช้ จึงยังจองห้องสอนออนไลน์ไม่ได้</div>
+  {% elif rooms %}
+    <div class="online-result-heading">
+      <div>
+        <p class="eyebrow">ผลลัพธ์</p>
+        <h2>ห้องว่าง {{ selection.start|time:"H:i" }}–{{ selection.end|time:"H:i" }} น.</h2>
+      </div>
+      <span>{{ rooms|length }} ห้อง</span>
+    </div>
+    <div class="online-result-list">
+      {% for room in rooms %}
+        <article class="online-result-row{% if forloop.first %} is-recommended{% endif %}">
+          <div>
+            <div class="online-result-title">
+              <strong>{{ room.code }}</strong>
+              <span>{{ room.name }}</span>
+              {% if forloop.first %}<small>แนะนำ</small>{% endif %}
+            </div>
+            <p>{{ room.building }}{% if room.floor %} · ชั้น {{ room.floor }}{% endif %} · รองรับ {{ room.capacity }} คน · ว่างช่วงนี้</p>
+          </div>
+          {% if profile_complete %}
+            <form method="post" action="{% url 'bookings:online_teaching_quick_book' %}" class="online-quick-book-form">
+              {% csrf_token %}
+              <input type="hidden" name="room" value="{{ room.pk }}">
+              <input type="hidden" name="start_at" value="{{ selection.start|date:'c' }}">
+              <input type="hidden" name="end_at" value="{{ selection.end|date:'c' }}">
+              <input type="hidden" name="course_run" value="{{ selection.course.pk }}">
+              <input type="hidden" name="purpose" value="{{ selection.purpose }}">
+              <input type="hidden" name="return_query" value="{{ query_string }}">
+              <button type="submit">{% if forloop.first %}ยืนยันจอง{% else %}เลือกห้องนี้{% endif %}</button>
+            </form>
+          {% else %}
+            <span class="online-profile-needed">กรอกข้อมูลบัญชีก่อนยืนยัน</span>
+          {% endif %}
+        </article>
+      {% endfor %}
+    </div>
+  {% else %}
+    <div class="notice warning">
+      <strong>ไม่มีห้องว่างช่วงนี้</strong>
+      <p>ลองเลือกเวลาอื่น หรือใช้ช่วงใกล้เคียงด้านล่าง</p>
+    </div>
+    {% if alternatives %}
+      <div class="online-alternative-list" aria-label="ช่วงเวลาใกล้เคียง">
+        {% for item in alternatives %}
+          <a href="{{ item.url }}">{{ item.start_at|time:"H:i" }}–{{ item.end_at|time:"H:i" }} น. · ว่าง {{ item.available_count }} ห้อง</a>
+        {% endfor %}
+      </div>
+    {% endif %}
+  {% endif %}
+
+  {% if legacy_room %}
+    <p class="online-legacy-link"><a href="{% url 'bookings:online_teaching_book' legacy_room.code %}">เลือกห้องเองแบบเดิม</a></p>
+  {% endif %}
+</div>

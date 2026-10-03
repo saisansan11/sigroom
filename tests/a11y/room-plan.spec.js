@@ -253,14 +253,20 @@ test('service gateway responsive matrix has no page overflow, 16px body text, an
     expect(metrics.bodySize, `body text below 16px at ${width}px`).toBeGreaterThanOrEqual(16);
     expect(metrics.smallTargets, `touch target below 48px at ${width}px`).toEqual([]);
 
-    const activeServices = page.locator('.lka-r3g-service-grid > a.lka-r3g-service');
-    await expect(activeServices).toHaveCount(3);
+    const serviceCards = page.locator('.lka-r3g-service-grid > .lka-r3g-service');
+    await expect(serviceCards).toHaveCount(4);
+
+    const lodgingService = page.locator('.lka-r3g-service-grid > .lka-r3g-service--lodging');
+    await expect(lodgingService).toBeVisible();
+    await expect(lodgingService.locator('.lka-r3g-service-main-link')).toBeVisible();
+    await expect(lodgingService.locator('.lka-r3g-service-actions > a')).toHaveCount(2);
+
+    const directServices = page.locator('.lka-r3g-service-grid > a.lka-r3g-service');
+    await expect(directServices).toHaveCount(3);
     for (let index = 0; index < 3; index += 1) {
-      await expect(activeServices.nth(index)).toBeVisible();
+      await expect(directServices.nth(index)).toBeVisible();
     }
-    const futureService = page.locator('.lka-r3g-service-grid > .lka-r3g-service--future');
-    await expect(futureService).toBeVisible();
-    await expect(futureService).toHaveAttribute('aria-disabled', 'true');
+    await expect(page.locator('.lka-r3g-service-grid > .lka-r3g-service--future')).toHaveCount(0);
 
     await page.locator('.lka-rates-disclosure > summary').click();
     if (width <= 768) {

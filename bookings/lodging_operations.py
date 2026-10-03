@@ -1,15 +1,16 @@
 """Staff workspace presentation; allocation rules remain in lodging_services."""
-from datetime import datetime, time
+from datetime import datetime, time, timedelta
 
 from django import forms
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.db import IntegrityError
+from django.db.models import Case, IntegerField, When
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
+from django.views.decorators.http import require_GET
 
-from .lodging_about_data import FLOOR4_LODGING_ROOMS, FLOOR5_LODGING_ROOMS, TOTAL_ROOMS
 from .lodging_models import CourseLodgingCohort, CourseLodgingRelease, PublicLodgingAccess
 from .lodging_services import (
     assign_lodging_bed,
@@ -19,6 +20,9 @@ from .lodging_services import (
     cohort_hold_range,
     cohort_self_booking_status,
     move_lodging_bed,
+    nearby_public_lodging_dates,
+    public_lodging_rooms as service_public_lodging_rooms,
+    available_public_lodging_rooms,
     release_lodging_reservation,
     request_general_lodging,
     set_cohort_self_booking,
@@ -75,47 +79,118 @@ class MoveBedForm(forms.Form):
 
 
 def public_lodging_rooms():
-    """Return public lodging choices, preferring the authoritative 401–530 inventory.
+    """Backward-compatible import point; business inventory selection lives in lodging_services."""
+    return service_public_lodging_rooms()
 
-    Production originally shipped with four pilot DORM-101..104 rows. Keep them as a
-    temporary fallback only while no authoritative plan room exists, so the public form
-    remains usable before the controlled registry sync. Once any authoritative inventory
-    exists, pilot rows are excluded from public selection without modifying or retiring
-    their database records.
-    """
-    base = Resource.objects.filter(
-        resource_type=Resource.Type.ROOM,
-        room_category=Resource.Category.LODGING,
-        status=Resource.Status.ACTIVE,
-    )
-    plan_numbers = FLOOR4_LODGING_ROOMS + FLOOR5_LODGING_ROOMS
-    plan_codes = [code for number in plan_numbers for code in (str(number), f"DORM-{number}")]
-    authoritative = base.filter(code__in=plan_codes)
-    existing_codes = set(authoritative.values_list("code", flat=True))
-    complete_inventory = (
-        len(existing_codes) == TOTAL_ROOMS
-        and all(
-            sum(alias in existing_codes for alias in (str(number), f"DORM-{number}")) == 1
-            for number in plan_numbers
-        )
-    )
-    if complete_inventory:
-        return authoritative.order_by("floor", "code")
-    return base.order_by("code")
+
+class PublicRoomChoiceField(forms.ModelChoiceField):
+    def __init__(self, *args, attendees=1, **kwargs):
+        self.attendees = attendees
+        super().__init__(*args, **kwargs)
+
+    def label_from_instance(self, obj):
+        capacity = int(obj.capacity or 0)
+        if capacity:
+            suffix = f" · รองรับ {capacity} คน"
+            if capacity < self.attendees:
+                suffix += " · เกินความจุ"
+        else:
+            suffix = " · ไม่ระบุความจุ"
+        return f"{obj.code}{suffix}"
 
 
 class GeneralRequestForm(forms.Form):
-    guest_name = forms.CharField(label="ชื่อผู้เข้าพัก / ผู้ติดต่อ", max_length=200)
-    room = forms.ModelChoiceField(label="ห้องพัก", queryset=Resource.objects.none())
     check_in = forms.DateField(label="วันเข้าพัก (14:00 น.)", widget=forms.DateInput(attrs={"type": "date"}))
     check_out = forms.DateField(label="วันออก (12:00 น.)", widget=forms.DateInput(attrs={"type": "date"}))
-    phone = forms.CharField(label="เบอร์โทรติดต่อ", max_length=30)
+    attendees = forms.IntegerField(label="จำนวนผู้พัก", min_value=1, max_value=20, initial=1, required=False)
+    guest_name = forms.CharField(label="ชื่อผู้เข้าพัก / ผู้ติดต่อ", max_length=200)
+    phone = forms.CharField(label="เบอร์โทรติดต่อ", max_length=30, widget=forms.TextInput(attrs={"inputmode": "tel"}))
+    room = PublicRoomChoiceField(label="ห้องที่ระบบเสนอ", queryset=Resource.objects.none())
     note = forms.CharField(label="หมายเหตุ", required=False, max_length=1000,
                            widget=forms.Textarea(attrs={"rows": 3}))
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, selection_data=None, preferred_room_id=None, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields["room"].queryset = public_lodging_rooms()
+        source = self.data if self.is_bound else (selection_data or {})
+        initial = self.initial or {}
+        raw_check_in = source.get("check_in") or initial.get("check_in")
+        raw_check_out = source.get("check_out") or initial.get("check_out")
+        raw_attendees = source.get("attendees") or initial.get("attendees") or 1
+
+        # Preserve the historical form contract for registry/admin callers that
+        # instantiate the form only to inspect the public lodging inventory.
+        # The public request view always supplies dates, so the task-first flow
+        # still filters rooms by the requested stay before presenting choices.
+        if not raw_check_in or not raw_check_out:
+            self.fields["room"].queryset = public_lodging_rooms()
+            self.fields["room"].attendees = 1
+            return
+
+        try:
+            check_in = forms.DateField().clean(raw_check_in)
+            check_out = forms.DateField().clean(raw_check_out)
+            attendees = int(raw_attendees)
+        except (ValidationError, TypeError, ValueError):
+            return
+        if attendees < 1 or check_out <= check_in:
+            return
+
+        rooms = available_public_lodging_rooms(
+            check_in=check_in,
+            check_out=check_out,
+            attendees=attendees,
+        )
+        ids = [room.pk for room in rooms]
+        self.available_room_ids = set(ids)
+
+        # A bound POST must be allowed to carry its selected public room through form
+        # validation even if the room became unavailable after the page loaded. The
+        # service/database then re-checks and returns the safe conflict/duplicate message.
+        validation_ids = list(ids)
+        if self.is_bound and source.get("room"):
+            try:
+                posted_pk = int(source.get("room"))
+            except (TypeError, ValueError):
+                posted_pk = None
+            if posted_pk and posted_pk not in validation_ids and public_lodging_rooms().filter(pk=posted_pk).exists():
+                validation_ids.append(posted_pk)
+
+        if validation_ids:
+            ordering = Case(
+                *[When(pk=pk, then=position) for position, pk in enumerate(validation_ids)],
+                output_field=IntegerField(),
+            )
+            queryset = public_lodging_rooms().filter(pk__in=validation_ids).order_by(ordering)
+        else:
+            queryset = Resource.objects.none()
+        self.fields["room"].queryset = queryset
+        self.fields["room"].attendees = attendees
+
+        selected_pk = None
+        if preferred_room_id:
+            try:
+                preferred_pk = int(preferred_room_id)
+            except (TypeError, ValueError):
+                preferred_pk = None
+            if preferred_pk in ids:
+                selected_pk = preferred_pk
+        if selected_pk is None and ids:
+            selected_pk = ids[0]
+        if selected_pk is not None and not self.is_bound:
+            self.initial["room"] = selected_pk
+
+    def clean_attendees(self):
+        return self.cleaned_data.get("attendees") or 1
+
+    def clean(self):
+        cleaned = super().clean()
+        check_in = cleaned.get("check_in")
+        check_out = cleaned.get("check_out")
+        if check_in and check_in < timezone.localdate():
+            self.add_error("check_in", "วันเข้าพักต้องไม่เป็นวันที่ผ่านมาแล้ว")
+        if check_in and check_out and check_out <= check_in:
+            self.add_error("check_out", "วันออกต้องอยู่หลังวันเข้า")
+        return cleaned
 
 
 def _parse_local_datetime(value, label):
@@ -222,32 +297,105 @@ def _operations_summary(cards, public_pending):
     }
 
 
-def general_request(request):
-    initial = {}
+def _general_request_initial(request):
+    today = timezone.localdate()
+    initial = {
+        "check_in": today,
+        "check_out": today + timedelta(days=1),
+        "attendees": 1,
+    }
     if getattr(request.user, "is_authenticated", False):
-        initial = {
+        initial.update({
             "guest_name": request.user.display_name,
             "phone": getattr(request.user, "phone", ""),
-        }
-    selected_room = None
-    selected_id = request.GET.get("room_id", "")
-    if selected_id:
+        })
+    for key in ("check_in", "check_out", "attendees"):
+        if request.GET.get(key):
+            initial[key] = request.GET[key]
+    if request.GET.get("attendees_delta") in {"-1", "1"}:
         try:
-            selected_room = public_lodging_rooms().filter(pk=selected_id).first()
-        except (ValueError, TypeError, OverflowError):
-            pass
-        if selected_room:
-            initial["room"] = selected_room.pk
-        else:
-            messages.warning(request, "ห้องที่เลือกไม่พร้อมรับคำขอ กรุณาตรวจสอบห้องพักอีกครั้ง")
-    form = GeneralRequestForm(request.POST if request.method == "POST" else None, initial=initial)
+            current = int(initial.get("attendees") or 1)
+            delta = int(request.GET["attendees_delta"])
+        except (TypeError, ValueError):
+            current, delta = 1, 0
+        initial["attendees"] = min(20, max(1, current + delta))
+    return initial
+
+
+def _general_room_context(form):
+    rooms = list(form.fields["room"].queryset)
+    available_ids = getattr(form, "available_room_ids", {room.pk for room in rooms})
+    available_rooms = [room for room in rooms if room.pk in available_ids]
+    selected = None
+    selected_value = form["room"].value()
+    if selected_value:
+        selected = next((room for room in available_rooms if str(room.pk) == str(selected_value)), None)
+    if selected is None and available_rooms:
+        selected = available_rooms[0]
+    return {"suggested_room": selected, "available_room_count": len(available_rooms)}
+
+
+@require_GET
+def general_request_rooms(request):
+    """HTMX/public room suggestion endpoint; bounded to a 60-day scan horizon and exposes no PII."""
+    try:
+        check_in = forms.DateField().clean(request.GET.get("check_in"))
+        check_out = forms.DateField().clean(request.GET.get("check_out"))
+        attendees = int(request.GET.get("attendees") or 1)
+    except (ValidationError, TypeError, ValueError):
+        return render(
+            request,
+            "lodging/partials/general_request_rooms.html",
+            {"room_error": "กรุณาตรวจวันเข้าพัก วันออก และจำนวนผู้พัก"},
+            status=400,
+        )
+    today = timezone.localdate()
+    horizon = today + timedelta(days=60)
+    if check_in < today or check_in > horizon or check_out > horizon or check_out <= check_in or attendees < 1 or attendees > 20:
+        return render(
+            request,
+            "lodging/partials/general_request_rooms.html",
+            {"room_error": "ค้นหาห้องได้ตั้งแต่วันนี้ถึง 60 วันข้างหน้า และวันออกต้องอยู่หลังวันเข้า"},
+            status=400,
+        )
+
+    form = GeneralRequestForm(
+        initial={"check_in": check_in, "check_out": check_out, "attendees": attendees},
+        selection_data=request.GET,
+        preferred_room_id=request.GET.get("room_id") or request.GET.get("room"),
+    )
+    context = {"form": form, **_general_room_context(form)}
+    if context["available_room_count"] == 0:
+        context["nearby_dates"] = nearby_public_lodging_dates(
+            check_in=check_in,
+            check_out=check_out,
+            attendees=attendees,
+        )
+    response = render(request, "lodging/partials/general_request_rooms.html", context)
+    response["Cache-Control"] = "no-store"
+    return response
+
+
+def general_request(request):
+    initial = _general_request_initial(request)
+    preferred_room_id = request.GET.get("room_id") or request.GET.get("room") or ""
+    selection_data = initial if request.method == "GET" else None
+    form = GeneralRequestForm(
+        request.POST if request.method == "POST" else None,
+        initial=initial,
+        selection_data=selection_data,
+        preferred_room_id=preferred_room_id,
+    )
+    room_context = _general_room_context(form)
+    if preferred_room_id and room_context["suggested_room"] is None:
+        messages.warning(request, "ห้องที่เลือกไม่ว่างในวันที่ระบุ ระบบจะแสดงห้องอื่นที่พร้อมแทน")
+
     if request.method == "POST" and form.is_valid():
         authenticated = bool(getattr(request.user, "is_authenticated", False))
         client_key = ""
         if not authenticated:
             client_ip = request_ip(request) if client_ip_is_trusted() else ""
             if client_ip:
-                # นับตาม IP ที่ยืนยันแล้ว — cookie/session ผู้ส่งทิ้งได้ทุกครั้ง จึงใช้กันยิงถี่ไม่ได้
                 client_key = f"ip:{client_ip}"
             else:
                 if request.session.session_key is None:
@@ -264,7 +412,30 @@ def general_request(request):
         else:
             messages.success(request, "ส่งคำขอแล้ว กรุณาเก็บลิงก์นี้ไว้เพื่อตรวจสถานะ")
             return redirect("bookings:lodging_general_request_status", token=booking.public_lodging_access.pk)
-    response = render(request, "lodging/general_request.html", {"form": form})
+
+    context = {"form": form, **room_context}
+    if room_context["available_room_count"] == 0:
+        try:
+            check_in = forms.DateField().clean(form["check_in"].value())
+            check_out = forms.DateField().clean(form["check_out"].value())
+            attendees = int(form["attendees"].value() or 1)
+        except (ValidationError, TypeError, ValueError):
+            pass
+        else:
+            context["nearby_dates"] = nearby_public_lodging_dates(
+                check_in=check_in,
+                check_out=check_out,
+                attendees=attendees,
+            )
+            context["nights"] = max(1, (check_out - check_in).days)
+    else:
+        try:
+            check_in = forms.DateField().clean(form["check_in"].value())
+            check_out = forms.DateField().clean(form["check_out"].value())
+            context["nights"] = max(1, (check_out - check_in).days)
+        except (ValidationError, TypeError, ValueError):
+            pass
+    response = render(request, "lodging/general_request.html", context)
     response["Cache-Control"] = "no-store"
     return response
 

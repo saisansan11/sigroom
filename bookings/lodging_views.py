@@ -28,6 +28,7 @@ from .lodging_models import (
     PublicLodgingAccess,
 )
 from .course_catalog import selectable_course_runs
+from .models import Booking
 from .lodging_services import (
     assign_lodging_bed,
     can_access_lodging_management,
@@ -67,11 +68,10 @@ def lodging_room_detail(request, number):
 
 # UX-17: Public dormitory showcase — no login required.
 def lodging_about(request):
-    """Public information page about the dormitory building.
+    """Public service gateway, with a small private booking summary after login.
 
-    Presents static factual content (rooms, rates, floor plans, photos).
-    Requires no authentication. Contains no student PII.
-    No dependency on active cohort records.
+    The showcase remains public. Authenticated responses also include the current
+    user's active booking count, so those responses must never be shared by a CDN.
     """
     context = {
         "rates": RATES,
@@ -79,39 +79,36 @@ def lodging_about(request):
         "electricity_fan_flat_baht_per_month": ELECTRICITY_FAN_FLAT_BAHT_PER_MONTH,
         "monthly_threshold_days": MONTHLY_THRESHOLD_DAYS,
     }
-    return render(request, "lodging/lodging_about.html", context)
+    if request.user.is_authenticated:
+        context["my_pending_count"] = Booking.objects.filter(
+            requester=request.user,
+            request_status__in=Booking.HOLDING_STATUSES,
+            end_at__gt=timezone.now(),
+        ).count()
+
+    response = render(request, "lodging/lodging_about.html", context)
+    if request.user.is_authenticated:
+        response["Cache-Control"] = "private, no-store"
+    return response
 
 
 @login_required
 def service_staff_entry(request, service):
-    """Login-first gateway for the three operational owner groups.
+    """Login-first gateway using the shared managed-services policy."""
+    from .role_home import SERVICE_LEARNING, SERVICE_LODGING, SERVICE_ONLINE, managed_services
 
-    The public Service Gateway never exposes an admin surface directly. After
-    authentication, access is checked against the existing source-of-truth roles
-    before redirecting to the corresponding operations workspace.
-    """
-    if service == "lodging":
-        if not can_access_lodging_management(request.user):
-            raise PermissionDenied("คุณไม่มีสิทธิ์จัดการงานห้องพัก")
-        return redirect("bookings:lodging_workspace")
-
-    category_map = {
-        "online": (Resource.Category.ONLINE,),
-        "learning": (Resource.Category.CLASSROOM, Resource.Category.LAB, Resource.Category.MEETING),
-    }
-    categories = category_map.get(service)
-    if categories is None:
+    known_services = {SERVICE_LODGING, SERVICE_ONLINE, SERVICE_LEARNING}
+    if service not in known_services:
         raise Http404("ไม่พบบริการที่ร้องขอ")
 
-    can_manage = bool(
-        request.user.is_superuser
-        or request.user.custodied_resources.filter(
-            resource_type=Resource.Type.ROOM,
-            room_category__in=categories,
-        ).exists()
-    )
-    if not can_manage:
+    services = managed_services(request.user)
+    if service not in services and not request.user.is_superuser:
+        if service == SERVICE_LODGING:
+            raise PermissionDenied("คุณไม่มีสิทธิ์จัดการงานห้องพัก")
         raise PermissionDenied("บัญชีนี้ไม่ได้รับมอบหมายให้ดูแลห้องในส่วนนี้")
+
+    if service == SERVICE_LODGING:
+        return redirect("bookings:lodging_workspace")
     return redirect("usage:list")
 
 
@@ -374,13 +371,21 @@ def lodging_pass(request, slug, student_id):
     return _student_pass_response(request, _student_pass_context(request, cohort, student))
 
 
+def lodging_start(request):
+    """Public split between course lodging and general lodging requests."""
+    return render(request, "lodging/lodging_start.html")
+
+
 def lodging_index(request):
-    """หน้ารวมลิงก์รอบที่พักที่เปิดอยู่ตาม booking window จริง."""
+    """หน้ารวมรอบที่พัก; รอบเดียวข้ามไปเลือกเตียงทันทีสำหรับผู้เรียน."""
     candidates = CourseLodgingCohort.objects.filter(
         allocation_status=CourseLodgingCohort.AllocationStatus.ALLOCATED,
         is_active=True,
     ).prefetch_related("rooms").order_by("check_in_date", "title")
     cohorts = [cohort for cohort in candidates if cohort_self_booking_status(cohort)[0] == "open"]
+    is_manager = can_access_lodging_management(request.user)
+    if len(cohorts) == 1 and not is_manager:
+        return redirect("bookings:lodging_portal", slug=cohorts[0].slug)
     return render(request, "lodging/lodging_index.html", {"cohorts": cohorts})
 
 

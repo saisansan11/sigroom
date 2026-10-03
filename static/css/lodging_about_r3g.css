@@ -167,6 +167,42 @@
   color: var(--r3g-pending);
 }
 
+.lodging-about-ledger-r3g .lka-r3g-service-main-link {
+  color: inherit;
+  text-decoration-thickness: 1px;
+  text-underline-offset: .16em;
+}
+
+.lodging-about-ledger-r3g .lka-r3g-service-actions {
+  align-self: end;
+  display: flex;
+  flex-wrap: wrap;
+  gap: .3rem .5rem;
+}
+
+.lodging-about-ledger-r3g .lka-r3g-service-actions a,
+.lodging-about-ledger-r3g .lka-r3g-task-links a {
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  color: var(--r3g-link);
+  font-size: .78rem;
+  font-weight: 600;
+}
+
+.lodging-about-ledger-r3g .lka-r3g-task-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .25rem 1rem;
+  margin-top: .4rem;
+}
+
+.lodging-about-ledger-r3g div.lka-r3g-service:focus-within {
+  background: var(--r3g-sunk);
+  outline: 2px solid var(--r3g-link);
+  outline-offset: -2px;
+}
+
 /* Real-place gallery: one contained horizontal rail instead of a mosaic. */
 .lodging-about-ledger-r3g .lka-section {
   width: min(100% - 2rem, var(--content-max));

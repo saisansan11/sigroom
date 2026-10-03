@@ -4,7 +4,7 @@ from django.contrib.auth.forms import AuthenticationForm, PasswordChangeForm, Pa
 from audit.context import request_ip
 
 from .models import validate_allowed_email_domain
-from .services import LOGIN_THROTTLED_MESSAGE, complete_self_service_password_reset, login_is_throttled
+from .services import LOGIN_THROTTLED_MESSAGE, complete_self_service_password_reset, login_identity_key, login_is_throttled
 
 
 class ThrottledAuthenticationForm(AuthenticationForm):
@@ -12,7 +12,8 @@ class ThrottledAuthenticationForm(AuthenticationForm):
 
     def clean(self):
         username = self.cleaned_data.get("username")
-        if username and login_is_throttled(username, request_ip(self.request)):
+        identity_key = login_identity_key(username)
+        if identity_key and login_is_throttled(identity_key, request_ip(self.request)):
             raise forms.ValidationError(LOGIN_THROTTLED_MESSAGE, code="throttled")
         return super().clean()
 

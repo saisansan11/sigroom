@@ -1,26 +1,37 @@
 """Focused teacher workflow for the three Signal School online teaching rooms.
 
 Booking Core remains authoritative for time policy, blackout/outage, overlap holds,
-submission state, cancellation and audit.  This module only owns the feature-policy
-layer: teacher authorization, room allowlist, course catalog choices and compact UI.
+submission state, cancellation and audit. This module owns authorization and the
+short task-first presentation only; booking writes go through online_teaching_services.
 """
 from datetime import datetime, timedelta
+from urllib.parse import parse_qsl, urlencode
 
 from django import forms
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse
 from django.utils import timezone
+from django.utils.dateparse import parse_datetime
+from django.views.decorators.http import require_POST
 
-from audit.services import audit, model_snapshot
-from notifications.services import notify_submitted
+from accounts.models import Unit
+from accounts.services import complete_contact_profile
 from resources.models import Resource, ResourceRule
 
+from .course_catalog import selectable_course_runs
 from .forms import BuddhistDateField, time_choices
 from .models import Booking, CourseRun
-from .course_catalog import selectable_course_runs
-from .services import BookingConflict, find_available_rooms, next_quarter_start, submit_booking
+from .online_teaching_services import create_online_teaching_booking, suggest_online_rooms
+from .services import (
+    BookingConflict,
+    find_available_rooms,
+    next_quarter_start,
+    search_date_choices,
+    search_period_choices,
+)
 
 
 ONLINE_TEACHER_GROUP = "signalschool-teacher"
@@ -29,6 +40,9 @@ ONLINE_TEACHING_ROOM_CODES = (
     "STU-ONLINE-2",
     "STU-ONLINE-3",
 )
+ONLINE_START_CHIPS = ("08:00", "09:00", "10:00", "11:00", "13:00", "14:00", "15:00")
+ONLINE_DURATION_MINUTES = (30, 60, 120)
+ONLINE_QUERY_KEYS = {"day", "date", "start", "dur", "course_run", "purpose"}
 
 
 def can_book_online_teaching(user) -> bool:
@@ -98,6 +112,8 @@ def _room_availability(room, start_at, end_at, user) -> tuple[bool, str]:
 
 
 class OnlineTeachingBookingForm(forms.Form):
+    """Legacy choose-room-first form kept for bookmarked online/<code>/ URLs."""
+
     date = BuddhistDateField(
         label="วันที่",
         widget=forms.TextInput(
@@ -149,42 +165,335 @@ class OnlineTeachingBookingForm(forms.Form):
         return cleaned
 
 
+def _parse_quick_day(params):
+    today = timezone.localdate()
+    day_value = (params.get("day") or "").strip()
+    date_value = (params.get("date") or "").strip()
+    if day_value and day_value != "other":
+        try:
+            booking_date = datetime.fromisoformat(day_value).date()
+        except ValueError:
+            return None, "กรุณาตรวจวันที่อีกครั้ง"
+    elif date_value:
+        try:
+            booking_date = BuddhistDateField().clean(date_value)
+        except ValidationError:
+            return None, "กรุณาตรวจวันที่อีกครั้ง (วัน/เดือน/ปี พ.ศ.)"
+    else:
+        booking_date = today + timedelta(days=1)
+    if booking_date < today:
+        return None, "วันที่จองต้องไม่ย้อนหลัง"
+    return booking_date, ""
+
+
+def _selected_course(user, params, runs):
+    requested = (params.get("course_run") or "").strip()
+    by_id = {str(run.pk): run for run in runs}
+    if requested:
+        return by_id.get(requested), "" if requested in by_id else "หลักสูตร/รุ่นนี้ไม่ได้อยู่ในรายการที่เปิดใช้"
+    run_ids = [run.pk for run in runs]
+    last_id = (
+        Booking.objects.filter(
+            requester=user,
+            room__room_category=Resource.Category.ONLINE,
+            course_run_id__in=run_ids,
+        )
+        .exclude(course_run=None)
+        .order_by("-created_at")
+        .values_list("course_run_id", flat=True)
+        .first()
+    )
+    if last_id:
+        match = by_id.get(str(last_id))
+        if match:
+            return match, ""
+    return (runs[0] if runs else None), ""
+
+
+def _quick_selection(user, params):
+    booking_date, error = _parse_quick_day(params)
+    presets = search_period_choices()
+    start_text = (params.get("start") or "09:00").strip()[:5]
+    try:
+        start_clock = datetime.strptime(start_text, "%H:%M").time()
+    except ValueError:
+        start_clock = None
+        error = error or "กรุณาตรวจเวลาเริ่มอีกครั้ง"
+
+    dur = (params.get("dur") or "60").strip().lower()
+    duration_minutes = None
+    start_at = end_at = None
+    zone = timezone.get_current_timezone()
+    if booking_date and dur in {"am", "pm"}:
+        preset_index = 0 if dur == "am" else 1
+        if len(presets) <= preset_index:
+            error = error or "ยังไม่ได้ตั้งช่วงเวลานี้ในระบบ"
+        else:
+            preset = presets[preset_index]
+            start_at = timezone.make_aware(
+                datetime.combine(booking_date, datetime.strptime(preset["start"], "%H:%M").time()), zone
+            )
+            end_at = timezone.make_aware(
+                datetime.combine(booking_date, datetime.strptime(preset["end"], "%H:%M").time()), zone
+            )
+            duration_minutes = int((end_at - start_at).total_seconds() // 60)
+    elif booking_date and start_clock is not None:
+        try:
+            duration_minutes = int(dur)
+        except ValueError:
+            duration_minutes = None
+        # UI เสนอ 30/60/120 นาที; ค่าอื่นที่เป็นช่วง 30 นาทีและไม่เกิน 4 ชม.
+        # รับไว้สำหรับลิงก์ช่วงใกล้เคียงที่ระบบสร้างจาก preset เช้า/บ่ายเท่านั้น.
+        if duration_minutes is None or duration_minutes < 30 or duration_minutes > 240 or duration_minutes % 30:
+            error = error or "กรุณาเลือกระยะเวลาที่ระบบรองรับ"
+        else:
+            start_at = timezone.make_aware(datetime.combine(booking_date, start_clock), zone)
+            end_at = start_at + timedelta(minutes=duration_minutes)
+
+    if start_at and end_at and end_at <= start_at:
+        error = error or "เวลาสิ้นสุดต้องอยู่หลังเวลาเริ่ม"
+    if start_at and start_at < timezone.now():
+        error = error or "เวลาเริ่มต้องไม่อยู่ในอดีต"
+
+    runs = list(online_course_runs())
+    selected_course, course_error = _selected_course(user, params, runs)
+    error = error or course_error
+    purpose = (params.get("purpose") or Booking.Purpose.TEACHING).strip()
+    valid_purposes = {value for value, _ in Booking.Purpose.choices}
+    if purpose not in valid_purposes:
+        purpose = Booking.Purpose.TEACHING
+        error = error or "วัตถุประสงค์ไม่ถูกต้อง"
+
+    return {
+        "date": booking_date,
+        "day": booking_date.isoformat() if booking_date else "",
+        "date_text": (
+            f"{booking_date.day:02d}/{booking_date.month:02d}/{booking_date.year + 543}" if booking_date else ""
+        ),
+        "start": start_at,
+        "end": end_at,
+        "start_text": timezone.localtime(start_at).strftime("%H:%M") if start_at else start_text,
+        "dur": dur,
+        "duration_minutes": duration_minutes,
+        "presets": presets,
+        "runs": runs,
+        "course": selected_course,
+        "purpose": purpose,
+        "error": error,
+    }
+
+
+def _selection_query(selection, *, start_at=None, end_at=None):
+    explicit_slot = start_at is not None and end_at is not None
+    start_at = start_at or selection.get("start")
+    end_at = end_at or selection.get("end")
+    params = {}
+    if start_at and end_at:
+        local_start = timezone.localtime(start_at)
+        params["day"] = local_start.date().isoformat()
+        params["start"] = local_start.strftime("%H:%M")
+        if explicit_slot:
+            params["dur"] = str(int((end_at - start_at).total_seconds() // 60))
+        else:
+            params["dur"] = selection.get("dur") or str(int((end_at - start_at).total_seconds() // 60))
+    elif selection.get("date"):
+        params["day"] = selection["date"].isoformat()
+        params["start"] = selection.get("start_text") or "09:00"
+        params["dur"] = selection.get("dur") or "60"
+    if selection.get("course"):
+        params["course_run"] = str(selection["course"].pk)
+    params["purpose"] = selection.get("purpose") or Booking.Purpose.TEACHING
+    return urlencode(params)
+
+
+def _online_home_context(request):
+    if not can_book_online_teaching(request.user):
+        return {
+            "access_denied": True,
+            "profile_complete": False,
+            "rooms": [],
+            "alternatives": [],
+        }
+
+    selection = _quick_selection(request.user, request.GET)
+    profile_complete = bool(request.user.unit_id and (request.user.phone or "").strip())
+    rooms = []
+    alternatives = []
+    if not selection["error"] and selection["start"] and selection["end"]:
+        rooms, alternatives = suggest_online_rooms(
+            user=request.user,
+            start_at=selection["start"],
+            end_at=selection["end"],
+        )
+
+    for alternative in alternatives:
+        alternative["url"] = (
+            reverse("bookings:online_teaching_home")
+            + "?"
+            + _selection_query(
+                selection,
+                start_at=alternative["start_at"],
+                end_at=alternative["end_at"],
+            )
+        )
+
+    day_choices = []
+    for choice in search_date_choices():
+        params = {
+            "day": choice["value"],
+            "start": selection["start_text"] or "09:00",
+            "dur": selection["dur"] or "60",
+            "purpose": selection["purpose"],
+        }
+        if selection["course"]:
+            params["course_run"] = str(selection["course"].pk)
+        day_choices.append({**choice, "url": reverse("bookings:online_teaching_home") + "?" + urlencode(params)})
+
+    start_choices = []
+    for value in ONLINE_START_CHIPS:
+        params = {
+            "day": selection["day"],
+            "start": value,
+            "dur": selection["dur"] or "60",
+            "purpose": selection["purpose"],
+        }
+        if selection["course"]:
+            params["course_run"] = str(selection["course"].pk)
+        start_choices.append({"value": value, "url": reverse("bookings:online_teaching_home") + "?" + urlencode(params)})
+
+    duration_choices = [
+        ("30", "30 นาที"),
+        ("60", "1 ชม."),
+        ("120", "2 ชม."),
+    ]
+    if len(selection["presets"]) >= 1:
+        duration_choices.append(("am", selection["presets"][0]["label"]))
+    if len(selection["presets"]) >= 2:
+        duration_choices.append(("pm", selection["presets"][1]["label"]))
+    duration_links = []
+    for value, label in duration_choices:
+        params = {
+            "day": selection["day"],
+            "start": selection["start_text"] or "09:00",
+            "dur": value,
+            "purpose": selection["purpose"],
+        }
+        if selection["course"]:
+            params["course_run"] = str(selection["course"].pk)
+        duration_links.append(
+            {"value": value, "label": label, "url": reverse("bookings:online_teaching_home") + "?" + urlencode(params)}
+        )
+
+    ordered_rooms = _ordered_rooms(active_only=True)
+    legacy_room = ordered_rooms[0] if ordered_rooms else None
+    return {
+        "access_denied": False,
+        "selection": selection,
+        "day_choices": day_choices,
+        "start_choices": start_choices,
+        "duration_choices": duration_links,
+        "time_options": time_choices(),
+        "purpose_choices": Booking.Purpose.choices,
+        "profile_complete": profile_complete,
+        "profile_units": Unit.objects.filter(is_active=True).order_by("code"),
+        "rooms": rooms,
+        "alternatives": alternatives,
+        "legacy_room": legacy_room,
+        "query_string": _selection_query(selection),
+    }
+
+
 @login_required
 def online_teaching_home(request):
+    context = _online_home_context(request)
+    template = (
+        "bookings/partials/online_results.html"
+        if getattr(request, "htmx", False) and not context.get("access_denied")
+        else "bookings/online_teaching_home.html"
+    )
+    response = render(request, template, context)
+    if request.user.is_authenticated:
+        response["Cache-Control"] = "private, no-store"
+    return response
+
+
+def _parse_quick_datetime(value, label):
+    parsed = parse_datetime((value or "").strip())
+    if parsed is None:
+        raise ValidationError(f"{label}ไม่ถูกต้อง")
+    if timezone.is_naive(parsed):
+        parsed = timezone.make_aware(parsed, timezone.get_current_timezone())
+    return parsed
+
+
+def _safe_return_query(raw):
+    pairs = []
+    for key, value in parse_qsl(raw or "", keep_blank_values=False):
+        if key in ONLINE_QUERY_KEYS:
+            pairs.append((key, value))
+    return urlencode(pairs)
+
+
+@login_required
+@require_POST
+def online_teaching_quick_book(request):
     _require_teacher(request.user)
-    rooms = _ordered_rooms(active_only=True)
-    next_start = next_quarter_start()
-    next_end = next_start + timedelta(hours=1)
-    available, _ = find_available_rooms(
-        next_start,
-        next_end,
-        request.user,
-        room_categories=(Resource.Category.ONLINE,),
-    )
-    available_ids = {item.room.pk for item in available}
-    cards = [
-        {
-            "room": room,
-            "available_now": room.pk in available_ids,
-        }
-        for room in rooms
-    ]
-    return render(
-        request,
-        "bookings/online_teaching_home.html",
-        {
-            "cards": cards,
-            "expected_room_count": len(ONLINE_TEACHING_ROOM_CODES),
-            "configured_room_count": len(rooms),
-            "next_start": next_start,
-            "next_end": next_end,
-            "course_count": online_course_runs().count(),
-        },
-    )
+    try:
+        start_at = _parse_quick_datetime(request.POST.get("start_at"), "เวลาเริ่ม")
+        end_at = _parse_quick_datetime(request.POST.get("end_at"), "เวลาสิ้นสุด")
+        if timezone.localdate(start_at) != timezone.localdate(end_at):
+            raise ValidationError("การจองห้องสอนออนไลน์ต้องอยู่ในวันเดียวกัน")
+        room = Resource.objects.filter(pk=request.POST.get("room")).select_related("rule").first()
+        if room is None:
+            raise ValidationError("ไม่พบห้องที่เลือก")
+        course_run = selectable_course_runs().filter(pk=request.POST.get("course_run")).first()
+        if course_run is None:
+            raise ValidationError("หลักสูตร/รุ่นนี้ไม่ได้อยู่ในรายการที่เปิดใช้")
+        purpose = request.POST.get("purpose") or Booking.Purpose.TEACHING
+        if purpose not in {value for value, _ in Booking.Purpose.choices}:
+            raise ValidationError("วัตถุประสงค์ไม่ถูกต้อง")
+        booking = create_online_teaching_booking(
+            user=request.user,
+            room=room,
+            start_at=start_at,
+            end_at=end_at,
+            course_run=course_run,
+            purpose=purpose,
+        )
+    except BookingConflict:
+        messages.error(request, "ห้องนี้เพิ่งถูกจอง กรุณาเลือกห้องอื่น")
+    except ValidationError as exc:
+        messages.error(request, " · ".join(exc.messages))
+    else:
+        messages.success(request, f"จอง {booking.room.name} สำเร็จและยืนยันอัตโนมัติแล้ว")
+        return redirect("bookings:my_bookings")
+
+    query = _safe_return_query(request.POST.get("return_query"))
+    target = reverse("bookings:online_teaching_home")
+    return redirect(f"{target}?{query}" if query else target)
+
+
+@login_required
+@require_POST
+def online_teaching_profile(request):
+    _require_teacher(request.user)
+    unit = None
+    if not request.user.unit_id:
+        unit = Unit.objects.filter(pk=request.POST.get("unit"), is_active=True).first()
+    try:
+        complete_contact_profile(request.user, unit, request.POST.get("phone", ""))
+    except ValidationError as exc:
+        messages.error(request, " · ".join(exc.messages))
+    else:
+        messages.success(request, "บันทึกข้อมูลสำหรับการจองเรียบร้อยแล้ว")
+    query = _safe_return_query(request.POST.get("return_query"))
+    target = reverse("bookings:online_teaching_home")
+    return redirect(f"{target}?{query}" if query else target)
 
 
 @login_required
 def online_teaching_book(request, code):
+    """Legacy choose-room-first URL, kept for bookmarks and old links."""
     _require_teacher(request.user)
     room = get_object_or_404(_room_queryset(active_only=True), code=code)
     rule = getattr(room, "rule", None)
@@ -219,55 +528,23 @@ def online_teaching_book(request, code):
                 if not is_available:
                     form.add_error(None, reason)
                 else:
-                    course_run = form.cleaned_data["course_run"]
-                    course_title = course_run.display_name
-                    booking = Booking(
-                        room=room,
-                        requester=request.user,
-                        unit=request.user.unit,
-                        responsible_name=request.user.display_name,
-                        responsible_phone=(request.user.phone or "").strip(),
-                        course_run=course_run,
-                        title=course_title,
-                        attendee_level=course_title,
-                        purpose=form.cleaned_data["purpose"],
-                        start_at=start_at,
-                        end_at=end_at,
-                        attendees=1,
-                        visibility=Booking.Visibility.NORMAL,
-                        has_external_attendees=False,
-                    )
                     try:
-                        booking.full_clean()
-                        booking.save()
-                        submit_booking(booking)
+                        booking = create_online_teaching_booking(
+                            user=request.user,
+                            room=room,
+                            start_at=start_at,
+                            end_at=end_at,
+                            course_run=form.cleaned_data["course_run"],
+                            purpose=form.cleaned_data["purpose"],
+                        )
                     except BookingConflict as exc:
-                        if booking.pk:
-                            booking.delete()
                         form.add_error(None, str(exc))
                     except ValidationError as exc:
-                        if booking.pk:
-                            booking.delete()
                         for message in exc.messages:
                             form.add_error(None, message)
                     else:
-                        if booking.request_status != Booking.RequestStatus.APPROVED:
-                            booking.delete()
-                            form.add_error(None, "นโยบายห้องไม่อนุญาตการยืนยันอัตโนมัติ")
-                        else:
-                            audit(
-                                request.user,
-                                "bookings.booking",
-                                booking.pk,
-                                "online_teaching_booked",
-                                after=model_snapshot(booking),
-                            )
-                            notify_submitted(booking)
-                            messages.success(
-                                request,
-                                f"จอง {room.name} สำเร็จและยืนยันอัตโนมัติแล้ว",
-                            )
-                            return redirect("bookings:my_bookings")
+                        messages.success(request, f"จอง {booking.room.name} สำเร็จและยืนยันอัตโนมัติแล้ว")
+                        return redirect("bookings:my_bookings")
 
     return render(
         request,

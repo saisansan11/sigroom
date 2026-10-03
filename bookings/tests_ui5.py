@@ -84,12 +84,12 @@ def test_guest_header_nav_semantics_and_aria_current(client):
     assert "จองห้องพัก" in home_html
     assert "เข้าสู่ระบบ" in home_html
 
-    # On lodging index, "จองห้องพัก" gets aria-current="page"
-    resp_lodging = client.get(reverse("bookings:lodging_index"))
+    # On lodging start, "จองห้องพัก" gets aria-current="page"
+    resp_lodging = client.get(reverse("bookings:lodging_start"))
     assert resp_lodging.status_code == 200
     lodging_html = resp_lodging.content.decode()
     assert 'aria-current="page"' in lodging_html
-    assert 'href="/lodging/"' in lodging_html or 'href="/lodging"' in lodging_html
+    assert f'href="{reverse("bookings:lodging_start")}"' in lodging_html
 
 
 def test_app_css_touch_targets_meet_wcag():
