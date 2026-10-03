@@ -21,3 +21,8 @@
 - ยังไม่ได้ทดสอบกล้องจริงสองเครื่อง, Safari หรือ OS reduced-motion; unit tests ไม่ใช่หลักฐานแทนการตรวจอุปกรณ์จริง
 - Follow-up Reviewer เดิม: ประกาศหลายวันควรแสดงวันที่, native confirm เดิม, blackout logic ซ้ำ ไม่รวมใน PR นี้
 - งานถัดไป: นกพิราบสื่อสารตาม PR-C และแผน 3D; ฟีเจอร์ใหม่ต้องส่ง Review ก่อน merge/deploy
+
+## Review correction — 3 Oct 2026
+All four reviewer findings addressed: Node tests now run in required Repository checks; QR back computed background is rgb(36,40,37) with background-image none; winding uses active elapsed time; legacy dialog close removes open and resumes reels. Six Node tests pass. Full local regression: 862 passed (145s); system check and migration drift pass. Browser fixture on port 8018: flip, QR open/close and focus return pass. Physical QR scan and Safari remain untested.
+Cache evidence: production build and deploy both run collectstatic with manifest storage. The previous deployed manifest maps CSS to 2dd6e21d2b66 and JS to 5549b6740592. Rebuilt revised assets produce different hashes (CSS a0014a6a18e3); template static tags resolve hash filenames in DEBUG=False. The fixed ?v=1 does not prevent this; no cache policy change needed. Firebase /static cache is one year immutable, safe for these hashed URLs. No production change in this review fix.
+Previous CI six-gate success did NOT cover Node interaction tests; new CI must be checked at the new HEAD. Remains Draft pending review.

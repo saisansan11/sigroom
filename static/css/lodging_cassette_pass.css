@@ -103,7 +103,7 @@ body.lodging-booking-ios27.cassette-pass-page .cassette-face {
   transform: translateZ(calc(var(--t) / 2));
 }
 
-.cassette-pass-page .cassette-face--back {
+body.lodging-booking-ios27.cassette-pass-page .cassette-face--back {
   display: grid;
   place-items: center;
   padding: 0;

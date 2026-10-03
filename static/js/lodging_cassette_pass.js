@@ -25,7 +25,7 @@
   var nightsElapsed = Math.max(0, Math.min(nightsTotal, Number(card.dataset.nightsElapsed) || 0));
   var targetFraction = nightsElapsed / nightsTotal;
   var shownFraction = reducedMotion ? targetFraction : 0;
-  var windStart = 0;
+  var windElapsed = 0;
   var windFrom = shownFraction;
   var windDuration = reducedMotion ? 0 : 700 + Math.abs(targetFraction - shownFraction) * 1100;
   var hubLeftAngle = 0;
@@ -90,8 +90,8 @@
     var speed = PLAY;
 
     if (shownFraction !== targetFraction) {
-      if (!windStart) windStart = now;
-      var k = windDuration <= 0 ? 1 : clamp((now - windStart) / windDuration, 0, 1);
+      windElapsed += dt * 1000;
+      var k = windDuration <= 0 ? 1 : clamp(windElapsed / windDuration, 0, 1);
       var eased = 1 - Math.pow(1 - k, 3);
       shownFraction = windFrom + (targetFraction - windFrom) * eased;
       speed = FFWD * Math.sign(targetFraction - windFrom || 1);
@@ -202,14 +202,21 @@
       qrOpen = true;
       stopLoop();
     });
-    qrDialog.addEventListener("close", function () {
-      qrOpen = false;
-      qrOpenButton.focus();
-      startLoop();
-    });
+    qrDialog.addEventListener("close", resumeAfterQr);
+  }
+  function resumeAfterQr() {
+    qrOpen = false;
+    qrOpenButton.focus();
+    startLoop();
   }
   if (qrDialog && qrCloseButton) {
-    qrCloseButton.addEventListener("click", function () { qrDialog.close(); });
+    qrCloseButton.addEventListener("click", function () {
+      if (typeof qrDialog.close === "function") qrDialog.close();
+      else {
+        qrDialog.removeAttribute("open");
+        resumeAfterQr();
+      }
+    });
   }
 
   if (copyButton) {
@@ -264,7 +271,7 @@
   } else {
     shownFraction = 0;
     windFrom = 0;
-    windStart = 0;
+    windElapsed = 0;
     renderTape();
     startLoop();
   }
