@@ -1,0 +1,212 @@
+<title>หน้าแรก SIGROOM ยุค 90</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!-- mockup เท่านั้น: ของจริงใช้ฟอนต์ self-host ใน static/fonts -->
+<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;600&family=Noto+Serif+Thai:wght@500;600&display=swap" rel="stylesheet">
+<style>
+/* หน้าแรกแบบโต๊ะทำงานสำนักงานไทยยุค 90 บนธีม A: ปฏิทินฉีก · เพจเจอร์ · แฟ้มบริการ · บอร์ดไม้ก๊อก */
+:root{
+  color-scheme:light;
+  --paper:#F5F1E6; --paper-raised:#FBF8F0; --paper-sunk:#EFE8D6; --rule:#D8CFB8; --rule-strong:#B9AD8F;
+  --ink:#1F2A24; --ink-muted:#5E5D52; --link:#1F4E79; --stamp:#A3241C; --ok:#2F6B3A;
+  --note:#F3E9CC; --note-2:#E6EDDF;
+  --tab-lodging:#2F6B3A; --tab-online:#1F4E79; --tab-classroom:#C98A1B; --tab-meeting:#A3241C;
+  --cork:#B98B5A; --cork-dot:#9C7146; --cork-frame:#6E4E2E;
+  --pager:#26292A; --pager-edge:#141616; --lcd:#A7B293; --lcd-ink:#1C2419;
+  --font-sans:"Sarabun",Tahoma,"Leelawadee UI",sans-serif;
+  --font-serif:"Noto Serif Thai","Sarabun",Tahoma,serif;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--font-sans);font-size:16px;line-height:1.55}
+a{color:var(--link)}
+.wrap{max-width:440px;margin:0 auto;padding-inline:16px;padding-block:0 48px}
+.mock-note{font-size:13px;color:var(--ink-muted);border:1px dashed var(--rule);padding:8px 10px;margin:14px 0;background:var(--paper-raised)}
+
+/* หัวเว็บ */
+.topbar{display:flex;align-items:center;justify-content:space-between;gap:12px;padding-block:12px;border-bottom:2px solid var(--ink)}
+.brand{display:flex;flex-direction:column;line-height:1.15}
+.brand b{font-family:var(--font-serif);font-weight:600;font-size:22px;letter-spacing:.06em}
+.brand span{font-size:12.5px;color:var(--ink-muted)}
+.menu{font-size:14px;display:flex;gap:12px}
+.menu a{text-decoration:none;color:var(--ink)}
+
+/* แถวบน: คำทักทาย + ปฏิทินฉีก */
+.hello{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;margin-top:18px}
+.hello h1{font-family:var(--font-serif);font-weight:600;font-size:23px;line-height:1.3;margin:0;text-wrap:balance}
+.hello p{margin:6px 0 0;color:var(--ink-muted);font-size:14.5px}
+.tearcal{flex:0 0 auto;width:96px;background:var(--paper-raised);border:1px solid var(--rule-strong);text-align:center;position:relative;
+  box-shadow:0 2px 0 var(--paper-sunk),0 4px 0 var(--rule)}
+.tearcal::before{content:"";position:absolute;left:14px;right:14px;top:-5px;height:8px;
+  background:radial-gradient(circle,var(--ink) 0 2px,transparent 2.5px) 0 0/16px 8px repeat-x}
+.tearcal .m{background:var(--stamp);color:#FBF8F0;font-size:12px;font-weight:600;padding:5px 0 3px;letter-spacing:.02em}
+.tearcal .d{font-family:var(--font-serif);font-weight:600;font-size:44px;line-height:1.05;padding-top:4px}
+.tearcal .w{font-size:12.5px;padding-bottom:7px;color:var(--ink-muted)}
+.tearcal .perf{border-top:1px dashed var(--rule-strong);height:6px;background:var(--paper-sunk)}
+
+/* เพจเจอร์ */
+.pager{display:flex;align-items:stretch;gap:10px;margin-top:16px;background:var(--pager);border-radius:10px;padding:10px;
+  text-decoration:none;color:inherit;box-shadow:inset 0 -3px 0 var(--pager-edge)}
+.pager .lcd{flex:1;min-width:0;background:var(--lcd);color:var(--lcd-ink);border-radius:3px;padding:6px 10px;
+  box-shadow:inset 0 2px 0 rgba(0,0,0,.18);font-variant-numeric:tabular-nums}
+.lcd .top{display:flex;justify-content:space-between;font-size:12.5px;font-weight:600;letter-spacing:.04em}
+.lcd .msg{font-size:15px;font-weight:500;line-height:1.35;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.lcd .blink{display:inline-block;width:7px;height:7px;background:var(--lcd-ink);border-radius:50%;margin-right:5px;animation:blink 1.2s steps(2) infinite}
+@keyframes blink{50%{opacity:0}}
+.pager .btns{display:flex;flex-direction:column;justify-content:center;gap:6px}
+.pager .btns i{display:block;width:26px;height:12px;border-radius:6px;background:#3B4042;box-shadow:inset 0 -2px 0 #1b1e1f}
+.pager .brand-sm{writing-mode:vertical-rl;transform:rotate(180deg);font-size:10px;color:#8B9294;letter-spacing:.12em;text-align:center}
+
+/* พื้นที่ภาพ 3D เดิม */
+.scene{margin-top:18px;border:1px solid var(--rule);background:var(--paper-sunk);position:relative;overflow:hidden}
+.scene svg{display:block;width:100%;height:auto}
+.scene .cap{position:absolute;left:8px;bottom:6px;font-size:11.5px;color:var(--ink-muted)}
+.sign{position:absolute;background:rgba(251,248,240,.92);border:1px solid var(--ink);border-radius:2px;padding:3px 8px;font-size:12.5px;line-height:1.3;
+  box-shadow:2px 2px 0 rgba(31,42,36,.25);text-decoration:none;color:var(--ink);white-space:nowrap}
+.sign b{display:block;font-weight:600}
+.sign small{color:var(--link);font-weight:500}
+
+/* แฟ้มบริการ */
+h2{font-family:var(--font-serif);font-weight:600;font-size:18px;margin:24px 0 10px;border-bottom:2px solid var(--ink);padding-bottom:4px}
+.folders{display:grid;grid-template-columns:1fr 1fr;gap:18px 12px;padding-top:8px}
+.folder{position:relative;background:var(--paper-raised);border:1px solid var(--rule-strong);padding:12px 12px 12px;min-width:0;
+  text-decoration:none;color:var(--ink);display:flex;flex-direction:column;gap:2px;transition:transform .15s}
+.folder::before{content:"";position:absolute;left:-1px;top:-10px;width:42%;height:10px;background:var(--tab);border-radius:2px 2px 0 0}
+.folder.lodging{--tab:var(--tab-lodging);grid-column:1/-1}
+.folder.online{--tab:var(--tab-online)}.folder.classroom{--tab:var(--tab-classroom)}.folder.meeting{--tab:var(--tab-meeting)}
+a.folder:hover,a.folder:focus-visible{transform:translateY(-2px)}
+.folder .t{font-weight:600;font-size:16px;line-height:1.3}
+.folder .s{font-size:13px;color:var(--ink-muted);line-height:1.4}
+.folder .row{display:flex;gap:8px;margin-top:8px;flex-wrap:wrap}
+.folder .row a{flex:1 1 140px;text-align:center;border:1px solid var(--ink);padding:9px 8px;text-decoration:none;color:var(--ink);font-weight:500;font-size:14.5px;background:var(--paper);
+  box-shadow:0 3px 0 var(--rule-strong)}
+.folder .row a:active{transform:translateY(2px);box-shadow:0 1px 0 var(--rule-strong)}
+.folder .lbl{font-size:11.5px;color:var(--ink-muted);letter-spacing:.02em}
+
+/* บอร์ดไม้ก๊อก */
+.cork{margin-top:4px;border:8px solid var(--cork-frame);background-color:var(--cork);
+  background-image:radial-gradient(var(--cork-dot) 1px,transparent 1.5px),radial-gradient(var(--cork-dot) 1px,transparent 1.5px);
+  background-size:9px 9px,13px 13px;background-position:0 0,4px 6px;padding:18px 12px 14px;display:grid;grid-template-columns:1fr 1fr;gap:14px;min-height:150px}
+.note{position:relative;background:var(--note);padding:14px 10px 10px;font-size:13.5px;line-height:1.4;box-shadow:1px 2px 0 rgba(0,0,0,.18);min-width:0}
+.note:nth-child(1){transform:rotate(-2deg)}.note:nth-child(2){transform:rotate(1.6deg);background:var(--note-2)}
+.note::before{content:"";position:absolute;top:-5px;left:50%;width:12px;height:12px;margin-left:-6px;border-radius:50%;background:var(--pin,#A3241C);
+  box-shadow:inset -2px -2px 0 rgba(0,0,0,.25),0 2px 2px rgba(0,0,0,.25)}
+.note:nth-child(2)::before{--pin:#1F4E79}
+.note b{display:block;font-size:12px;letter-spacing:.03em;margin-bottom:2px}
+.note.stop b{color:var(--stamp)}.note.open b{color:var(--ok)}
+.note a{font-weight:500}
+.cork.empty{grid-template-columns:1fr;place-items:center;color:#FBF8F0;font-size:14px;text-shadow:0 1px 0 rgba(0,0,0,.35)}
+.more{display:block;margin-top:10px;font-size:14px}
+
+/* ตัวควบคุมจำลอง */
+.sim{margin-top:26px;border:1px dashed var(--rule);background:var(--paper-raised);padding:10px 12px;font-size:14px;display:grid;gap:6px}
+.sim label{display:flex;gap:8px;align-items:center}
+:focus-visible{outline:3px solid var(--link);outline-offset:2px}
+[hidden]{display:none!important}
+@media (prefers-reduced-motion: reduce){.lcd .blink{animation:none}.folder{transition:none}}
+</style>
+
+<div class="wrap">
+  <header class="topbar">
+    <div class="brand"><b>SIGROOM</b><span>ระบบจองห้อง รร.ส.สส.</span></div>
+    <nav class="menu" aria-label="เมนูรอง"><a href="#">สถานะห้อง</a><a href="#" id="loginLink">เข้าสู่ระบบ</a></nav>
+  </header>
+
+  <p class="mock-note">ตัวอย่างหน้าแรก (mockup) ข้อมูลเป็นของสมมติ · ภาพ 3D จริงไม่เปลี่ยน ใช้ภาพแทนในตัวอย่างนี้</p>
+
+  <section class="hello">
+    <div>
+      <h1>วันนี้ต้องการใช้ห้องอะไร</h1>
+      <p>เลือกงานด้านล่าง ระบบหาห้องว่างให้</p>
+    </div>
+    <div class="tearcal" role="img" id="tearcal" aria-label="วันนี้ วันจันทร์ที่ ๕ ตุลาคม พ.ศ. ๒๕๖๙">
+      <div class="m" id="calM">ต.ค. ๒๕๖๙</div>
+      <div class="d" id="calD">๕</div>
+      <div class="w" id="calW">วันจันทร์</div>
+      <div class="perf"></div>
+    </div>
+  </section>
+
+  <a class="pager" href="#" id="pager" aria-label="การจองของฉัน มีข้อความใหม่ 2 รายการ">
+    <span class="brand-sm" aria-hidden="true">SIGNAL</span>
+    <span class="lcd">
+      <span class="top"><span><span class="blink" aria-hidden="true"></span>มีข้อความ 2</span><span>09:41</span></span>
+      <span class="msg" id="pagerMsg">คำขอห้องพัก 412 อนุมัติแล้ว</span>
+    </span>
+    <span class="btns" aria-hidden="true"><i></i><i></i></span>
+  </a>
+
+  <div class="scene">
+    <svg viewBox="0 0 400 210" aria-hidden="true">
+      <rect width="400" height="210" fill="#EFE8D6"/>
+      <g stroke="#B9AD8F" stroke-width="1">
+        <path d="M30 150 L130 100 L230 150 L130 200 Z" fill="#E3DCC8"/>
+        <path d="M60 135 L60 85 L130 50 L200 85 L200 135 L130 170 Z" fill="#D8CFB8"/>
+        <path d="M60 85 L130 120 L200 85" fill="none"/><path d="M130 120 L130 170" />
+        <path d="M230 160 L310 120 L390 160 L310 200 Z" fill="#E3DCC8"/>
+        <path d="M255 150 L255 115 L310 88 L365 115 L365 150 L310 177 Z" fill="#CFD8CC"/>
+        <path d="M255 115 L310 142 L365 115" fill="none"/><path d="M310 142 L310 177"/>
+      </g>
+    </svg>
+    <a class="sign" href="#" style="left:22%;top:12%"><b>อาคารพัก</b><small>จองห้องพัก →</small></a>
+    <a class="sign" href="#" style="left:62%;top:28%"><b>อาคาร บก.กศ.</b><small>ห้องสอนออนไลน์ →</small></a>
+    <span class="cap">ตำแหน่งภาพ 3D เดิม · ป้ายบนอาคารเป็นป้ายอะคริลิก</span>
+  </div>
+
+  <h2>เลือกงาน</h2>
+  <div class="folders">
+    <div class="folder lodging">
+      <span class="lbl">แฟ้ม ๑</span>
+      <span class="t">จองห้องพัก</span>
+      <span class="s">อาคารพัก 401–530</span>
+      <div class="row"><a href="#">นักเรียนหลักสูตร</a><a href="#">บุคคลทั่วไป</a></div>
+    </div>
+    <a class="folder online" href="#"><span class="lbl">แฟ้ม ๒</span><span class="t">จองห้องสอนออนไลน์</span><span class="s">เลือกเวลา ระบบหาห้องว่างให้</span></a>
+    <a class="folder classroom" href="#"><span class="lbl">แฟ้ม ๓</span><span class="t">จองห้องเรียน</span><span class="s">บอกวัน เวลา จำนวนคน</span></a>
+    <a class="folder meeting" href="#" style="grid-column:1/-1"><span class="lbl">แฟ้ม ๔</span><span class="t">จองห้องประชุม</span><span class="s">บอกวัน เวลา จำนวนคน</span></a>
+  </div>
+
+  <h2>ประกาศวันนี้</h2>
+  <div class="cork" id="cork">
+    <div class="note stop"><b>งดใช้ห้อง</b>ห้อง 412 วันนี้ 08.00–16.00 น.<br>ปรับปรุงเครื่องปรับอากาศ</div>
+    <div class="note open"><b>เปิดจองที่พัก</b>นนส. รุ่น 12<br>เปิดถึง 4 ต.ค. 2569<br><a href="#">จองเตียง →</a></div>
+  </div>
+  <a class="more" href="#">ดูสถานะห้องทั้งหมด</a>
+
+  <div class="sim" aria-label="ตัวควบคุมจำลอง (เฉพาะ mockup)">
+    <strong>จำลอง (เฉพาะ mockup)</strong>
+    <label><input type="checkbox" id="simLogin" checked> เข้าสู่ระบบแล้ว (แสดงเพจเจอร์)</label>
+    <label><input type="checkbox" id="simNotes" checked> มีประกาศ</label>
+  </div>
+</div>
+
+<script>
+(function(){
+  // ปฏิทินฉีก: วันที่วันนี้ตามเวลาไทย เลขไทย ปี พ.ศ. (ของจริง render ฝั่ง server)
+  try{
+    const now=new Date(), tz='Asia/Bangkok';
+    const th=(o)=>new Intl.DateTimeFormat('th-TH-u-nu-thai',Object.assign({timeZone:tz},o)).format(now);
+    const month=th({month:'short'}), year=th({year:'numeric'}).replace(/[^๐-๙]/g,'');
+    document.getElementById('calM').textContent=month+' '+year;
+    document.getElementById('calD').textContent=th({day:'numeric'});
+    document.getElementById('calW').textContent=th({weekday:'long'});
+    document.getElementById('tearcal').setAttribute('aria-label','วันนี้ '+th({weekday:'long',day:'numeric',month:'long',year:'numeric'}));
+  }catch(e){}
+
+  // เพจเจอร์สลับข้อความ
+  const msgs=['คำขอห้องพัก 412 อนุมัติแล้ว','พรุ่งนี้ 10.00 น. STU-ONLINE-2'];
+  let i=0; const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if(!reduce) setInterval(()=>{i=(i+1)%msgs.length;document.getElementById('pagerMsg').textContent=msgs[i];},3500);
+
+  const pager=document.getElementById('pager'), login=document.getElementById('loginLink');
+  document.getElementById('simLogin').addEventListener('change',e=>{
+    pager.hidden=!e.target.checked; login.textContent=e.target.checked?'ออกจากระบบ':'เข้าสู่ระบบ';
+  });
+  login.textContent='ออกจากระบบ';
+
+  const cork=document.getElementById('cork'), saved=cork.innerHTML;
+  document.getElementById('simNotes').addEventListener('change',e=>{
+    if(e.target.checked){cork.classList.remove('empty');cork.innerHTML=saved;}
+    else{cork.classList.add('empty');cork.textContent='วันนี้ไม่มีประกาศ';}
+  });
+})();
+</script>
