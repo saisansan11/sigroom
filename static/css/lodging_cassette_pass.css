@@ -9,7 +9,17 @@
   margin-inline: auto;
 }
 
-.cassette-pass-page .keycard--cassette {
+body.cassette-pass-page #keycard.keycard--cassette {
+  --light-x: 30%;
+  --shadow-x: 0px;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  text-align: left;
+  color: var(--ink);
+  transform: none;
   width: min(100%, 26rem);
   max-width: 100%;
   height: auto;
@@ -51,6 +61,8 @@
   border-radius: 50%;
   background: rgb(31 42 36 / .18);
   filter: blur(7px);
+  transform: translateX(var(--shadow-x));
+  transition: transform .5s ease;
   pointer-events: none;
 }
 
@@ -61,7 +73,6 @@
   aspect-ratio: 100 / 64;
   transform-style: preserve-3d;
   transition: transform .7s cubic-bezier(.2, .8, .2, 1);
-  will-change: transform;
 }
 
 .cassette-pass-page .cassette.is-dragging { transition: none; }
@@ -72,14 +83,17 @@
   -webkit-backface-visibility: hidden;
 }
 
-.cassette-pass-page .cassette-face {
+body.lodging-booking-ios27.cassette-pass-page .cassette-face {
   inset: 0;
   min-height: 0;
   border: 1px solid #151816;
   border-radius: 3.2cqw;
   overflow: hidden;
-  background: #2a2e2b;
-  box-shadow: inset 0 0 0 1px rgb(255 255 255 / .03);
+  background:
+    radial-gradient(ellipse at var(--light-x) 0%, rgb(255 255 255 / .13), transparent 65%),
+    repeating-linear-gradient(0deg, transparent 0 2px, rgb(0 0 0 / .035) 2px 3px),
+    var(--shell, #2a2e2b);
+  box-shadow: inset 0 2px 1px rgb(255 255 255 / .28), inset 0 -3px 2px rgb(0 0 0 / .65), inset 0 0 0 1.2cqw #202421;
 }
 
 .cassette-pass-page .cassette-face--front {
@@ -89,7 +103,7 @@
   transform: translateZ(calc(var(--t) / 2));
 }
 
-.cassette-pass-page .cassette-face--back {
+body.lodging-booking-ios27.cassette-pass-page .cassette-face--back {
   display: grid;
   place-items: center;
   padding: 0;
@@ -97,7 +111,9 @@
   transform: rotateY(180deg) translateZ(calc(var(--t) / 2));
 }
 
-.cassette-pass-page .cassette-side { background: #121413; }
+.cassette-pass-page .cassette-side {
+  background: linear-gradient(to bottom, #4c514d, #242825 44%, #101310 46% 54%, #303631 56%, #181c19);
+}
 .cassette-pass-page .cassette-side--top,
 .cassette-pass-page .cassette-side--bottom {
   left: 2.5cqw;
@@ -123,6 +139,7 @@
   height: 67%;
   padding: 2.1cqw 3cqw 0;
   border-radius: 1.6cqw;
+  box-shadow: 0 1px 1px rgb(0 0 0 / .7), inset 0 1px 0 #fff;
   background-color: var(--paper-raised);
   background-image: repeating-linear-gradient(to bottom, transparent 0, transparent calc(5.6cqw - 1px), #e3dcc8 calc(5.6cqw - 1px), #e3dcc8 5.6cqw);
 }
@@ -172,7 +189,7 @@
   position: absolute;
   left: 0;
   right: 0;
-  top: 26.6cqw;
+  top: 22cqw;
   height: 7.6cqw;
   background: linear-gradient(to bottom, #a3241c 0 33.33%, #c98a1b 33.33% 66.66%, #1f4e79 66.66%);
 }
@@ -181,12 +198,22 @@
   z-index: 2;
   left: 19%;
   right: 19%;
-  top: 22.2cqw;
-  height: 16.5cqw;
+  top: 17.4cqw;
+  height: 14.5cqw;
   overflow: hidden;
   border: .4cqw solid var(--ink);
   border-radius: 8cqw;
   background: #211e1b;
+  box-shadow: 0 1px 1px rgb(255 255 255 / .3), inset 0 2px 5px #080b08;
+}
+.cassette-pass-page .cassette-window::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  border-radius: inherit;
+  box-shadow: inset 0 3px 5px rgb(0 0 0 / .7);
+  background: linear-gradient(115deg, transparent 15%, rgb(255 255 255 / .1) 30%, transparent 45%);
 }
 .cassette-pass-page .cassette-tape-display { display: block; width: 100%; height: 100%; }
 .cassette-pass-page .cassette-name,
@@ -223,14 +250,14 @@
   width: 3.4cqw;
   height: 3.4cqw;
   border-radius: 50%;
-  background: #3b403d;
-  box-shadow: inset 0 0 0 .5cqw #2a2e2b;
+  background: radial-gradient(circle at 35% 25%, #b3b8ad, #626b61 45%, #252c26 70%);
+  box-shadow: 0 1px 0 rgb(255 255 255 / .16), inset 0 0 0 .45cqw #141b15, inset 0 1px 2px #050805;
 }
 .cassette-pass-page .cassette-screw::after {
   content: "";
   position: absolute;
   left: 20%; right: 20%; top: 46%; height: 8%;
-  background: #1a1d1b;
+  background: #151b16;
   transform: rotate(35deg);
 }
 .cassette-pass-page .cassette-screw--1 { left: 2.4cqw; top: 2.4cqw; }
@@ -245,7 +272,8 @@
   right: 19%;
   bottom: 0;
   height: 20%;
-  background: #1a1d1b;
+  background: repeating-linear-gradient(90deg, #202621 0 2px, #2b332c 2px 3px);
+  box-shadow: inset 0 2px 1px rgb(255 255 255 / .12);
   clip-path: polygon(8% 0, 92% 0, 100% 100%, 0 100%);
 }
 .cassette-pass-page .cassette-lip span { position: absolute; left: 5%; right: 5%; bottom: 5%; height: 6%; background: #4a2f22; }
@@ -308,6 +336,7 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .cassette-pass-page .cassette-stage::after { transition: none; }
   .cassette-pass-page .cassette,
   .cassette-pass-page .cassette.is-dragging { transition: none; }
   .cassette-pass-page .cassette-stamp { animation: none; }
