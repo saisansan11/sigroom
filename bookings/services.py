@@ -224,6 +224,16 @@ def validate_booking_window(
     if cohort_conflict_for_resource(resource, start, end):
         errors.append("ห้องพักถูกสงวนไว้สำหรับรอบหลักสูตรในช่วงวันที่เลือก")
 
+    # Closures apply even when this room has no optional ResourceRule.
+    from resources.services import active_blackouts, active_outages
+
+    blackouts = active_blackouts(resource, start, end)
+    if blackouts:
+        errors.append(f"ติดวันหยุด/กิจกรรมส่วนกลาง: {blackouts[0].title}")
+    outages = active_outages(resource, start, end)
+    if outages:
+        errors.append(f"ห้องงดใช้: {outages[0].reason}")
+
     if not rule:
         return errors
 
@@ -252,14 +262,6 @@ def validate_booking_window(
         if not user_unit_id or not rule.allowed_units.filter(pk=user_unit_id).exists():
             errors.append("หน่วยงานของคุณไม่มีสิทธิ์จองห้องนี้")
 
-    from resources.services import active_blackouts, active_outages
-
-    blackouts = active_blackouts(resource, start, end)
-    if blackouts:
-        errors.append(f"ติดวันหยุด/กิจกรรมส่วนกลาง: {blackouts[0].title}")
-    outages = active_outages(resource, start, end)
-    if outages:
-        errors.append(f"ห้องงดใช้: {outages[0].reason}")
     return errors
 
 
@@ -366,6 +368,8 @@ def _contact_for_room(room: Resource) -> str:
 def cancel_booking(booking: Booking, user, now: datetime | None = None) -> Booking:
     """ยกเลิกคำขอของตนเองก่อนเส้นตายและปลด hold ใน transaction เดียว"""
     now = now or timezone.now()
+    # Serialize with approval/amendment decisions and validate the current row.
+    booking = Booking.objects.select_for_update().select_related("room").get(pk=booking.pk)
     if booking.requester_id != getattr(user, "pk", None) and not getattr(user, "is_superuser", False):
         raise PermissionError("คุณไม่มีสิทธิ์ยกเลิกการจองนี้")
     if booking.request_status in {
