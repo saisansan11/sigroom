@@ -79,6 +79,7 @@
       </details>
 
       <p class="online-step-label">2 · เริ่มกี่โมง</p>
+      <div class="online-start-options">
       {% for group_label, values in start_groups %}
         <div class="online-time-row" role="group" aria-label="เวลาเริ่มช่วง{{ group_label }}">
           <span class="online-time-row-label">{{ group_label }}</span>
@@ -92,6 +93,9 @@
           </div>
         </div>
       {% endfor %}
+      </div>
+      <p class="online-preset-note online-preset-am">ช่วงเช้าใช้เวลา {{ selection.presets.0.start }}–{{ selection.presets.0.end }} ไม่ใช้เวลาเริ่มที่เลือก</p>
+      <p class="online-preset-note online-preset-pm">ช่วงบ่ายใช้เวลา {{ selection.presets.1.start }}–{{ selection.presets.1.end }} ไม่ใช้เวลาเริ่มที่เลือก</p>
 
       <p class="online-step-label">3 · นานเท่าไร</p>
       <div class="online-chip-row" role="group" aria-label="เลือกระยะเวลา">
@@ -125,3 +129,4 @@
   {% endif %}
 </div>
 {% endblock %}
+{% block scripts %}<script src="{% static 'js/online_quick_selection.js' %}"></script>{% endblock %}

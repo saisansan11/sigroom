@@ -276,7 +276,13 @@ body.online-teaching-r3l .online-calendar-day span,
 body.online-teaching-r3l .online-calendar-day.is-off { min-height: 44px; display: flex; align-items: center; justify-content: center; border: 1px solid transparent; border-radius: 2px; }
 body.online-teaching-r3l .online-calendar-day.is-off { color: var(--ot-rule); }
 body.online-teaching-r3l .online-calendar-day.is-today span { border-color: var(--ot-rule); }
-body.online-teaching-r3l .online-calendar-day input:checked + span { border-color: var(--ot-ink); background: var(--ot-ink); color: var(--ot-paper); }
+body.online-teaching-r3l .online-calendar-day input:checked + span,
+body.online-teaching-r3l .online-calendar-day span.is-on { border-color: var(--ot-ink); background: var(--ot-ink); color: var(--ot-paper); }
+body.online-teaching-r3l .online-preset-note { display: none; color: var(--ot-muted); }
+body.online-teaching-r3l .online-quick-filter:has(input[name="dur"][value="am"]:checked) .online-preset-am,
+body.online-teaching-r3l .online-quick-filter:has(input[name="dur"][value="pm"]:checked) .online-preset-pm { display: block; }
+body.online-teaching-r3l .online-quick-filter:has(input[name="dur"][value="am"]:checked) .online-start-options,
+body.online-teaching-r3l .online-quick-filter:has(input[name="dur"][value="pm"]:checked) .online-start-options { opacity: .55; }
 body.online-teaching-r3l .online-inline-form { display: flex; flex-wrap: wrap; gap: .45rem; align-items: end; margin: .45rem 0 0; }
 body.online-teaching-r3l .online-inline-form label { min-width: min(100%, 15rem); margin: 0; }
 body.online-teaching-r3l .online-inline-form :is(input,select,button) { min-height: 44px; margin-bottom: 0; border-radius: 2px; }
