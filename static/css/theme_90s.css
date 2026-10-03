@@ -1,0 +1,25 @@
+:root {
+  --tab-lodging: #2F6B3A;
+  --tab-online: #1F4E79;
+  --tab-classroom: #C98A1B;
+  --tab-meeting: #A3241C;
+  --shell: #2A2E2B;
+  --shell-edge: #1A1D1B;
+  --shell-side: #121413;
+  --tape: #4A2F22;
+  --hub: #ECE6D6;
+}
+
+/* ชั้นตกแต่งยุค 90: ใช้บนธีม A เดิมเท่านั้น และไม่เปลี่ยน token หลัก */
+.typewriter-num {
+  font-variant-numeric: tabular-nums;
+  letter-spacing: .04em;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .theme-90s-motion {
+    animation: none !important;
+    transition: none !important;
+    transform: none !important;
+  }
+}
