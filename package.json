@@ -2,6 +2,7 @@
   "name": "sigroom-accessibility-tests",
   "private": true,
   "scripts": {
+    "test:interaction": "node --test tests/*.test.cjs",
     "test:a11y": "playwright test --config=playwright.a11y.config.js"
   },
   "devDependencies": {

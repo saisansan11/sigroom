@@ -28,3 +28,7 @@ branch: feat/teaching-pigeon-3d-preview
 
 ## ส่งต่องาน
 อ่าน SIGROOM workflow และแผน PR-C แล้วตรวจ Git/GitHub ล่าสุดอีกครั้ง งานต้นแบบ 3D อยู่ branch feat/teaching-pigeon-3d-preview; งานตลับอยู่ Draft #85 อย่า merge/deploy งานใหม่โดยไม่มีคำสั่งเฉพาะ รักษางานอื่นทั้งหมด
+## Review correction — 3 Oct 2026
+Feedback expiry now uses a one-shot timer independent of animation; renaming clears feedback and updates immediately. Opacity moved to outer stage, keeping device preserve-3d intact. Added four dependency-free Node tests and wired npm run test:interaction into required Repository checks (same workflow/script change as #85, glob includes both suites after merging).
+Local verification: four Node tests pass with reduced-motion enabled and zero animation intervals; A/B/C feedback expires, rename works, hatch count stays zero. Django check and migration drift pass. Full suite: 862 passed in 131s (existing warnings). Browser at port 8017: petOff on, tilt 24 degrees, LCD and A/B/C remain visible; rename during feedback updates immediately. Actual OS reduced-motion and Safari not exercised; reduced-motion evidence is VM regression tests. Screenshot displayed during QA; saving the screenshot was denied by the browser tool filesystem.
+Scope remains a mockup plus tests/CI/docs, not runtime pet integration. Review new HEAD before leaving Draft; no merge or deploy. CI must be checked on new HEAD.

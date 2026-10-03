@@ -117,7 +117,7 @@ canvas{display:block;width:100%;aspect-ratio:32/24;background:var(--lcd);border-
   <p class="sub">นกโตขึ้นทุกครั้งที่สอนจริงจนจบคาบ ไม่ต้องเข้ามาให้อาหารทุกวัน และนกไม่ตาย</p>
   <p class="mock-note">ต้นแบบรูปลักษณ์ 3D · ข้อมูลสมมติทั้งหมด ปุ่มท้ายหน้าใช้จำลองขั้นของนก ยังไม่เชื่อมบัญชีหรือการจองจริง</p>
 
-  <div class="device-stage">
+  <div class="device-stage" id="deviceStage">
     <div class="device" id="device">
       <span class="loop"></span><span class="ring"></span>
       <span class="device-screw left" aria-hidden="true"></span><span class="device-screw right" aria-hidden="true"></span>
@@ -299,12 +299,17 @@ canvas{display:block;width:100%;aspect-ratio:32/24;background:var(--lcd);border-
   }
 
   // ปุ่มบนตัวเครื่อง: เป็นของเล่น ไม่มีผลกับการเติบโต
+  let feedbackTimer;
+  function feedback(kind, text){
+    clearTimeout(feedbackTimer); effect=kind; effectT=0; setText(text); draw();
+    feedbackTimer=setTimeout(()=>{effect=null; setText($('petOff').checked ? 'ปิดการแสดงนกแล้ว' : idleText()); draw();},2250);
+  }
   function flash(id){ const el=$(id); el.classList.add('on'); setTimeout(()=>el.classList.remove('on'),900); }
-  $('bA').onclick = ()=>{ if(stage==='egg'||hatching) return setText('ไข่ยังไม่ฟัก รอถึงเวลาสอน');
-    flash('icFeed'); effect='feed'; effectT=0; setText('ง่ำ ๆ อิ่มแล้ว'); };
-  $('bB').onclick = ()=>{ if(stage==='egg'||hatching) return setText('ไข่อุ่น ๆ');
-    flash('icPlay'); effect='pat'; effectT=0; setText('กุ๊ก กุ๊ก ชอบจัง'); };
-  $('bC').onclick = ()=>{ flash('icStat'); setText('สอนจบแล้ว '+taught+' ครั้ง'); effect='stat'; effectT=0; };
+  $('bA').onclick = ()=>{ if(stage==='egg'||hatching) return feedback(null,'ไข่ยังไม่ฟัก รอถึงเวลาสอน');
+    flash('icFeed'); feedback('feed','ง่ำ ๆ อิ่มแล้ว'); };
+  $('bB').onclick = ()=>{ if(stage==='egg'||hatching) return feedback(null,'ไข่อุ่น ๆ');
+    flash('icPlay'); feedback('pat','กุ๊ก กุ๊ก ชอบจัง'); };
+  $('bC').onclick = ()=>{ flash('icStat'); feedback('stat','สอนจบแล้ว '+taught+' ครั้ง'); };
 
   // ไข่ในใบยืนยันจอง
   const mini = $('eggMini').getContext('2d'); ghost(mini,16,16); plot(mini, EGG, 2, 1);
@@ -321,8 +326,8 @@ canvas{display:block;width:100%;aspect-ratio:32/24;background:var(--lcd);border-
     if(reduce){ stage='chick'; taught=0; setText('ไข่ฟักแล้ว ได้ลูกนก'); updateInfo(); return; }
     hatching={t:0}; setText('ถึงเวลาสอนแล้ว ไข่กำลังฟัก…');
   };
-  $('nameInput').addEventListener('input', updateInfo);
-  $('petOff').addEventListener('change', e=>{ $('device').style.opacity = e.target.checked ? .35 : 1;
+  $('nameInput').addEventListener('input', ()=>{clearTimeout(feedbackTimer);effect=null;updateInfo();});
+  $('petOff').addEventListener('change', e=>{ $('deviceStage').style.opacity = e.target.checked ? .35 : 1;
     setText(e.target.checked ? 'ปิดการแสดงนกแล้ว' : idleText()); });
 
   // จังหวะเวลา: เฟรมนิ่ง 2 ครั้ง/วินาที แบบของเล่น LCD
@@ -330,7 +335,7 @@ canvas{display:block;width:100%;aspect-ratio:32/24;background:var(--lcd);border-
   function tick(){
     if(hatching){ hatching.t += 2;
       if(hatching.t > 52){ hatching=null; stage='chick'; taught=0; setText('ไข่ฟักแล้ว ได้ลูกนก ตั้งชื่อได้ด้านล่าง'); updateInfo(); return; } }
-    if(effect){ effectT++; if(effectT>8){ effect=null; setText(idleText()); } }
+    if(effect) effectT++;
     if(!reduce || hatching) frame++;
     draw();
   }

@@ -23,3 +23,6 @@ branch: feat/teaching-pigeon-3d-preview; แยกจากงานตลับ
 
 ## ขอบเขต
 ต้นแบบรอบนี้ยังไม่ให้ไข่จริง ไม่บันทึกข้อมูล ไม่สร้าง migration และไม่ใช่ฟีเจอร์ที่เปิด production แล้ว การเชื่อม backend เป็น PR-C ถัดจากการตรวจต้นแบบนี้
+
+## Review fixes for #86
+Expire feedback independently of animation ticks, including reduced motion; refresh the name immediately. Move disabled opacity to the outer stage to preserve internal 3D ordering. Verify interactions and layer visibility in browser; retain mock-only scope.
