@@ -28,6 +28,7 @@ from .lodging_models import (
     PublicLodgingAccess,
 )
 from .course_catalog import selectable_course_runs
+from .models import Booking
 from .lodging_services import (
     assign_lodging_bed,
     can_access_lodging_management,
@@ -67,11 +68,10 @@ def lodging_room_detail(request, number):
 
 # UX-17: Public dormitory showcase — no login required.
 def lodging_about(request):
-    """Public information page about the dormitory building.
+    """Public service gateway, with a small private booking summary after login.
 
-    Presents static factual content (rooms, rates, floor plans, photos).
-    Requires no authentication. Contains no student PII.
-    No dependency on active cohort records.
+    The showcase remains public. Authenticated responses also include the current
+    user's active booking count, so those responses must never be shared by a CDN.
     """
     context = {
         "rates": RATES,
@@ -79,7 +79,17 @@ def lodging_about(request):
         "electricity_fan_flat_baht_per_month": ELECTRICITY_FAN_FLAT_BAHT_PER_MONTH,
         "monthly_threshold_days": MONTHLY_THRESHOLD_DAYS,
     }
-    return render(request, "lodging/lodging_about.html", context)
+    if request.user.is_authenticated:
+        context["my_pending_count"] = Booking.objects.filter(
+            requester=request.user,
+            request_status__in=Booking.HOLDING_STATUSES,
+            end_at__gt=timezone.now(),
+        ).count()
+
+    response = render(request, "lodging/lodging_about.html", context)
+    if request.user.is_authenticated:
+        response["Cache-Control"] = "private, no-store"
+    return response
 
 
 @login_required

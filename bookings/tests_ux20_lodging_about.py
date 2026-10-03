@@ -83,15 +83,19 @@ def test_ux20_hero_section_elements(client):
     assert "ที่พักและบริการห้องของโรงเรียนทหารสื่อสาร" in html
     assert 'id="lka-hero-stage"' in html
     assert "room4p_3421.jpg" in html
-    assert "ห้องพักหลักสูตร" in html
-    assert "ห้องพักบุคคลทั่วไป" in html
-    assert "ห้องสอนออนไลน์" in html
-    assert "ห้องเรียน / ห้องประชุม" in html
-    assert "กำลังพัฒนาระบบ" in html
+    assert "จองห้องพัก" in html
+    assert "นักเรียนหลักสูตร" in html
+    assert "บุคคลทั่วไป" in html
+    assert "จองห้องสอนออนไลน์" in html
+    assert "จองห้องเรียน" in html
+    assert "จองห้องประชุม" in html
+    assert "กำลังพัฒนาระบบ" not in html
+    assert reverse("bookings:lodging_start") in html
     assert reverse("bookings:lodging_index") in html
     assert reverse("bookings:lodging_general_request") in html
     assert reverse("bookings:online_teaching_home") in html
-    assert 'aria-disabled="true"' in html
+    assert reverse("bookings:book_search") + "?category=classroom" in html
+    assert reverse("bookings:book_search") + "?category=meeting" in html
 
     # R3-G deliberately removes duplicated hero statistics and old pseudo-3D hero cards.
     assert "lka-info-chips" not in html
@@ -144,7 +148,8 @@ def test_ux20_preview_hub_and_action_ids(client):
     assert reverse("bookings:lodging_index") in html, "Missing link to lodging booking"
     assert reverse("bookings:online_teaching_home") in html, "Missing link to online-teaching booking"
     assert 'href="#lka-explorer-fallback"' in html, "Missing link to fallback plan"
-    assert "กำลังพัฒนาระบบ" in html, "Missing non-bookable classroom/meeting state"
+    assert reverse("bookings:book_search") + "?category=classroom" in html
+    assert reverse("bookings:book_search") + "?category=meeting" in html
 
 def test_ux20_explorer_shell_details(client):
     """Interactive Floor Explorer uses expandable details shell architecture."""
@@ -233,7 +238,7 @@ def test_ux20_journey_and_why_sections(client):
     for index in range(1, 4):
         assert f"ห้องสอนออนไลน์ {index}" in html
         assert f"STU-ONLINE-{index}" in html
-    assert "สำหรับครูและอาจารย์ผู้สอน" in html
+    assert "เลือกเวลา ระบบหาห้องว่างให้" in html
     assert "บก.กศ.รร.ส.สส." in html
     assert "งานห้องพัก" in html
     assert "แผนกสนับสนุนการศึกษา" in html

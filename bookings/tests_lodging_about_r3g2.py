@@ -55,23 +55,25 @@ def test_hero_poster_assets_exist():
 def test_four_service_channels_with_correct_links(client):
     html = _html(client)
     services = _section(html, r'<section class="lka-section lka-g2-services" id="lka-preview-hub".*?</section>')
-    expected = [
-        ("ห้องพักหลักสูตร", reverse("bookings:lodging_index")),
-        ("ห้องพักบุคคลทั่วไป", reverse("bookings:lodging_general_request")),
-        ("ห้องสอนออนไลน์", reverse("bookings:online_teaching_home")),
-    ]
-    links = re.findall(r'<a class="lka-r3g-service" href="([^"]+)">.*?<strong>([^<]+)</strong>', services, re.DOTALL)
-    assert [(name, href) for href, name in links] == expected
-    assert len(re.findall(r'class="lka-r3g-service(?: lka-r3g-service--future)?"', services)) == 4
+    assert "วันนี้ต้องการทำอะไร" in services
+    for label, href in (
+        ("จองห้องพัก", reverse("bookings:lodging_start")),
+        ("นักเรียนหลักสูตร", reverse("bookings:lodging_index")),
+        ("บุคคลทั่วไป", reverse("bookings:lodging_general_request")),
+        ("จองห้องสอนออนไลน์", reverse("bookings:online_teaching_home")),
+        ("จองห้องเรียน", reverse("bookings:book_search") + "?category=classroom"),
+        ("จองห้องประชุม", reverse("bookings:book_search") + "?category=meeting"),
+    ):
+        assert label in services
+        assert f'href="{href}"' in services
+    assert services.count("lka-r3g-service ") >= 4
 
 
-def test_classroom_channel_is_not_clickable(client):
-    html = _html(client)
-    services = _section(html, r'<section class="lka-section lka-g2-services".*?</section>')
-    future = _section(services, r'<div class="lka-r3g-service lka-r3g-service--future" aria-disabled="true">.*?</div>')
-    assert "ห้องเรียน / ห้องประชุม" in future
-    assert "กำลังพัฒนาระบบ" in future
-    assert "<a " not in future and "href=" not in future
+def test_classroom_and_meeting_channels_are_clickable():
+    source = TEMPLATE.read_text(encoding="utf-8")
+    assert "กำลังพัฒนาระบบ" not in source
+    assert "?category=classroom" in source
+    assert "?category=meeting" in source
 
 
 def test_page_order_hero_services_showcase_then_folded_info(client):

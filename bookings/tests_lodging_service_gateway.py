@@ -40,21 +40,26 @@ def _room(code, category, *, unit=None):
     return room
 
 
-def test_public_page_is_service_gateway_with_three_clear_entries(client):
+def test_public_page_is_task_first_gateway_with_four_clear_entries(client):
     response = client.get(reverse("bookings:lodging_about"))
     assert response.status_code == 200
     html = response.content.decode("utf-8")
 
     assert "SIGROOM" in html
     assert "ที่พักและบริการห้องของโรงเรียนทหารสื่อสาร" in html
-    assert "ห้องพักหลักสูตร" in html
-    assert "ห้องพักบุคคลทั่วไป" in html
-    assert "ห้องสอนออนไลน์" in html
-    assert "ห้องเรียน / ห้องประชุม" in html
-    assert "กำลังพัฒนาระบบ" in html
+    assert "จองห้องพัก" in html
+    assert "นักเรียนหลักสูตร" in html
+    assert "บุคคลทั่วไป" in html
+    assert "จองห้องสอนออนไลน์" in html
+    assert "จองห้องเรียน" in html
+    assert "จองห้องประชุม" in html
+    assert "กำลังพัฒนาระบบ" not in html
+    assert reverse("bookings:lodging_start") in html
     assert reverse("bookings:lodging_index") in html
     assert reverse("bookings:lodging_general_request") in html
     assert reverse("bookings:online_teaching_home") in html
+    assert reverse("bookings:book_search") + "?category=classroom" in html
+    assert reverse("bookings:book_search") + "?category=meeting" in html
     assert "งานห้องพัก" in html
     assert "บก.กศ.รร.ส.สส." in html
     assert "แผนกสนับสนุนการศึกษา" in html

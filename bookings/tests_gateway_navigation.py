@@ -23,7 +23,7 @@ def test_guest_brand_and_gateway_navigation_point_to_service_gateway(client):
     assert f'href="{lodging}">จองห้องพัก</a>' in header
 
 
-def test_gateway_page_keeps_three_service_choices_and_marks_gateway_current(client):
+def test_gateway_page_keeps_task_first_service_choices_and_marks_gateway_current(client):
     response = client.get(reverse("bookings:lodging_about"))
     assert response.status_code == 200
     html = response.content.decode("utf-8")
@@ -32,6 +32,7 @@ def test_gateway_page_keeps_three_service_choices_and_marks_gateway_current(clie
     assert 'aria-current="page"' in header
     assert '>หน้าแรก</a>' in header
     assert "จองห้องพัก" in html
-    assert "จองห้องสอน" in html
-    assert "ห้องเรียน / ห้องประชุม" in html
-    assert "กำลังพัฒนาระบบ" in html
+    assert "จองห้องสอนออนไลน์" in html
+    assert "จองห้องเรียน" in html
+    assert "จองห้องประชุม" in html
+    assert "กำลังพัฒนาระบบ" not in html
