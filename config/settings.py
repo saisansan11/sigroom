@@ -108,6 +108,7 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 # --- ผู้ใช้ -----------------------------------------------------------------
 AUTH_USER_MODEL = "accounts.User"
+AUTHENTICATION_BACKENDS = ["accounts.backends.UsernameOrEmailBackend"]
 ALLOWED_EMAIL_DOMAIN = os.environ.get("ALLOWED_EMAIL_DOMAIN", "signalschool.ac.th")
 LOGIN_URL = "/accounts/login/"
 LOGIN_REDIRECT_URL = "/home/"

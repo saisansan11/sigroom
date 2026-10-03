@@ -13,17 +13,41 @@ from audit.services import audit
 LOGIN_THROTTLED_MESSAGE = "ใส่รหัสผ่านผิดหลายครั้งเกินไป กรุณารอสักครู่แล้วลองใหม่ หรือกดลืมรหัสผ่านด้านล่าง"
 
 
+def login_identity_key(raw: str) -> str:
+    """คืน key เดียวกันสำหรับ username และอีเมลหน่วยของบัญชีเดิม เพื่อใช้กับ throttle."""
+    identity = (raw or "").strip().lower()
+    if not identity or "@" not in identity:
+        return identity
+
+    # Import ในฟังก์ชันเพื่อไม่ให้ services/models ผูกกันตอนโหลดแอปเกินจำเป็น
+    from .models import validate_allowed_email_domain
+
+    try:
+        validate_allowed_email_domain(identity)
+    except ValidationError:
+        return identity
+
+    user_model = get_user_model()
+    try:
+        user = user_model._default_manager.only("username").get(email__iexact=identity)
+    except (user_model.DoesNotExist, user_model.MultipleObjectsReturned):
+        return identity
+    return user.username.strip().lower()
+
+
 def login_is_throttled(username: str, ip: str, now: datetime | None = None) -> bool:
     """True เมื่อความพยายามเข้าสู่ระบบผิดใน window ล่าสุดถึงเพดานตัวใดตัวหนึ่ง
 
     นับจากเหตุการณ์ login_failed ใน audit log (append-only) จึงไม่ต้องมีตารางเพิ่ม และความพยายามที่ถูกบล็อก
     ไม่สร้างแถวใหม่ — เพดานจึงคลายเองเมื่อครั้งเก่าสุดหลุดออกจาก window
+    username และอีเมลหน่วยของบัญชีเดียวกันถูก canonicalize เป็น identity เดียวกันก่อนนับ
     """
     now = now or timezone.now()
     window_start = now - timedelta(seconds=settings.LOGIN_THROTTLE_WINDOW_SECONDS)
     failures = AuditLog.objects.filter(entity="accounts.user", action="login_failed", at__gte=window_start)
-    if username:
-        by_username = failures.filter(entity_id=username[:100])
+    identity_key = login_identity_key(username)
+    if identity_key:
+        by_username = failures.filter(entity_id=identity_key[:100])
         if by_username.count() >= settings.LOGIN_THROTTLE_USER_LIMIT:
             return True
         if ip and by_username.filter(ip=ip[:45]).count() >= settings.LOGIN_THROTTLE_USER_IP_LIMIT:
