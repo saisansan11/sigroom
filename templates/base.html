@@ -149,6 +149,17 @@
       {% endif %}
     </div>
   </header>
+  {% if user.is_authenticated and nav_managed_services %}
+    <nav class="managed-service-strip" aria-label="งานบริการที่รับผิดชอบ">
+      <span>งานของฉัน:</span>
+      {% if nav_managed_services|length > 1 %}
+        {% for slug, label, url in nav_managed_services %}
+          <a href="{{ url }}"{% if request.resolver_match.url_name == 'service_staff_entry' and request.resolver_match.kwargs.service == slug %} aria-current="page"{% endif %}>{{ label }}</a>
+        {% endfor %}
+      {% endif %}
+      <a href="{% url 'bookings:lodging_about' %}">จองห้องให้ตัวเอง</a>
+    </nav>
+  {% endif %}
   <main id="main-content" class="container page-shell" tabindex="-1">
     {% if messages %}
       <div aria-live="polite">

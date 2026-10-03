@@ -84,34 +84,21 @@ def lodging_about(request):
 
 @login_required
 def service_staff_entry(request, service):
-    """Login-first gateway for the three operational owner groups.
+    """Login-first gateway using the shared managed-services policy."""
+    from .role_home import SERVICE_LEARNING, SERVICE_LODGING, SERVICE_ONLINE, managed_services
 
-    The public Service Gateway never exposes an admin surface directly. After
-    authentication, access is checked against the existing source-of-truth roles
-    before redirecting to the corresponding operations workspace.
-    """
-    if service == "lodging":
-        if not can_access_lodging_management(request.user):
-            raise PermissionDenied("คุณไม่มีสิทธิ์จัดการงานห้องพัก")
-        return redirect("bookings:lodging_workspace")
-
-    category_map = {
-        "online": (Resource.Category.ONLINE,),
-        "learning": (Resource.Category.CLASSROOM, Resource.Category.LAB, Resource.Category.MEETING),
-    }
-    categories = category_map.get(service)
-    if categories is None:
+    known_services = {SERVICE_LODGING, SERVICE_ONLINE, SERVICE_LEARNING}
+    if service not in known_services:
         raise Http404("ไม่พบบริการที่ร้องขอ")
 
-    can_manage = bool(
-        request.user.is_superuser
-        or request.user.custodied_resources.filter(
-            resource_type=Resource.Type.ROOM,
-            room_category__in=categories,
-        ).exists()
-    )
-    if not can_manage:
+    services = managed_services(request.user)
+    if service not in services and not request.user.is_superuser:
+        if service == SERVICE_LODGING:
+            raise PermissionDenied("คุณไม่มีสิทธิ์จัดการงานห้องพัก")
         raise PermissionDenied("บัญชีนี้ไม่ได้รับมอบหมายให้ดูแลห้องในส่วนนี้")
+
+    if service == SERVICE_LODGING:
+        return redirect("bookings:lodging_workspace")
     return redirect("usage:list")
 
 

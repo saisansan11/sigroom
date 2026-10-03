@@ -2,12 +2,14 @@ from django.urls import path
 from django.views.generic import RedirectView
 
 from . import course_views, lodging_views, views
+from .role_home import role_home
 from .online_teaching import online_teaching_book, online_teaching_home
 from .lodging_operations import lodging_workspace, general_request
 
 app_name = "bookings"
 
 urlpatterns = [
+    path("start/", role_home, name="role_home"),
     # หน้า Gateway เป็นทางเข้าหลัก ส่วน /home/ เป็นหน้าสถานะห้องเมนูรอง
     path("home/", views.calendar_view, name="calendar"),
     path(
