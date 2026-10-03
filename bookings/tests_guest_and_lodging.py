@@ -58,22 +58,33 @@ def sample_data():
     }
 
 
-def test_guest_can_view_calendar_without_login(client, sample_data):
-    """ผู้ใช้ทั่วไปที่ไม่ได้ล็อกอิน สามารถเข้าดูหน้าแรกและเห็นสถานะห้องได้ทันที"""
+def test_guest_can_view_status_category_index_without_login(client, sample_data):
+    """ผู้ใช้ทั่วไปเห็นตัวเลือกหมวด โดยไม่รวมทะเบียนทุกประเภทไว้หน้าเดียว"""
     resp = client.get(reverse("bookings:calendar"))
     assert resp.status_code == 200
-    assert "สถานะห้องวันนี้" in resp.content.decode("utf-8")
-    assert "เข้าสู่ระบบ" in resp.content.decode("utf-8")
-    assert "B1-101" in resp.content.decode("utf-8")
-
-
-def test_guest_can_filter_by_category(client, sample_data):
-    """สามารถเลือกกรองเฉพาะห้องพัก หรือห้องเรียนได้"""
-    resp = client.get(reverse("bookings:calendar") + "?category=lodging")
-    assert resp.status_code == 200
     content = resp.content.decode("utf-8")
-    assert "DORM-101" in content
-    assert "B1-101" not in content  # ห้องเรียนต้องไม่แสดงเมื่อกรองห้องพัก
+    assert "สถานะห้องวันนี้" in content
+    assert "เข้าสู่ระบบ" in content
+    assert "เลือกหมวดห้อง" in content
+    assert reverse("bookings:room_status", args=["classroom"]) in content
+    assert reverse("bookings:room_status", args=["lodging"]) in content
+    assert "B1-101" not in content
+    assert "DORM-101" not in content
+
+
+def test_guest_room_categories_have_separate_pages(client, sample_data):
+    """ห้องพักและห้องเรียนอยู่คนละหน้า ไม่ใช้ query filter บนทะเบียนรวม"""
+    lodging = client.get(reverse("bookings:room_status", args=["lodging"]))
+    assert lodging.status_code == 200
+    lodging_content = lodging.content.decode("utf-8")
+    assert "DORM-101" in lodging_content
+    assert "B1-101" not in lodging_content
+
+    classroom = client.get(reverse("bookings:room_status", args=["classroom"]))
+    assert classroom.status_code == 200
+    classroom_content = classroom.content.decode("utf-8")
+    assert "B1-101" in classroom_content
+    assert "DORM-101" not in classroom_content
 
 
 def test_calendar_events_public_masking(client, sample_data):
