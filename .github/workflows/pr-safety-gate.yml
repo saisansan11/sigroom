@@ -75,6 +75,9 @@ jobs:
             git diff --check
           fi
 
+      - name: Run UI interaction regression tests
+        run: npm run test:interaction
+
       - name: Run Django system checks
         run: uv run manage.py check
 
