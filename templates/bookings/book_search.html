@@ -1,19 +1,19 @@
 {% extends "base.html" %}
-{% block title %}ขอใช้ห้อง · SIGROOM{% endblock %}
+{% block title %}{{ booking_heading }} · SIGROOM{% endblock %}
 {% block content %}
 <div class="page-heading booking-sheet-heading">
   <div>
-    <h1>ขอใช้ห้อง</h1>
+    <h1>{{ booking_heading }}</h1>
     <p class="heading-desc">สามขั้นในหน้าเดียว ไม่ต้องกดค้นหา ผลเปลี่ยนตามที่เลือก</p>
   </div>
   <a class="booking-help-link" href="{% url 'bookings:about' %}">วิธีใช้งาน SIGROOM</a>
 </div>
 
-<nav class="booking-path-switcher" aria-label="เลือกประเภทการจอง">
+{% if not booking_category_locked %}<nav class="booking-path-switcher" aria-label="เลือกประเภทการจอง">
   <a class="booking-path-link is-current" aria-current="page" href="{% url 'bookings:book_search' %}">ห้องเรียน / ประชุม</a>
   {% if nav_can_book_online %}<a class="booking-path-link" href="{% url 'bookings:online_teaching_home' %}">ห้องสอนออนไลน์ <small>สำหรับครู</small></a>{% endif %}
   <a class="booking-path-link" href="{% url 'bookings:lodging_index' %}">ห้องพัก <small>รอบหลักสูตร</small></a>
-</nav>
+</nav>{% endif %}
 
 <form id="book-search-form" class="booking-step-form" method="get" action="{% url 'bookings:book_search' %}"
       hx-get="{% url 'bookings:book_search' %}" hx-trigger="change delay:250ms, submit" hx-target="#room-results"
@@ -71,6 +71,9 @@
       </label>
     </div>
 
+    {% if booking_category_locked %}
+      <input type="hidden" name="category" value="{{ selected_booking_category }}">
+    {% else %}
     <fieldset class="chip-group chip-group-quiet">
       <legend>ประเภทห้อง</legend>
       <div class="chips">
@@ -79,6 +82,7 @@
         {% endfor %}
       </div>
     </fieldset>
+    {% endif %}
 
     {% if equipment %}
       <details class="ledger-disclosure" {% if equipment_codes %}open{% endif %}>

@@ -26,7 +26,7 @@
         <p class="lka-g2-kicker">โรงเรียนทหารสื่อสาร กรมการทหารสื่อสาร</p>
         <h1 id="lka-hero-heading" class="lka-g2-title"><span class="lka-g2-logo-white"><picture><source type="image/webp" srcset="{% static 'img/brand/sigroom-logo-horizontal-white-360.webp' %} 360w, {% static 'img/brand/sigroom-logo-horizontal-white-720.webp' %} 720w" sizes="(min-width: 56rem) 320px, 240px"><img src="{% static 'img/brand/sigroom-logo-horizontal-white-360.png' %}" alt="SIGROOM" width="320" height="91" decoding="async"></picture></span></h1>
         <p class="lka-g2-lede">ที่พักและบริการห้องของโรงเรียนทหารสื่อสาร</p>
-        <p class="lka-g2-sub">จองห้องพักสำหรับผู้เข้าหลักสูตรและบุคคลทั่วไป และจองห้องสอนออนไลน์ ได้จากหน้านี้</p>
+        <p class="lka-g2-sub">จองห้องพักสำหรับผู้เข้าหลักสูตรและข้าราชการทหาร และจองห้องสอนออนไลน์ ได้จากหน้านี้</p>
         <div class="lka-g2-ctas">
           <a class="lka-g2-cta lka-g2-cta--primary" href="#lka-preview-hub">ดูห้องพัก</a>
           <a class="lka-g2-cta lka-g2-cta--ghost" href="#lka-explorer">สำรวจแบบ 3 มิติ</a>
@@ -79,16 +79,13 @@
     {% endif %}
 
     <div class="lka-r3g-service-grid">
-      <div class="lka-r3g-service lka-r3g-service--lodging">
+      <a class="lka-r3g-service lka-r3g-service--lodging" href="{% url 'bookings:lodging_start' %}">
         <span class="gateway-folder-index">แฟ้ม ๑</span>
         <span class="lka-r3g-service-icon">{% include "lodging/partials/gateway_icon.html" with icon="lodging" %}</span>
-        <strong><a class="lka-r3g-service-main-link" href="{% url 'bookings:lodging_start' %}">จองห้องพัก</a></strong>
-        <small>เลือกเส้นทางตามประเภทผู้เข้าพัก</small>
-        <span class="lka-r3g-service-actions">
-          <a href="{% url 'bookings:lodging_index' %}">นักเรียนหลักสูตร</a>
-          <a href="{% url 'bookings:lodging_general_request' %}">บุคคลทั่วไป</a>
-        </span>
-      </div>
+        <strong>จองห้องพัก</strong>
+        <small>นักเรียนหลักสูตรและข้าราชการทหาร</small>
+        <span class="lka-r3g-action">เริ่มจอง</span>
+      </a>
       <a class="lka-r3g-service lka-r3g-service--online" href="{% url 'bookings:online_teaching_home' %}">
         <span class="gateway-folder-index">แฟ้ม ๒</span>
         <span class="lka-r3g-service-icon">{% include "lodging/partials/gateway_icon.html" with icon="online" %}</span>
@@ -333,9 +330,9 @@
                 <select id="lka-room-cohort" disabled><option value="">กำลังตรวจสอบหลักสูตร</option></select>
                 <p id="lka-room-availability" role="status"></p>
                 <a class="lka-room-next" id="lka-room-book" hidden>จองห้องนี้</a>
-                <a id="lka-room-request" hidden>ส่งคำขอพักสำหรับบุคคลทั่วไป</a>
+                <a id="lka-room-request" hidden>ส่งคำขอพักสำหรับข้าราชการทหาร</a>
               </div>
-              <p class="lka-panel-note">ข้อมูลว่างอาจเปลี่ยนแปลง ระบบตรวจสอบอีกครั้งเมื่อส่งจอง · บุคคลทั่วไปต้องระบุวันเข้าพักก่อนตรวจห้องว่าง</p>
+              <p class="lka-panel-note">ข้อมูลว่างอาจเปลี่ยนแปลง ระบบตรวจสอบอีกครั้งเมื่อส่งจอง · ข้าราชการทหารต้องระบุวันเข้าพักก่อนตรวจห้องว่าง</p>
             </div>
           </dialog>
         </div>
@@ -554,7 +551,7 @@
       <div class="lka-disclosure-body lka-faq-list">
         <details class="lka-faq-item"><summary class="lka-faq-question"><span>ที่พักของนักเรียนตั้งอยู่ชั้นใดของอาคาร?</span></summary><div class="lka-faq-answer"><p>พื้นที่พักอยู่บนชั้น 4 และชั้น 5 ของอาคารที่พักนักเรียน</p></div></details>
         <details class="lka-faq-item"><summary class="lka-faq-question"><span>มีห้องพักรองรับกี่ห้อง?</span></summary><div class="lka-faq-answer"><p>ชั้น 4 มี 57 ห้อง 114 เตียง และชั้น 5 มี 30 ห้อง 120 เตียง รวม 87 ห้อง 234 เตียง</p></div></details>
-        <details class="lka-faq-item"><summary class="lka-faq-question"><span>บุคคลทั่วไปยื่นคำขอพักได้ที่ไหน?</span></summary><div class="lka-faq-answer"><p>เลือก “ห้องพักบุคคลทั่วไป” ในส่วนเลือกบริการของหน้านี้ แล้วระบุวันเข้าพักเพื่อให้ระบบตรวจสอบห้องว่าง</p></div></details>
+        <details class="lka-faq-item"><summary class="lka-faq-question"><span>ข้าราชการทหารยื่นคำขอพักได้ที่ไหน?</span></summary><div class="lka-faq-answer"><p>เลือก “จองห้องพัก” แล้วเลือก “ข้าราชการทหาร” แล้วระบุวันเข้าพักเพื่อให้ระบบตรวจสอบห้องว่าง</p></div></details>
         <details class="lka-faq-item"><summary class="lka-faq-question"><span>ผัง 3 มิติใช้บนโทรศัพท์ได้หรือไม่?</span></summary><div class="lka-faq-answer"><p>ใช้ได้ กด “ดูผัง 3 มิติ” แล้วเลือกชั้นหรือหมายเลขห้องที่ต้องการ</p></div></details>
       </div>
     </details>

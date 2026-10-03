@@ -1,0 +1,38 @@
+<ul class="main-nav">
+  {% if nav_service %}
+    <li><a href="{% url 'bookings:lodging_about' %}">‹ บริการทั้งหมด</a></li>
+    <li class="nav-service-name"><span>{{ nav_service_label }}:</span></li>
+    {% for link in nav_service_links %}
+      <li><a href="{{ link.url }}"{% if link.active %} aria-current="page"{% endif %}>{{ link.label }}</a></li>
+    {% endfor %}
+  {% endif %}
+  {% if user.is_authenticated %}
+    {% if nav_can_access_approvals or nav_can_manage_usage or nav_can_manage_lodging or nav_can_access_reports %}
+      <li class="nav-ops-item">
+        <details class="ops-menu">
+          <summary class="ops-menu-summary" aria-haspopup="true"{% if request.resolver_match.namespace == 'approvals' or request.resolver_match.namespace == 'usage' or request.resolver_match.namespace == 'reports' or nav_service == 'lodging' and nav_can_manage_lodging %} aria-current="true"{% endif %}>
+            <span>งานปฏิบัติการ</span>
+            {% if nav_pending_approval_count %}<span class="count-badge">{{ nav_pending_approval_count }}</span>{% endif %}
+          </summary>
+          <div class="ops-dropdown-panel">
+            <ul class="ops-nav-list">
+              {% if nav_can_access_approvals %}
+                <li><a{% if request.resolver_match.namespace == 'approvals' %} aria-current="page"{% endif %} href="{% url 'approvals:queue' %}">รออนุมัติ {% if nav_pending_approval_count %}<span class="count-badge">{{ nav_pending_approval_count }}</span>{% endif %}</a></li>
+              {% endif %}
+              {% if nav_can_manage_usage %}
+                <li><a{% if request.resolver_match.namespace == 'usage' %} aria-current="page"{% endif %} href="{% url 'usage:list' %}">การใช้งานห้อง</a></li>
+              {% endif %}
+              {% if nav_can_manage_lodging %}
+                <li><a{% if nav_service == 'lodging' %} aria-current="page"{% endif %} href="{% url 'bookings:lodging_workspace' %}">จัดการที่พัก</a></li>
+              {% endif %}
+              {% if nav_can_access_reports %}
+                <li class="ops-divider" role="separator"></li>
+                <li class="ops-secondary-item"><a class="nav-secondary-link"{% if request.resolver_match.namespace == 'reports' %} aria-current="page"{% endif %} href="{% url 'reports:dashboard' %}">รายงาน</a></li>
+              {% endif %}
+            </ul>
+          </div>
+        </details>
+      </li>
+    {% endif %}
+  {% endif %}
+</ul>

@@ -95,6 +95,10 @@ legend, label { font-weight: 700; } label small, .field small { display: block; 
 
 .main-nav { min-width: 0; display: flex; align-items: center; gap: var(--space-2xs); margin: 0; padding: 0; list-style: none; }
 .main-nav li { margin: 0; padding: 0; }
+.main-nav .nav-service-name { padding-inline: var(--space-sm); color: var(--ink); font-weight: 700; white-space: nowrap; }
+.desktop-nav .main-nav .nav-ops-item { margin-left: auto; }
+.mobile-menu .nav-service-name, .mobile-menu .nav-ops-item { grid-column: 1 / -1; min-width: 0; }
+.mobile-menu .ops-dropdown-panel { position: static; width: 100%; min-width: 0; margin-top: var(--space-xs); }
 .main-nav a { min-height: max(44px, 2.75rem); display: inline-flex; align-items: center; padding: var(--space-xs) var(--space-sm); border: 1px solid transparent; border-radius: var(--radius-sm); color: var(--muted); font-size: .9rem; font-weight: 700; text-decoration: none; white-space: nowrap; }
 .main-nav a:hover { border-color: transparent; background: var(--surface); color: var(--ink); }
 .main-nav a[aria-current="page"] { border-color: transparent; background: var(--surface-raised); color: var(--ink); box-shadow: inset 0 -2px var(--cyan); }
@@ -119,6 +123,10 @@ legend, label { font-weight: 700; } label small, .field small { display: block; 
 .mobile-menu-panel { position: absolute; top: 100%; right: 0; left: 0; padding: var(--space-md); border-bottom: 1px solid var(--line-strong); background: var(--canvas-deep); box-shadow: var(--shadow-panel); }
 .mobile-menu .main-nav { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-xs); }
 .mobile-menu .main-nav a { width: 100%; white-space: normal; }
+.mobile-menu .ops-menu, .mobile-menu .ops-menu-summary { width: 100%; }
+.mobile-menu .ops-nav-list { display: grid; grid-template-columns: minmax(0, 1fr); width: 100%; }
+.mobile-menu .ops-nav-list li { display: block; width: 100%; min-width: 0; }
+.mobile-menu .ops-nav-list a { display: flex; width: 100%; min-height: max(44px, 2.75rem); }
 .mobile-account { display: flex; align-items: center; justify-content: space-between; gap: var(--space-sm); margin-top: var(--space-md); padding-top: var(--space-md); border-top: 1px solid var(--line); }
 
 .page-shell { width: min(100% - 2rem, var(--content-max)); padding-top: clamp(2rem, 4vw, 3.75rem); padding-bottom: clamp(3rem, 7vw, 5rem); }

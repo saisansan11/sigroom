@@ -117,11 +117,14 @@ def test_lodging_index_links_to_about():
 
 
 def test_showcase_cta_links_back_to_lodging_index():
-    """The showcase template must link back to bookings:lodging_index."""
+    """The whole lodging folder opens the public gateway before either lodging path."""
     tmpl = _template()
-    assert "lodging_index" in tmpl, (
-        "lodging_about.html must contain a CTA link back to bookings:lodging_index"
+    assert "lodging_start" in tmpl, (
+        "lodging_about.html must contain a CTA link to bookings:lodging_start"
     )
+    start = (WORKTREE_ROOT / "templates" / "lodging" / "lodging_start.html").read_text(encoding="utf-8")
+    assert "lodging_index" in start
+    assert "lodging_general_request" in start
 
 
 def test_showcase_page_contains_booking_cta(client):

@@ -15,7 +15,7 @@
       <h1>จองห้องสอนออนไลน์</h1>
       <p>กดเลือกวัน เวลา และหลักสูตร รายการห้องว่างด้านล่างจะเปลี่ยนตามทันที</p>
     </div>
-    <a role="button" class="secondary" href="{% url 'bookings:my_bookings' %}">การจองของฉัน</a>
+    <a role="button" class="secondary" href="{% url 'bookings:my_bookings' %}{% if nav_service %}?service={{ nav_service }}{% endif %}">การจองของฉัน</a>
   </div>
 
   {% if access_denied %}

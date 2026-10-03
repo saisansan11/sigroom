@@ -8,7 +8,7 @@
     <h1>{{ title }}</h1>
     <p class="heading-desc">{{ series.room.code }} · {{ series.get_freq_display }} · {{ series.start_date|thai_date }}{% if series.end_date %}–{{ series.end_date|thai_date }}{% endif %}</p>
   </div>
-  <a class="secondary btn-my-bookings" role="button" href="{% url 'bookings:my_bookings' %}">การจองของฉัน ←</a>
+  <a class="secondary btn-my-bookings" role="button" href="{% url 'bookings:my_bookings' %}{% if nav_service %}?service={{ nav_service }}{% endif %}">การจองของฉัน ←</a>
 </div>
 
 <article class="detail-card series-summary-card">

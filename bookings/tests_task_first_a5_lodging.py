@@ -91,7 +91,8 @@ def test_lodging_start_is_public_and_has_two_paths(client):
     assert response.status_code == 200
     html = response.content.decode("utf-8")
     assert "นักเรียนหลักสูตร" in html
-    assert "บุคคลทั่วไป" in html
+    assert "ข้าราชการทหาร" in html
+    assert "บุคคลทั่วไป" not in html
     assert reverse("bookings:lodging_index") in html
     assert reverse("bookings:lodging_general_request") in html
 
