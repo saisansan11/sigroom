@@ -144,3 +144,43 @@ def complete_self_service_password_reset(user, raw_password):
         },
     )
     return locked, audit_row
+
+@transaction.atomic
+def complete_contact_profile(user, unit, phone):
+    """เติมสังกัด/เบอร์ที่ยังว่างเท่านั้นสำหรับ workflow จองห้องสอนออนไลน์."""
+    from bookings.phone_utils import normalize_phone
+    from .models import Unit
+
+    locked = get_user_model().objects.select_for_update().get(pk=user.pk)
+    before = {"unit": locked.unit_id, "phone": locked.phone}
+    update_fields = []
+
+    if not locked.unit_id:
+        if unit is None:
+            raise ValidationError("กรุณาเลือกสังกัด")
+        try:
+            selected_unit = Unit.objects.get(pk=getattr(unit, "pk", unit), is_active=True)
+        except (Unit.DoesNotExist, TypeError, ValueError) as exc:
+            raise ValidationError("สังกัดที่เลือกไม่อยู่ในรายการที่เปิดใช้") from exc
+        locked.unit = selected_unit
+        update_fields.append("unit")
+
+    if not (locked.phone or "").strip():
+        normalized = normalize_phone(phone)
+        if not normalized:
+            raise ValidationError("กรุณาระบุเบอร์โทรศัพท์ที่ถูกต้อง")
+        locked.phone = normalized
+        update_fields.append("phone")
+
+    if update_fields:
+        locked._audit_skip_registry = True
+        locked.save(update_fields=update_fields)
+        audit(
+            locked,
+            "accounts.user",
+            locked.pk,
+            "contact_profile_completed",
+            before=before,
+            after={"unit": locked.unit_id, "phone": locked.phone},
+        )
+    return locked

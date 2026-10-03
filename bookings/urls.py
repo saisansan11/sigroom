@@ -3,7 +3,12 @@ from django.views.generic import RedirectView
 
 from . import course_views, lodging_views, views
 from .role_home import role_home
-from .online_teaching import online_teaching_book, online_teaching_home
+from .online_teaching import (
+    online_teaching_book,
+    online_teaching_home,
+    online_teaching_profile,
+    online_teaching_quick_book,
+)
 from .lodging_operations import lodging_workspace, general_request, general_request_rooms
 
 app_name = "bookings"
@@ -21,6 +26,8 @@ urlpatterns = [
     path("api/calendar/events/", views.calendar_events, name="calendar_events"),
     path("book/", views.book_search, name="book_search"),
     path("online/", online_teaching_home, name="online_teaching_home"),
+    path("online/book/", online_teaching_quick_book, name="online_teaching_quick_book"),
+    path("online/profile/", online_teaching_profile, name="online_teaching_profile"),
     path("courses/", course_views.course_catalog_manage, name="course_catalog_manage"),
     path("online/<str:code>/", online_teaching_book, name="online_teaching_book"),
     path("book/<str:code>/", views.book_form, name="book_form"),

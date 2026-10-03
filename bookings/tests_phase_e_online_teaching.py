@@ -135,7 +135,9 @@ def test_online_hub_requires_login_and_teacher_role(client, online_e_setup):
     assert "/accounts/login/" in anonymous.url
 
     client.force_login(online_e_setup["non_teacher"])
-    assert client.get(url).status_code == 403
+    denied = client.get(url)
+    assert denied.status_code == 200
+    assert "บัญชีนี้ยังไม่มีสิทธิ์จองห้องสอนออนไลน์" in denied.content.decode()
 
     client.force_login(online_e_setup["teacher"])
     response = client.get(url)
@@ -143,7 +145,8 @@ def test_online_hub_requires_login_and_teacher_role(client, online_e_setup):
     html = response.content.decode()
     for code in ONLINE_TEACHING_ROOM_CODES:
         assert code in html
-    assert html.count("จองห้องนี้") == 3
+    assert "ค้นหาห้องว่าง" in html
+    assert "ยืนยันจอง" in html
 
 
 def test_online_form_is_focused_and_course_is_strict_dropdown(client, online_e_setup):
