@@ -258,12 +258,13 @@ test('service gateway responsive matrix has no page overflow, 16px body text, an
 
     const lodgingService = page.locator('.lka-r3g-service-grid > .lka-r3g-service--lodging');
     await expect(lodgingService).toBeVisible();
-    await expect(lodgingService.locator('.lka-r3g-service-main-link')).toBeVisible();
-    await expect(lodgingService.locator('.lka-r3g-service-actions > a')).toHaveCount(2);
+    await expect(lodgingService).toHaveAttribute('href', '/lodging/start/');
+    await expect(lodgingService).toContainText('นักเรียนหลักสูตรและข้าราชการทหาร');
+    await expect(lodgingService.locator('a')).toHaveCount(0);
 
     const directServices = page.locator('.lka-r3g-service-grid > a.lka-r3g-service');
-    await expect(directServices).toHaveCount(3);
-    for (let index = 0; index < 3; index += 1) {
+    await expect(directServices).toHaveCount(4);
+    for (let index = 0; index < 4; index += 1) {
       await expect(directServices.nth(index)).toBeVisible();
     }
     await expect(page.locator('.lka-r3g-service-grid > .lka-r3g-service--future')).toHaveCount(0);
@@ -282,6 +283,9 @@ test('service gateway responsive matrix has no page overflow, 16px body text, an
       await expect(page.locator('.lka-rates-table')).toHaveCSS('display', 'table');
     }
   }
+  await page.goto('/lodging/start/', { waitUntil: 'networkidle' });
+  await expect(page.locator('a[href="/lodging/"]').filter({ hasText: 'นักเรียนหลักสูตร' })).toBeVisible();
+  await expect(page.locator('a[href="/lodging/request/"]').filter({ hasText: 'ข้าราชการทหาร' })).toBeVisible();
 });
 
 test('FAQ uses one disclosure indicator and whole summary row is keyboard operable', async ({ page }) => {

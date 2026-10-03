@@ -85,14 +85,15 @@ def test_ux20_hero_section_elements(client):
     assert "room4p_3421.jpg" in html
     assert "จองห้องพัก" in html
     assert "นักเรียนหลักสูตร" in html
-    assert "บุคคลทั่วไป" in html
+    assert "ข้าราชการทหาร" in html
     assert "จองห้องสอนออนไลน์" in html
     assert "จองห้องเรียน" in html
     assert "จองห้องประชุม" in html
     assert "กำลังพัฒนาระบบ" not in html
     assert reverse("bookings:lodging_start") in html
-    assert reverse("bookings:lodging_index") in html
-    assert reverse("bookings:lodging_general_request") in html
+    start_html = client.get(reverse("bookings:lodging_start")).content.decode()
+    assert f'href="{reverse("bookings:lodging_index")}"' in start_html
+    assert f'href="{reverse("bookings:lodging_general_request")}"' in start_html
     assert reverse("bookings:online_teaching_home") in html
     assert reverse("bookings:book_search") + "?category=classroom" in html
     assert reverse("bookings:book_search") + "?category=meeting" in html
@@ -343,8 +344,10 @@ def test_ux20_final_cta_links(client):
 
     assert 'class="lka-section lka-cta"' not in html
     assert 'id="lka-cta-heading"' not in html
-    assert reverse("bookings:lodging_index") in html
-    assert reverse("bookings:lodging_general_request") in html
+    assert f'href="{reverse("bookings:lodging_start")}"' in html
+    start_html = client.get(reverse("bookings:lodging_start")).content.decode()
+    assert f'href="{reverse("bookings:lodging_index")}"' in start_html
+    assert f'href="{reverse("bookings:lodging_general_request")}"' in start_html
     assert reverse("bookings:online_teaching_home") in html
     assert 'class="lka-explorer-shell-trigger"' in html
     assert 'href="#lka-explorer-fallback"' in html

@@ -26,6 +26,7 @@ from .forms import AmendmentForm, BookingForm, BuddhistDateField, PreemptionForm
 from .lodging_models import CourseLodgingCohort
 from .models import Booking, BookingAmendment, BookingSeries, Preemption
 from .online_teaching import can_book_online_teaching, online_booking_editable_fields
+from .role_home import NAV_SERVICE_CATEGORIES, NAV_SERVICE_LABELS, service_booking_url, service_for_category
 from .preemption_services import acknowledge, can_preempt, execute_preemption, replacement_options
 from .series_services import cancel_remaining, create_series, preview_series, series_ref
 from .services import (
@@ -725,6 +726,9 @@ def book_search(request):
         "query_string": query_string,
         "booking_category_choices": BOOK_SEARCH_CATEGORY_CHOICES,
         "selected_booking_category": selected_category,
+        "booking_category_locked": selected_category in {"classroom", "meeting"},
+        "booking_heading": f"จอง{NAV_SERVICE_LABELS[selected_category]}" if selected_category in {"classroom", "meeting"} else "ขอใช้ห้อง",
+        "booking_result_label": NAV_SERVICE_LABELS.get(selected_category, "ห้อง"),
         "favorite_ids": set(request.user.favorite_resources.values_list("pk", flat=True)),
     }
     template = "bookings/partials/room_list.html" if getattr(request, "htmx", False) else "bookings/book_search.html"
@@ -909,13 +913,18 @@ def book_form(request, code):
     return render(
         request,
         "bookings/book_form.html",
-        {"form": form, "room": room, "time_presets": time_presets(), "search_query": _search_back_query(request)},
+        {"form": form, "room": room, "time_presets": time_presets(), "search_query": _search_back_query(request, room)},
     )
 
 
-def _search_back_query(request):
+def _search_back_query(request, room=None):
     """พารามิเตอร์สำหรับลิงก์ "เปลี่ยนเวลาหรือห้อง" กลับไปหน้าค้นหาโดยคงวัน/เวลา/จำนวนคนเดิม"""
     keep = [(key, value) for key in ("date", "start", "end", "attendees", "category") for value in request.GET.getlist(key)[:1]]
+    if room:
+        category = service_for_category(room.room_category)
+        if category in {"classroom", "meeting"}:
+            keep = [(key, value) for key, value in keep if key != "category"]
+            keep.append(("category", category))
     keep += [("equipment", value) for value in request.GET.getlist("equipment")]
     return urlencode(keep)
 
@@ -1273,16 +1282,25 @@ def booking_delete_draft(request, id):
     if booking.request_status != Booking.RequestStatus.DRAFT:
         raise Http404
     before = model_snapshot(booking)
+    service = service_for_category(booking.room.room_category)
     booking.delete()
     audit(request.user, "bookings.booking", id, "booking_draft_deleted", before=before)
     messages.success(request, "ลบร่างแล้ว")
-    return redirect("bookings:my_bookings")
+    url = reverse("bookings:my_bookings")
+    return redirect(f"{url}?service={service}" if service else url)
 
 
 @login_required
 def my_bookings(request):
     now = timezone.now()
+    service = request.GET.get("service", "").strip()
+    if service not in NAV_SERVICE_CATEGORIES:
+        service = ""
     bookings = _booking_queryset().filter(requester=request.user, series__isnull=True)
+    series_query = BookingSeries.objects.filter(created_by=request.user)
+    if service:
+        bookings = bookings.filter(room__room_category__in=NAV_SERVICE_CATEGORIES[service])
+        series_query = series_query.filter(room__room_category__in=NAV_SERVICE_CATEGORIES[service])
     groups = {
         "upcoming": bookings.filter(start_at__gte=now).exclude(request_status__in=[Booking.RequestStatus.DRAFT, Booking.RequestStatus.CANCELLED, Booking.RequestStatus.REJECTED, Booking.RequestStatus.EXPIRED]),
         "drafts": bookings.filter(request_status=Booking.RequestStatus.DRAFT),
@@ -1293,7 +1311,7 @@ def my_bookings(request):
     if tab not in groups:
         tab = "upcoming"
     series_items = list(
-        BookingSeries.objects.filter(created_by=request.user)
+        series_query
         .select_related("room")
         .prefetch_related("occurrences", "skips")
     )
@@ -1305,5 +1323,9 @@ def my_bookings(request):
     return render(
         request,
         "bookings/my_bookings.html",
-        {"groups": groups, "tab": tab, "bookings": groups[tab], "series_items": series_items},
+        {
+            "groups": groups, "tab": tab, "bookings": groups[tab], "series_items": series_items,
+            "selected_service": service, "selected_service_label": NAV_SERVICE_LABELS.get(service, ""),
+            "new_booking_url": service_booking_url(service),
+        },
     )

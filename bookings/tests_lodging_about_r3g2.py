@@ -58,8 +58,6 @@ def test_four_service_channels_with_correct_links(client):
     assert "วันนี้ต้องการทำอะไร" in services
     for label, href in (
         ("จองห้องพัก", reverse("bookings:lodging_start")),
-        ("นักเรียนหลักสูตร", reverse("bookings:lodging_index")),
-        ("บุคคลทั่วไป", reverse("bookings:lodging_general_request")),
         ("จองห้องสอนออนไลน์", reverse("bookings:online_teaching_home")),
         ("จองห้องเรียน", reverse("bookings:book_search") + "?category=classroom"),
         ("จองห้องประชุม", reverse("bookings:book_search") + "?category=meeting"),
@@ -67,6 +65,12 @@ def test_four_service_channels_with_correct_links(client):
         assert label in services
         assert f'href="{href}"' in services
     assert services.count("lka-r3g-service ") >= 4
+    lodging = _section(services, r'<a class="lka-r3g-service lka-r3g-service--lodging".*?</a>')
+    assert lodging.count("<a ") == 1
+    assert "นักเรียนหลักสูตรและข้าราชการทหาร" in lodging
+    start_html = client.get(reverse("bookings:lodging_start")).content.decode()
+    assert f'href="{reverse("bookings:lodging_index")}"' in start_html
+    assert f'href="{reverse("bookings:lodging_general_request")}"' in start_html
 
 
 def test_classroom_and_meeting_channels_are_clickable():

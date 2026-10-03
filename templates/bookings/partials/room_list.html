@@ -2,7 +2,7 @@
 <section class="ledger-step booking-results-section" aria-labelledby="results-title">
   <div class="ledger-step-head">
     <span class="step-num" aria-hidden="true">๒</span>
-    <h2 id="results-title" tabindex="-1">{% if error %}ตรวจวันและเวลาอีกครั้ง{% elif available %}ห้องที่ว่าง {{ available|length }} ห้อง{% else %}ไม่มีห้องว่างในช่วงนี้{% endif %}</h2>
+    <h2 id="results-title" tabindex="-1">{% if error %}ตรวจวันและเวลาอีกครั้ง{% elif available %}{{ booking_result_label|default:'ห้อง' }}ที่ว่าง {{ available|length }} ห้อง{% else %}ไม่มี{{ booking_result_label|default:'ห้อง' }}ว่างในช่วงนี้{% endif %}</h2>
     {% if selection_label %}<span class="step-note">{{ selection_label }}{% if track %} · แถบดำ = ช่วงที่ท่านขอ{% endif %}</span>{% endif %}
   </div>
 

@@ -100,8 +100,11 @@ def test_general_request_pending_and_conflict(data):
 
 def test_public_entry_routes(client):
     response = client.get(reverse("bookings:lodging_about"))
-    assert reverse("bookings:lodging_general_request") in response.content.decode()
-    assert reverse("bookings:lodging_index") in response.content.decode()
+    assert f'href="{reverse("bookings:lodging_start")}"' in response.content.decode()
+    start_html = client.get(reverse("bookings:lodging_start")).content.decode()
+    assert f'href="{reverse("bookings:lodging_general_request")}"' in start_html
+    assert f'href="{reverse("bookings:lodging_index")}"' in start_html
+    assert "ข้าราชการทหาร" in start_html
 
 def test_operations_nav_uses_workspace_on_desktop_and_mobile(client, data):
     staff, _, _ = data

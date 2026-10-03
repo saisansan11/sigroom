@@ -1,9 +1,11 @@
 """UX-32 task-first introduction, booking flow V2, and navigation cleanup."""
 from datetime import timedelta
 from pathlib import Path
+import re
 
 import pytest
 from django.conf import settings
+from django.contrib.auth.models import Group
 from django.urls import reverse
 from django.utils import timezone
 
@@ -83,11 +85,27 @@ def test_authenticated_home_has_two_primary_task_cards(client, ux32_setup):
     assert reverse("bookings:lodging_index") in html
 
 
-def test_navigation_has_no_duplicate_online_link_and_clear_booking_label():
+def test_navigation_has_no_duplicate_online_link_and_clear_booking_label(client, ux32_setup):
     template = (Path(settings.BASE_DIR) / "templates" / "base.html").read_text(encoding="utf-8")
-    exact_online_url = "{% url 'bookings:online_teaching_home' %}"
-    assert template.count(exact_online_url) == 1
-    assert "จองห้องเรียน" in template
+    assert template.count('{% include "includes/service_navigation.html" %}') == 2
+    teacher = ux32_setup["user"]
+    teacher.groups.add(Group.objects.get_or_create(name="signalschool-teacher")[0])
+    client.force_login(teacher)
+    response = client.get(reverse("bookings:online_teaching_home"))
+    assert response.status_code == 200
+    header = response.content.decode().split('<header class="site-header">', 1)[1].split("</header>", 1)[0]
+    # PR-2: ตรวจลิงก์จริงของเมนูสองขนาด แต่ละชุดมีลิงก์ออนไลน์เพียงครั้งเดียว
+    for marker in ('class="desktop-nav"', 'aria-label="เมนูหลักสำหรับมือถือ"'):
+        navigation = re.search(rf'<nav {marker}.*?</nav>', header, re.DOTALL)
+        assert navigation is not None
+        menu = navigation.group(0)
+        assert menu.count(f'href="{reverse("bookings:online_teaching_home")}"') == 1
+        assert "จองห้อง" in menu
+        assert "ห้องสอนออนไลน์:" in menu
+        assert '?service=online' in menu
+        assert reverse("bookings:lodging_start") not in menu
+        assert '?category=classroom' not in menu
+        assert '?category=meeting' not in menu
     assert "รู้จัก SIGROOM" in template
 
 

@@ -107,9 +107,11 @@ def test_guest_navigation_is_simple(client):
     assert resp.status_code == 200
     header = _header_html(resp.content.decode())
 
-    # Guest primary items
-    assert "สถานะห้องวันนี้" in header
-    assert "จองห้องพัก" in header
+    # PR-2: calendar ที่ไม่มี category ไม่สังกัดบริการ เมนูจึงเหลือแบรนด์และเข้าสู่ระบบ
+    assert resp.context["nav_service"] is None
+    assert f'class="brand" href="{reverse("bookings:lodging_about")}"' in header
+    assert "สถานะห้องวันนี้" not in header
+    assert "จองห้องพัก" not in header
     assert "เข้าสู่ระบบ" in header
 
     # Guest header must NOT see user or operational nav
@@ -123,17 +125,27 @@ def test_guest_navigation_is_simple(client):
 
 
 def test_normal_user_navigation_prominently_features_core_tasks(client, ux1_data):
-    """Normal user gets task-first top-level nav and no operational clutter."""
+    """Normal user gets tasks for the selected service and no operational access."""
     client.force_login(ux1_data["normal_user"])
     resp = client.get(reverse("bookings:calendar"))
     assert resp.status_code == 200
     header = _header_html(resp.content.decode())
 
-    # Prominent user task navigation
-    assert "หน้าแรก" in header
+    assert resp.context["nav_service"] is None
+    assert f'class="brand" href="{reverse("bookings:lodging_about")}"' in header
+    assert "การจองของฉัน" not in header
+    assert "จองห้องพัก" not in header
+    # เมื่อเลือกห้องเรียนแล้ว เมนูทั้งคอมและมือถือมีเฉพาะงานของห้องเรียน
+    resp = client.get(reverse("bookings:calendar"), {"category": "classroom"})
+    assert resp.status_code == 200
+    header = _header_html(resp.content.decode())
+    assert resp.context["nav_service"] == "classroom"
+    assert header.count("‹ บริการทั้งหมด") == 2
     assert "จองห้อง" in header
     assert "การจองของฉัน" in header
-    assert "จองห้องพัก" in header
+    assert "ห้องเรียน:" in header
+    assert "จองห้องพัก" not in header
+    assert reverse("bookings:online_teaching_home") not in header
 
     # Operational menu must NOT appear for normal user
     assert "งานปฏิบัติการ" not in header
@@ -151,17 +163,26 @@ def test_approver_user_navigation_groups_operational_work(client, ux1_data):
     assert resp.status_code == 200
     header = _header_html(resp.content.decode())
 
-    # Core tasks still prominent
-    assert "หน้าแรก" in header
+    assert resp.context["nav_service"] is None
+    assert f'class="brand" href="{reverse("bookings:lodging_about")}"' in header
+    assert "การจองของฉัน" not in header
+    assert "จองห้องพัก" not in header
+    # สิทธิ์ปฏิบัติการยังแสดงทั้งคอม/มือถือ แม้หน้านี้ไม่สังกัดบริการ
+    assert header.count(f'href="{reverse("approvals:queue")}"') == 2
+    resp = client.get(reverse("bookings:calendar"), {"category": "classroom"})
+    assert resp.status_code == 200
+    header = _header_html(resp.content.decode())
+    assert header.count("‹ บริการทั้งหมด") == 2
     assert "จองห้อง" in header
     assert "การจองของฉัน" in header
-    assert "จองห้องพัก" in header
+    assert "ห้องเรียน:" in header
+    assert "จองห้องพัก" not in header
 
     # Grouped operational menu present
     assert "งานปฏิบัติการ" in header
     assert "รออนุมัติ" in header
     assert "ops-dropdown-panel" in header
-    assert "mobile-ops-section" in header
+    assert header.count(f'href="{reverse("approvals:queue")}"') == 2
     assert reverse("approvals:queue") in header
 
 

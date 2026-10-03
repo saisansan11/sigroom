@@ -93,14 +93,19 @@ def test_gateway_has_direct_task_destinations(client):
 
     expected = (
         reverse("bookings:lodging_start"),
-        reverse("bookings:lodging_index"),
-        reverse("bookings:lodging_general_request"),
         reverse("bookings:online_teaching_home"),
         reverse("bookings:book_search") + "?category=classroom",
         reverse("bookings:book_search") + "?category=meeting",
     )
     for url in expected:
         assert f'href="{url}"' in html
+    parser = ServiceCardParser()
+    parser.feed(html)
+    assert parser.cards[0]["tag"] == "a"
+    assert parser.cards[0]["links"] == [reverse("bookings:lodging_start")]
+    start_html = client.get(reverse("bookings:lodging_start")).content.decode()
+    assert f'href="{reverse("bookings:lodging_index")}"' in start_html
+    assert f'href="{reverse("bookings:lodging_general_request")}"' in start_html
     assert "วันนี้ต้องการทำอะไร" in html
     assert "ดูสถานะห้องทั้งหมด" in html
     assert "กำลังพัฒนาระบบ" not in html

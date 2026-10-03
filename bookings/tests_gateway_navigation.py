@@ -15,12 +15,14 @@ def test_guest_brand_and_gateway_navigation_point_to_service_gateway(client):
 
     gateway = reverse("bookings:lodging_about")
     calendar = reverse("bookings:calendar")
-    lodging = reverse("bookings:lodging_start")
-
     assert f'class="brand" href="{gateway}"' in header
-    assert f'href="{gateway}">หน้าแรก</a>' in header
-    assert f'href="{calendar}">สถานะห้องวันนี้</a>' in header
-    assert f'href="{lodging}">จองห้องพัก</a>' in header
+    # PR-2: หน้าที่ไม่ได้เลือกบริการใช้โลโก้กลับ Gateway และไม่ปนเมนูบริการอื่น
+    assert response.context["nav_service"] is None
+    assert f'href="{reverse("login")}?next={calendar}"' in header
+    assert "สถานะห้องวันนี้" not in header
+    assert "จองห้องพัก" not in header
+    assert "การจองของฉัน" not in header
+    assert "งานปฏิบัติการ" not in header
 
 
 def test_gateway_page_keeps_task_first_service_choices_and_marks_gateway_current(client):
@@ -29,8 +31,11 @@ def test_gateway_page_keeps_task_first_service_choices_and_marks_gateway_current
     html = response.content.decode("utf-8")
     header = _header(html)
 
-    assert 'aria-current="page"' in header
-    assert '>หน้าแรก</a>' in header
+    assert response.context["nav_service"] is None
+    assert f'class="brand" href="{reverse("bookings:lodging_about")}"' in header
+    assert 'aria-current="page"' not in header
+    assert '>หน้าแรก</a>' not in header
+    assert '‹ บริการทั้งหมด' not in header
     assert "จองห้องพัก" in html
     assert "จองห้องสอนออนไลน์" in html
     assert "จองห้องเรียน" in html

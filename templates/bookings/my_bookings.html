@@ -5,17 +5,17 @@
 <div class="page-heading booking-flow-heading">
   <div>
     <p class="eyebrow">รายการส่วนตัว</p>
-    <h1>การจองของฉัน</h1>
+    <h1>การจองของฉัน{% if selected_service_label %} · {{ selected_service_label }}{% endif %}</h1>
     <p class="heading-desc">ติดตามคำขอจองที่กำลังจะถึง รายการร่าง และประวัติการพิจารณาจากที่เดียว</p>
   </div>
-  <a role="button" class="btn-primary" href="{% url 'bookings:book_search' %}">จองห้องใหม่ +</a>
+  <a role="button" class="btn-primary" href="{{ new_booking_url }}">จองห้องใหม่ +</a>
 </div>
 
 <nav class="tabs my-bookings-tabs" aria-label="ตัวกรองสถานะการจอง">
-  <a {% if tab == 'upcoming' %}aria-current="page"{% endif %} href="?tab=upcoming">กำลังจะถึง ({{ groups.upcoming|length }})</a>
-  <a {% if tab == 'drafts' %}aria-current="page"{% endif %} href="?tab=drafts">ร่าง ({{ groups.drafts|length }})</a>
-  <a {% if tab == 'past' %}aria-current="page"{% endif %} href="?tab=past">ที่ผ่านมา</a>
-  <a {% if tab == 'closed' %}aria-current="page"{% endif %} href="?tab=closed">ยกเลิก/ปฏิเสธ/หมดอายุ</a>
+  <a {% if tab == 'upcoming' %}aria-current="page"{% endif %} href="?tab=upcoming{% if selected_service %}&amp;service={{ selected_service }}{% endif %}">กำลังจะถึง ({{ groups.upcoming|length }})</a>
+  <a {% if tab == 'drafts' %}aria-current="page"{% endif %} href="?tab=drafts{% if selected_service %}&amp;service={{ selected_service }}{% endif %}">ร่าง ({{ groups.drafts|length }})</a>
+  <a {% if tab == 'past' %}aria-current="page"{% endif %} href="?tab=past{% if selected_service %}&amp;service={{ selected_service }}{% endif %}">ที่ผ่านมา</a>
+  <a {% if tab == 'closed' %}aria-current="page"{% endif %} href="?tab=closed{% if selected_service %}&amp;service={{ selected_service }}{% endif %}">ยกเลิก/ปฏิเสธ/หมดอายุ</a>
 </nav>
 
 {% if series_items %}
