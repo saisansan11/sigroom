@@ -4,7 +4,8 @@ Booking Core remains authoritative for time policy, blackout/outage, overlap hol
 submission state, cancellation and audit. This module owns authorization and the
 short task-first presentation only; booking writes go through online_teaching_services.
 """
-from datetime import datetime, timedelta
+import calendar
+from datetime import date, datetime, timedelta
 from urllib.parse import parse_qsl, urlencode
 
 from django import forms
@@ -23,12 +24,14 @@ from resources.models import Resource, ResourceRule
 
 from .course_catalog import selectable_course_runs
 from .forms import BuddhistDateField, time_choices
+from .templatetags.thaidate import THAI_MONTHS_FULL
 from .models import Booking, CourseRun
 from .online_teaching_services import create_online_teaching_booking, suggest_online_rooms
 from .services import (
     BookingConflict,
     find_available_rooms,
     next_quarter_start,
+    THAI_WEEKDAYS_SHORT,
     search_date_choices,
     search_period_choices,
 )
@@ -40,9 +43,15 @@ ONLINE_TEACHING_ROOM_CODES = (
     "STU-ONLINE-2",
     "STU-ONLINE-3",
 )
-ONLINE_START_CHIPS = ("08:00", "09:00", "10:00", "11:00", "13:00", "14:00", "15:00")
+# ชิปเวลาเริ่มทุกครึ่งชั่วโมง 07:00–17:30 (คาบสั้นสุด 30 นาทีจบไม่เกิน 18:00) แบ่งเช้า/บ่าย
+ONLINE_START_GROUPS = (
+    ("เช้า", tuple(f"{hour:02d}:{minute:02d}" for hour in range(7, 12) for minute in (0, 30))),
+    ("บ่าย", tuple(f"{hour:02d}:{minute:02d}" for hour in range(12, 18) for minute in (0, 30))),
+)
 ONLINE_DURATION_MINUTES = (30, 60, 120)
 ONLINE_QUERY_KEYS = {"day", "date", "start", "dur", "course_run", "purpose"}
+ONLINE_CALENDAR_TARGET = "online-calendar"
+ONLINE_CALENDAR_FALLBACK_DAYS = 90
 
 
 def can_book_online_teaching(user) -> bool:
@@ -306,6 +315,56 @@ def _selection_query(selection, *, start_at=None, end_at=None):
     return urlencode(params)
 
 
+def _online_calendar(selection, month_param, rooms):
+    """ตารางเดือนสำหรับ "เลือกวันอื่น" — กดวันได้เลย ไม่ต้องพิมพ์วันที่."""
+    today = timezone.localdate()
+    advance_days = [
+        room.rule.max_advance_days
+        for room in rooms
+        if getattr(room, "rule", None) is not None and room.rule.max_advance_days
+    ]
+    last_day = today + timedelta(days=max(advance_days) if advance_days else ONLINE_CALENDAR_FALLBACK_DAYS)
+
+    shown = selection["date"] if selection["date"] and today <= selection["date"] <= last_day else today
+    try:
+        year, month = (int(part) for part in (month_param or "").split("-"))
+        first = date(year, month, 1)
+    except (TypeError, ValueError):
+        first = shown.replace(day=1)
+    first = min(max(first, today.replace(day=1)), last_day.replace(day=1))
+
+    weeks = []
+    for week in calendar.Calendar(firstweekday=0).monthdatescalendar(first.year, first.month):
+        weeks.append(
+            [
+                {
+                    "date": day,
+                    "value": day.isoformat(),
+                    "in_month": day.month == first.month,
+                    "enabled": day.month == first.month and today <= day <= last_day,
+                    "selected": day == selection["date"],
+                    "today": day == today,
+                }
+                for day in week
+            ]
+        )
+
+    def month_link(target):
+        if target < today.replace(day=1) or target > last_day.replace(day=1):
+            return ""
+        params = dict(parse_qsl(_selection_query(selection)))
+        params["cal"] = f"{target.year:04d}-{target.month:02d}"
+        return reverse("bookings:online_teaching_home") + "?" + urlencode(params)
+
+    return {
+        "title": f"{THAI_MONTHS_FULL[first.month]} {first.year + 543}",
+        "weekdays": THAI_WEEKDAYS_SHORT,
+        "weeks": weeks,
+        "prev_url": month_link((first - timedelta(days=1)).replace(day=1)),
+        "next_url": month_link((first + timedelta(days=31)).replace(day=1)),
+    }
+
+
 def _online_home_context(request):
     if not can_book_online_teaching(request.user):
         return {
@@ -337,52 +396,18 @@ def _online_home_context(request):
             )
         )
 
-    day_choices = []
-    for choice in search_date_choices():
-        params = {
-            "day": choice["value"],
-            "start": selection["start_text"] or "09:00",
-            "dur": selection["dur"] or "60",
-            "purpose": selection["purpose"],
-        }
-        if selection["course"]:
-            params["course_run"] = str(selection["course"].pk)
-        day_choices.append({**choice, "url": reverse("bookings:online_teaching_home") + "?" + urlencode(params)})
-
-    start_choices = []
-    for value in ONLINE_START_CHIPS:
-        params = {
-            "day": selection["day"],
-            "start": value,
-            "dur": selection["dur"] or "60",
-            "purpose": selection["purpose"],
-        }
-        if selection["course"]:
-            params["course_run"] = str(selection["course"].pk)
-        start_choices.append({"value": value, "url": reverse("bookings:online_teaching_home") + "?" + urlencode(params)})
+    day_choices = search_date_choices()
+    chip_days = {choice["value"] for choice in day_choices}
 
     duration_choices = [
-        ("30", "30 นาที"),
-        ("60", "1 ชม."),
-        ("120", "2 ชม."),
+        {"value": "30", "label": "30 นาที"},
+        {"value": "60", "label": "1 ชม."},
+        {"value": "120", "label": "2 ชม."},
     ]
     if len(selection["presets"]) >= 1:
-        duration_choices.append(("am", selection["presets"][0]["label"]))
+        duration_choices.append({"value": "am", "label": selection["presets"][0]["label"]})
     if len(selection["presets"]) >= 2:
-        duration_choices.append(("pm", selection["presets"][1]["label"]))
-    duration_links = []
-    for value, label in duration_choices:
-        params = {
-            "day": selection["day"],
-            "start": selection["start_text"] or "09:00",
-            "dur": value,
-            "purpose": selection["purpose"],
-        }
-        if selection["course"]:
-            params["course_run"] = str(selection["course"].pk)
-        duration_links.append(
-            {"value": value, "label": label, "url": reverse("bookings:online_teaching_home") + "?" + urlencode(params)}
-        )
+        duration_choices.append({"value": "pm", "label": selection["presets"][1]["label"]})
 
     ordered_rooms = _ordered_rooms(active_only=True)
     legacy_room = ordered_rooms[0] if ordered_rooms else None
@@ -390,9 +415,11 @@ def _online_home_context(request):
         "access_denied": False,
         "selection": selection,
         "day_choices": day_choices,
-        "start_choices": start_choices,
-        "duration_choices": duration_links,
-        "time_options": time_choices(),
+        "day_in_chips": selection["day"] in chip_days,
+        "calendar": _online_calendar(selection, request.GET.get("cal"), ordered_rooms),
+        "calendar_open": bool(request.GET.get("cal")) or (bool(selection["day"]) and selection["day"] not in chip_days),
+        "start_groups": ONLINE_START_GROUPS,
+        "duration_choices": duration_choices,
         "purpose_choices": Booking.Purpose.choices,
         "profile_complete": profile_complete,
         "profile_units": Unit.objects.filter(is_active=True).order_by("code"),
@@ -406,11 +433,13 @@ def _online_home_context(request):
 @login_required
 def online_teaching_home(request):
     context = _online_home_context(request)
-    template = (
-        "bookings/partials/online_results.html"
-        if getattr(request, "htmx", False) and not context.get("access_denied")
-        else "bookings/online_teaching_home.html"
-    )
+    htmx = getattr(request, "htmx", False)
+    if not htmx or context.get("access_denied"):
+        template = "bookings/online_teaching_home.html"
+    elif htmx.target == ONLINE_CALENDAR_TARGET:
+        template = "bookings/partials/online_calendar.html"
+    else:
+        template = "bookings/partials/online_results.html"
     response = render(request, template, context)
     if request.user.is_authenticated:
         response["Cache-Control"] = "private, no-store"

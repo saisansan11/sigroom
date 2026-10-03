@@ -3,6 +3,7 @@ from django.shortcuts import redirect
 
 from resources.models import Resource
 from .lodging_services import can_access_lodging_management
+from .online_teaching import can_book_online_teaching
 
 SERVICE_LODGING = "lodging"
 SERVICE_ONLINE = "online"
@@ -49,5 +50,8 @@ def managed_services(user) -> list[str]:
 def role_home(request):
     services = managed_services(request.user)
     if not services:
+        # ครูผู้สอน (ไม่ใช่ผู้ดูแลระบบ) เข้าหน้าจองห้องสอนออนไลน์ทันที ไม่ต้องผ่านหน้าเลือกบริการ
+        if not request.user.is_superuser and can_book_online_teaching(request.user):
+            return redirect("bookings:online_teaching_home")
         return redirect("bookings:lodging_about")
     return redirect("bookings:service_staff_entry", service=services[0])

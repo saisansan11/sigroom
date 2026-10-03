@@ -1,0 +1,20 @@
+<div id="online-calendar" class="online-calendar" hx-include="closest form">
+  <div class="online-calendar-head">
+    {% if calendar.prev_url %}<a href="{{ calendar.prev_url }}" hx-get="{{ calendar.prev_url }}" hx-target="#online-calendar" hx-swap="outerHTML" hx-push-url="false" aria-label="เดือนก่อนหน้า">‹</a>{% else %}<span aria-hidden="true"></span>{% endif %}
+    <strong aria-live="polite">{{ calendar.title }}</strong>
+    {% if calendar.next_url %}<a href="{{ calendar.next_url }}" hx-get="{{ calendar.next_url }}" hx-target="#online-calendar" hx-swap="outerHTML" hx-push-url="false" aria-label="เดือนถัดไป">›</a>{% else %}<span aria-hidden="true"></span>{% endif %}
+  </div>
+  <div class="online-calendar-grid" role="group" aria-label="เลือกวันที่ {{ calendar.title }}">
+    {% for name in calendar.weekdays %}<span class="online-calendar-weekday" aria-hidden="true">{{ name }}</span>{% endfor %}
+    {% for week in calendar.weeks %}{% for day in week %}
+      {% if day.enabled %}
+        <label class="online-calendar-day{% if day.today %} is-today{% endif %}">
+          <input type="radio" name="day" value="{{ day.value }}"{% if day.selected and not day_in_chips %} checked{% endif %}>
+          <span>{{ day.date.day }}</span>
+        </label>
+      {% else %}
+        <span class="online-calendar-day is-off" aria-hidden="true">{% if day.in_month %}{{ day.date.day }}{% endif %}</span>
+      {% endif %}
+    {% endfor %}{% endfor %}
+  </div>
+</div>

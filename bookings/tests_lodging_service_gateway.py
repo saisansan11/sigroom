@@ -85,7 +85,8 @@ def test_online_teaching_section_exposes_exact_three_signal_school_rooms(client)
     for index in range(1, 4):
         assert f"ห้องสอนออนไลน์ {index}" in html
         assert f"STU-ONLINE-{index}" in html
-    assert html.count("รองรับ 5 คน") == 3
+    assert html.count("บก.กศ.รร.ส.สส. · ชั้น 3") == 3
+    assert "รองรับ 5 คน" not in html
     assert "กล้อง · ไมโครโฟน · ไฟสตูดิโอ · จอเขียว" in html
 
 

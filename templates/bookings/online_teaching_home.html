@@ -5,7 +5,7 @@
 {% block title %}จองห้องสอนออนไลน์ · SIGROOM{% endblock %}
 {% block head %}
 <link rel="stylesheet" href="{% static 'css/online_teaching.css' %}">
-<link rel="stylesheet" href="{% static 'css/online_teaching_r3l.css' %}?v=2">
+<link rel="stylesheet" href="{% static 'css/online_teaching_r3l.css' %}?v=3">
 {% endblock %}
 {% block content %}
 <div class="online-teaching-shell">
@@ -13,7 +13,7 @@
     <div>
       <p class="eyebrow">สำหรับครูผู้สอน</p>
       <h1>จองห้องสอนออนไลน์</h1>
-      <p>เลือกวัน เวลา และหลักสูตร แล้วระบบจะเสนอห้องที่ว่างให้ยืนยันได้ทันที</p>
+      <p>กดเลือกวัน เวลา และหลักสูตร รายการห้องว่างด้านล่างจะเปลี่ยนตามทันที</p>
     </div>
     <a role="button" class="secondary" href="{% url 'bookings:my_bookings' %}">การจองของฉัน</a>
   </div>
@@ -62,51 +62,52 @@
       </section>
     {% endif %}
 
-    <section class="online-quick-filter" aria-labelledby="online-quick-heading">
+    <form method="get" action="{% url 'bookings:online_teaching_home' %}" class="online-quick-filter" aria-labelledby="online-quick-heading"
+          hx-get="{% url 'bookings:online_teaching_home' %}" hx-trigger="change" hx-target="#online-results" hx-swap="outerHTML" hx-push-url="true">
       <div class="online-filter-head"><p class="eyebrow">1 · วันไหน</p><h2 id="online-quick-heading">เลือกวันและเวลา</h2></div>
-      <div class="online-chip-row" aria-label="เลือกวันที่">
+      <div class="online-chip-row" role="group" aria-label="เลือกวันที่">
         {% for item in day_choices %}
-          <a class="online-chip{% if selection.day == item.value %} is-on{% endif %}" href="{{ item.url }}">{{ item.label }}{% if item.sub %}<small>{{ item.sub }}</small>{% endif %}</a>
+          <label class="online-chip-option">
+            <input type="radio" name="day" value="{{ item.value }}"{% if selection.day == item.value %} checked{% endif %}>
+            <span class="online-chip">{{ item.label }}{% if item.sub %}<small>{{ item.sub }}</small>{% endif %}</span>
+          </label>
         {% endfor %}
       </div>
-      <form method="get" class="online-inline-form">
-        <input type="hidden" name="day" value="other">
-        <input type="hidden" name="start" value="{{ selection.start_text }}">
-        <input type="hidden" name="dur" value="{{ selection.dur }}">
-        {% if selection.course %}<input type="hidden" name="course_run" value="{{ selection.course.pk }}">{% endif %}
-        <input type="hidden" name="purpose" value="{{ selection.purpose }}">
-        <label for="online-custom-date">เลือกวันอื่น
-          <input id="online-custom-date" name="date" value="{{ selection.date_text }}" inputmode="numeric" placeholder="24/08/2569">
-        </label>
-        <button type="submit" class="secondary">ใช้วันที่นี้</button>
-      </form>
+      <details class="online-calendar-disclosure"{% if calendar_open %} open{% endif %}>
+        <summary>เลือกวันอื่นจากปฏิทิน</summary>
+        {% include "bookings/partials/online_calendar.html" %}
+      </details>
 
       <p class="online-step-label">2 · เริ่มกี่โมง</p>
-      <div class="online-chip-row" aria-label="เลือกเวลาเริ่ม">
-        {% for item in start_choices %}<a class="online-chip{% if selection.start_text == item.value and selection.dur != 'am' and selection.dur != 'pm' %} is-on{% endif %}" href="{{ item.url }}">{{ item.value }}</a>{% endfor %}
+      <div class="online-start-options">
+      {% for group_label, values in start_groups %}
+        <div class="online-time-row" role="group" aria-label="เวลาเริ่มช่วง{{ group_label }}">
+          <span class="online-time-row-label">{{ group_label }}</span>
+          <div class="online-time-grid">
+            {% for value in values %}
+              <label class="online-chip-option">
+                <input type="radio" name="start" value="{{ value }}"{% if selection.start_text == value and selection.dur != 'am' and selection.dur != 'pm' %} checked{% endif %}>
+                <span class="online-chip">{{ value }}</span>
+              </label>
+            {% endfor %}
+          </div>
+        </div>
+      {% endfor %}
       </div>
-      <form method="get" class="online-inline-form">
-        <input type="hidden" name="day" value="{{ selection.day }}">
-        <input type="hidden" name="dur" value="{{ selection.dur }}">
-        {% if selection.course %}<input type="hidden" name="course_run" value="{{ selection.course.pk }}">{% endif %}
-        <input type="hidden" name="purpose" value="{{ selection.purpose }}">
-        <label for="online-other-time">เวลาอื่น
-          <select id="online-other-time" name="start">
-            {% for value,label in time_options %}<option value="{{ value }}"{% if value == selection.start_text %} selected{% endif %}>{{ label }}</option>{% endfor %}
-          </select>
-        </label>
-        <button type="submit" class="secondary">ใช้เวลานี้</button>
-      </form>
+      <p class="online-preset-note online-preset-am">ช่วงเช้าใช้เวลา {{ selection.presets.0.start }}–{{ selection.presets.0.end }} ไม่ใช้เวลาเริ่มที่เลือก</p>
+      <p class="online-preset-note online-preset-pm">ช่วงบ่ายใช้เวลา {{ selection.presets.1.start }}–{{ selection.presets.1.end }} ไม่ใช้เวลาเริ่มที่เลือก</p>
 
       <p class="online-step-label">3 · นานเท่าไร</p>
-      <div class="online-chip-row" aria-label="เลือกระยะเวลา">
-        {% for item in duration_choices %}<a class="online-chip{% if selection.dur == item.value %} is-on{% endif %}" href="{{ item.url }}">{{ item.label }}</a>{% endfor %}
+      <div class="online-chip-row" role="group" aria-label="เลือกระยะเวลา">
+        {% for item in duration_choices %}
+          <label class="online-chip-option">
+            <input type="radio" name="dur" value="{{ item.value }}"{% if selection.dur == item.value %} checked{% endif %}>
+            <span class="online-chip">{{ item.label }}</span>
+          </label>
+        {% endfor %}
       </div>
 
-      <form method="get" class="online-course-form" hx-get="{% url 'bookings:online_teaching_home' %}" hx-target="#online-results" hx-push-url="true">
-        <input type="hidden" name="day" value="{{ selection.day }}">
-        <input type="hidden" name="start" value="{{ selection.start_text }}">
-        <input type="hidden" name="dur" value="{{ selection.dur }}">
+      <div class="online-course-form">
         <label for="online-course-run">4 · หลักสูตร / รุ่น
           <select id="online-course-run" name="course_run"{% if not selection.runs %} disabled{% endif %}>
             {% for run in selection.runs %}<option value="{{ run.pk }}"{% if selection.course and run.pk == selection.course.pk %} selected{% endif %}>{{ run.display_name }}</option>{% endfor %}
@@ -120,11 +121,12 @@
             </select>
           </label>
         </details>
-        <button type="submit">ค้นหาห้องว่าง</button>
-      </form>
-    </section>
+        <noscript><button type="submit">ค้นหาห้องว่าง</button></noscript>
+      </div>
+    </form>
 
     {% include "bookings/partials/online_results.html" %}
   {% endif %}
 </div>
 {% endblock %}
+{% block scripts %}<script src="{% static 'js/online_quick_selection.js' %}"></script>{% endblock %}

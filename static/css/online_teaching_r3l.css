@@ -249,13 +249,45 @@ body.online-teaching-r3l .online-chip {
   border: 1px solid var(--ot-rule); border-radius: 2px; background: transparent; color: var(--ot-ink); text-decoration: none;
 }
 body.online-teaching-r3l .online-chip small { color: var(--ot-muted); font-size: .72rem; }
-body.online-teaching-r3l .online-chip.is-on { border-color: var(--ot-ink); background: var(--ot-ink); color: var(--ot-paper); }
-body.online-teaching-r3l .online-chip.is-on small { color: var(--ot-paper); }
+body.online-teaching-r3l .online-chip.is-on,
+body.online-teaching-r3l .online-chip-option input:checked + .online-chip { border-color: var(--ot-ink); background: var(--ot-ink); color: var(--ot-paper); }
+body.online-teaching-r3l .online-chip.is-on small,
+body.online-teaching-r3l .online-chip-option input:checked + .online-chip small { color: var(--ot-paper); }
+/* ชิปแบบกดครั้งเดียว: radio ซ่อนไว้ ใช้ label เป็นปุ่ม */
+body.online-teaching-r3l .online-chip-option { position: relative; margin: 0; cursor: pointer; }
+body.online-teaching-r3l .online-chip-option input,
+body.online-teaching-r3l .online-calendar-day input { position: absolute; opacity: 0; width: 1px; height: 1px; margin: 0; }
+body.online-teaching-r3l .online-chip-option .online-chip { width: 100%; align-items: center; text-align: center; }
+body.online-teaching-r3l .online-chip-option input:focus-visible + .online-chip,
+body.online-teaching-r3l .online-calendar-day input:focus-visible + span { outline: 2px solid var(--ot-link); outline-offset: 2px; }
+body.online-teaching-r3l .online-time-row { display: grid; grid-template-columns: 2.6rem minmax(0,1fr); gap: .5rem; align-items: start; margin-bottom: .35rem; }
+body.online-teaching-r3l .online-time-row-label { min-height: 44px; display: flex; align-items: center; color: var(--ot-muted); font-size: .85rem; }
+body.online-teaching-r3l .online-time-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(4.4rem, 1fr)); gap: .35rem; }
+body.online-teaching-r3l .online-calendar-disclosure { margin: .45rem 0 0; padding: 0; border: 0; background: transparent; }
+body.online-teaching-r3l .online-calendar-disclosure summary { min-height: 44px; display: inline-flex; align-items: center; color: var(--ot-link); cursor: pointer; }
+body.online-teaching-r3l .online-calendar { max-width: 23rem; padding: .6rem; border: 1px solid var(--ot-rule); border-radius: 2px; background: var(--ot-raised); }
+body.online-teaching-r3l .online-calendar-head { display: grid; grid-template-columns: 44px 1fr 44px; align-items: center; text-align: center; margin-bottom: .35rem; }
+body.online-teaching-r3l .online-calendar-head a { min-height: 44px; display: flex; align-items: center; justify-content: center; color: var(--ot-ink); font-size: 1.4rem; text-decoration: none; }
+body.online-teaching-r3l .online-calendar-grid { display: grid; grid-template-columns: repeat(7, minmax(0,1fr)); gap: 2px; text-align: center; }
+body.online-teaching-r3l .online-calendar-weekday { padding: .2rem 0; color: var(--ot-muted); font-size: .75rem; }
+body.online-teaching-r3l .online-calendar-day { position: relative; margin: 0; }
+body.online-teaching-r3l label.online-calendar-day { cursor: pointer; }
+body.online-teaching-r3l .online-calendar-day span,
+body.online-teaching-r3l .online-calendar-day.is-off { min-height: 44px; display: flex; align-items: center; justify-content: center; border: 1px solid transparent; border-radius: 2px; }
+body.online-teaching-r3l .online-calendar-day.is-off { color: var(--ot-rule); }
+body.online-teaching-r3l .online-calendar-day.is-today span { border-color: var(--ot-rule); }
+body.online-teaching-r3l .online-calendar-day input:checked + span,
+body.online-teaching-r3l .online-calendar-day span.is-on { border-color: var(--ot-ink); background: var(--ot-ink); color: var(--ot-paper); }
+body.online-teaching-r3l .online-preset-note { display: none; color: var(--ot-muted); }
+body.online-teaching-r3l .online-quick-filter:has(input[name="dur"][value="am"]:checked) .online-preset-am,
+body.online-teaching-r3l .online-quick-filter:has(input[name="dur"][value="pm"]:checked) .online-preset-pm { display: block; }
+body.online-teaching-r3l .online-quick-filter:has(input[name="dur"][value="am"]:checked) .online-start-options,
+body.online-teaching-r3l .online-quick-filter:has(input[name="dur"][value="pm"]:checked) .online-start-options { opacity: .55; }
 body.online-teaching-r3l .online-inline-form { display: flex; flex-wrap: wrap; gap: .45rem; align-items: end; margin: .45rem 0 0; }
 body.online-teaching-r3l .online-inline-form label { min-width: min(100%, 15rem); margin: 0; }
 body.online-teaching-r3l .online-inline-form :is(input,select,button) { min-height: 44px; margin-bottom: 0; border-radius: 2px; }
 body.online-teaching-r3l .online-course-form {
-  display: grid; grid-template-columns: minmax(0,2fr) minmax(12rem,1fr) auto; gap: .6rem; align-items: end;
+  display: grid; grid-template-columns: minmax(0,2fr) minmax(12rem,1fr); gap: .6rem; align-items: end;
   margin-top: .9rem; padding-top: .8rem; border-top: 1px solid var(--ot-rule);
 }
 body.online-teaching-r3l .online-course-form :is(select,button) { min-height: 44px; margin-bottom: 0; border-radius: 2px; }
