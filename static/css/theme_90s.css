@@ -131,15 +131,3 @@
 @media (prefers-reduced-motion: reduce) {
   .slip { animation: none; }
 }
-
-/* B5 — เลขอ้างอิงแบบเครื่องพิมพ์ดีด */
-.booking-ref-typewriter {
-  display: inline-block;
-  padding: .08rem .3rem;
-  border: 1px solid var(--rule);
-  background: var(--paper-sunk);
-  color: var(--ink);
-  font-variant-numeric: tabular-nums;
-  letter-spacing: .08em;
-  font-weight: 600;
-}
