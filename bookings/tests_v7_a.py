@@ -136,15 +136,13 @@ def test_find_available_now_reuses_conflict_blackout_and_outage_checks(availabil
     assert teaching_rooms[4].code in visible_codes
 
 
-def test_homepage_book_now_link_prefills_next_slot(client, availability_setup, monkeypatch):
+def test_classroom_status_book_now_link_prefills_next_slot(client, availability_setup, monkeypatch):
     user, teaching_rooms, _, _, _ = availability_setup
     monkeypatch.setattr("django.utils.timezone.now", lambda: _aware())
     client.force_login(user)
-
-    response = client.get(reverse("bookings:calendar"))
+    response = client.get(reverse("bookings:room_status", args=["classroom"]))
     assert response.status_code == 200
     content = response.content.decode()
-    assert 'class="room-index"' in content
     assert f"/book/{teaching_rooms[0].code}/?search=1" in content
     assert "start=09%3A00" not in content
 
@@ -172,7 +170,7 @@ def _booking_post_data(user, start, **overrides):
     return data
 
 
-def test_homepage_book_now_submit_conflict_shows_retry_message(client, availability_setup, monkeypatch):
+def test_classroom_status_book_now_submit_conflict_shows_retry_message(client, availability_setup, monkeypatch):
     user, teaching_rooms, _, _, _ = availability_setup
     monkeypatch.setattr("django.utils.timezone.now", lambda: _aware())
     room = teaching_rooms[0]
@@ -189,15 +187,12 @@ def test_homepage_book_now_submit_conflict_shows_retry_message(client, availabil
     )
     submit_booking(held)
     client.force_login(user)
-
-    homepage = client.get(reverse("bookings:calendar"))
-    assert f"/book/{room.code}/?search=1" in homepage.content.decode()
-
+    status_page = client.get(reverse("bookings:room_status", args=["classroom"]))
+    assert f"/book/{room.code}/?search=1" in status_page.content.decode()
     response = client.post(
         reverse("bookings:book_form", args=[room.code]),
         _booking_post_data(user, start),
     )
-
     assert response.status_code == 200
     content = response.content.decode()
     assert "กรุณาเลือกเวลาหรือห้องอื่น" in content

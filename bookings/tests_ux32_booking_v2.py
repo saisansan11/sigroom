@@ -71,16 +71,16 @@ def test_about_page_is_public_and_task_first(client):
     assert reverse("bookings:lodging_index") in html
 
 
-def test_authenticated_home_has_two_primary_task_cards(client, ux32_setup):
+def test_authenticated_home_uses_category_selector_instead_of_mixed_booking_cards(client, ux32_setup):
     client.force_login(ux32_setup["user"])
     response = client.get(reverse("bookings:calendar"))
     assert response.status_code == 200
     html = response.content.decode()
-    # ธีม A: งานหลักสองทาง = ช่อง "จองห้อง" ในแถบงาน + ลิงก์ "จองห้องพัก"
-    assert 'class="task-cell task-cell-primary"' in html
-    assert "เลือกเวลา ระบบหาห้องว่างให้" in html
-    assert reverse("bookings:book_search") in html
-    assert reverse("bookings:lodging_index") in html
+    assert 'class="task-strip"' in html
+    assert 'class="status-category-grid"' in html
+    assert reverse("bookings:room_status", args=["classroom"]) in html
+    assert reverse("bookings:room_status", args=["lodging"]) in html
+    assert 'class="task-cell task-cell-primary"' not in html
 
 
 def test_navigation_has_no_duplicate_online_link_and_clear_booking_label():

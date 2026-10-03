@@ -197,11 +197,10 @@ def test_admin_inline_shows_upload_field_when_flag_enabled(settings):
 # --- C3: หน้าเว็บ (render + N+1) ---------------------------------------------
 
 
-def test_calendar_view_omits_room_thumbnails_from_today_ledger(client, room):
+def test_room_status_view_omits_room_thumbnails_from_today_ledger(client, room):
     other_room = _make_room("ROOM-C2")
     save_room_photo(resource=room, image=_make_upload(), is_cover=True)
-
-    resp = client.get(reverse("bookings:calendar"))
+    resp = client.get(reverse("bookings:room_status", args=["classroom"]))
     assert resp.status_code == 200
     content = resp.content.decode()
     ledger = content[content.index('id="today-board"'):content.index('id="home-more"')]

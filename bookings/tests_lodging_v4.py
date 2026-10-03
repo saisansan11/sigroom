@@ -417,7 +417,7 @@ def test_calendar_and_today_board_show_lodging_reservation(client, lodging_data)
         start=today,
         end=today + timedelta(days=2),
     )
-    calendar = client.get(reverse("bookings:calendar"))
+    calendar = client.get(reverse("bookings:room_status", args=["lodging"]))
     assert calendar.status_code == 200
     assert calendar.context["stat_free_now"] == 2
     assert calendar.context["stat_in_use"] == 1

@@ -157,17 +157,21 @@ def test_online_meeting_url_is_editable_after_submit():
     assert "online_meeting_url" in POST_SUBMIT_EDITABLE_FIELDS
 
 
-def test_homepage_shows_online_card_and_group_only_when_rooms_exist(client, online_setup):
+def test_online_rooms_live_on_dedicated_status_page_only_when_active(client, online_setup):
     home = reverse("bookings:calendar")
-    content = client.get(home).content.decode()
-    assert 'id="now-online"' in content
+    status = reverse("bookings:room_status", args=["online"])
+    assert "V7B-ON1" not in client.get(home).content.decode()
+
+    content = client.get(status).content.decode()
+    assert "V7B-ON1" in content
     assert "ห้องสอนออนไลน์" in content
 
     Resource.objects.filter(room_category=Resource.Category.ONLINE).update(
         status=Resource.Status.RETIRED
     )
-    content = client.get(home).content.decode()
-    assert 'id="now-online"' not in content
+    content = client.get(status).content.decode()
+    assert "V7B-ON1" not in content
+    assert "ยังไม่มีห้องสอนออนไลน์ที่เปิดใช้งาน" in content
 
 
 def test_online_room_uses_same_overlap_protection(online_setup):

@@ -4776,3 +4776,18 @@ button.link-inline:hover { background: transparent; color: var(--ink); }
   .chip-reveal-time { grid-template-columns: 1fr 1fr; }
   .auth-sheet-wrap { padding-top: var(--space-sm); }
 }
+
+/* Split room-status IA: /home/ is a category index; each category owns its ledger page. */
+.status-category-section { margin-bottom: var(--space-2xl); }
+.status-category-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 14rem), 1fr)); gap: var(--space-sm); }
+.status-category-card { min-height: 10rem; display: flex; flex-direction: column; gap: .35rem; padding: var(--space-lg); border: 1px solid var(--ink); background: var(--paper); color: var(--ink); text-decoration: none; }
+.status-category-card:hover, .status-category-card:focus-visible { background: var(--paper-sunk); color: var(--ink); }
+.status-category-card .status-category-label { font-family: var(--font-serif); font-size: 1.25rem; }
+.status-category-card strong { font-size: 1rem; }
+.status-category-card > span:not(.status-category-label) { color: var(--ink-muted); font-size: .9rem; line-height: 1.45; }
+.status-category-card small { margin-top: auto; color: var(--link); font-weight: 700; }
+.status-index-login { margin-top: var(--space-md); }
+.status-back-link { min-height: 44px; display: inline-flex; align-items: center; margin-bottom: var(--space-xs); font-weight: 700; }
+.room-status-head { margin-bottom: var(--space-lg); }
+@media (max-width: 40rem) { .status-category-grid { grid-template-columns: 1fr 1fr; } .status-category-card { min-height: 8.5rem; padding: var(--space-md); } }
+@media (max-width: 25rem) { .status-category-grid { grid-template-columns: 1fr; } }
