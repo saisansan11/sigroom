@@ -495,7 +495,7 @@ def online_teaching_quick_book(request):
         messages.error(request, " · ".join(exc.messages))
     else:
         messages.success(request, f"จอง {booking.room.name} สำเร็จและยืนยันอัตโนมัติแล้ว")
-        return redirect("bookings:my_bookings")
+        return redirect("bookings:booking_pass", id=booking.id)
 
     query = _safe_return_query(request.POST.get("return_query"))
     target = reverse("bookings:online_teaching_home")
@@ -573,7 +573,7 @@ def online_teaching_book(request, code):
                             form.add_error(None, message)
                     else:
                         messages.success(request, f"จอง {booking.room.name} สำเร็จและยืนยันอัตโนมัติแล้ว")
-                        return redirect("bookings:my_bookings")
+                        return redirect("bookings:booking_pass", id=booking.id)
 
     return render(
         request,

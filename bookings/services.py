@@ -6,12 +6,16 @@ M0/M1 ครอบคลุม: คำนวณช่วงถือครอง
 """
 from dataclasses import dataclass
 from datetime import date, datetime, time, timedelta
+import math
+from urllib.parse import urlsplit
 
-from django.core.exceptions import ValidationError
+from django.conf import settings
+from django.core.exceptions import PermissionDenied, ValidationError
 from django.db import IntegrityError, transaction
 from django.db.backends.postgresql.psycopg_any import DateTimeTZRange
 from django.db.models import QuerySet
 from django.utils import timezone
+from django.urls import reverse
 
 from resources.models import Resource, ResourceRule
 from audit.services import audit
@@ -1081,3 +1085,80 @@ def last_booking_defaults(user) -> dict:
 def booking_ref(booking: Booking) -> str:
     """เลขอ้างอิงสั้นที่แสดงให้ผู้ใช้ (8 ตัวแรกของรหัส — ตรงกับ "รหัสการจอง" ในหน้ารายละเอียด)"""
     return str(booking.pk)[:8]
+
+
+def booking_pass_context(booking: Booking, user, now: datetime | None = None) -> dict:
+    """ข้อมูลบัตรส่วนตัว ตรวจสิทธิ์ก่อนคืนข้อมูลและไม่รับ origin จาก header."""
+    if not can_view_details(user, booking):
+        raise PermissionDenied("ไม่มีสิทธิ์ดูบัตรจองนี้")
+    from .role_home import NAV_SERVICE_LABELS, service_booking_url, service_for_category
+    from .templatetags.thaidate import thai_datetime
+
+    now = now or timezone.now()
+    duration = (booking.end_at - booking.start_at).total_seconds()
+    fraction = min(1.0, max(0.0, (now - booking.start_at).total_seconds() / duration)) if duration > 0 else float(now >= booking.end_at)
+    service = service_for_category(booking.room.room_category)
+    detail_path = reverse("bookings:booking_detail", args=[booking.pk])
+    canonical_url = ""
+    base = getattr(settings, "PUBLIC_BASE_URL", "").strip().rstrip("/")
+    try:
+        origin = urlsplit(base)
+        valid_origin = (
+            origin.scheme in {"http", "https"} and bool(origin.hostname)
+            and origin.username is None and origin.password is None
+            and not origin.query and not origin.fragment and not origin.path
+            and "\\" not in base and not any(character.isspace() or ord(character) < 32 for character in base)
+        )
+        origin.port  # ปฏิเสธ port ที่ผิดรูปด้วย
+    except ValueError:
+        valid_origin = False
+    if valid_origin:
+        canonical_url = f"{base}{detail_path}"
+
+    date_line = f"{thai_datetime(booking.start_at)}–{thai_datetime(booking.end_at)}"
+    status_key = booking.request_status
+    status_text = booking.get_request_status_display()
+    if booking.usage_status in {Booking.UsageStatus.DISPLACED, Booking.UsageStatus.ROOM_UNAVAILABLE}:
+        status_key = booking.usage_status
+        status_text = booking.get_usage_status_display()
+    actions = []
+    if booking.request_status in Booking.HOLDING_STATUSES:
+        actions.append({"url": reverse("bookings:booking_ics", args=[booking.pk]), "label": "เพิ่มลงปฏิทิน (.ics)", "download": True})
+    rebook_url = service_booking_url(service)
+    if service in {"classroom", "meeting"} or booking.room.room_category == Resource.Category.LAB:
+        rebook_url = reverse("bookings:book_form", args=[booking.room.code]) + f"?rebook={booking.pk}"
+    actions.append({"url": rebook_url, "label": "จองอีกครั้ง"})
+    actions.append({"url": detail_path, "label": "ดูรายละเอียดการจอง"})
+    return {
+        "booking": booking,
+        "booking_ref": booking_ref(booking),
+        "progress": fraction,
+        "qr_url": canonical_url,
+        "detail_url": detail_path,
+        "my_bookings_url": reverse("bookings:my_bookings") + (f"?service={service}" if service else ""),
+        "show_online_link": bool(booking.online_meeting_url) and can_view_online_link(user, booking),
+        "cassette": {
+            "header": f"· {NAV_SERVICE_LABELS.get(service, booking.room.get_room_category_display())}",
+            "service": service or "classroom",
+            "is_booking": True,
+            "title": booking.title,
+            "room_code": booking.room.code,
+            "bed_label": f"เลขที่ {booking_ref(booking)}",
+            "owner": booking.requester.display_name,
+            "date_line": date_line,
+            "status_text": status_text,
+            "status_key": status_key,
+            "progress": f"{fraction:.6f}",
+            "left_reel_scale": f"{math.sqrt(12 ** 2 + (40 ** 2 - 12 ** 2) * (1 - fraction)) / 40:.4f}",
+            "right_reel_scale": f"{math.sqrt(12 ** 2 + (40 ** 2 - 12 ** 2) * fraction) / 40:.4f}",
+            "window_text": "รอเริ่ม" if now < booking.start_at else "ครบ" if now >= booking.end_at else f"{round(fraction * 100)}%",
+            "qr_image_url": reverse("bookings:booking_pass_qr_svg", args=[booking.pk]) if canonical_url else "",
+            "qr_alt": f"QR สำหรับเปิดรายละเอียดการจอง ห้อง {booking.room.code}",
+            "qr_title": "QR รายละเอียดการจอง",
+            "front_label": "บัตรกำลังแสดงด้านหน้า กดเพื่อพลิกดู QR รายละเอียดการจอง",
+            "back_label": "บัตรกำลังแสดงด้าน QR รายละเอียดการจอง กดเพื่อพลิกกลับดูด้านหน้า",
+            "flip_label": "พลิกดู QR รายละเอียด",
+            "actions": actions,
+            "copy_url": canonical_url or detail_path,
+        },
+    }

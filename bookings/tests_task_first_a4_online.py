@@ -146,8 +146,8 @@ def test_quick_confirm_creates_one_approved_booking_and_audit(client, a4_setup):
         _quick_payload(a4_setup["rooms"][1], a4_setup["run"], start_at, end_at),
     )
     assert response.status_code == 302
-    assert response.url == reverse("bookings:my_bookings")
     booking = Booking.objects.get()
+    assert response.url == reverse("bookings:booking_pass", args=[booking.pk])
     assert booking.room_id == a4_setup["rooms"][1].pk
     assert booking.request_status == Booking.RequestStatus.APPROVED
     assert AuditLog.objects.filter(
@@ -303,7 +303,7 @@ def test_task_first_journey_gateway_online_quick_confirm(client, a4_setup):
         _quick_payload(room, a4_setup["run"], start_at, end_at),
     )
     assert confirmed.status_code == 302
-    assert confirmed.url == reverse("bookings:my_bookings")
+    assert confirmed.url == reverse("bookings:booking_pass", args=[Booking.objects.get(room=room, requester=a4_setup["teacher"]).pk])
     assert Booking.objects.filter(room=room, requester=a4_setup["teacher"]).count() == 1
 
 

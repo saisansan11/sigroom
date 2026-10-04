@@ -10,7 +10,8 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.dateparse import parse_datetime
-from django.views.decorators.http import require_POST
+from django.views.decorators.http import require_GET, require_POST
+from django.views.decorators.cache import never_cache
 
 from resources.models import Blackout, Resource, ResourceRule
 from resources.services import active_blackouts, active_outages
@@ -45,6 +46,7 @@ from .services import (
     time_presets,
     booking_suggestions,
     booking_ref,
+    booking_pass_context,
     last_booking_defaults,
     resolve_search_selection,
     room_day_bookings,
@@ -902,9 +904,9 @@ def book_form(request, code):
                 audit(request.user, "bookings.booking", booking.pk, "booking_created", after=model_snapshot(booking))
                 notify_submitted(booking)
                 messages.success(request, "ส่งคำขอจองห้องแล้ว")
-                # ธงใช้ครั้งเดียว: หน้ารายละเอียดแสดงตราประทับแล้วลบทิ้ง (รีเฟรชไม่เล่นซ้ำ)
+                # ธงใช้ครั้งเดียว: หน้าบัตรแสดงผลการส่งแล้วลบทิ้ง
                 request.session["just_submitted_booking"] = str(booking.id)
-                return redirect("bookings:booking_detail", id=booking.id)
+                return redirect("bookings:booking_pass", id=booking.id)
     else:
         initial = _rebook_initial(request, room) or _initial_from_query(request)
         prefill_source = initial.pop("source", "rebook" if request.GET.get("rebook") else "profile")
@@ -1049,6 +1051,7 @@ def booking_detail(request, id):
         .first()
     )
     full_details = can_view_details(request.user, booking)
+    pass_access = full_details
     approval_access = can_decide(request.user, booking) or bool(
         pending_amendment and can_decide(request.user, pending_amendment)
     )
@@ -1078,6 +1081,7 @@ def booking_detail(request, id):
         {
             "booking": booking,
             "booking_ref": booking_ref(booking),
+            "can_view_pass": pass_access,
             "just_submitted": just_submitted,
             "can_add_to_calendar": booking.request_status in Booking.HOLDING_STATUSES,
             # ลิงก์ออนไลน์ใช้สิทธิ์เข้มกว่า can_view_details — คนหน่วยเดียวกันเห็นหน้านี้ได้แต่ต้องไม่เห็นลิงก์
@@ -1111,6 +1115,40 @@ def booking_detail(request, id):
             "rejection_reasons": recent_rejection_reasons(request.user) if can_approve else [],
         },
     )
+
+
+@login_required
+@require_GET
+@never_cache
+def booking_pass(request, id):
+    booking = get_object_or_404(_booking_queryset(), id=id)
+    context = booking_pass_context(booking, request.user)
+    context["just_submitted"] = False
+    if request.session.get("just_submitted_booking") == str(booking.id):
+        del request.session["just_submitted_booking"]
+        context["just_submitted"] = booking.request_status in Booking.HOLDING_STATUSES
+    response = render(request, "bookings/booking_pass.html", context)
+    response["X-Content-Type-Options"] = "nosniff"
+    response["X-Robots-Tag"] = "noindex, nofollow"
+    response["Referrer-Policy"] = "no-referrer"
+    return response
+
+
+@login_required
+@require_GET
+@never_cache
+def booking_pass_qr_svg(request, id):
+    from .lodging_services import generate_cohort_qr_svg
+
+    booking = get_object_or_404(_booking_queryset(), id=id)
+    context = booking_pass_context(booking, request.user)
+    if not context["qr_url"]:
+        return HttpResponse("ยังไม่ได้ตั้ง URL กลางสำหรับ QR", status=503, content_type="text/plain; charset=utf-8")
+    response = HttpResponse(generate_cohort_qr_svg(context["qr_url"]), content_type="image/svg+xml")
+    response["X-Content-Type-Options"] = "nosniff"
+    response["X-Robots-Tag"] = "noindex, nofollow"
+    response["Referrer-Policy"] = "no-referrer"
+    return response
 
 
 @login_required
@@ -1272,6 +1310,8 @@ def booking_submit(request, id):
     else:
         notify_submitted(booking)
         messages.success(request, "ส่งคำขอจองห้องแล้ว")
+        request.session["just_submitted_booking"] = str(booking.id)
+        return redirect("bookings:booking_pass", id=booking.id)
     return redirect("bookings:booking_detail", id=booking.id)
 
 

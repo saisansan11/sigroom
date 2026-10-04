@@ -200,6 +200,7 @@ def test_teacher_booking_auto_approves_and_client_cannot_spoof_owner_or_unit(cli
     )
     assert response.status_code == 302
     booking = Booking.objects.get(room=room)
+    assert response.url == reverse("bookings:booking_pass", args=[booking.pk])
     assert booking.requester_id == teacher.pk
     assert booking.unit_id == teacher.unit_id
     assert booking.responsible_name == teacher.display_name

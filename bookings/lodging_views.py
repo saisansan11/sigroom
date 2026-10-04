@@ -306,11 +306,16 @@ def lodging_book_bed(request, slug):
 
 
 def _student_pass_context(request, cohort, student):
+    from .templatetags.thaidate import thai_date
+
     roommates = CourseStudentLodging.objects.filter(
         cohort=cohort, room=student.room
     ).exclude(pk=student.pk).order_by("bed_number")
     pass_path = reverse("bookings:lodging_pass", args=[cohort.slug, student.id])
     pass_url = get_canonical_public_url(request, pass_path)
+    stay = stay_progress(cohort.check_in_date, cohort.check_out_date)
+    owner = f"{student.rank} {student.full_name}"
+    date_line = f"{thai_date(cohort.check_in_date)}–{thai_date(cohort.check_out_date)}"
     return {
         "cohort": cohort,
         "student": student,
@@ -320,7 +325,29 @@ def _student_pass_context(request, cohort, student):
             f"บัตรรายงานตัวเข้าที่พัก {student.room.code} (เตียง {student.bed_number}) - {cohort.title}",
             pass_url,
         ),
-        "stay": stay_progress(cohort.check_in_date, cohort.check_out_date),
+        "stay": stay,
+        "cassette": {
+            "header": "· ที่พัก รร.ส.สส.",
+            "service": "lodging",
+            "room_code": student.room.code,
+            "bed_label": f"เตียง {student.bed_number}",
+            "owner": owner,
+            "title": cohort.title,
+            "date_line": date_line,
+            "status_text": "จองแล้ว",
+            "nights_total": stay.nights_total,
+            "nights_elapsed": stay.nights_elapsed,
+            "left_reel_scale": stay.left_reel_scale,
+            "right_reel_scale": stay.right_reel_scale,
+            "window_text": stay.window_text,
+            "qr_image_url": reverse("bookings:lodging_checkin_qr_svg", args=[student.pk]),
+            "qr_alt": f"QR code สำหรับรายงานตัวเข้าที่พัก ห้อง {student.room.code} เตียง {student.bed_number}",
+            "qr_title": "QR เช็กอิน",
+            "qr_dialog_alt": f"QR เช็กอินเต็มจอ ห้อง {student.room.code} เตียง {student.bed_number}",
+            "front_label": "บัตรกำลังแสดงด้านหน้า กดเพื่อพลิกดู QR สำหรับรายงานตัว",
+            "back_label": "บัตรกำลังแสดงด้าน QR สำหรับรายงานตัว กดเพื่อพลิกกลับดูด้านหน้า",
+            "flip_label": "พลิกดู QR เช็กอิน",
+        },
     }
 
 

@@ -21,7 +21,11 @@ def _read_template() -> str:
         / "lodging"
         / "student_pass.html"
     )
-    return template_path.read_text(encoding="utf-8")
+    template = template_path.read_text(encoding="utf-8")
+    include = '{% include "partials/cassette_pass.html" %}'
+    assert template.count(include) == 1
+    cassette = (template_path.parent.parent / "partials" / "cassette_pass.html").read_text(encoding="utf-8")
+    return template.replace(include, cassette)
 
 
 def _read_css() -> str:

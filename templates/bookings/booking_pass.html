@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% load static thaidate %}
+{% block html_theme %}light{% endblock %}
+{% block body_class %}lodging-booking-ios27 cassette-pass-page{% endblock %}
+{% block head %}
+<link rel="stylesheet" href="{% static 'css/lodging_booking_ios27.css' %}?v=2">
+<link rel="stylesheet" href="{% static 'css/lodging_booking_r3l.css' %}?v=1">
+<link rel="stylesheet" href="{% static 'css/lodging_cassette_pass.css' %}?v=2">
+{% endblock %}
+{% block title %}บัตรจอง · {{ booking.room.code }} · SIGROOM{% endblock %}
+{% block content %}
+<div class="page-heading cassette-pass-heading">
+  <div>
+    <p class="eyebrow">บัตรจอง · เลขที่ {{ booking_ref }}</p>
+    <h1>{{ booking.title }}</h1>
+    {% if cassette.qr_image_url %}<p>แตะบัตรหรือกด Enter / Space เพื่อพลิกดู QR รายละเอียดการจอง</p>{% endif %}
+  </div>
+</div>
+{% include "bookings/partials/booking_result.html" %}
+<section class="cassette-pass-shell" aria-label="บัตรจองห้อง">
+  {% include "partials/cassette_pass.html" %}
+  <section class="cassette-ledger" aria-labelledby="cassette-ledger-title">
+    <h2 id="cassette-ledger-title">รายละเอียดบัตรจอง</h2>
+    <dl>
+      <div><dt>ห้อง</dt><dd>{{ booking.room.code }} · {{ booking.room.name }}</dd></div>
+      <div><dt>สถานที่</dt><dd>{{ booking.room.building }}{% if booking.room.floor %} ชั้น {{ booking.room.floor }}{% endif %}</dd></div>
+      <div><dt>กิจกรรม</dt><dd>{{ booking.title }}</dd></div>
+      <div><dt>เริ่ม</dt><dd>{{ booking.start_at|thai_datetime }}</dd></div>
+      <div><dt>สิ้นสุด</dt><dd>{{ booking.end_at|thai_datetime }}</dd></div>
+      <div><dt>ผู้จอง</dt><dd>{{ booking.requester.display_name }}</dd></div>
+      <div><dt>เลขอ้างอิง</dt><dd>{{ booking_ref }}</dd></div>
+      <div><dt>สถานะ</dt><dd>{{ cassette.status_text }}{% if booking.request_status == 'pending' %} · ยังต้องรอผลพิจารณาก่อนใช้งาน{% endif %}</dd></div>
+      {% if show_online_link %}<div><dt>ห้องเรียนออนไลน์</dt><dd><a href="{{ booking.online_meeting_url }}" target="_blank" rel="noopener noreferrer">เข้าห้องเรียนออนไลน์</a></dd></div>{% endif %}
+      <div><dt>ลิงก์รายละเอียด</dt><dd><a href="{{ cassette.copy_url }}">{{ cassette.copy_url }}</a></dd></div>
+    </dl>
+  </section>
+  <p><a role="button" class="secondary btn-my-bookings" href="{{ my_bookings_url }}">การจองของฉัน</a></p>
+</section>
+{% endblock %}
+{% block scripts %}
+<script src="{% static 'js/lodging_cassette_pass.js' %}?v=2" defer></script>
+{% endblock %}
