@@ -1,4 +1,5 @@
 import json
+from functools import wraps
 
 from django.conf import settings
 from django.contrib.auth.decorators import login_required
@@ -13,6 +14,16 @@ from .push import push_enabled, subscribe, unsubscribe
 def _configured():
     if not push_enabled():
         raise Http404
+
+
+def push_configured(view):
+    """ปิดผิวโจมตีของ feature ทั้งหมดก่อน auth/method handling เมื่อ VAPID ไม่พร้อม"""
+    @wraps(view)
+    def wrapped(request, *args, **kwargs):
+        _configured()
+        return view(request, *args, **kwargs)
+
+    return wrapped
 
 
 def _body(request):
@@ -32,19 +43,19 @@ def _error(exc):
     return JsonResponse({"error": message}, status=409 if isinstance(exc, PermissionError) else 400)
 
 
+@push_configured
 @login_required
 @require_GET
 def push_status(request):
-    _configured()
     response = JsonResponse({"endpoints": list(PushSubscription.objects.filter(user=request.user).values_list("endpoint", flat=True))})
     response["Cache-Control"] = "no-store"
     return response
 
 
+@push_configured
 @login_required
 @require_POST
 def push_subscribe(request):
-    _configured()
     try:
         subscribe(request.user, _body(request), request.META.get("HTTP_USER_AGENT", ""))
     except (ValidationError, PermissionError) as exc:
@@ -52,10 +63,10 @@ def push_subscribe(request):
     return JsonResponse({"enabled": True})
 
 
+@push_configured
 @login_required
 @require_POST
 def push_unsubscribe(request):
-    _configured()
     try:
         data = _body(request)
         unsubscribe(request.user, data.get("endpoint"))
@@ -64,9 +75,9 @@ def push_unsubscribe(request):
     return JsonResponse({"enabled": False})
 
 
+@push_configured
 @require_GET
 def service_worker(request):
-    _configured()
     source = (settings.BASE_DIR / "static" / "js" / "web_push_sw.js").read_text(encoding="utf-8")
     response = HttpResponse(source, content_type="application/javascript; charset=utf-8")
     response["Cache-Control"] = "no-cache"

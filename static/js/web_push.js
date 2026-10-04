@@ -41,6 +41,17 @@
       return result;
     }
 
+    async function removeBrowserSubscription(message) {
+      if (!subscription) return true;
+      const removed = await subscription.unsubscribe();
+      if (!removed) {
+        display(enabled, message || 'เบราว์เซอร์ยังยกเลิกการแจ้งเตือนไม่สำเร็จ กรุณาลองอีกครั้ง');
+        return false;
+      }
+      subscription = null;
+      return true;
+    }
+
     if (!window.isSecureContext || !('serviceWorker' in navigator) || !('PushManager' in window) || !('Notification' in window) || (appleMobile && !standalone)) {
       status.textContent = appleMobile && !standalone ? 'ต้องเปิดจากไอคอน SIGROOM บนหน้าจอโฮมก่อน' : 'เบราว์เซอร์นี้ไม่รองรับแจ้งเตือนบนเครื่อง กระดิ่งในเว็บยังใช้งานได้';
       button.textContent = 'เบราว์เซอร์ไม่รองรับ';
@@ -53,11 +64,20 @@
       let created = false;
       try {
         if (enabled && subscription) {
-          await request(panel.dataset.unsubscribeUrl, {endpoint: subscription.endpoint});
-          await subscription.unsubscribe();
-          subscription = null;
-          display(false);
+          const endpoint = subscription.endpoint;
+          if (!await removeBrowserSubscription('ปิดแจ้งเตือนไม่สำเร็จ เครื่องนี้ยังรับแจ้งเตือนอยู่')) return;
+          try {
+            await request(panel.dataset.unsubscribeUrl, {endpoint: endpoint});
+            display(false);
+          } catch (_) {
+            // ฝั่ง browser ปิดแล้ว จึงไม่แสดงว่าเปิดอยู่ แม้ทะเบียน server จะรอล้างเมื่อ push service ตอบ 404/410
+            display(false, 'ปิดบนเครื่องนี้แล้ว แต่ล้างทะเบียนบนระบบไม่สำเร็จ ระบบจะล้างให้อัตโนมัติเมื่อส่งครั้งถัดไป');
+          }
           return;
+        }
+        if (subscription && !enabled) {
+          // subscription ที่ browser ถืออยู่แต่ไม่ใช่ของบัญชีปัจจุบัน ต้องเอาออกก่อนเพื่อกันรับ push ของบัญชีเดิม
+          if (!await removeBrowserSubscription('พบการแจ้งเตือนของบัญชีเดิม แต่เบราว์เซอร์ยังยกเลิกไม่สำเร็จ กรุณาลองอีกครั้ง')) return;
         }
         // เรียกก่อน await แรก เพื่อคง user activation บน iPhone
         const permission = window.Notification.permission === 'granted' ? 'granted' : await window.Notification.requestPermission();
@@ -76,7 +96,7 @@
         display(true);
       } catch (error) {
         if (created && subscription) {
-          try { await subscription.unsubscribe(); } catch (_) { /* ไม่บันทึกฝั่ง server จึงไม่มีการส่ง */ }
+          try { await subscription.unsubscribe(); } catch (_) { /* server ไม่บันทึก subscription ใหม่ จึงไม่มีการส่งจากบัญชีนี้ */ }
           subscription = null;
         }
         display(enabled, error.message || 'เปิดแจ้งเตือนไม่สำเร็จ กรุณาลองอีกครั้ง');
@@ -89,7 +109,11 @@
         subscription = registration ? await registration.pushManager.getSubscription() : null;
         if (subscription) {
           const result = await request(panel.dataset.statusUrl);
-          display(result.endpoints.includes(subscription.endpoint));
+          if (result.endpoints.includes(subscription.endpoint)) {
+            display(true);
+          } else if (await removeBrowserSubscription('พบการแจ้งเตือนของบัญชีเดิม แต่เบราว์เซอร์ยังยกเลิกไม่สำเร็จ กรุณากดปุ่มเพื่อลองอีกครั้ง')) {
+            display(false, 'ล้างการแจ้งเตือนที่ผูกกับบัญชีเดิมจากเครื่องนี้แล้ว');
+          }
         } else display(false);
       } catch (_) {
         display(false, 'ตรวจสถานะไม่สำเร็จ กดเปิดแจ้งเตือนเพื่อลองอีกครั้ง');

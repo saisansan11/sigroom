@@ -64,6 +64,23 @@ def _deliver_email(booking, kind, text, pass_path, counts):
         )
 
 
+def _deliver_push(booking, kind, text, pass_path):
+    """Push เป็นช่องทางแยกจาก email: ช่องทางใดล้มต้องไม่ขวางอีกช่องทางหรืองาน scheduled อื่น"""
+    try:
+        from .push import send_push
+
+        title = "SIGROOM · เตือนก่อนสอน" if kind == "remind_30" else "SIGROOM · ถึงเวลาสอนแล้ว"
+        send_push(booking.requester, title, text, pass_path)
+    except Exception as exc:
+        # ไม่ log endpoint, key, payload หรือ exception text
+        logger.warning(
+            "teaching_reminder_push_failed booking=%s kind=%s error_type=%s",
+            booking.pk,
+            kind,
+            type(exc).__name__,
+        )
+
+
 def send_teaching_reminders(now=None) -> dict[str, int]:
     """ผล email_failed นับเมื่อ on_commit ทำงาน; run_jobs เรียกนอก outer atomic"""
     now = now or timezone.now()
@@ -110,6 +127,10 @@ def send_teaching_reminders(now=None) -> dict[str, int]:
                     transaction.on_commit(
                         lambda booking=booking, kind=kind, text=text, path=pass_path:
                         _deliver_email(booking, kind, text, path, counts)
+                    )
+                    transaction.on_commit(
+                        lambda booking=booking, kind=kind, text=text, path=pass_path:
+                        _deliver_push(booking, kind, text, path)
                     )
         except IntegrityError as exc:
             # อยู่นอก atomic: การชน constraint ไม่ทำให้ transaction ของงานถัดไปเสีย
