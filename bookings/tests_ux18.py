@@ -140,14 +140,15 @@ def test_sticky_jump_is_safe_area_and_wrapping_aware():
     assert "padding-bottom: 4.75rem;" in css
 
 
-def test_portal_public_privacy_and_accessible_bed_label(client, ux18_setup):
+def test_portal_public_privacy_and_accessible_bed_label(client, ux18_setup, enrolled_student):
     cohort = ux18_setup["cohort"]
     occupied = ux18_setup["occupied"]
+    enrolled_student(cohort)
     response = client.get(reverse("bookings:lodging_portal", args=[cohort.slug]))
     assert response.status_code == 200
     html = response.content.decode("utf-8")
 
-    # Public portal must expose status only, never occupied-student PII.
+    # Authenticated portal still exposes no occupied-student PII.
     assert occupied.full_name not in html
     assert occupied.origin_unit not in html
     assert occupied.phone not in html

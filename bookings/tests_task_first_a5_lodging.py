@@ -97,21 +97,24 @@ def test_lodging_start_is_public_and_has_two_paths(client):
     assert reverse("bookings:lodging_general_request") in html
 
 
-def test_lodging_index_single_open_cohort_redirects_to_portal(client):
+def test_lodging_index_single_open_cohort_redirects_to_portal(client, enrolled_student):
     staff = _user("a5-supervisor")
     room = _room("A5-C401")
     cohort = _cohort(slug="a5-one", supervisor=staff, room=room)
+    enrolled_student(cohort)
     response = client.get(reverse("bookings:lodging_index"))
     assert response.status_code == 302
     assert response.url == reverse("bookings:lodging_portal", args=[cohort.slug])
 
 
-def test_lodging_index_two_open_cohorts_lists_them(client):
+def test_lodging_index_two_open_cohorts_lists_them(client, enrolled_student):
     staff = _user("a5-supervisor2")
     room1 = _room("A5-C402")
     room2 = _room("A5-C403")
-    _cohort(slug="a5-two-a", supervisor=staff, room=room1)
-    _cohort(slug="a5-two-b", supervisor=staff, room=room2, offset=5)
+    first = _cohort(slug="a5-two-a", supervisor=staff, room=room1)
+    second = _cohort(slug="a5-two-b", supervisor=staff, room=room2, offset=5)
+    student = enrolled_student(first)
+    enrolled_student(second, user=student)
     response = client.get(reverse("bookings:lodging_index"))
     assert response.status_code == 200
     html = response.content.decode("utf-8")
@@ -120,6 +123,7 @@ def test_lodging_index_two_open_cohorts_lists_them(client):
 
 
 def test_lodging_index_no_open_cohort_points_back_to_start(client):
+    client.force_login(_user("a5-empty-student"))
     response = client.get(reverse("bookings:lodging_index"))
     assert response.status_code == 200
     html = response.content.decode("utf-8")

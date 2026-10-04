@@ -51,6 +51,11 @@
   </div>
 </div>
 
+{% if own_booking %}
+<div class="notice info" role="status">คุณจองห้อง {{ own_booking.room.code }} เตียง {{ own_booking.bed_number }} แล้ว
+  <a href="{% url 'bookings:lodging_reservation_manage' cohort.slug own_booking.self_service_access.pk %}">เปิดบัตรของฉัน</a>
+</div>
+{% endif %}
 {% if selected_room %}
 <div class="notice info" role="status">เลือกห้อง {{ selected_room.room.code }} ไว้แล้ว · เลือกเตียงว่างด้านล่างเพื่อจองต่อ{% if selected_room.is_full %} · ห้องนี้เต็มแล้ว กรุณาเลือกห้องอื่น{% endif %}</div>
 {% endif %}
@@ -103,9 +108,9 @@
                 {% if bed.is_occupied %}
                   <small class="mono muted-text">จองแล้ว</small>
                 {% else %}
-                  <button type="button" class="bed-select-btn" aria-label="เลือกห้อง {{ rdata.room.code }} เตียง {{ bed.number }}" onclick="openBookingModal('{{ rdata.room.id }}', '{{ rdata.room.code }}', '{{ bed.number }}')">
+                  {% if not own_booking %}<button type="button" class="bed-select-btn" aria-label="เลือกห้อง {{ rdata.room.code }} เตียง {{ bed.number }}" onclick="openBookingModal('{{ rdata.room.id }}', '{{ rdata.room.code }}', '{{ bed.number }}')">
                     เลือกเตียงนี้
-                  </button>
+                  </button>{% endif %}
                 {% endif %}
               </div>
             </div>
@@ -177,7 +182,7 @@
       </label>
 
       <label for="id_full_name">ชื่อ - นามสกุล
-        <input type="text" id="id_full_name" name="full_name" value="{{ modal_data.full_name|default:'' }}" placeholder="ชื่อ และนามสกุลจริง" required autocomplete="name" autofocus>
+        <input type="text" id="id_full_name" name="full_name" value="{{ modal_data.full_name|default:'' }}" placeholder="ชื่อ และนามสกุลจริง" required autocomplete="name" autofocus{% if request.user.is_lodging_student %} readonly{% endif %}>
       </label>
 
       <label for="id_origin_unit">หน่วยต้นสังกัด

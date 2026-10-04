@@ -135,6 +135,8 @@ def managed_services(user) -> list[str]:
 
 @login_required
 def role_home(request):
+    if request.user.is_lodging_student:
+        return redirect("bookings:lodging_index")
     services = managed_services(request.user)
     if not services:
         # ครูผู้สอน (ไม่ใช่ผู้ดูแลระบบ) เข้าหน้าจองห้องสอนออนไลน์ทันที ไม่ต้องผ่านหน้าเลือกบริการ

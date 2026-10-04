@@ -1,0 +1,7 @@
+{% extends "base.html" %}
+{% block title %}เข้าสู่ระบบไม่สำเร็จ · SIGROOM{% endblock %}
+{% block content %}
+<section class="card"><h1>เข้าสู่ระบบด้วย Google ไม่สำเร็จ</h1>
+<p>กรุณาเริ่มจากหน้าเข้าสู่ระบบอีกครั้ง หรือติดต่อผู้ดูแลระบบ</p>
+<a class="btn-primary" href="{% url 'accounts:login' %}">กลับหน้าเข้าสู่ระบบ</a></section>
+{% endblock %}

@@ -388,7 +388,7 @@ def test_share_qr_and_canonical_url(settings, rf, lodging_data):
     assert hold.upper.date() == date(2026, 9, 6)
 
 
-def test_lodging_index_and_supervisor_isolation(client, lodging_data):
+def test_lodging_index_and_supervisor_isolation(client, lodging_data, enrolled_student):
     cohort = make_cohort(lodging_data, "owned")
     other_cohort = CourseLodgingCohort(
         title="other",
@@ -403,7 +403,9 @@ def test_lodging_index_and_supervisor_isolation(client, lodging_data):
     other_cohort.save()
     public = client.get(reverse("bookings:lodging_index"))
     assert public.status_code == 302
-    assert public.url == reverse("bookings:lodging_portal", args=[cohort.slug])  # A5: single open cohort skips the list
+    assert public.url.startswith(reverse("accounts:login"))
+    enrolled_student(cohort)
+    assert client.get(reverse("bookings:lodging_index")).url == reverse("bookings:lodging_portal", args=[cohort.slug])
     client.force_login(lodging_data["user"])
     assert client.get(reverse("bookings:lodging_cohort_detail", args=[cohort.slug])).status_code == 200
     assert client.get(reverse("bookings:lodging_cohort_detail", args=[other_cohort.slug])).status_code == 403

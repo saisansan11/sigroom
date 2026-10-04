@@ -129,7 +129,7 @@ def test_unknown_public_status_token_is_not_discoverable(client):
     assert response.status_code == 404
 
 
-def test_course_booking_window_blocks_before_open_even_on_direct_post(client, lodging_room):
+def test_course_booking_window_blocks_before_open_even_on_direct_post(client, lodging_room, enrolled_student):
     now = timezone.now()
     cohort = _cohort(
         lodging_room,
@@ -138,6 +138,7 @@ def test_course_booking_window_blocks_before_open_even_on_direct_post(client, lo
         close_at=now + timedelta(days=2),
     )
     assert cohort_self_booking_status(cohort, now)[0] == "not_open"
+    enrolled_student(cohort)
     portal = client.get(reverse("bookings:lodging_portal", args=[cohort.slug]))
     assert portal.status_code == 200
     assert "ยังไม่เปิดรับจอง" in portal.content.decode("utf-8")

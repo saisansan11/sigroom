@@ -133,9 +133,10 @@ def test_authenticated_role_actions_priority_ordering(client, v6_a_setup, monkey
     assert reverse("usage:list") in content2
 
 
-def test_lodging_portal_sorts_available_rooms_before_full_rooms(client, v6_a_setup):
+def test_lodging_portal_sorts_available_rooms_before_full_rooms(client, v6_a_setup, enrolled_student):
     """ใน lodging portal ห้องที่ยังมีเตียงว่างต้องถูกจัดให้อยู่ก่อนห้องที่เต็มแล้ว"""
     _, _, cohort, room1, room2 = v6_a_setup
+    enrolled_student(cohort)
 
     # จอง room1 ให้เต็ม (beds_per_room = 1)
     CourseStudentLodging.objects.create(
@@ -166,9 +167,10 @@ def test_lodging_portal_sorts_available_rooms_before_full_rooms(client, v6_a_set
     assert rooms_data[1]["is_full"]
 
 
-def test_lodging_portal_renders_jump_button_and_input_attributes(client, v6_a_setup):
+def test_lodging_portal_renders_jump_button_and_input_attributes(client, v6_a_setup, enrolled_student):
     """หน้า student portal ต้องมีปุ่มลอยไปห้องว่าง, inputmode="tel" และ autofocus"""
     _, _, cohort, _, _ = v6_a_setup
+    enrolled_student(cohort)
 
     resp = client.get(reverse("bookings:lodging_portal", args=[cohort.slug]))
     assert resp.status_code == 200
@@ -184,13 +186,14 @@ def test_lodging_portal_renders_jump_button_and_input_attributes(client, v6_a_se
     assert "autofocus" in content
 
 
-def test_lodging_booking_error_reopens_modal_with_preserved_data(client, v6_a_setup):
+def test_lodging_booking_error_reopens_modal_with_preserved_data(client, v6_a_setup, enrolled_student):
     """เมื่อเกิด error ตอนจอง (เบอร์ซ้ำ / เตียงถูกจองตัดหน้า)
     ต้องกลับมาเปิด modal เดิมอัตโนมัติ พร้อมค่าที่กรอกและข้อความ error ใน modal
     """
     _, _, cohort, room1, room2 = v6_a_setup
 
     # จองเตียงแรกสำเร็จ
+    enrolled_student(cohort, name="สมชาย รักชาติ")
     data_1 = {
         "room_id": str(room1.id),
         "bed_number": "1",
@@ -205,6 +208,7 @@ def test_lodging_booking_error_reopens_modal_with_preserved_data(client, v6_a_se
     assert CourseStudentLodging.objects.filter(phone="0891234567").exists()
 
     # กรณีที่ 1: พยายามจองเตียงเดิมซ้ำ (เตียงถูกแย่ง)
+    enrolled_student(cohort, name="มานะ อดทน")
     data_conflict_bed = {
         "room_id": str(room1.id),
         "bed_number": "1",
@@ -231,6 +235,7 @@ def test_lodging_booking_error_reopens_modal_with_preserved_data(client, v6_a_se
     assert "modal.showModal()" in content_conflict
 
     # กรณีที่ 2: พยายามใช้เบอร์โทรเดิมซ้ำ
+    enrolled_student(cohort, name="สมชาย รักชาติ (ซ้ำ)")
     data_duplicate_phone = {
         "room_id": str(room2.id),
         "bed_number": "1",
