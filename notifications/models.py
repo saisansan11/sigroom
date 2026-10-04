@@ -10,6 +10,13 @@ class Notification(models.Model):
         related_name="notifications",
     )
     text = models.CharField("ข้อความ", max_length=300)
+    kind = models.CharField(
+        "ชนิดการแจ้งเตือน",
+        max_length=30,
+        blank=True,
+        default="",
+        db_default="",
+    )
     url = models.CharField("ลิงก์", max_length=200, blank=True)
     booking = models.ForeignKey(
         "bookings.Booking",
@@ -27,6 +34,13 @@ class Notification(models.Model):
         verbose_name_plural = "การแจ้งเตือน"
         ordering = ["-created_at", "-pk"]
         indexes = [models.Index(fields=["user", "read_at"])]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["booking", "user", "kind"],
+                condition=~models.Q(kind=""),
+                name="uniq_notification_booking_user_kind",
+            ),
+        ]
 
     def __str__(self):
         return f"{self.user}: {self.text}"

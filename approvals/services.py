@@ -438,6 +438,7 @@ def run_scheduled_jobs(now: datetime | None = None) -> dict[str, int]:
     from bookings.series_services import series_ref
     from notifications.services import booking_summary, notify
     from usage.services import mark_finished_bookings_used
+    from notifications.reminders import send_teaching_reminders
 
     now = now or timezone.now()
     counts = {
@@ -586,4 +587,7 @@ def run_scheduled_jobs(now: datetime | None = None) -> dict[str, int]:
             )
             counts["deemed_acknowledged"] += 1
     counts["usage_used"] = mark_finished_bookings_used(now)
-    return counts
+    reminder_counts = send_teaching_reminders(now)
+    # คืน dict เดียวกับ callback เพื่อให้ email_failed หลัง outer commit ยังสะท้อนผลจริง
+    reminder_counts.update(counts)
+    return reminder_counts
