@@ -83,6 +83,8 @@ def current_service(request):
         "series_detail": (BookingSeries, "room__room_category"),
         "series_cancel_remaining": (BookingSeries, "room__room_category"),
         "booking_detail": (Booking, "room__room_category"),
+        "booking_pass": (Booking, "room__room_category"),
+        "booking_pass_qr_svg": (Booking, "room__room_category"),
         "booking_ics": (Booking, "room__room_category"),
         "booking_edit": (Booking, "room__room_category"),
         "booking_amend": (Booking, "room__room_category"),

@@ -102,6 +102,7 @@
             {% endfor %}
           </td>
           <td class="row-actions booking-cell-actions">
+            <a role="button" class="compact-button secondary" href="{% url 'bookings:booking_pass' booking.id %}" aria-label="ดูบัตรจอง {{ booking.title }}">ดูบัตรจอง</a>
             <a role="button" class="compact-button secondary" href="{% url 'bookings:booking_detail' booking.id %}" aria-label="ดูรายละเอียด {{ booking.title }}">ดูรายละเอียด</a>
             {% if booking.request_status == 'approved' %}
               <a class="rebook-link" href="{% url 'bookings:book_form' booking.room.code %}?rebook={{ booking.id }}" aria-label="จองแบบเดิมอีกครั้ง {{ booking.title }}">จองแบบเดิมอีกครั้ง ↻</a>

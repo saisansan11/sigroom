@@ -63,6 +63,7 @@ ROUTE_EXPECTATIONS = {
     "series_preview": "classroom", "series_create": "classroom",
     "series_detail": "classroom", "series_cancel_remaining": "classroom", "my_bookings": None,
     "booking_detail": "classroom", "booking_ics": "classroom", "booking_edit": "classroom",
+    "booking_pass": "classroom", "booking_pass_qr_svg": "classroom",
     "booking_amend": "classroom", "booking_preempt": "classroom", "booking_cancel": "classroom",
     "booking_submit": "classroom", "booking_delete_draft": "classroom",
     "amendment_withdraw": "classroom", "preemption_acknowledge": "classroom",

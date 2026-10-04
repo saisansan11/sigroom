@@ -1,4 +1,4 @@
-/* SIGROOM B6 — บัตรเข้าพักตลับเทป 3D (scoped to the student pass page) */
+/* SIGROOM — บัตรตลับเทป 3D ร่วมทุกบริการ (scoped to cassette-pass-page) */
 .cassette-pass-page .cassette-pass-shell {
   width: min(100%, 32rem);
   margin-inline: auto;
@@ -193,6 +193,11 @@ body.lodging-booking-ios27.cassette-pass-page .cassette-face--back {
   height: 7.6cqw;
   background: linear-gradient(to bottom, #a3241c 0 33.33%, #c98a1b 33.33% 66.66%, #1f4e79 66.66%);
 }
+.cassette-pass-page [data-booking-pass] .cassette-stripes { background: var(--pass-stripe); }
+.cassette-pass-page [data-booking-pass][data-service="lodging"] { --pass-stripe: var(--tab-lodging); }
+.cassette-pass-page [data-booking-pass][data-service="online"] { --pass-stripe: var(--tab-online); }
+.cassette-pass-page [data-booking-pass][data-service="classroom"] { --pass-stripe: var(--tab-classroom); }
+.cassette-pass-page [data-booking-pass][data-service="meeting"] { --pass-stripe: var(--tab-meeting); }
 .cassette-pass-page .cassette-window {
   position: absolute;
   z-index: 2;

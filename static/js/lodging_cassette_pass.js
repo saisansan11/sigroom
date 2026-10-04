@@ -24,6 +24,10 @@
   var nightsTotal = Math.max(1, Number(card.dataset.nightsTotal) || 1);
   var nightsElapsed = Math.max(0, Math.min(nightsTotal, Number(card.dataset.nightsElapsed) || 0));
   var targetFraction = nightsElapsed / nightsTotal;
+  var progress = Number(card.dataset.progress);
+  if (card.dataset.progress !== undefined && card.dataset.progress.trim() !== "" && Number.isFinite(progress)) {
+    targetFraction = clamp(progress, 0, 1);
+  }
   var shownFraction = reducedMotion ? targetFraction : 0;
   var windElapsed = 0;
   var windFrom = shownFraction;
@@ -118,11 +122,11 @@
     card.setAttribute(
       "aria-label",
       flipped
-        ? "บัตรกำลังแสดงด้าน QR สำหรับรายงานตัว กดเพื่อพลิกกลับดูด้านหน้า"
-        : "บัตรกำลังแสดงด้านหน้า กดเพื่อพลิกดู QR สำหรับรายงานตัว"
+        ? card.dataset.backLabel || "บัตรกำลังแสดงด้าน QR สำหรับรายงานตัว กดเพื่อพลิกกลับดูด้านหน้า"
+        : card.dataset.frontLabel || "บัตรกำลังแสดงด้านหน้า กดเพื่อพลิกดู QR สำหรับรายงานตัว"
     );
     if (flipButton) {
-      flipButton.textContent = flipped ? "พลิกกลับด้านหน้า" : "พลิกดู QR เช็กอิน";
+      flipButton.textContent = flipped ? "พลิกกลับด้านหน้า" : card.dataset.flipLabel || "พลิกดู QR เช็กอิน";
     }
   }
 
@@ -222,6 +226,7 @@
   if (copyButton) {
     copyButton.addEventListener("click", function () {
       var url = copyButton.dataset.passUrl || window.location.href;
+      if (url.charAt(0) === "/") url = new URL(url, window.location.href).href;
       if (!navigator.clipboard || !navigator.clipboard.writeText) {
         if (copyStatus) copyStatus.textContent = "ไม่สามารถคัดลอกอัตโนมัติได้ กรุณาคัดลอก URL จากแถบเบราว์เซอร์";
         return;

@@ -1,0 +1,151 @@
+  <div
+    id="keycard"
+    class="keycard keycard--cassette"
+    role="button"
+    tabindex="0"
+    aria-pressed="false"
+    aria-label="{{ cassette.front_label }}"
+    data-front-label="{{ cassette.front_label }}"
+    data-back-label="{{ cassette.back_label }}"
+    data-flip-label="{{ cassette.flip_label }}"
+    data-service="{{ cassette.service }}"{% if cassette.is_booking %} data-booking-pass="true"{% endif %}
+    {% if cassette.is_booking %}data-progress="{{ cassette.progress }}"{% else %}data-nights-total="{{ cassette.nights_total }}"
+    data-nights-elapsed="{{ cassette.nights_elapsed }}"{% endif %}
+  >
+    <div class="cassette-stage">
+      <div class="cassette" aria-hidden="true">
+        <div class="cassette-side cassette-side--top"></div>
+        <div class="cassette-side cassette-side--bottom"></div>
+        <div class="cassette-side cassette-side--left"></div>
+        <div class="cassette-side cassette-side--right"></div>
+
+        <div class="keycard-face keycard-front cassette-face cassette-face--front">
+          <span class="cassette-screw cassette-screw--1"></span>
+          <span class="cassette-screw cassette-screw--2"></span>
+          <span class="cassette-screw cassette-screw--3"></span>
+          <span class="cassette-screw cassette-screw--4"></span>
+          <span class="cassette-screw cassette-screw--5"></span>
+
+          <div class="cassette-label">
+            <div class="cassette-label-head">
+              <span class="cassette-side-mark">A</span>
+              <strong>SIGROOM</strong>
+              <span>{{ cassette.header }}</span>
+            </div>
+            <div class="cassette-room-line">
+              <span class="cassette-room-code"><small>ห้อง</small>{{ cassette.room_code }}</span>
+              <span class="cassette-bed">{{ cassette.bed_label }}</span>
+            </div>
+            <div class="cassette-stripes" aria-hidden="true"></div>
+            <div class="cassette-window">
+              <svg class="cassette-tape-display" viewBox="0 0 220 60" aria-hidden="true" focusable="false">
+                <defs>
+                  <radialGradient id="cassetteTape" cx="45%" cy="40%" r="58%">
+                    <stop offset="0" stop-color="#73503a"></stop>
+                    <stop offset=".55" stop-color="#4a2f22"></stop>
+                    <stop offset="1" stop-color="#1f130d"></stop>
+                  </radialGradient>
+                  <linearGradient id="cassetteGlass" x1="0" y1="0" x2="1" y2="1">
+                    <stop offset="0" stop-color="#fff" stop-opacity=".18"></stop>
+                    <stop offset=".34" stop-color="#fff" stop-opacity="0"></stop>
+                    <stop offset=".72" stop-color="#fff" stop-opacity=".10"></stop>
+                    <stop offset="1" stop-color="#fff" stop-opacity="0"></stop>
+                  </linearGradient>
+                  <g id="packArt">
+                    <circle r="40" fill="url(#cassetteTape)" stroke="#160d09" stroke-width="1.2" vector-effect="non-scaling-stroke"></circle>
+                    <circle r="35" fill="none" stroke="#f3dcc4" stroke-opacity=".10" vector-effect="non-scaling-stroke"></circle>
+                    <circle r="31" fill="none" stroke="#f3dcc4" stroke-opacity=".08" vector-effect="non-scaling-stroke"></circle>
+                    <circle r="27" fill="none" stroke="#f3dcc4" stroke-opacity=".07" vector-effect="non-scaling-stroke"></circle>
+                    <circle r="23" fill="none" stroke="#f3dcc4" stroke-opacity=".07" vector-effect="non-scaling-stroke"></circle>
+                    <circle r="19" fill="none" stroke="#f3dcc4" stroke-opacity=".06" vector-effect="non-scaling-stroke"></circle>
+                    <circle r="15" fill="none" stroke="#f3dcc4" stroke-opacity=".06" vector-effect="non-scaling-stroke"></circle>
+                    <circle r="11" fill="none" stroke="#f3dcc4" stroke-opacity=".05" vector-effect="non-scaling-stroke"></circle>
+                    <path d="M-28 -24 A38 38 0 0 1 24 -28" fill="none" stroke="#fff" stroke-opacity=".08" stroke-width="2" vector-effect="non-scaling-stroke"></path>
+                  </g>
+                  <g id="hubArt">
+                    <circle r="12" fill="#ece6d6" stroke="#a99f8a" stroke-width="1.2"></circle>
+                    <circle r="8" fill="#211e1b"></circle>
+                    <circle r="3" fill="#ece6d6"></circle>
+                    <g stroke="#ece6d6" stroke-width="2" stroke-linecap="round">
+                      <path d="M0-8v3"></path><path d="M6.9-4l-2.6 1.5"></path><path d="M6.9 4L4.3 2.5"></path>
+                      <path d="M0 8V5"></path><path d="M-6.9 4l2.6-1.5"></path><path d="M-6.9-4l2.6 1.5"></path>
+                    </g>
+                  </g>
+                </defs>
+                <rect width="220" height="60" rx="3" fill="#211e1b"></rect>
+                <g transform="translate(62 30)">
+                  <g class="cassette-tape-pack" transform="scale({{ cassette.left_reel_scale }})"><use href="#packArt"></use></g>
+                  <g class="cassette-reel-hub"><use href="#hubArt"></use></g>
+                </g>
+                <g transform="translate(158 30)">
+                  <g class="cassette-tape-pack" transform="scale({{ cassette.right_reel_scale }})"><use href="#packArt"></use></g>
+                  <g class="cassette-reel-hub"><use href="#hubArt"></use></g>
+                </g>
+                <rect x="84" y="18" width="52" height="24" rx="2" fill="#15130f" stroke="#4d463f"></rect>
+                <text x="110" y="35.5" text-anchor="middle" font-size="9" fill="#efe8d6">{{ cassette.window_text }}</text>
+                <rect width="220" height="60" rx="3" fill="url(#cassetteGlass)"></rect>
+              </svg>
+            </div>
+            <p class="cassette-name">{{ cassette.owner }}</p>
+            <p class="cassette-meta">{{ cassette.title }} · {{ cassette.date_line }}</p>
+            <div class="stamp cassette-stamp{% if cassette.status_key %} status-{{ cassette.status_key }}{% endif %}">{{ cassette.status_text }}</div>
+          </div>
+          <div class="cassette-lip" aria-hidden="true"><span></span><i></i><i></i><i></i><i></i><i></i></div>
+        </div>
+
+        <div class="keycard-face keycard-back cassette-face cassette-face--back">
+          <div class="cassette-qr-sticker">
+            {% if cassette.qr_image_url %}<img
+              class="keycard-qr cassette-qr"
+              src="{{ cassette.qr_image_url }}"
+              width="360"
+              height="360"
+              loading="eager"
+              decoding="async"
+              alt="{{ cassette.qr_alt }}"
+            >{% else %}<p>QR ยังไม่พร้อมใช้งาน</p>{% endif %}
+            <div class="cassette-back-info">
+              <span class="cassette-side-mark">B</span>
+              <strong>ห้อง {{ cassette.room_code }} · {{ cassette.bed_label }}</strong>
+              <span>{{ cassette.owner }}</span>
+              <small>{{ cassette.title }}</small>
+              <small>{{ cassette.date_line }}</small>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <p class="cassette-hint">ลากเพื่อเอียงดู · แตะเพื่อพลิกไปด้าน QR</p>
+
+{% if cassette.actions %}
+  <div class="keycard-actions-bar">
+    {% if cassette.qr_image_url %}
+      <button type="button" class="btn-primary" id="cassetteFlipBtn">{{ cassette.flip_label }}</button>
+      <button type="button" class="secondary" id="cassetteQrOpenBtn">ขยาย QR เต็มจอ</button>
+    {% endif %}
+    <button type="button" class="secondary" id="copyPassBtn" data-pass-url="{{ cassette.copy_url }}">คัดลอกลิงก์</button>
+    {% for action in cassette.actions %}
+      <a role="button" class="secondary" href="{{ action.url }}"{% if action.download %} download{% endif %}>{{ action.label }}</a>
+    {% endfor %}
+  </div>
+  <p id="cassetteCopyStatus" class="cassette-copy-status" role="status" aria-live="polite"></p>
+{% endif %}
+{% if cassette.qr_image_url %}
+  <noscript><p><a href="{{ cassette.qr_image_url }}">เปิด {{ cassette.qr_title }}</a> · อ่านข้อมูลบัตรทั้งหมดได้ด้านล่าง</p></noscript>
+<dialog id="cassetteQrDialog" class="cassette-qr-dialog" aria-labelledby="cassette-qr-dialog-title">
+  <div class="cassette-qr-dialog-inner">
+    <h2 id="cassette-qr-dialog-title">{{ cassette.qr_title }}</h2>
+    <img
+      src="{{ cassette.qr_image_url }}"
+      alt="{{ cassette.qr_dialog_alt|default:cassette.qr_alt }}"
+      width="720"
+      height="720"
+      loading="eager"
+      decoding="async"
+    >
+    <p><strong>ห้อง {{ cassette.room_code }} · {{ cassette.bed_label }}</strong><br>{{ cassette.owner }}</p>
+    <button type="button" class="btn-primary" id="cassetteQrCloseBtn">ปิด</button>
+  </div>
+</dialog>
+{% else %}<p class="notice info">QR ยังไม่พร้อมใช้งาน กรุณาติดต่อเจ้าหน้าที่เพื่อตั้ง URL กลางของระบบ</p>{% endif %}

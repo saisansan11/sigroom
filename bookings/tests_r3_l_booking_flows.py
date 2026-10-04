@@ -52,6 +52,9 @@ def test_student_lodging_portal_has_compact_summary_and_preserves_bed_flow():
 
 def test_keycard_flip_is_explicitly_preserved_in_r3_l():
     template = _read("templates/lodging/student_pass.html")
+    include = '{% include "partials/cassette_pass.html" %}'
+    assert template.count(include) == 1
+    template = template.replace(include, _read("templates/partials/cassette_pass.html"))
     cassette_js = _read("static/js/lodging_cassette_pass.js")
 
     assert template.count('id="keycard"') == 1
