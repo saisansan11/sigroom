@@ -157,6 +157,8 @@ class Booking(models.Model):
     unit = models.ForeignKey("accounts.Unit", verbose_name="หน่วยงานผู้ขอ", on_delete=models.PROTECT, related_name="bookings")
     responsible_name = models.CharField("ผู้รับผิดชอบ (ชื่อ-ตำแหน่ง)", max_length=200)
     responsible_phone = models.CharField("โทรศัพท์ผู้รับผิดชอบ", max_length=30)
+    lodging_rate = models.ForeignKey("bookings.LodgingRate", verbose_name="อัตราค่าที่พักที่เจ้าหน้าที่เลือก",
+        null=True, blank=True, on_delete=models.PROTECT, related_name="guest_bookings")
 
     course_run = models.ForeignKey(
         CourseRun,
@@ -469,4 +471,4 @@ class SeriesSkip(models.Model):
         return f"{self.series_id} {self.occur_date}: {self.reason}"
 
 
-from .lodging_models import CourseLodgingCohort, CourseStudentLodging
+from .lodging_models import CourseLodgingCohort, CourseStudentLodging, LodgingRate, LodgingMeterReading

@@ -10,6 +10,7 @@ from .online_teaching import (
     online_teaching_quick_book,
 )
 from .lodging_operations import lodging_workspace, general_request, general_request_rooms
+from . import lodging_dashboard_views
 
 app_name = "bookings"
 
@@ -57,6 +58,9 @@ urlpatterns = [
     path("lodging/staff/<slug:service>/", lodging_views.service_staff_entry, name="service_staff_entry"),
     path("lodging/manage/", lodging_views.lodging_manage, name="lodging_manage"),
     path("lodging/workspace/", lodging_workspace, name="lodging_workspace"),
+    path("lodging/dashboard/", lodging_dashboard_views.dashboard, name="lodging_dashboard"),
+    path("lodging/dashboard/export/", lodging_dashboard_views.export_csv, name="lodging_dashboard_export"),
+    path("lodging/dashboard/rooms/<int:room_id>/", lodging_dashboard_views.room_panel, name="lodging_dashboard_room"),
     path("lodging/request/", general_request, name="lodging_general_request"),
     path("lodging/request/rooms/", general_request_rooms, name="lodging_general_request_rooms"),
     path("lodging/request/status/<uuid:token>/", lodging_views.lodging_general_request_status, name="lodging_general_request_status"),

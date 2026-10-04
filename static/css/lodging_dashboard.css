@@ -1,0 +1,22 @@
+.dashboard-links { display: flex; flex-wrap: wrap; gap: .6rem 1.25rem; margin-block: 1rem; }
+.dashboard-links a, .dashboard-back { display: inline-flex; min-height: 44px; align-items: center; }
+.dashboard-filters { display: flex; flex-wrap: wrap; align-items: end; gap: 1rem; margin-block: 1.5rem; }
+.dashboard-filters label { flex: 1 1 12rem; margin: 0; }
+.dashboard-filters button { min-height: 44px; margin-bottom: 0; }
+.dashboard-layout { display: grid; grid-template-columns: minmax(0, 1fr) minmax(19rem, .4fr); gap: 1.5rem; align-items: start; }
+.dashboard-summary { display: flex; gap: .75rem 1.2rem; flex-wrap: wrap; padding-block: 1rem; border-block: 1px solid var(--line); }
+.dashboard-rooms { display: grid; grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr)); gap: .8rem; }
+.dashboard-room { display: grid; gap: .3rem; min-height: 44px; padding: 1rem; border: 1px solid var(--line); border-inline-start: 5px solid var(--green); border-radius: .4rem; background: var(--paper-raised); color: var(--ink); text-decoration: none; overflow-wrap: anywhere; }
+.dashboard-room.status-full { border-inline-start-color: var(--red); }
+.dashboard-room.status-occupied { border-inline-start-color: var(--amber); }
+.dashboard-room strong { font-size: 1.25rem; }
+.dashboard-dots { letter-spacing: .15rem; overflow-wrap: anywhere; }
+.dashboard-room:focus-visible { outline: 3px solid var(--cyan); outline-offset: 3px; }
+#lodging-room-panel { min-width: 0; padding: 1rem; border: 1px solid var(--line); border-radius: .4rem; position: sticky; top: 1rem; max-height: calc(100vh - 2rem); overflow-y: auto; }
+.dashboard-room-detail, .dashboard-occupant { min-width: 0; overflow-wrap: anywhere; }
+.dashboard-occupant { padding-block: 1rem; border-block-end: 1px solid var(--line); }
+.dashboard-room-detail input, .dashboard-room-detail select { min-height: 44px; max-width: 100%; }
+.dashboard-room-detail button { min-height: 44px; }
+.dashboard-room-page { max-width: 45rem; margin-inline: auto; }
+@media (max-width: 900px) { .dashboard-layout { grid-template-columns: minmax(0, 1fr); } #lodging-room-panel { position: static; max-height: none; overflow-y: visible; } }
+@media (max-width: 430px) { .dashboard-rooms { grid-template-columns: repeat(2, minmax(0, 1fr)); } .dashboard-room { padding: .75rem; } .dashboard-filters { gap: .6rem; } }

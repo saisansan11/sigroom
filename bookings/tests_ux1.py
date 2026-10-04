@@ -202,15 +202,21 @@ def test_custodian_user_navigation_groups_usage(client, ux1_data):
 
 
 def test_lodging_manager_navigation_groups_lodging_management(client, ux1_data):
-    """Supervisor gets the shared lodging operations entry in the operational menu."""
+    """Supervisor gets the shared lodging operations entry pointing to dashboard, which preserves legacy links."""
     client.force_login(ux1_data["supervisor_user"])
     resp = client.get(reverse("bookings:calendar"))
     assert resp.status_code == 200
     header = _header_html(resp.content.decode())
 
     assert "งานปฏิบัติการ" in header
-    assert "จัดการที่พัก" in header
-    assert reverse("bookings:lodging_workspace") in header
+    assert "แดชบอร์ดที่พัก" in header
+    assert reverse("bookings:lodging_dashboard") in header
+
+    dashboard_resp = client.get(reverse("bookings:lodging_dashboard"))
+    assert dashboard_resp.status_code == 200
+    dashboard_html = dashboard_resp.content.decode()
+    assert reverse("bookings:lodging_workspace") in dashboard_html
+    assert reverse("bookings:lodging_manage") in dashboard_html
 
 
 def test_reports_link_is_secondary_in_operational_group(client, ux1_data):
