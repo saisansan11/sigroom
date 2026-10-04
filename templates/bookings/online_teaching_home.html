@@ -6,6 +6,7 @@
 {% block head %}
 <link rel="stylesheet" href="{% static 'css/online_teaching.css' %}">
 <link rel="stylesheet" href="{% static 'css/online_teaching_r3l.css' %}?v=3">
+{% if webpush_enabled %}<link rel="stylesheet" href="{% static 'css/web_push.css' %}">{% endif %}
 {% endblock %}
 {% block content %}
 <div class="online-teaching-shell">
@@ -25,6 +26,7 @@
       <a href="{% url 'bookings:lodging_about' %}">กลับหน้าเลือกบริการ</a>
     </section>
   {% else %}
+    {% include "includes/web_push_controls.html" %}
     <section class="online-account-line" aria-label="ข้อมูลผู้จอง">
       <span>สอนในนาม</span>
       <strong>{{ user.display_name }}</strong>
@@ -129,4 +131,4 @@
   {% endif %}
 </div>
 {% endblock %}
-{% block scripts %}<script src="{% static 'js/online_quick_selection.js' %}"></script>{% endblock %}
+{% block scripts %}<script src="{% static 'js/online_quick_selection.js' %}"></script>{% if webpush_enabled %}<script src="{% static 'js/web_push.js' %}"></script>{% endif %}{% endblock %}

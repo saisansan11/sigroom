@@ -1,0 +1,6 @@
+.web-push-panel { margin-block: 1rem; }
+.web-push-panel h2 { margin-block: 0 .35rem; }
+.web-push-panel form { margin-block: .65rem; }
+.web-push-panel button { min-height: 44px; }
+.web-push-note { font-size: .9rem; }
+.web-push-panel [hidden] { display: none; }

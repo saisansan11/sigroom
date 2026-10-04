@@ -7,6 +7,7 @@ from bookings.lodging_services import can_access_lodging_management
 from bookings.online_teaching import can_book_online_teaching
 from bookings.role_home import NAV_SERVICE_LABELS, SERVICE_LABELS, current_service, managed_services, service_booking_url
 
+from .push import push_enabled
 from .services import unread_count
 
 
@@ -43,7 +44,10 @@ def navigation_counts(request):
         (slug, SERVICE_LABELS[slug], reverse("bookings:service_staff_entry", args=[slug]))
         for slug in services
     ]
+    enabled = push_enabled()
     context.update({
+        "webpush_enabled": enabled,
+        "webpush_public_key": settings_public_key() if enabled else "",
         "nav_unread_count": getattr(request, "_nav_unread_count", None) if getattr(request, "_nav_unread_count", None) is not None else unread_count(request.user),
         "nav_can_access_approvals": can_access,
         "nav_pending_approval_count": len(pending_for(request.user)) if can_access else 0,
@@ -54,3 +58,9 @@ def navigation_counts(request):
         "nav_managed_services": managed_nav,
     })
     return context
+
+
+def settings_public_key():
+    from django.conf import settings
+
+    return settings.WEBPUSH_VAPID_PUBLIC_KEY

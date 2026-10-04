@@ -7,11 +7,11 @@ from django.urls import include, path
 from django.views.generic import TemplateView
 
 from audit.views import client_ip_diagnostics
+from notifications.push_views import service_worker
 
 admin.site.site_header = "SIGROOM — ผู้ดูแลระบบ"
 admin.site.site_title = "SIGROOM"
 admin.site.index_title = "ทะเบียนและการตั้งค่า"
-
 
 
 def favicon_redirect(request):
@@ -27,6 +27,7 @@ urlpatterns = [
         TemplateView.as_view(template_name="manifest.webmanifest", content_type="application/manifest+json"),
         name="webmanifest",
     ),
+    path("sw.js", service_worker, name="push_service_worker"),
     path("ops/client-ip/", client_ip_diagnostics, name="client_ip_diagnostics"),
     path("admin/", admin.site.urls),
     path("accounts/", include("accounts.urls")),
