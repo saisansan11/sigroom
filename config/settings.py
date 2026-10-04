@@ -22,6 +22,9 @@ load_dotenv(BASE_DIR / ".env")
 SITE_NAME = "SIGROOM"
 SITE_NAME_TH = "ระบบจองห้อง รร.ส.สส."
 PUBLIC_BASE_URL = os.environ.get("PUBLIC_BASE_URL", "").strip().rstrip("/")
+WEBPUSH_VAPID_PUBLIC_KEY = os.environ.get("WEBPUSH_VAPID_PUBLIC_KEY", "").strip()
+WEBPUSH_VAPID_PRIVATE_KEY = os.environ.get("WEBPUSH_VAPID_PRIVATE_KEY", "").strip()
+WEBPUSH_VAPID_SUBJECT = os.environ.get("WEBPUSH_VAPID_SUBJECT", "").strip()
 PUBLIC_LODGING_RATE_WINDOW_SECONDS = int(os.environ.get("PUBLIC_LODGING_RATE_WINDOW_SECONDS", "900"))
 PUBLIC_LODGING_RATE_PHONE_LIMIT = int(os.environ.get("PUBLIC_LODGING_RATE_PHONE_LIMIT", "3"))
 PUBLIC_LODGING_RATE_CLIENT_LIMIT = int(os.environ.get("PUBLIC_LODGING_RATE_CLIENT_LIMIT", "8"))

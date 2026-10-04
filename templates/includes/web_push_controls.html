@@ -1,0 +1,19 @@
+{% if webpush_enabled and user.is_authenticated %}
+<section class="detail-card web-push-panel" data-webpush-panel
+         data-public-key="{{ webpush_public_key }}" data-worker-url="{% url 'push_service_worker' %}"
+         data-status-url="{% url 'notifications:push_status' %}"
+         data-subscribe-url="{% url 'notifications:push_subscribe' %}"
+         data-unsubscribe-url="{% url 'notifications:push_unsubscribe' %}">
+  <h2>แจ้งเตือนบนเครื่องนี้</h2>
+  <p data-webpush-status role="status" aria-live="polite">กำลังตรวจสอบการรองรับของเบราว์เซอร์</p>
+  <form data-webpush-form>{% csrf_token %}
+    <button type="button" class="secondary" data-webpush-toggle disabled>เปิดแจ้งเตือนบนเครื่องนี้</button>
+  </form>
+  <p class="web-push-note">เครื่องที่ใช้ร่วมกันควรปิดแจ้งเตือนก่อนออกจากบัญชี</p>
+  <div data-webpush-install hidden>
+    <p>iPhone และ iPad: ติดตั้ง SIGROOM ลงหน้าจอโฮม แล้วเปิดจากไอคอนก่อนเปิดแจ้งเตือน</p>
+    {% include "includes/pwa_install_guide.html" %}
+  </div>
+  <noscript><p>ต้องเปิด JavaScript จึงเปิดแจ้งเตือนบนเครื่องนี้ได้ กระดิ่งในเว็บยังใช้งานได้ตามปกติ</p></noscript>
+</section>
+{% endif %}

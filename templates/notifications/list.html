@@ -1,11 +1,13 @@
 {% extends "base.html" %}
-{% load thaidate %}
+{% load static thaidate %}
 {% block title %}การแจ้งเตือน · SIGROOM{% endblock %}
+{% block head %}{% if webpush_enabled %}<link rel="stylesheet" href="{% static 'css/web_push.css' %}">{% endif %}{% endblock %}
 {% block content %}
 <div class="page-heading">
   <div><p class="eyebrow">รายการส่วนตัว</p><h1>การแจ้งเตือน</h1><p>แสดง 50 รายการล่าสุด</p></div>
   <form method="post" action="{% url 'notifications:read_all' %}">{% csrf_token %}<button class="secondary" type="submit">ทำเครื่องหมายอ่านทั้งหมด</button></form>
 </div>
+{% include "includes/web_push_controls.html" %}
 <div class="notification-list">
 {% for item in notifications %}
   <a class="notification-item {% if not item.read_at %}unread{% endif %}" href="{% url 'notifications:open' item.id %}">
@@ -14,3 +16,4 @@
 {% empty %}<div class="empty-state detail-card"><strong>ยังไม่มีการแจ้งเตือน</strong>เมื่อสถานะการจองเปลี่ยนหรือมีงานที่เกี่ยวข้อง รายการจะแสดงที่นี่</div>{% endfor %}
 </div>
 {% endblock %}
+{% block scripts %}{% if webpush_enabled %}<script src="{% static 'js/web_push.js' %}"></script>{% endif %}{% endblock %}
