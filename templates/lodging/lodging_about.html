@@ -3,6 +3,7 @@
 
 {% block html_theme %}light{% endblock %}
 {% block body_class %}lodging-about-ledger-r3g{% endblock %}
+{% block body_attrs %} data-ink="on"{% endblock %}
 
 {% block title %}SIGROOM · ที่พักและบริการห้อง โรงเรียนทหารสื่อสาร{% endblock %}
 
@@ -14,6 +15,7 @@
 <link rel="stylesheet" href="{% static 'css/lodging_about_r3g.css' %}?v=1">
 <link rel="stylesheet" href="{% static 'css/lodging_about_r3g2.css' %}">
 <link rel="stylesheet" href="{% static 'css/gateway_90s.css' %}?v=1">
+<link rel="stylesheet" href="{% static 'css/ink_bleed.css' %}">
 {% endblock %}
 
 {% block content %}
@@ -572,4 +574,5 @@
 <script src="{% static 'js/lodging_about_hero3d.js' %}" defer></script>
 <script src="{% static 'js/lodging_about_explorer.js' %}?v=32" defer></script>
 <script src="{% static 'js/gateway_90s.js' %}?v=1" defer></script>
+<script src="{% static 'js/ink_bleed.js' %}" defer></script>
 {% endblock %}
