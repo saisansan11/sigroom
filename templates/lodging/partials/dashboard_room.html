@@ -1,0 +1,32 @@
+{% load thaidate %}
+<section class="dashboard-room-detail">
+{% if is_partial %}{% for message in messages %}<p class="notice {{ message.tags }}" role="status">{{ message }}</p>{% endfor %}{% endif %}
+<a class="dashboard-back" href="{% url 'bookings:lodging_dashboard' %}?day={{ day|date:'Y-m-d' }}&amp;floor={{ floor }}&amp;status={{ status }}">กลับแดชบอร์ด</a>
+<h2>ห้อง {{ row.room.code }}</h2><p>{{ row.room.get_lodging_cooling_display|default:'ยังไม่ระบุประเภท' }} · {{ row.status_label }} {{ row.occupied }}/{{ row.capacity }} คน</p>
+{% if row.billing_conflict %}<p class="notice warning">อัตราที่คิดต่อห้องต้องเลือกเป็นอัตราเดียวกันสำหรับผู้พักช่วงเดียวกัน ระบบยังไม่รวมค่าที่พักกลุ่มนี้</p>{% endif %}
+<p>ค่าที่พัก {{ row.accommodation|floatformat:2 }} + ค่าไฟรวมทั้งห้อง {{ row.electricity|floatformat:2 }} = <strong>{{ row.total|floatformat:2 }} บาท</strong>{% if row.estimated %} · ประมาณการ{% endif %}</p>
+{% if row.missing_rates %}<p class="notice warning">ยอดยังไม่รวม {{ row.missing_rates }} คนที่ไม่มีอัตราถูกต้อง เลือกประเภทผู้พักตามข้อมูลจริง</p>{% endif %}
+{% for occupant in row.occupants %}
+<article class="dashboard-occupant">
+<h3>{{ occupant.name }}</h3><p>{{ occupant.people }} คน · {{ occupant.check_in|thai_date }} ถึง {{ occupant.check_out|thai_date }} · {{ occupant.nights }} คืน</p>
+<p>{% if occupant.rate %}{{ occupant.rate }}{% else %}ยังไม่ได้เลือกอัตรา{% endif %}</p>
+{% if occupant.monthly_comparison %}<p>ราคารายเดือน {{ occupant.monthly_comparison|floatformat:2 }} บาท เพื่อเปรียบเทียบเท่านั้น ยังคิดราคาต่อวัน</p>{% endif %}
+{% if occupant.can_manage_rate %}
+<form method="post" action="{% url 'bookings:lodging_dashboard_room' row.room.pk %}?day={{ day|date:'Y-m-d' }}&amp;floor={{ floor }}&amp;status={{ status }}" hx-post="{% url 'bookings:lodging_dashboard_room' row.room.pk %}?day={{ day|date:'Y-m-d' }}&amp;floor={{ floor }}&amp;status={{ status }}" hx-target="#lodging-room-panel" hx-swap="innerHTML">
+{% csrf_token %}<input type="hidden" name="action" value="rate"><input type="hidden" name="kind" value="{{ occupant.kind }}"><input type="hidden" name="source_id" value="{{ occupant.source.pk }}">
+<label>อัตราตามประเภทผู้พัก <select name="rate_id" required><option value="">เลือกอัตรา</option>{% for rate in rates %}<option value="{{ rate.pk }}"{% if rate.pk == occupant.rate.pk %} selected{% endif %}>{{ rate }}</option>{% endfor %}</select></label>
+<button type="submit">บันทึกอัตรา</button></form>
+{% endif %}
+</article>
+{% empty %}<p>ไม่มีผู้พักคืนนี้</p>{% endfor %}
+{% if row.cooling == 'air' %}
+<h3>มิเตอร์ไฟรวมทั้งห้อง</h3><p>ไม่แบ่งค่าไฟรายคน ราคาต่อหน่วยต้องระบุจากข้อมูลจริง ยอดยังเป็นประมาณการจนมีเลขมิเตอร์ออก</p>
+{% if meter_form %}
+<form method="post" action="{% url 'bookings:lodging_dashboard_room' row.room.pk %}?day={{ day|date:'Y-m-d' }}&amp;floor={{ floor }}&amp;status={{ status }}" hx-post="{% url 'bookings:lodging_dashboard_room' row.room.pk %}?day={{ day|date:'Y-m-d' }}&amp;floor={{ floor }}&amp;status={{ status }}" hx-target="#lodging-room-panel" hx-swap="innerHTML">
+{% csrf_token %}<input type="hidden" name="action" value="meter">
+{% if meter_form.errors %}<div class="notice error" role="alert">{{ meter_form.non_field_errors }}{% for field in meter_form %}{{ field.errors }}{% endfor %}</div>{% endif %}
+{{ meter_form.as_p }}<button type="submit">บันทึกมิเตอร์</button></form>
+{% else %}<p>ยังไม่มีช่วงเข้าพักให้บันทึกมิเตอร์</p>{% endif %}
+{% elif row.cooling == 'fan' %}<p>ห้องพัดลมไม่มีการบันทึกมิเตอร์ไฟในหน้านี้</p>
+{% else %}<p>กรุณาตั้งประเภทห้องพักในทะเบียนก่อนเลือกอัตราหรือบันทึกมิเตอร์</p>{% endif %}
+</section>

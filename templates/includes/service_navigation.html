@@ -23,7 +23,7 @@
                 <li><a{% if request.resolver_match.namespace == 'usage' %} aria-current="page"{% endif %} href="{% url 'usage:list' %}">การใช้งานห้อง</a></li>
               {% endif %}
               {% if nav_can_manage_lodging %}
-                <li><a{% if nav_service == 'lodging' %} aria-current="page"{% endif %} href="{% url 'bookings:lodging_workspace' %}">จัดการที่พัก</a></li>
+                <li><a{% if nav_service == 'lodging' %} aria-current="page"{% endif %} href="{% url 'bookings:lodging_dashboard' %}">แดชบอร์ดที่พัก</a></li>
               {% endif %}
               {% if nav_can_access_reports %}
                 <li class="ops-divider" role="separator"></li>

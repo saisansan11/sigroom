@@ -1,0 +1,4 @@
+{% extends "base.html" %}{% load static %}
+{% block title %}ห้อง {{ row.room.code }} · แดชบอร์ดที่พัก{% endblock %}
+{% block head %}<link rel="stylesheet" href="{% static 'css/lodging_dashboard.css' %}">{% endblock %}
+{% block content %}<div class="dashboard-room-page">{% include 'lodging/partials/dashboard_room.html' %}</div>{% endblock %}

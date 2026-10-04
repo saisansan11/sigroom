@@ -72,7 +72,7 @@ class ResourceAdmin(admin.ModelAdmin):
     fieldsets = (
         (None, {"fields": (("resource_type", "code"), "name", "status")}),
         ("ที่ตั้ง", {"fields": (("building", "floor"), "location_note")}),
-        ("คุณลักษณะห้อง", {"fields": ("room_category", "capacity", "fixed_equipment", "layouts")}),
+        ("คุณลักษณะห้อง", {"fields": ("room_category", "lodging_cooling", "capacity", "fixed_equipment", "layouts")}),
         ("ผู้รับผิดชอบ", {"fields": ("owner_unit", "custodians")}),
     )
 

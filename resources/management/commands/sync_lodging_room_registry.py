@@ -153,6 +153,7 @@ class Command(BaseCommand):
             for spec in create_specs:
                 room = Resource.objects.create(
                     code=spec.preferred_code,
+                    lodging_cooling=spec.cooling,
                     name=spec.name,
                     resource_type=Resource.Type.ROOM,
                     room_category=Resource.Category.LODGING,

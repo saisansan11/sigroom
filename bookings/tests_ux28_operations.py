@@ -106,12 +106,20 @@ def test_public_entry_routes(client):
     assert f'href="{reverse("bookings:lodging_index")}"' in start_html
     assert "ข้าราชการทหาร" in start_html
 
-def test_operations_nav_uses_workspace_on_desktop_and_mobile(client, data):
+def test_operations_nav_uses_dashboard_on_desktop_and_mobile(client, data):
     staff, _, _ = data
     staff.is_superuser = True
     staff.save(update_fields=["is_superuser"])
     client.force_login(staff)
     response = client.get(reverse("bookings:calendar"))
     assert response.status_code == 200
+    dashboard_url = reverse("bookings:lodging_dashboard")
+    assert response.content.decode().count(f'href="{dashboard_url}"') == 2
+
+    dashboard_response = client.get(dashboard_url)
+    assert dashboard_response.status_code == 200
+    dashboard_html = dashboard_response.content.decode()
     workspace_url = reverse("bookings:lodging_workspace")
-    assert response.content.decode().count(f'href="{workspace_url}"') == 2
+    manage_url = reverse("bookings:lodging_manage")
+    assert f'href="{workspace_url}"' in dashboard_html
+    assert f'href="{manage_url}"' in dashboard_html

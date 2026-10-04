@@ -74,6 +74,7 @@ ROUTE_EXPECTATIONS = {
     "lodging_cohort_detail": "lodging", "lodging_cohort_edit": "lodging", "lodging_cohort_export_csv": "lodging",
     "lodging_cohort_qr_svg": "lodging", "lodging_portal": "lodging", "lodging_book_bed": "lodging",
     "lodging_reservation_manage": "lodging", "lodging_reservation_cancel": "lodging",
+    "lodging_dashboard": "lodging", "lodging_dashboard_export": "lodging", "lodging_dashboard_room": "lodging",
     "lodging_pass": "lodging", "lodging_checkin": "lodging", "lodging_checkin_qr_svg": "lodging",
 }
 
@@ -89,7 +90,7 @@ def test_service_for_every_booking_url_name(route_name, shell_data):
         ident = shell_data["amendment"].pk
     elif route_name == "preemption_acknowledge":
         ident = shell_data["preemption"].pk
-    values = {"id": ident, "code": shell_data["rooms"]["classroom"].code, "number": 401, "service": "lodging", "slug": "shell", "token": uuid4(), "student_id": uuid4()}
+    values = {"id": ident, "room_id": shell_data["rooms"]["lodging"].pk, "code": shell_data["rooms"]["classroom"].code, "number": 401, "service": "lodging", "slug": "shell", "token": uuid4(), "student_id": uuid4()}
     path = reverse(f"bookings:{route_name}", kwargs={key: values[key] for key in route.pattern.converters})
     request = RequestFactory().get(path, HTTP_X_SIGROOM_SERVICE="meeting")
     request.resolver_match = resolve(path)

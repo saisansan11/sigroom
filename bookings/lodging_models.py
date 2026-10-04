@@ -1,7 +1,7 @@
 import uuid
 from django.conf import settings
 from django.core.exceptions import ValidationError
-from django.db import models
+from django.db import models, transaction
 from django.urls import reverse
 from resources.models import Resource
 
@@ -139,6 +139,8 @@ class CourseStudentLodging(models.Model):
     origin_unit = models.CharField("หน่วยต้นสังกัด", max_length=150)
     phone = models.CharField("เบอร์โทรศัพท์", max_length=30)
     note = models.CharField("หมายเหตุเพิ่มเติม", max_length=200, blank=True)
+    lodging_rate = models.ForeignKey("bookings.LodgingRate", verbose_name="อัตราค่าที่พักที่เจ้าหน้าที่เลือก",
+        null=True, blank=True, on_delete=models.PROTECT, related_name="students")
     booked_at = models.DateTimeField("เวลาที่จอง", auto_now_add=True)
     checked_in_at = models.DateTimeField("เวลารายงานตัว", null=True, blank=True)
     checked_in_by = models.ForeignKey(
@@ -342,6 +344,136 @@ class PublicLodgingAccess(models.Model):
 
     def __str__(self):
         return f"{self.booking_id} / {self.pk}"
+
+
+class LodgingRate(models.Model):
+    class Basis(models.TextChoices):
+        PERSON = "person", "ต่อคน"
+        ROOM = "room", "ต่อห้อง"
+
+    category = models.CharField("ประเภทผู้พัก", max_length=100)
+    cooling = models.CharField("แอร์/พัดลม", max_length=8, choices=Resource.Cooling.choices)
+    daily_price = models.DecimalField("ราคาต่อวัน", max_digits=10, decimal_places=2)
+    monthly_price = models.DecimalField("ราคาต่อเดือน (แสดงเพื่อเปรียบเทียบ)", max_digits=10, decimal_places=2)
+    effective_from = models.DateField("มีผลตั้งแต่")
+    basis = models.CharField("หน่วยคิดเงิน", max_length=8, choices=Basis.choices, default=Basis.PERSON)
+
+    class Meta:
+        verbose_name = "อัตราค่าที่พัก"
+        verbose_name_plural = "อัตราค่าที่พัก"
+        ordering = ["category", "cooling", "-effective_from"]
+        constraints = [
+            models.UniqueConstraint(fields=["category", "cooling", "effective_from"], name="unique_lodging_rate_date"),
+            models.CheckConstraint(condition=models.Q(daily_price__gte=0, monthly_price__gte=0), name="nonnegative_lodging_rate"),
+        ]
+
+    def clean(self):
+        super().clean()
+        if self.daily_price is not None and self.daily_price < 0 or self.monthly_price is not None and self.monthly_price < 0:
+            raise ValidationError("ราคาค่าที่พักต้องไม่ติดลบ")
+
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        return super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"{self.category} · {self.get_cooling_display()} · {self.daily_price} บาท/{self.get_basis_display()}"
+
+
+class LodgingMeterReading(models.Model):
+    room = models.ForeignKey(Resource, verbose_name="ห้องแอร์", on_delete=models.PROTECT, related_name="lodging_meters")
+    check_in_date = models.DateField("วันเข้าพัก")
+    check_out_date = models.DateField("วันออก")
+    meter_in = models.DecimalField("เลขมิเตอร์เข้า", max_digits=12, decimal_places=3)
+    meter_out = models.DecimalField("เลขมิเตอร์ออก", max_digits=12, decimal_places=3, null=True, blank=True)
+    unit_price = models.DecimalField("ราคาค่าไฟต่อหน่วย", max_digits=10, decimal_places=4, null=True, blank=True)
+    recorded_by = models.ForeignKey(settings.AUTH_USER_MODEL, verbose_name="ผู้บันทึก", on_delete=models.PROTECT)
+    recorded_at = models.DateTimeField("เวลาบันทึกล่าสุด", auto_now=True)
+
+    class Meta:
+        verbose_name = "มิเตอร์ไฟห้องพัก"
+        verbose_name_plural = "มิเตอร์ไฟห้องพัก"
+        constraints = [
+            models.UniqueConstraint(fields=["room", "check_in_date", "check_out_date"], name="unique_room_stay_meter"),
+            models.CheckConstraint(condition=models.Q(check_out_date__gte=models.F("check_in_date")), name="meter_stay_dates_valid"),
+            models.CheckConstraint(condition=models.Q(meter_in__gte=0) & (models.Q(meter_out__isnull=True) | models.Q(meter_out__gte=models.F("meter_in"))), name="meter_values_valid"),
+            models.CheckConstraint(condition=models.Q(unit_price__isnull=True) | models.Q(unit_price__gte=0), name="meter_price_nonnegative"),
+        ]
+
+    def clean(self):
+        super().clean()
+        errors = {}
+        if self.pk:
+            original_recorded_by_id = (
+                type(self).objects.filter(pk=self.pk)
+                .values_list("recorded_by_id", flat=True)
+                .first()
+            )
+            if original_recorded_by_id and self.recorded_by_id != original_recorded_by_id:
+                errors["recorded_by"] = "ไม่อนุญาตให้แก้ไขผู้บันทึกเดิม"
+        if self.room_id and (self.room.room_category != Resource.Category.LODGING or self.room.lodging_cooling != Resource.Cooling.AIR):
+            errors["room"] = "บันทึกมิเตอร์ได้เฉพาะห้องพักประเภทแอร์"
+        if self.check_in_date and self.check_out_date and self.check_out_date < self.check_in_date:
+            errors["check_out_date"] = "วันออกต้องไม่อยู่ก่อนวันเข้าพัก"
+        if self.room_id and self.check_in_date and self.check_out_date:
+            from .models import Booking
+            if self.pk:
+                existing = (
+                    type(self).objects.filter(pk=self.pk)
+                    .values("room_id", "check_in_date", "check_out_date")
+                    .first()
+                )
+                if (
+                    existing
+                    and existing["room_id"] == self.room_id
+                    and existing["check_in_date"] == self.check_in_date
+                    and existing["check_out_date"] == self.check_out_date
+                ):
+                    cohort_stay = True
+                else:
+                    cohort_stay = CourseLodgingCohort.objects.filter(
+                        rooms=self.room,
+                        check_in_date=self.check_in_date,
+                        check_out_date=self.check_out_date,
+                    ).exists()
+            else:
+                cohort_stay = CourseLodgingCohort.objects.filter(
+                    rooms=self.room,
+                    check_in_date=self.check_in_date,
+                    check_out_date=self.check_out_date,
+                ).exists()
+
+            guest_stay = Booking.objects.filter(
+                room=self.room,
+                request_status="approved",
+                public_lodging_access__isnull=False,
+                start_at__date=self.check_in_date,
+                end_at__date=self.check_out_date,
+            ).exists()
+            if not cohort_stay and not guest_stay:
+                errors["check_in_date"] = "ช่วงมิเตอร์ต้องตรงกับช่วงเข้าพักที่จัดสรรหรืออนุมัติแล้วของห้องนี้"
+        if self.meter_in is not None and self.meter_in < 0:
+            errors["meter_in"] = "เลขมิเตอร์ต้องไม่ติดลบ"
+        if self.meter_out is not None:
+            if self.meter_in is not None and self.meter_out < self.meter_in:
+                errors["meter_out"] = "เลขมิเตอร์ออกต้องไม่น้อยกว่าเลขมิเตอร์เข้า"
+            if self.unit_price is None:
+                errors["unit_price"] = "กรุณากรอกราคาค่าไฟต่อหน่วยก่อนสรุปยอด"
+        if self.unit_price is not None and self.unit_price < 0:
+            errors["unit_price"] = "ราคาค่าไฟต่อหน่วยต้องไม่ติดลบ"
+        if errors:
+            raise ValidationError(errors)
+
+    @transaction.atomic
+    def save(self, *args, **kwargs):
+        from audit.context import current_actor
+        from audit.services import audit, model_snapshot
+        previous = type(self).objects.filter(pk=self.pk).first() if self.pk else None
+        self.full_clean()
+        result = super().save(*args, **kwargs)
+        audit(current_actor() or self.recorded_by, "bookings.lodgingmeterreading", self.pk, "lodging_meter_saved",
+              before=model_snapshot(previous) if previous else None, after=model_snapshot(self))
+        return result
 
 
 class PublicLodgingThrottle(models.Model):

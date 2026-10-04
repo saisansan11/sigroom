@@ -1,0 +1,23 @@
+{% extends "base.html" %}{% load static thaidate %}
+{% block title %}แดชบอร์ดห้องพัก · SIGROOM{% endblock %}
+{% block head %}<link rel="stylesheet" href="{% static 'css/lodging_dashboard.css' %}">{% endblock %}
+{% block content %}
+<header class="page-head"><div><p class="eyebrow">จัดการที่พัก</p><h1>แดชบอร์ดห้องพัก</h1><p>{{ day|thai_date }} · ยอดของช่วงเข้าพักทั้งหมดที่มีผู้พักในวันที่เลือก</p></div></header>
+<nav class="dashboard-links" aria-label="งานจัดการที่พัก">
+  <a href="{% url 'bookings:lodging_workspace' %}">จัดเตียงและคำขอเดิม</a>
+  <a href="{% url 'bookings:lodging_manage' %}">จัดการหลักสูตรเดิม</a>
+  <a href="{% url 'bookings:lodging_dashboard_export' %}?day={{ day|date:'Y-m-d' }}&amp;floor={{ floor }}&amp;status={{ status }}">ส่งออกยอดรายห้อง CSV</a>
+</nav>
+<form id="lodging-dashboard-filters" method="get" class="dashboard-filters">
+  <label>วันที่ <input type="date" name="day" value="{{ day|date:'Y-m-d' }}" min="2000-01-01" max="2199-12-31"></label>
+  <label>ชั้น <select name="floor"><option value="all">ทั้งหมด</option><option value="4"{% if floor == '4' %} selected{% endif %}>4</option><option value="5"{% if floor == '5' %} selected{% endif %}>5</option></select></label>
+  <label>แสดง <select name="status"><option value="all">ทั้งหมด</option><option value="empty"{% if status == 'empty' %} selected{% endif %}>ว่าง</option><option value="occupied"{% if status == 'occupied' %} selected{% endif %}>มีผู้พัก</option><option value="full"{% if status == 'full' %} selected{% endif %}>เต็ม</option></select></label>
+  <button type="submit">ดูข้อมูล</button>
+</form>
+<div class="dashboard-layout">
+  <section id="lodging-dashboard-grid" aria-label="ห้องพักตามชั้น" hx-get="{% url 'bookings:lodging_dashboard' %}" hx-trigger="every 30s [!document.hidden]" hx-include="#lodging-dashboard-filters" hx-target="this" hx-swap="innerHTML">
+    {% include 'lodging/partials/dashboard_grid.html' %}
+  </section>
+  <aside id="lodging-room-panel" aria-label="รายละเอียดห้อง"><p>เลือกห้องเพื่อดูผู้พัก อัตราค่าที่พัก และมิเตอร์ไฟ</p></aside>
+</div>
+{% endblock %}
