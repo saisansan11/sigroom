@@ -1,7 +1,11 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as DjangoUserAdmin
+from allauth.socialaccount.models import SocialApp
 
 from .models import Unit, User
+
+if admin.site.is_registered(SocialApp):
+    admin.site.unregister(SocialApp)
 
 
 @admin.register(Unit)
@@ -20,7 +24,7 @@ class UserAdmin(DjangoUserAdmin):
     fieldsets = (
         (None, {"fields": ("username", "password")}),
         ("ข้อมูลกำลังพล", {"fields": ("rank", "first_name", "last_name", "service_number", "position", "phone", "email", "unit")}),
-        ("สิทธิ์", {"fields": ("is_active", "is_staff", "is_superuser", "is_infosec_officer", "must_change_password", "groups", "user_permissions")}),
+        ("สิทธิ์", {"fields": ("is_active", "is_staff", "is_superuser", "is_infosec_officer", "must_change_password", "is_lodging_student", "groups", "user_permissions")}),
         ("วันที่", {"fields": ("last_login", "date_joined")}),
     )
     add_fieldsets = (

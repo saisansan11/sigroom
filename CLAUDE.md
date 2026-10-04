@@ -17,6 +17,7 @@
 - งานตามเวลา: management command `run_jobs` เรียกทุก 5 นาทีจาก Task Scheduler/cron
 - แจ้งเตือนมือถือ: Web Push ผ่าน `pywebpush` + VAPID (ผู้ใช้อนุมัติใน runbook PR-5; ปิดเมื่อไม่มี env)
 - ไม่ใช้ Docker ในเครื่องพัฒนา (ติดตั้ง PostgreSQL ตรง ๆ)
+- เข้าสู่ระบบด้วย Google: django-allauth (เฉพาะ provider Google, ไม่เปิดสมัครเอง) — ผู้ใช้อนุมัติ 3 ต.ค. 2569
 
 ## กติกาที่ห้ามละเมิด
 1. **การกันจองซ้อนต้องบังคับที่ฐานข้อมูล** ด้วย `ExclusionConstraint` บน `bookings.BookingResource`

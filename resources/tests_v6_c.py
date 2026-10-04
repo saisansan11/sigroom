@@ -258,8 +258,9 @@ def cohort_setup(room):
     return cohort, room, other_room
 
 
-def test_student_portal_renders_gallery_trigger_and_placeholder(client, cohort_setup):
+def test_student_portal_renders_gallery_trigger_and_placeholder(client, cohort_setup, enrolled_student):
     cohort, room, other_room = cohort_setup
+    enrolled_student(cohort)
     save_room_photo(resource=room, image=_make_upload(), is_cover=True)
 
     resp = client.get(reverse("bookings:lodging_portal", args=[cohort.slug]))
@@ -270,8 +271,9 @@ def test_student_portal_renders_gallery_trigger_and_placeholder(client, cohort_s
     assert "roomGalleryDialog" in content
 
 
-def test_student_portal_photo_prefetch_avoids_n_plus_one(client, cohort_setup):
+def test_student_portal_photo_prefetch_avoids_n_plus_one(client, cohort_setup, enrolled_student):
     cohort, room, other_room = cohort_setup
+    enrolled_student(cohort)
     save_room_photo(resource=room, image=_make_upload(), is_cover=True)
     save_room_photo(resource=other_room, image=_make_upload(name="other.png"), is_cover=True)
 

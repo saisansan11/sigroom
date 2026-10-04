@@ -44,6 +44,7 @@ from .lodging_services import (
     release_lodging_reservation,
     stay_progress,
     update_cohort_allocation,
+    require_student_cohort,
 )
 
 
@@ -204,6 +205,7 @@ def _build_portal_context(cohort):
     }
 
 
+@login_required
 def lodging_portal(request, slug):
     """หน้าจอเลือกห้องพักสำหรับนักเรียนหลักสูตร (ลิงก์รุ่น; policy ตรวจที่ service ซ้ำตอนจอง)."""
     cohort = get_object_or_404(
@@ -211,6 +213,7 @@ def lodging_portal(request, slug):
         slug=slug,
         allocation_status=CourseLodgingCohort.AllocationStatus.ALLOCATED,
     )
+    enrollment = require_student_cohort(request.user, cohort)
     booking_state, booking_message = cohort_self_booking_status(cohort)
     if booking_state != "open":
         response = render(
@@ -222,6 +225,15 @@ def lodging_portal(request, slug):
         response["X-Robots-Tag"] = "noindex, nofollow"
         return response
     context = _build_portal_context(cohort)
+    own_booking = cohort.students.filter(user=request.user).select_related("self_service_access").first()
+    if own_booking:
+        context["own_booking"] = own_booking
+    context["modal_data"] = {
+        "rank": enrollment.rank if enrollment else request.user.rank,
+        "full_name": request.user.get_full_name(),
+        "origin_unit": enrollment.origin_unit if enrollment else str(request.user.unit or ""),
+        "phone": enrollment.phone if enrollment else request.user.phone,
+    }
     selected_id = request.GET.get("room_id", "")
     selected = next((row for row in context["rooms_data"] if str(row["room"].pk) == selected_id), None)
     if selected_id and selected is None:
@@ -237,9 +249,13 @@ def lodging_portal(request, slug):
     if "lodging_modal_error" in request.session:
         context["modal_error"] = request.session.pop("lodging_modal_error")
         context["modal_data"] = request.session.pop("lodging_modal_data", {})
-    return render(request, "lodging/student_portal.html", context)
+    response = render(request, "lodging/student_portal.html", context)
+    response["Cache-Control"] = "private, no-store"
+    response["X-Robots-Tag"] = "noindex, nofollow"
+    return response
 
 
+@login_required
 @require_POST
 def lodging_book_bed(request, slug):
     """ส่งข้อมูลจองเตียงในห้องพัก (atomic transaction กันชนเตียงเดียวกัน)"""
@@ -248,10 +264,13 @@ def lodging_book_bed(request, slug):
         slug=slug,
         allocation_status=CourseLodgingCohort.AllocationStatus.ALLOCATED,
     )
+    require_student_cohort(request.user, cohort)
     room_id = request.POST.get("room_id")
     bed_number_raw = request.POST.get("bed_number")
     rank = request.POST.get("rank", "").strip()
     full_name = request.POST.get("full_name", "").strip()
+    if request.user.is_lodging_student:
+        full_name = request.user.get_full_name().strip()
     origin_unit = request.POST.get("origin_unit", "").strip()
     phone = normalize_phone(request.POST.get("phone", ""))
     note = request.POST.get("note", "").strip()
@@ -291,7 +310,8 @@ def lodging_book_bed(request, slug):
 
     try:
         student = assign_lodging_bed(cohort=cohort, room_id=room_id, bed_number=bed_number,
-            rank=rank, full_name=full_name, origin_unit=origin_unit, phone=phone, note=note)
+            rank=rank, full_name=full_name, origin_unit=origin_unit, phone=phone, note=note,
+            student_user=request.user)
         room = student.room
     except (IntegrityError, ValidationError) as exc:
         return _respond_modal_error(" · ".join(exc.messages) if isinstance(exc, ValidationError)
@@ -369,6 +389,9 @@ def lodging_reservation_manage(request, slug, token):
     )
     student = access.student
     cohort = student.cohort
+    if student.user_id and (not request.user.is_authenticated or (
+            request.user.pk != student.user_id and not can_manage_cohort(request.user, cohort))):
+        raise PermissionDenied("บัตรนี้เป็นของผู้จองเท่านั้น กรุณาเข้าสู่ระบบด้วยบัญชีเจ้าของบัตร")
     context = _student_pass_context(request, cohort, student)
     booking_state, booking_message = cohort_self_booking_status(cohort)
     context.update({
@@ -393,6 +416,7 @@ def lodging_reservation_cancel(request, slug, token):
             student=access.student,
             outcome=CourseLodgingRelease.Outcome.CANCELLED,
             access_token=access.pk,
+            self_service_user=request.user,
         )
     except ValidationError as exc:
         messages.error(request, " · ".join(exc.messages))
@@ -405,6 +429,9 @@ def lodging_pass(request, slug, student_id):
     """บัตรยืนยันการเข้าพักสำหรับนักเรียนแคปหน้าจอไว้เป็นหลักฐาน"""
     cohort = get_object_or_404(CourseLodgingCohort, slug=slug)
     student = get_object_or_404(CourseStudentLodging.objects.select_related("room", "cohort"), pk=student_id, cohort=cohort)
+    if student.user_id and (not request.user.is_authenticated or (
+            request.user.pk != student.user_id and not can_manage_cohort(request.user, cohort))):
+        raise PermissionDenied("บัตรนี้เป็นของผู้จองเท่านั้น กรุณาเข้าสู่ระบบด้วยบัญชีเจ้าของบัตร")
     return _student_pass_response(request, _student_pass_context(request, cohort, student))
 
 
@@ -413,12 +440,16 @@ def lodging_start(request):
     return render(request, "lodging/lodging_start.html")
 
 
+@login_required
 def lodging_index(request):
     """หน้ารวมรอบที่พัก; รอบเดียวข้ามไปเลือกเตียงทันทีสำหรับผู้เรียน."""
     candidates = CourseLodgingCohort.objects.filter(
         allocation_status=CourseLodgingCohort.AllocationStatus.ALLOCATED,
         is_active=True,
     ).prefetch_related("rooms").order_by("check_in_date", "title")
+    if not can_access_lodging_management(request.user):
+        candidates = candidates.filter(enrollments__user=request.user, enrollments__is_active=True,
+                                       enrollments__email__iexact=request.user.email).distinct()
     cohorts = [cohort for cohort in candidates if cohort_self_booking_status(cohort)[0] == "open"]
     is_manager = can_access_lodging_management(request.user)
     if len(cohorts) == 1 and not is_manager:

@@ -47,6 +47,10 @@ INSTALLED_APPS = [
     "django.contrib.postgres",
     "django_htmx",
     "storages",
+    "allauth",
+    "allauth.account",
+    "allauth.socialaccount",
+    "allauth.socialaccount.providers.google",
     # แอปของระบบ (modular monolith — SRS NF-15)
     "accounts",
     "resources",
@@ -68,6 +72,8 @@ MIDDLEWARE = [
     "audit.middleware.AuditActorMiddleware",
     "accounts.middleware.MustChangePasswordMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
+    "allauth.account.middleware.AccountMiddleware",
+    "accounts.middleware.LodgingStudentScopeMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "django_htmx.middleware.HtmxMiddleware",
 ]
@@ -115,6 +121,25 @@ AUTHENTICATION_BACKENDS = ["accounts.backends.UsernameOrEmailBackend"]
 ALLOWED_EMAIL_DOMAIN = os.environ.get("ALLOWED_EMAIL_DOMAIN", "signalschool.ac.th")
 LOGIN_URL = "/accounts/login/"
 LOGIN_REDIRECT_URL = "/start/"
+GOOGLE_OAUTH_CLIENT_ID = os.environ.get("GOOGLE_OAUTH_CLIENT_ID", "").strip()
+GOOGLE_OAUTH_CLIENT_SECRET = os.environ.get("GOOGLE_OAUTH_CLIENT_SECRET", "").strip()
+GOOGLE_LOGIN_ENABLED = bool(GOOGLE_OAUTH_CLIENT_ID and GOOGLE_OAUTH_CLIENT_SECRET)
+SOCIALACCOUNT_PROVIDERS = {"google": {
+    "APP": {"client_id": GOOGLE_OAUTH_CLIENT_ID, "secret": GOOGLE_OAUTH_CLIENT_SECRET},
+    "SCOPE": ["openid", "email", "profile"],
+    "AUTH_PARAMS": {"hd": ALLOWED_EMAIL_DOMAIN, "prompt": "select_account"},
+    "OAUTH_PKCE_ENABLED": True,
+}}
+SOCIALACCOUNT_LOGIN_ON_GET = False
+SOCIALACCOUNT_AUTO_SIGNUP = False
+SOCIALACCOUNT_STORE_TOKENS = False
+SOCIALACCOUNT_EMAIL_AUTHENTICATION = False
+SOCIALACCOUNT_EMAIL_AUTHENTICATION_AUTO_CONNECT = False
+SOCIALACCOUNT_ADAPTER = "accounts.social.SchoolGoogleAdapter"
+ACCOUNT_ADAPTER = "accounts.social.NoSignupAccountAdapter"
+ACCOUNT_EMAIL_VERIFICATION = "none"
+ACCOUNT_EMAIL_NOTIFICATIONS = False
+# ใช้ backend เดิมเท่านั้น: allauth social login เรียก Django login ได้โดยไม่เปิด password backend อีกทาง
 AUTH_PASSWORD_VALIDATORS = [
     {"NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"},
     {"NAME": "django.contrib.auth.password_validation.MinimumLengthValidator", "OPTIONS": {"min_length": 12}},  # SR-05
@@ -207,6 +232,9 @@ DJANGO_SECURE = (DJANGO_SECURE_RAW if DJANGO_SECURE_RAW is not None else ("0" if
 # Firebase Hosting CDN ส่งผ่านเฉพาะ cookie ที่ชื่อ __session
 SESSION_COOKIE_NAME = os.environ.get("SESSION_COOKIE_NAME", "__session" if DJANGO_SECURE else "sessionid")
 SESSION_COOKIE_SAMESITE = "Lax" if DJANGO_SECURE else "Strict"
+# Local OAuth testing needs Lax; production policy remains the existing Lax setting.
+if DEBUG and os.environ.get("DJANGO_DEV_OAUTH_SAMESITE", "") == "Lax":
+    SESSION_COOKIE_SAMESITE = "Lax"
 SESSION_COOKIE_AGE = 12 * 60 * 60  # 12 ชั่วโมง (SR-05)
 
 # จัดเก็บ CSRF Token ใน Session เมื่อเปิดโหมด Secure/Cloud

@@ -271,6 +271,8 @@ def place_holds(booking: Booking, equipment: list[Resource] | None = None) -> li
     ถ้าชน ฐานข้อมูลจะโยน IntegrityError จาก excl_overlapping_holds → แปลงเป็น BookingConflict
     ใช้ savepoint ต่อทรัพยากร เพื่อบอกได้ว่าชนที่ไหน (FR-06)
     """
+    if getattr(booking.requester, "is_lodging_student", False):
+        raise ValidationError("บัญชีนักเรียนใช้จองเตียงของหลักสูตรตนเองเท่านั้น")
     resources = _resources_for(booking, equipment or [])
     resource_ids = {resource.pk for resource in resources}
     locked_resources = list(
@@ -334,6 +336,8 @@ def validate_booking_window(
 ) -> list[str]:
     """ตรวจช่วงเวลาและสิทธิ์ตามกฎรายห้อง คืนข้อความไทยทั้งหมดที่พบ"""
     errors: list[str] = []
+    if getattr(user, "is_lodging_student", False):
+        return ["บัญชีนักเรียนใช้จองเตียงของหลักสูตรตนเองเท่านั้น"]
     now = now or timezone.now()
     rule = getattr(resource, "rule", None)
 
