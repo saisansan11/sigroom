@@ -229,6 +229,7 @@ body.lodging-about-ledger-r3g main.page-shell {
   color: var(--g2-paper-ink);
   font: inherit;
   font-size: .82rem;
+  font-weight: 500;
   cursor: pointer;
 }
 

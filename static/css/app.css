@@ -76,6 +76,11 @@ button, [role="button"], input[type="submit"] {
   min-height: max(44px, 2.75rem); display: inline-flex; align-items: center; justify-content: center; gap: var(--space-xs);
   font-weight: 700; line-height: 1.25; transition: transform var(--motion-fast) var(--ease-product), background-color var(--motion-fast) ease, border-color var(--motion-fast) ease, box-shadow var(--motion-fast) ease;
 }
+/* Pico ตั้งน้ำหนัก/ระยะบรรทัดของปุ่มผ่าน [type="submit"] ซึ่งชนะตัวเลือก `button` ด้านบน
+   ทำให้ <button> หนา 400 สูง 53px ขณะที่ลิงก์หน้าตาปุ่มหนา 500 สูง 46px — ตั้งซ้ำด้วยน้ำหนักตัวเลือกเท่ากันให้ปุ่มทุกชนิดเท่ากัน */
+[type="submit"], [type="button"], [type="reset"] { font-weight: 500; line-height: 1.25; }
+/* ลูกศรของ summary ที่เป็นปุ่มสูงตามระยะบรรทัดของ Pico (27px) ดันปุ่มให้สูงกว่าปุ่มข้างเคียง */
+details summary[role="button"]::after { height: 1.25rem; }
 button:hover, [role="button"]:hover, input[type="submit"]:hover { transform: translateY(-1px); }
 button:active, [role="button"]:active, input[type="submit"]:active { transform: translateY(0); }
 button:disabled, [aria-disabled="true"] { cursor: not-allowed; opacity: .48; transform: none; }
@@ -4402,6 +4407,8 @@ input:not([type="checkbox"]):not([type="radio"]), select, textarea { border-radi
 .brand-logo img { display: block; width: auto; height: 40px; }
 .brand-sub { color: var(--ink-muted); font-family: var(--font-sans); font-size: .82rem; font-weight: 400; white-space: nowrap; }
 .main-nav a { border: none; border-radius: 0; color: var(--ink); font-weight: 500; font-size: .95rem; }
+/* Pico ใส่ margin ติดลบให้ลิงก์ในเมนู (ชดเชย padding ของ li ที่เราตั้งเป็น 0 แล้ว) ทำให้เมนูบนจอกว้างซ้อนทับกัน 12px */
+.desktop-nav .main-nav > li > a, .desktop-nav .main-nav .ops-menu-summary { margin-inline: 0; }
 .main-nav a:hover { background: transparent; color: var(--ink); text-decoration: underline; text-decoration-thickness: 1px; }
 .main-nav a[aria-current="page"] { background: transparent; color: var(--ink); box-shadow: inset 0 -2px var(--ink); }
 .ops-menu-summary { border: none; border-radius: 0; background: transparent; color: var(--ink); font-size: .95rem; font-weight: 500; }
@@ -4691,7 +4698,7 @@ a.task-cell-title:hover { color: var(--ink); text-decoration: underline; }
 .pick-actions { display: flex; align-items: center; gap: var(--space-xs); }
 .pick-actions .fav-button { border: 1px solid var(--rule-strong); border-radius: 2px; background: transparent; color: var(--ink-muted); }
 .pick-actions .fav-button:hover, .pick-actions .fav-button.is-fav { border-color: var(--pending); background: transparent; color: var(--pending); }
-.pick-btn { min-height: 44px; display: inline-flex; align-items: center; justify-content: center; min-width: 8.5rem; margin: 0; padding: .3rem 1rem; white-space: nowrap; }
+a.pick-btn, .pick-btn { min-height: 44px; display: inline-flex; align-items: center; justify-content: center; min-width: 8.5rem; margin: 0; padding: .3rem 1rem; white-space: nowrap; }
 .pick-empty { margin: var(--space-xs) 0; color: var(--ink-muted); }
 .suggest-list { margin: var(--space-sm) 0; }
 .suggest { margin: 0 0 .4rem; padding: .5rem .75rem; border-left: 3px solid var(--pending); background: #EFE6CC; color: var(--ink); font-size: .95rem; line-height: 1.6; }
