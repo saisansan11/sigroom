@@ -214,7 +214,8 @@ def test_next_available_date_skips_full_days_and_weekends(flow):
 
 def test_suggestions_prefer_frequent_room_and_add_next_date_when_full(flow):
     room = make_room("FREQ-1")
-    day = next_monday()
+    # min_days=8 ให้วันก่อนหน้า 7 วันยังเป็นอนาคตเสมอ (เดิมรันวันจันทร์แล้วไปจองเช้าวันนี้ซึ่งผ่านไปแล้ว)
+    day = next_monday(min_days=8)
     past_day = day - timedelta(days=7)
     for hour in (8, 9):
         book(room, flow["user"], at(past_day, hour), at(past_day, hour + 1))
