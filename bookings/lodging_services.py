@@ -206,6 +206,52 @@ def student_enrollment(user, cohort):
     ).first()
 
 
+def auto_enroll_verified_student(cohort_id, email, user=None):
+    """เพิ่มชื่อเข้ารุ่นให้บัญชีโรงเรียนที่ Google ยืนยันแล้ว เมื่อรุ่นเปิด "login แล้วจองได้ทันที".
+
+    ผู้เรียกต้องตรวจ email_verified/โดเมน/hd ให้ผ่านก่อนเสมอ คืน None เมื่อไม่เข้าเงื่อนไข
+    (ผู้เรียกจะปฏิเสธการเข้าสู่ระบบเหมือนไม่มีชื่อในรุ่น)
+    """
+    from .lodging_models import CourseStudentEnrollment
+
+    # บัญชีเจ้าหน้าที่/ครูที่มีอยู่แล้วไม่ถูกเพิ่มอัตโนมัติ ให้ผู้จัดหลักสูตรเพิ่มชื่อเอง
+    if user is not None and not getattr(user, "is_lodging_student", False):
+        return None
+    cohort = (
+        CourseLodgingCohort.objects.select_for_update()
+        .filter(pk=cohort_id, open_enrollment=True)
+        .first()
+    )
+    if cohort is None or cohort_self_booking_status(cohort)[0] != "open":
+        return None
+    # มีแถวอยู่แล้ว (รวมที่เจ้าหน้าที่ปิดสิทธิ์ไว้) = ไม่สร้างใหม่และไม่เปิดสิทธิ์คืนเอง
+    if CourseStudentEnrollment.objects.filter(cohort=cohort, email__iexact=email).exists():
+        return None
+    # รายชื่อไม่เกินจำนวนเตียงของรุ่น กันการสร้างบัญชีจำนวนมากจากลิงก์เดียว
+    capacity = cohort.rooms.count() * cohort.beds_per_room
+    if cohort.enrollments.filter(is_active=True).count() >= capacity:
+        return None
+    # หนึ่งคนอยู่ได้รุ่นเดียวในช่วงวันเดียวกัน กันถือลิงก์ของรุ่นอื่นมาจองเตียงซ้อน
+    overlapping = CourseStudentEnrollment.objects.filter(
+        email__iexact=email,
+        is_active=True,
+        cohort__allocation_status=CourseLodgingCohort.AllocationStatus.ALLOCATED,
+        cohort__check_in_date__lte=cohort.check_out_date,
+        cohort__check_out_date__gte=cohort.check_in_date,
+    ).exclude(cohort=cohort)
+    if overlapping.exists():
+        return None
+    enrollment = CourseStudentEnrollment.objects.create(cohort=cohort, email=email)
+    audit(
+        None,
+        "bookings.coursestudentenrollment",
+        enrollment.pk,
+        "student_auto_enrolled",
+        after={"cohort": str(cohort.pk), "email": email[:2] + "***@" + email.rsplit("@", 1)[-1]},
+    )
+    return enrollment
+
+
 def require_student_cohort(user, cohort):
     enrollment = student_enrollment(user, cohort)
     if enrollment is None and not can_manage_cohort(user, cohort):

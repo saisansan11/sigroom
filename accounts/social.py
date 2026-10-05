@@ -89,6 +89,9 @@ def _match_school_identity(request, sociallogin):
             cohort__is_active=True,
             cohort__allocation_status="allocated",
         ).first()
+        if enrollment is None:
+            from bookings.lodging_services import auto_enroll_verified_student
+            enrollment = auto_enroll_verified_student(cohort_id, email, user)
     if user is None:
         if enrollment is None or enrollment.user_id:
             raise GoogleLoginDenied("not_registered")

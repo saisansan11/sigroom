@@ -55,6 +55,11 @@ class CourseLodgingCohort(models.Model):
         default=AllocationStatus.RELEASED,
     )
     is_active = models.BooleanField("เปิดใช้การจองด้วยตนเอง", default=False)
+    open_enrollment = models.BooleanField(
+        "เข้าสู่ระบบด้วยอีเมลโรงเรียนแล้วจองได้ทันที",
+        default=True,
+        help_text="ปิดเมื่อต้องการให้จองได้เฉพาะอีเมลที่เจ้าหน้าที่ใส่ในรายชื่อรุ่นไว้ก่อน",
+    )
     booking_open_at = models.DateTimeField("เปิดรับจองเมื่อ", null=True, blank=True)
     booking_close_at = models.DateTimeField("ปิดรับจองเมื่อ", null=True, blank=True)
     note = models.TextField("คำชี้แจง/ข้อปฏิบัติในการเข้าพัก", blank=True)
