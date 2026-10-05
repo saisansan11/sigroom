@@ -25,7 +25,7 @@
   user-select: none;
   z-index: 9998;
   mix-blend-mode: multiply;
-  animation: ink-soak-fade 1500ms ease-out forwards;
+  animation: ink-soak-fade 2400ms ease-out forwards;
 }
 
 /* ปุ่มพื้นเข้ม: multiply มองไม่เห็น จึงใช้ screen ให้สีสว่างซึมบนพื้นหมึก */
@@ -36,7 +36,7 @@
   /* รูปร่างขอบเสี้ยนมาจาก clip-path ที่สคริปต์สุ่มให้แต่ละหยด */
   transform: translate(-50%, -50%) scale(.04);
   filter: blur(.4px);
-  animation: ink-soak-spread 950ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation: ink-soak-spread 1300ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
 @keyframes ink-soak-spread {
@@ -46,7 +46,7 @@
 @keyframes ink-soak-fade {
   0% { opacity: 0; }
   10% { opacity: 1; }
-  55% { opacity: .9; }
+  65% { opacity: .9; }
   100% { opacity: 0; }
 }
 

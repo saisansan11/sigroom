@@ -100,8 +100,8 @@ test('จำนวนหยดไม่เกินเพดาน และจ�
   env.move(0, 0);
   for (let i = 1; i <= 400; i += 1) env.move((i * 37) % 1200, (i * 53) % 700);
   assert.ok(env.ink.getState().lobeCount <= env.ink.getState().maxLobes);
-  env.advance(5000);
-  env.ink.renderLoop(6000);
+  env.advance(9000);
+  env.ink.renderLoop(10000);
   assert.equal(env.ink.getState().lobeCount, 0);
 });
 
@@ -124,12 +124,12 @@ test('รอยหมึกเป็นรูปขอบเสี้ยน ไ�
   env.ink.renderLoop(1400);
   const canvas = canvasOf(env);
   assert.ok(canvas.draws > 0);
-  assert.ok(canvas.segments / canvas.draws >= 30, 'แต่ละรอยต้องมีจุดขอบอย่างน้อย 30 จุด');
+  assert.ok(canvas.segments / canvas.draws >= 100, 'แต่ละรอยต้องมีจุดขอบอย่างน้อย 100 จุดให้เสี้ยนละเอียด');
   const button = makeElement('button');
   button.interactive = true;
   env.fire('pointerdown', { target: button, clientX: 60, clientY: 40, button: 0 });
   const clips = soaksOf(env)[0].children.map(blob => blob.style.clipPath);
-  assert.ok(clips.every(clip => clip.startsWith('polygon(') && clip.split(',').length >= 40));
+  assert.ok(clips.every(clip => clip.startsWith('polygon(') && clip.split(',').length >= 120));
   assert.equal(new Set(clips).size, 4, 'รูปร่างแต่ละหยดไม่ซ้ำกัน');
 });
 

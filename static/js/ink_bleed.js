@@ -7,13 +7,13 @@
 (function () {
   'use strict';
 
-  var MAX_LOBES = 180;
+  var MAX_LOBES = 260;
   var MAX_DPR = 1.5;
   var EMIT_DISTANCE = 14;       // px ระหว่างหยดบนเส้นทางเมาส์
   var MAX_EMITS_PER_MOVE = 6;
   var COLOR_SPAN = 170;         // px ที่เมาส์ต้องเดินก่อนเปลี่ยนไปสีถัดไป
   var PEAK_ALPHA = 0.2;         // บนกระดาษ (multiply) · พื้นเข้มลดลงเล็กน้อยเพราะ screen สว่างเร็ว
-  var SOAK_LIFETIME_MS = 1500;
+  var SOAK_LIFETIME_MS = 2400;
   var SOAK_MAX_AREA_RATIO = 0.5;
   // เขียว น้ำเงิน เหลืองอำพัน แดง (สีแถบแฟ้มบริการ) + ม่วง เขียวน้ำทะเล ให้ไล่สีต่อเนื่อง
   var PIGMENTS = [
@@ -125,11 +125,17 @@
   /** ขอบรอยหมึก: หยักละเอียดทั้งวง และมีเสี้ยนยาวแทรกเป็นช่วง ๆ เหมือนหมึกไหลตามใยกระดาษ */
   function makeEdge(points) {
     var edge = [];
+    // คลื่นช้า 2 ชั้นให้ตัวรอยเบี้ยวไม่กลม + หยักถี่ทุกจุด + เสี้ยนบางเท่าเส้นใย (กว้างจุดเดียว)
+    var phaseA = Math.random() * Math.PI * 2;
+    var phaseB = Math.random() * Math.PI * 2;
     for (var i = 0; i < points; i++) {
-      var isSpike = Math.random() < 0.2;
+      var turn = (Math.PI * 2 * i) / points;
+      var wobble = Math.sin(turn * 3 + phaseA) * 0.08 + Math.sin(turn * 7 + phaseB) * 0.05;
+      var isFibre = Math.random() < 0.3;
+      var length = Math.random();
       edge.push({
-        base: 0.6 + Math.random() * 0.4,
-        spike: isSpike ? 0.5 + Math.random() * 1.1 : Math.random() * 0.12
+        base: 0.64 + wobble + Math.random() * 0.14,
+        spike: isFibre ? 0.2 + length * length * 1.25 : Math.random() * 0.07   // ส่วนใหญ่สั้น มีเส้นยาวปนเล็กน้อย
       });
     }
     return edge;
@@ -141,7 +147,7 @@
     var alpha = lobe.peak * Math.min(1, t / 0.06) * Math.pow(1 - t, 1.3);
     if (alpha <= 0.002) return;
     // เสี้ยนงอกตามหลังตัวรอย: หมึกแผ่ก่อนแล้วค่อยไหลตามใยกระดาษ
-    var seep = Math.min(1, Math.max(0, (t - 0.04) / 0.5));
+    var seep = Math.min(1, Math.max(0, (t - 0.03) / 0.42));
     seep = seep * seep * (3 - 2 * seep);
     var c = lobe.color;
     var layer = lobe.dark ? glowCtx : ctx;
@@ -201,9 +207,9 @@
       x: x, y: y, color: dark ? lighten(color) : color, dark: Boolean(dark), born: now(),
       r0: (4 + Math.random() * 5) * scale,
       r1: (20 + Math.random() * 20) * scale,
-      edge: makeEdge(scale > 1.2 ? 56 : 36),
+      edge: makeEdge(scale > 1.2 ? 150 : 104),
       turn: Math.random() * Math.PI * 2,
-      life: (1500 + Math.random() * 900) * lifeScale,
+      life: (2600 + Math.random() * 1300) * lifeScale,
       peak: PEAK_ALPHA * (dark ? 0.75 : 1) * (0.6 + Math.random() * 0.4)
     });
   }
@@ -332,7 +338,7 @@
 
   /** polygon ขอบหยัก + เสี้ยนยาว ใช้ตัดรูปร่างหมึกที่ซึมเข้าปุ่ม */
   function blotClipPath() {
-    var edge = makeEdge(48);
+    var edge = makeEdge(132);
     var parts = [];
     for (var i = 0; i < edge.length; i++) {
       var reach = Math.min(50, 50 * (0.5 * edge[i].base + 0.31 * edge[i].spike + 0.1));
