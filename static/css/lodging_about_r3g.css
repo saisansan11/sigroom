@@ -254,7 +254,17 @@
   box-shadow: none;
 }
 
-.lodging-about-ledger-r3g .lka-gallery-fig .lka-fig-inner { border-radius: 0; }
+/* กรอบรูปสูงตามรูป 4:3 + คำบรรยายเท่ากันทุกใบ: ล้างความสูงตายตัวของธีมเดิม (รวมใบ feature บนจอกว้าง)
+   ไม่เช่นนั้นรูปจะเต็มแค่ครึ่งกรอบและคำบรรยายถูกตัดหาย */
+.lodging-about-ledger-r3g .lka-gallery-fig .lka-fig-inner,
+.lodging-about-ledger-r3g .lka-gallery-fig--feature .lka-fig-inner {
+  aspect-ratio: auto;
+  height: auto;
+  min-height: 0;
+  overflow: visible;
+  border-radius: 0;
+}
+.lodging-about-ledger-r3g .lka-gallery-img { height: auto; }
 .lodging-about-ledger-r3g .lka-gallery-img { aspect-ratio: 4 / 3; object-fit: cover; }
 .lodging-about-ledger-r3g .lka-fig-overlay {
   position: static;
@@ -263,6 +273,7 @@
   padding: .5rem .65rem;
 }
 .lodging-about-ledger-r3g .lka-fig-overlay figcaption { color: var(--r3g-ink) !important; font-size: .78rem; }
+.lodging-about-ledger-r3g .lka-fig-overlay figcaption strong { color: var(--r3g-ink) !important; }
 
 /* Explorer stays available but is deliberately collapsed until requested. */
 .lodging-about-ledger-r3g .lka-explorer-section { padding-top: .25rem; }
