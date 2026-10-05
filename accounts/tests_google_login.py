@@ -230,6 +230,8 @@ def test_qr_google_creates_only_preloaded_student_and_returns_to_beds(client, go
 
 
 def test_qr_does_not_grant_membership_without_roster(client, google_settings, cohort):
+    # โหมดรายชื่อเท่านั้น: ผู้จัดหลักสูตรปิด "login แล้วจองได้ทันที" ของรุ่นนี้
+    CourseLodgingCohort.objects.filter(pk=cohort.pk).update(open_enrollment=False)
     before = User.objects.count()
     target = reverse("bookings:lodging_portal", args=[cohort.slug])
     assert callback(client, claims("new-student@signalschool.ac.th"), target).url == reverse("accounts:login")
@@ -348,3 +350,78 @@ def test_legacy_user_insert_works_after_student_flag_migration():
     with connection.cursor() as cursor:
         cursor.execute(f"INSERT INTO {table} ({columns}) VALUES ({placeholders})", values)
     assert User.objects.get(username="legacy-writer").is_lodging_student is False
+
+
+# ---------- login แล้วจองได้ทันที (open_enrollment) ----------
+
+def test_open_cohort_lets_verified_school_account_log_in_and_book(client, google_settings, cohort):
+    target = reverse("bookings:lodging_portal", args=[cohort.slug])
+    response = callback(client, claims("walk-in@signalschool.ac.th"), target)
+    assert response.url == target
+    user = User.objects.get(email="walk-in@signalschool.ac.th")
+    assert user.is_lodging_student and not user.is_staff and not user.is_superuser
+    assert not user.has_usable_password() and not user.groups.exists()
+    enrollment = CourseStudentEnrollment.objects.get(cohort=cohort, email=user.email)
+    assert enrollment.user_id == user.pk and enrollment.is_active
+    assert AuditLog.objects.filter(action="student_auto_enrolled", entity_id=str(enrollment.pk)).exists()
+    assert client.get(target).status_code == 200
+    for path in ("/online/", "/approvals/", "/lodging/manage/", "/book/", "/admin/"):
+        assert client.get(path).status_code == 403
+
+
+@pytest.mark.parametrize("override", [
+    {"email_verified": False},
+    {"hd": "gmail.com"},
+    {"email": "outsider@gmail.com"},
+])
+def test_open_cohort_still_rejects_unverified_or_outside_accounts(client, google_settings, cohort, override):
+    before = User.objects.count()
+    target = reverse("bookings:lodging_portal", args=[cohort.slug])
+    data = claims(**{"email": "walk-in@signalschool.ac.th", **override})
+    assert callback(client, data, target).url == reverse("accounts:login")
+    assert User.objects.count() == before and not CourseStudentEnrollment.objects.exists()
+
+
+def test_open_cohort_does_not_enroll_without_cohort_link_or_when_closed(client, google_settings, cohort):
+    before = User.objects.count()
+    assert callback(client, claims("walk-in@signalschool.ac.th")).url == reverse("accounts:login")
+    CourseLodgingCohort.objects.filter(pk=cohort.pk).update(is_active=False)
+    target = reverse("bookings:lodging_portal", args=[cohort.slug])
+    assert callback(client, claims("walk-in@signalschool.ac.th"), target).url == reverse("accounts:login")
+    assert User.objects.count() == before and not CourseStudentEnrollment.objects.exists()
+
+
+def test_open_cohort_never_reopens_a_disabled_roster_row(client, google_settings, cohort):
+    CourseStudentEnrollment.objects.create(cohort=cohort, email="blocked@signalschool.ac.th", is_active=False)
+    before = User.objects.count()
+    target = reverse("bookings:lodging_portal", args=[cohort.slug])
+    assert callback(client, claims("blocked@signalschool.ac.th"), target).url == reverse("accounts:login")
+    assert User.objects.count() == before
+    assert not CourseStudentEnrollment.objects.get(email="blocked@signalschool.ac.th").is_active
+
+
+def test_open_cohort_stops_at_bed_capacity_and_one_cohort_per_period(client, google_settings, cohort):
+    target = reverse("bookings:lodging_portal", args=[cohort.slug])
+    for index in range(4):  # 1 ห้อง x 4 เตียง
+        CourseStudentEnrollment.objects.create(cohort=cohort, email=f"seat{index}@signalschool.ac.th")
+    assert callback(client, claims("fifth@signalschool.ac.th"), target).url == reverse("accounts:login")
+    assert not User.objects.filter(email="fifth@signalschool.ac.th").exists()
+
+    CourseStudentEnrollment.objects.filter(email="seat3@signalschool.ac.th").delete()
+    assert callback(Client(), claims("fifth@signalschool.ac.th", sub="uid-fifth"), target).url == target
+    room = Resource.objects.create(code="G-DORM-2", name="ห้องพัก 2", resource_type="room", room_category="lodging", capacity=4)
+    other = CourseLodgingCohort.objects.create(title="รุ่นซ้อนวัน", slug="overlap-class", supervisor=cohort.supervisor,
+        unit=cohort.unit, check_in_date=cohort.check_in_date, check_out_date=cohort.check_out_date,
+        allocation_status="allocated", is_active=True)
+    other.rooms.add(room)
+    other_target = reverse("bookings:lodging_portal", args=[other.slug])
+    assert callback(Client(), claims("fifth@signalschool.ac.th", sub="uid-fifth"), other_target).url == reverse("accounts:login")
+    assert not CourseStudentEnrollment.objects.filter(cohort=other).exists()
+
+
+def test_open_cohort_does_not_auto_enroll_existing_staff_account(client, google_settings, cohort, existing):
+    target = reverse("bookings:lodging_portal", args=[cohort.slug])
+    callback(client, claims(existing.email), target)
+    assert not CourseStudentEnrollment.objects.filter(email=existing.email).exists()
+    existing.refresh_from_db()
+    assert not existing.is_lodging_student

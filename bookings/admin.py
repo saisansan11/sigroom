@@ -212,6 +212,15 @@ class CourseLodgingCohortAdmin(admin.ModelAdmin):
             )
         except (ValidationError, PermissionDenied) as exc:
             obj._lodging_error = str(exc)
+            return
+        # update_cohort_allocation ไม่รู้จักฟิลด์นี้ จึงบันทึกแยกพร้อม audit เมื่อค่าเปลี่ยน
+        wanted = form.cleaned_data.get("open_enrollment")
+        if wanted is not None:
+            current = CourseLodgingCohort.objects.filter(pk=obj.pk).values_list("open_enrollment", flat=True).first()
+            if current is not None and current != wanted:
+                CourseLodgingCohort.objects.filter(pk=obj.pk).update(open_enrollment=wanted)
+                audit(request.user, "bookings.courselodgingcohort", obj.pk, "cohort_open_enrollment_changed",
+                      before={"open_enrollment": current}, after={"open_enrollment": wanted})
 
     def save_related(self, request, form, formsets, change):
         # เมื่อ update_cohort_allocation ล้มเหลว obj ยังไม่ถูกบันทึกจริง จึงข้าม
