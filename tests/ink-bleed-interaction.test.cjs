@@ -24,8 +24,9 @@ function makeElement(tag) {
       if (type !== '2d') return null;
       el.draws = 0;
       return {
-        setTransform() {}, clearRect() {}, beginPath() {}, fill() {},
-        arc() { el.draws += 1; },
+        setTransform() {}, clearRect() {}, beginPath() {}, closePath() {}, moveTo() {},
+        lineTo() { el.segments = (el.segments || 0) + 1; },
+        fill() { el.draws += 1; },
         createRadialGradient() { return { addColorStop() {} }; },
       };
     },
@@ -113,6 +114,23 @@ test('พื้นเข้มใช้ชั้นสีสว่างแย�
   const state = env.ink.getState();
   assert.ok(state.lobeCount > 0);
   assert.equal(state.darkLobeCount, state.lobeCount);
+});
+
+test('รอยหมึกเป็นรูปขอบเสี้ยน ไม่ใช่วงกลม และหมึกในปุ่มถูกตัดขอบเป็นเสี้ยนเช่นกัน', () => {
+  const env = setup();
+  env.move(0, 0);
+  env.move(200, 0);
+  env.advance(400);
+  env.ink.renderLoop(1400);
+  const canvas = canvasOf(env);
+  assert.ok(canvas.draws > 0);
+  assert.ok(canvas.segments / canvas.draws >= 30, 'แต่ละรอยต้องมีจุดขอบอย่างน้อย 30 จุด');
+  const button = makeElement('button');
+  button.interactive = true;
+  env.fire('pointerdown', { target: button, clientX: 60, clientY: 40, button: 0 });
+  const clips = soaksOf(env)[0].children.map(blob => blob.style.clipPath);
+  assert.ok(clips.every(clip => clip.startsWith('polygon(') && clip.split(',').length >= 40));
+  assert.equal(new Set(clips).size, 4, 'รูปร่างแต่ละหยดไม่ซ้ำกัน');
 });
 
 test('นิ้วและปากกาไม่ทำให้เกิดรอยตามเมาส์', () => {

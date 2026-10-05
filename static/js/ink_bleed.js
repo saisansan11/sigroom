@@ -1,6 +1,6 @@
 /**
  * SIGROOM — หมึกสีน้ำซึมกระดาษ
- * 1) ลากเมาส์: รอยสีน้ำหลายสีซึมตามปลายเมาส์แล้วค่อย ๆ จาง (วาดบน canvas เดียว)
+ * 1) ลากเมาส์: รอยหมึกหลายสีซึมตามปลายเมาส์ ขอบแตกเป็นเสี้ยนตามใยกระดาษ แล้วค่อย ๆ จาง
  * 2) กดปุ่ม/เมนู/ชิป: หมึกหลายสีแผ่ซึมเข้าไปในองค์ประกอบที่กด
  * ปิดเองเมื่อ prefers-reduced-motion · ไม่ขวางการกด · ปิดรายหน้าได้ด้วย <body data-ink="off">
  */
@@ -12,7 +12,7 @@
   var EMIT_DISTANCE = 14;       // px ระหว่างหยดบนเส้นทางเมาส์
   var MAX_EMITS_PER_MOVE = 6;
   var COLOR_SPAN = 170;         // px ที่เมาส์ต้องเดินก่อนเปลี่ยนไปสีถัดไป
-  var PEAK_ALPHA = 0.22;        // บนกระดาษ (multiply) · พื้นเข้มลดลงเล็กน้อยเพราะ screen สว่างเร็ว
+  var PEAK_ALPHA = 0.2;         // บนกระดาษ (multiply) · พื้นเข้มลดลงเล็กน้อยเพราะ screen สว่างเร็ว
   var SOAK_LIFETIME_MS = 1500;
   var SOAK_MAX_AREA_RATIO = 0.5;
   // เขียว น้ำเงิน เหลืองอำพัน แดง (สีแถบแฟ้มบริการ) + ม่วง เขียวน้ำทะเล ให้ไล่สีต่อเนื่อง
@@ -122,26 +122,51 @@
     rafId = requestAnimationFrame(renderLoop);
   }
 
+  /** ขอบรอยหมึก: หยักละเอียดทั้งวง และมีเสี้ยนยาวแทรกเป็นช่วง ๆ เหมือนหมึกไหลตามใยกระดาษ */
+  function makeEdge(points) {
+    var edge = [];
+    for (var i = 0; i < points; i++) {
+      var isSpike = Math.random() < 0.2;
+      edge.push({
+        base: 0.6 + Math.random() * 0.4,
+        spike: isSpike ? 0.5 + Math.random() * 1.1 : Math.random() * 0.12
+      });
+    }
+    return edge;
+  }
+
   function drawLobe(lobe, t) {
     var grow = 1 - Math.pow(1 - t, 3);                       // ซึมเร็วตอนแรกแล้วช้าลง
     var radius = lobe.r0 + (lobe.r1 - lobe.r0) * grow;
-    var alpha = lobe.peak * Math.min(1, t / 0.08) * Math.pow(1 - t, 1.5);
+    var alpha = lobe.peak * Math.min(1, t / 0.06) * Math.pow(1 - t, 1.3);
     if (alpha <= 0.002) return;
+    // เสี้ยนงอกตามหลังตัวรอย: หมึกแผ่ก่อนแล้วค่อยไหลตามใยกระดาษ
+    var seep = Math.min(1, Math.max(0, (t - 0.04) / 0.5));
+    seep = seep * seep * (3 - 2 * seep);
     var c = lobe.color;
     var layer = lobe.dark ? glowCtx : ctx;
     var rgb = 'rgba(' + c[0] + ',' + c[1] + ',' + c[2] + ',';
     if (layer.createRadialGradient) {
-      var gradient = layer.createRadialGradient(lobe.x, lobe.y, 0, lobe.x, lobe.y, radius);
-      gradient.addColorStop(0, rgb + (alpha * 0.75).toFixed(4) + ')');
-      gradient.addColorStop(0.6, rgb + (alpha * 0.6).toFixed(4) + ')');
-      gradient.addColorStop(0.84, rgb + alpha.toFixed(4) + ')');   // สีเข้มขึ้นที่ขอบแบบสีน้ำแห้ง
-      gradient.addColorStop(1, rgb + '0)');
+      var gradient = layer.createRadialGradient(lobe.x, lobe.y, 0, lobe.x, lobe.y, radius * 2.3);
+      gradient.addColorStop(0, rgb + (alpha * 0.8).toFixed(4) + ')');
+      gradient.addColorStop(0.35, rgb + alpha.toFixed(4) + ')');
+      gradient.addColorStop(1, rgb + (alpha * 0.85).toFixed(4) + ')');   // ขอบคม ไม่ฟุ้งหาย
       layer.fillStyle = gradient;
     } else {
       layer.fillStyle = rgb + alpha.toFixed(4) + ')';
     }
+    var edge = lobe.edge;
+    var step = (Math.PI * 2) / edge.length;
     layer.beginPath();
-    layer.arc(lobe.x, lobe.y, radius, 0, Math.PI * 2);
+    for (var i = 0; i < edge.length; i++) {
+      var reach = radius * (edge[i].base + edge[i].spike * seep);
+      var angle = lobe.turn + i * step;
+      var px = lobe.x + Math.cos(angle) * reach;
+      var py = lobe.y + Math.sin(angle) * reach;
+      if (i === 0) layer.moveTo(px, py);
+      else layer.lineTo(px, py);
+    }
+    layer.closePath();
     layer.fill();
   }
 
@@ -174,19 +199,21 @@
     if (lobes.length >= MAX_LOBES) lobes.shift();
     lobes.push({
       x: x, y: y, color: dark ? lighten(color) : color, dark: Boolean(dark), born: now(),
-      r0: (7 + Math.random() * 7) * scale,
-      r1: (30 + Math.random() * 28) * scale,
+      r0: (4 + Math.random() * 5) * scale,
+      r1: (20 + Math.random() * 20) * scale,
+      edge: makeEdge(scale > 1.2 ? 56 : 36),
+      turn: Math.random() * Math.PI * 2,
       life: (1500 + Math.random() * 900) * lifeScale,
       peak: PEAK_ALPHA * (dark ? 0.75 : 1) * (0.6 + Math.random() * 0.4)
     });
   }
 
-  /** หยดสีน้ำหนึ่งจุด: 3 วงซ้อนเยื้องกันให้ขอบไม่กลมเรียบ */
+  /** รอยหมึกหนึ่งจุด: 2 รอยซ้อนเยื้องกัน ขอบเป็นเสี้ยนไม่ซ้ำกัน */
   function spawnWash(x, y, color, scale, dark) {
     if (isReducedMotion()) return;
     color = color || pigmentAt(travel / COLOR_SPAN);
     scale = scale || 1;
-    for (var i = 0; i < 3; i++) {
+    for (var i = 0; i < 2; i++) {
       addLobe(x + (Math.random() - 0.5) * 16 * scale, y + (Math.random() - 0.5) * 16 * scale, color, scale, 1, dark);
     }
     startRaf();
@@ -279,7 +306,7 @@
     layer.style.height = rect.height + 'px';
     if (window.getComputedStyle) layer.style.borderRadius = window.getComputedStyle(target).borderRadius || '';
 
-    var size = Math.max(rect.width, rect.height) * 2.3;
+    var size = Math.max(rect.width, rect.height) * 1.45;
     var start = Math.floor(travel / COLOR_SPAN);
     for (var i = 0; i < 4; i++) {
       var c = PIGMENTS[(start + i) % PIGMENTS.length];
@@ -290,7 +317,8 @@
       blob.style.width = size + 'px';
       blob.style.height = size + 'px';
       blob.style.animationDelay = (i * 80) + 'ms';
-      blob.style.background = 'radial-gradient(circle, rgba(' + c.join(',') + ',.62) 0%, rgba(' + c.join(',') + ',.42) 42%, rgba(' + c.join(',') + ',0) 70%)';
+      blob.style.background = 'radial-gradient(circle, rgba(' + c.join(',') + ',.26) 0%, rgba(' + c.join(',') + ',.4) 100%)';
+      blob.style.clipPath = blotClipPath();
       layer.appendChild(blob);
     }
     document.body.appendChild(layer);
@@ -300,6 +328,18 @@
     }, SOAK_LIFETIME_MS);
     soakTimers.push({ layer: layer, timer: timer });
     return layer;
+  }
+
+  /** polygon ขอบหยัก + เสี้ยนยาว ใช้ตัดรูปร่างหมึกที่ซึมเข้าปุ่ม */
+  function blotClipPath() {
+    var edge = makeEdge(48);
+    var parts = [];
+    for (var i = 0; i < edge.length; i++) {
+      var reach = Math.min(50, 50 * (0.5 * edge[i].base + 0.31 * edge[i].spike + 0.1));
+      var angle = (Math.PI * 2 * i) / edge.length;
+      parts.push((50 + Math.cos(angle) * reach).toFixed(1) + '% ' + (50 + Math.sin(angle) * reach).toFixed(1) + '%');
+    }
+    return 'polygon(' + parts.join(',') + ')';
   }
 
   function removeNode(node) {

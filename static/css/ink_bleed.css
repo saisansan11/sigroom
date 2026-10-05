@@ -33,9 +33,9 @@
 
 .ink-soak-blob {
   position: absolute;
-  border-radius: 47% 53% 60% 40% / 45% 58% 42% 55%;
+  /* รูปร่างขอบเสี้ยนมาจาก clip-path ที่สคริปต์สุ่มให้แต่ละหยด */
   transform: translate(-50%, -50%) scale(.04);
-  filter: blur(5px);
+  filter: blur(.4px);
   animation: ink-soak-spread 950ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
