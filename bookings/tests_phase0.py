@@ -36,7 +36,10 @@ def test_root_redirect_response_targets_gateway(client):
 
 
 def test_fullcalendar_scripts_are_deferred(client):
-    html = client.get("/home/").content.decode("utf-8")
+    index_html = client.get("/home/").content.decode("utf-8")
+    assert not re.findall(r"<script[^>]*fullcalendar[^>]*>", index_html)
+
+    html = client.get(reverse("bookings:room_status", args=["classroom"])).content.decode("utf-8")
     tags = re.findall(r"<script[^>]*fullcalendar[^>]*>", html)
     assert len(tags) == 2
     assert all(" defer" in tag for tag in tags)

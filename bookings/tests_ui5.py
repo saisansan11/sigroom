@@ -78,10 +78,9 @@ def test_guest_header_nav_semantics_and_aria_current(client):
     assert resp_home.status_code == 200
     home_html = resp_home.content.decode()
 
-    # On calendar / home, "สถานะห้องวันนี้" has aria-current="page"
-    assert 'aria-current="page"' in home_html
+    # /home/ เป็นหน้าเลือกหมวดห้อง ยังไม่มีหมวดใดถูกเลือก จึงไม่มี aria-current
     assert "สถานะห้องวันนี้" in home_html
-    assert "จองห้องพัก" in home_html
+    assert "ห้องพัก" in home_html
     assert "เข้าสู่ระบบ" in home_html
 
     # On lodging start, "จองห้องพัก" gets aria-current="page"

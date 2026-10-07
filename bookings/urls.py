@@ -18,6 +18,7 @@ urlpatterns = [
     path("start/", role_home, name="role_home"),
     # หน้า Gateway เป็นทางเข้าหลัก ส่วน /home/ เป็นหน้าสถานะห้องเมนูรอง
     path("home/", views.calendar_view, name="calendar"),
+    path("home/<slug:category>/", views.room_status_view, name="room_status"),
     path(
         "",
         RedirectView.as_view(pattern_name="bookings:lodging_about", query_string=True, permanent=False),

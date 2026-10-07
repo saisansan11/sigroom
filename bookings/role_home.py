@@ -65,6 +65,9 @@ def current_service(request):
         return category if category in {"classroom", "meeting"} else None
     if name in {"calendar", "calendar_events"}:
         return service_for_category(request.GET.get("category", "").strip())
+    if name == "room_status":
+        category = match.kwargs.get("category")
+        return category if category in NAV_SERVICE_LABELS else None
     if name == "my_bookings":
         service = request.GET.get("service", "").strip()
         return service if service in NAV_SERVICE_LABELS else None
