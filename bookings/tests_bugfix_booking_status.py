@@ -138,7 +138,7 @@ def test_displaced_booking_not_on_today_board(env, client):
     booking.holds.update(released_at=timezone.now())
     Booking.objects.filter(pk=booking.pk).update(usage_status=Booking.UsageStatus.DISPLACED)
     client.force_login(env["requester"])
-    response = client.get(reverse("bookings:calendar"))
+    response = client.get(reverse("bookings:room_status", args=["classroom"]))
     row = next(row for row in response.context["board_rows"] if row["room"] == env["room"])
     assert all(block["label"] != "วิชาเดิม" for block in row["blocks"])
 

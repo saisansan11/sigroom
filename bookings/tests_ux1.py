@@ -306,44 +306,40 @@ def test_task_first_home_shows_primary_task_banner_for_next_booking(client, ux1_
     assert reverse("bookings:booking_detail", args=[booking.id]) in html
 
 
-def test_task_first_home_shows_quick_booking_banner_for_idle_user(client, ux1_data):
-    """User without upcoming booking still has the solid booking cell linking to the search."""
+def test_task_first_home_shows_category_choices_for_idle_user(client, ux1_data):
     client.force_login(ux1_data["normal_user"])
     resp = client.get(reverse("bookings:calendar"))
     assert resp.status_code == 200
     html = resp.content.decode()
-
-    expected = 'class="task-cell task-cell-primary" href="' + reverse("bookings:book_search") + '"'
-    assert expected in html
     assert "ยังไม่มีการจอง" in html
     assert 'data-task="my-pending"' in html
+    assert 'class="status-category-grid"' in html
+    assert reverse("bookings:room_status", args=["classroom"]) in html
+    assert reverse("bookings:room_status", args=["lodging"]) in html
+    assert 'class="task-cell task-cell-primary"' not in html
 
 
-def test_task_first_home_quick_launcher_links(client, ux1_data):
-    """Primary booking stays visible while secondary shortcuts move under one disclosure."""
+def test_task_first_home_links_to_separate_status_pages(client, ux1_data):
     client.force_login(ux1_data["normal_user"])
     resp = client.get(reverse("bookings:calendar"))
     assert resp.status_code == 200
     html = resp.content.decode()
+    assert 'class="status-category-grid"' in html
+    for category in ("classroom", "lab", "meeting", "online", "lodging"):
+        assert reverse("bookings:room_status", args=[category]) in html
+    assert 'id="home-more"' not in html
+    assert 'href="#homepage-availability-section"' not in html
+    assert 'href="#operational-calendar-section"' not in html
 
-    assert 'id="home-more"' in html
-    assert 'class="home-more-links"' in html
-    assert reverse("bookings:book_search") in html
-    assert 'href="#homepage-availability-section"' in html
-    assert 'href="#operational-calendar-section"' in html
 
-
-def test_operational_calendar_and_today_board_remain_accessible(client):
-    """Today's ledger stays primary; all secondary content shares one collapsed disclosure."""
-    resp = client.get(reverse("bookings:calendar"))
+def test_operational_calendar_and_today_board_live_on_category_page(client):
+    resp = client.get(reverse("bookings:room_status", args=["classroom"]))
     assert resp.status_code == 200
     html = resp.content.decode()
-
     assert '<details id="home-more" class="home-more">' in html
     assert '<details id="home-more" class="home-more" open' not in html
     assert '<section id="operational-calendar-section" class="operational-calendar-section">' in html
     assert 'id="operational-schedule-summary"' in html
-
     assert 'id="today-board"' in html
     assert html.index('id="today-board"') < html.index('id="home-more"') < html.index('id="operational-calendar-section"')
     assert 'id="calendar"' in html
@@ -351,37 +347,33 @@ def test_operational_calendar_and_today_board_remain_accessible(client):
     assert 'id="building-filter"' in html
 
 
-def test_guest_homepage_removes_duplicate_action_banner(client):
-    """Guest homepage: plain Thai heading, login + lodging actions, no HUD labels."""
+def test_guest_status_index_is_clean_category_selector(client):
     resp = client.get(reverse("bookings:calendar"))
     assert resp.status_code == 200
     html = resp.content.decode()
-
     assert "guest-action-banner" not in html
     assert "guest-head" in html
     assert reverse("login") in html
-    assert reverse("bookings:lodging_index") in html
-    assert 'href="#operational-calendar-section"' in html
+    assert 'class="status-category-grid"' in html
+    assert reverse("bookings:room_status", args=["lodging"]) in html
+    assert 'href="#operational-calendar-section"' not in html
     for hud_label in ("Mission Clock", "Guest Access", ">Today<"):
         assert hud_label not in html
 
 
-def test_compact_home_entry_strip_preserves_discovery_and_anchors(client, ux1_data):
-    """Room-category index keeps the anchors into the availability list and lodging cohorts."""
+def test_compact_home_category_index_routes_each_service_separately(client, ux1_data):
     resp = client.get(reverse("bookings:calendar"))
     assert resp.status_code == 200
     html = resp.content.decode()
+    assert 'class="status-category-grid"' in html
+    for category in ("classroom", "lab", "meeting", "online", "lodging"):
+        assert reverse("bookings:room_status", args=[category]) in html
+    assert ux1_data["cohort"].title not in html
 
-    assert 'class="room-index"' in html
-    assert "ห้องเรียน / ห้องปฏิบัติ" in html
-    assert "ห้องประชุม" in html
-    assert "ห้องพักหลักสูตร" in html
-    assert 'href="#now-teaching"' in html
-    assert 'href="#now-meeting"' in html
-
-    assert 'id="lodging-courses"' in html
-    assert ux1_data["cohort"].title in html
-    assert reverse("bookings:lodging_portal", args=[ux1_data["cohort"].slug]) in html
+    lodging = client.get(reverse("bookings:room_status", args=["lodging"]))
+    lodging_html = lodging.content.decode()
+    assert ux1_data["cohort"].title in lodging_html
+    assert reverse("bookings:lodging_portal", args=[ux1_data["cohort"].slug]) in lodging_html
 
 
 def test_authenticated_home_eliminates_redundant_task_repetition(client, ux1_data):

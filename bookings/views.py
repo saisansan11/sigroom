@@ -76,6 +76,83 @@ BOOK_SEARCH_CATEGORY_CHOICES = (
 )
 
 
+ROOM_STATUS_PAGES = {
+    "classroom": {
+        "label": "ห้องเรียน",
+        "description": "ดูเฉพาะห้องเรียนและช่วงเวลาว่างของห้องเรียน",
+        "categories": (Resource.Category.CLASSROOM,),
+        "booking_category": "classroom",
+    },
+    "lab": {
+        "label": "ห้องสอนปฏิบัติ",
+        "description": "ดูเฉพาะห้องสอนปฏิบัติและห้องฝึก",
+        "categories": (Resource.Category.LAB,),
+        "booking_category": "lab",
+    },
+    "meeting": {
+        "label": "ห้องประชุม",
+        "description": "ดูห้องประชุมและห้องพิเศษที่ใช้กระบวนการจองเดียวกัน",
+        "categories": (Resource.Category.MEETING, Resource.Category.SPECIAL),
+        "booking_category": "meeting",
+    },
+    "online": {
+        "label": "ห้องสอนออนไลน์",
+        "description": "ดูเฉพาะห้องสอนออนไลน์และสถานะว่างของแต่ละห้อง",
+        "categories": (Resource.Category.ONLINE,),
+        "booking_category": "",
+    },
+    "lodging": {
+        "label": "ห้องพัก",
+        "description": "ดูเฉพาะห้องพักและการสงวนห้องตามรอบหลักสูตร",
+        "categories": (Resource.Category.LODGING,),
+        "booking_category": "",
+    },
+}
+
+
+def _room_status_page(category):
+    page = ROOM_STATUS_PAGES.get(category)
+    if page is None:
+        raise Http404("ไม่พบหมวดห้อง")
+    return page
+
+
+def _status_page_items():
+    base = Resource.objects.filter(resource_type=Resource.Type.ROOM, status=Resource.Status.ACTIVE)
+    items = []
+    for key, page in ROOM_STATUS_PAGES.items():
+        items.append({
+            "key": key,
+            "label": page["label"],
+            "description": page["description"],
+            "count": base.filter(room_category__in=page["categories"]).count(),
+            "url": reverse("bookings:room_status", args=[key]),
+        })
+    return items
+
+
+def _status_primary_action(request, category, page):
+    if category == "lodging":
+        return {"label": "จองห้องพัก", "url": reverse("bookings:lodging_index")}
+    if category == "online":
+        online_url = reverse("bookings:online_teaching_home")
+        if request.user.is_authenticated and can_book_online_teaching(request.user):
+            return {"label": "จองห้องสอนออนไลน์", "url": online_url}
+        if not request.user.is_authenticated:
+            return {
+                "label": "เข้าสู่ระบบเพื่อจองห้องสอนออนไลน์",
+                "url": f"{reverse('login')}?{urlencode({'next': online_url})}",
+            }
+        return None
+    booking_path = f"{reverse('bookings:book_search')}?{urlencode({'category': page['booking_category']})}"
+    if request.user.is_authenticated:
+        return {"label": f"จอง{page['label']}", "url": booking_path}
+    return {
+        "label": f"เข้าสู่ระบบเพื่อจอง{page['label']}",
+        "url": f"{reverse('login')}?{urlencode({'next': booking_path})}",
+    }
+
+
 def _parse_calendar_datetime(value: str | None, fallback: datetime) -> datetime:
     try:
         parsed = parse_datetime(value or "") or fallback
@@ -138,8 +215,8 @@ def _room_gap_bookable(request, room):
     return False
 
 
-def _today_board(request, rooms, now):
-    """แถวเวลารายห้องของวันนี้ (07:00–21:00) พร้อมช่วงว่างแตะจอง และตัวเลขสรุปสถานการณ์"""
+def _today_board(request, rooms, now, *, allow_gap_booking=True):
+    """แถวเวลารายห้องของวันนี้; dedicated flows may disable generic gap booking links."""
     zone = timezone.get_current_timezone()
     day = timezone.localdate(now)
     board_start = timezone.make_aware(datetime.combine(day, time(BOARD_START_HOUR)), zone)
@@ -245,7 +322,7 @@ def _today_board(request, rooms, now):
             busy_now.add(room.id)
             in_use.add(room.id)
         gaps = []
-        if _room_gap_bookable(request, room):
+        if allow_gap_booking and _room_gap_bookable(request, room):
             rule = getattr(room, "rule", None)
             window_start, window_end = board_start, board_end
             pad = timedelta(0)
@@ -278,7 +355,7 @@ def _today_board(request, rooms, now):
     }
 
 
-def _homepage_availability_context(request, selected_category=""):
+def _homepage_availability_context(request, selected_categories=()):
     """แปลงผล service ของงาน A เป็นข้อมูลแสดงผลและลิงก์จองที่ปลอดภัย.
 
     ตอนนี้คำนวณตรวจว่างรายห้องทุกครั้งที่เปิดหน้าแรก ซึ่งเหมาะกับ pilot ที่มี
@@ -296,6 +373,9 @@ def _homepage_availability_context(request, selected_category=""):
             "end": local_end.strftime("%H:%M"),
         }
     )
+    if isinstance(selected_categories, str):
+        selected_categories = (selected_categories,) if selected_categories else ()
+    selected_categories = set(selected_categories)
     groups = []
     group_categories = {
         "teaching": {Resource.Category.CLASSROOM, Resource.Category.LAB},
@@ -311,14 +391,13 @@ def _homepage_availability_context(request, selected_category=""):
     for group in now_result.groups:
         if group["key"] == "online" and not has_online:
             continue
+        if selected_categories and not (selected_categories & group_categories[group["key"]]):
+            continue
         cards = []
-        if selected_category and selected_category not in group_categories[group["key"]]:
-            room_results = ()
-        else:
-            room_results = tuple(
-                result for result in group["rooms"]
-                if not selected_category or result.room.room_category == selected_category
-            )
+        room_results = tuple(
+            result for result in group["rooms"]
+            if not selected_categories or result.room.room_category in selected_categories
+        )
         for result in room_results:
             booking_path = f"{reverse('bookings:book_form', args=[result.room.code])}?{query_string}"
             book_url = booking_path if request.user.is_authenticated else (
@@ -356,15 +435,7 @@ def about_view(request):
     return render(request, "bookings/about.html")
 
 
-def calendar_view(request):
-    rooms = Resource.objects.filter(
-        resource_type=Resource.Type.ROOM, status=Resource.Status.ACTIVE
-    ).order_by("code").select_related("rule").prefetch_related("photos")
-    selected_category = request.GET.get("category", "").strip()
-    if selected_category:
-        rooms = rooms.filter(room_category=selected_category)
-    buildings = rooms.exclude(building="").values_list("building", flat=True).distinct().order_by("building")
-    now = timezone.now()
+def _home_task_context(request, now):
     if request.user.is_authenticated:
         next_booking = (
             _booking_queryset()
@@ -390,36 +461,76 @@ def calendar_view(request):
         next_booking = None
         usage_today_count = None
         my_pending_count = 0
+    return {
+        "next_booking": next_booking,
+        "next_booking_countdown": _countdown_label(next_booking, now),
+        "usage_today_count": usage_today_count,
+        "my_pending_count": my_pending_count,
+    }
 
-    category_choices = [
-        ("", "ทุกหมวดห้อง"),
-        (Resource.Category.CLASSROOM, "ห้องเรียน"),
-        (Resource.Category.LODGING, "ห้องพัก"),
-        (Resource.Category.MEETING, "ห้องประชุม"),
-        (Resource.Category.ONLINE, "ห้องสอนออนไลน์"),
-        (Resource.Category.LAB, "ห้องสอนปฏิบัติ"),
-    ]
 
-    active_lodging_cohorts = CourseLodgingCohort.objects.filter(
-        allocation_status=CourseLodgingCohort.AllocationStatus.ALLOCATED,
-        is_active=True,
-    ).order_by("check_in_date", "title")
+def calendar_view(request):
+    """Status landing page: choose one room category before showing any room ledger."""
+    now = timezone.now()
+    context = {
+        "home_now": timezone.localtime(now),
+        "status_categories": _status_page_items(),
+    }
+    context.update(_home_task_context(request, now))
+    return render(request, "bookings/status_index.html", context)
 
+
+def room_status_view(request, category):
+    """Dedicated status page locked to one server-side room category group."""
+    page = _room_status_page(category)
+    rooms = (
+        Resource.objects.filter(
+            resource_type=Resource.Type.ROOM,
+            status=Resource.Status.ACTIVE,
+            room_category__in=page["categories"],
+        )
+        .order_by("code")
+        .select_related("rule")
+        .prefetch_related("photos")
+    )
+    buildings = rooms.exclude(building="").values_list("building", flat=True).distinct().order_by("building")
+    now = timezone.now()
+    active_lodging_cohorts = None
+    if category == "lodging":
+        active_lodging_cohorts = CourseLodgingCohort.objects.filter(
+            allocation_status=CourseLodgingCohort.AllocationStatus.ALLOCATED,
+            is_active=True,
+        ).order_by("check_in_date", "title")
+
+    availability = None
+    if category not in {"lodging", "online"}:
+        availability = _homepage_availability_context(request, page["categories"])
+
+    status_page = {
+        "key": category,
+        "label": page["label"],
+        "description": page["description"],
+        "booking_category": page["booking_category"],
+        "generic_booking": category not in {"lodging", "online"},
+        "primary_action": _status_primary_action(request, category, page),
+    }
     context = {
         "rooms": rooms,
         "buildings": buildings,
-        "selected_category": selected_category,
-        "category_choices": category_choices,
-        "next_booking": next_booking,
-        "next_booking_countdown": _countdown_label(next_booking, now),
+        "status_page": status_page,
         "home_now": timezone.localtime(now),
-        "usage_today_count": usage_today_count,
-        "my_pending_count": my_pending_count,
         "active_lodging_cohorts": active_lodging_cohorts,
-        "homepage_availability": _homepage_availability_context(request, selected_category),
+        "homepage_availability": availability,
     }
-    context.update(_today_board(request, rooms, now))
-    return render(request, "bookings/calendar.html", context)
+    context.update(
+        _today_board(
+            request,
+            rooms,
+            now,
+            allow_gap_booking=category not in {"lodging", "online"},
+        )
+    )
+    return render(request, "bookings/room_status.html", context)
 
 
 def calendar_events(request):
@@ -432,7 +543,21 @@ def calendar_events(request):
         start_at__lt=end,
         end_at__gt=start,
     ).exclude(usage_status=Booking.UsageStatus.DISPLACED)
-    if request.GET.get("category"):
+    status_category = request.GET.get("status_category", "").strip()
+    status_page = ROOM_STATUS_PAGES.get(status_category) if status_category else None
+    if status_category and status_page is None:
+        return JsonResponse({"detail": "unknown room status category"}, status=400)
+    event_categories = tuple(status_page["categories"]) if status_page else ()
+    requested_room_code = request.GET.get("room", "").strip()
+    if event_categories and requested_room_code and not Resource.objects.filter(
+        code=requested_room_code,
+        resource_type=Resource.Type.ROOM,
+        room_category__in=event_categories,
+    ).exists():
+        return JsonResponse([], safe=False)
+    if event_categories:
+        bookings = bookings.filter(room__room_category__in=event_categories)
+    elif request.GET.get("category"):
         bookings = bookings.filter(room__room_category=request.GET["category"])
     if request.GET.get("room"):
         bookings = bookings.filter(room__code=request.GET["room"])
@@ -488,7 +613,9 @@ def calendar_events(request):
     cohort_category = request.GET.get("category")
     cohort_room_code = request.GET.get("room")
     cohort_building = request.GET.get("building")
-    if cohort_category:
+    if event_categories:
+        cohort_query = cohort_query.filter(rooms__room_category__in=event_categories)
+    elif cohort_category:
         cohort_query = cohort_query.filter(rooms__room_category=cohort_category)
     if cohort_room_code:
         cohort_query = cohort_query.filter(rooms__code=cohort_room_code)
@@ -507,7 +634,9 @@ def calendar_events(request):
             # cohort_query กรองที่ระดับ "รุ่นที่มีห้องตรงเงื่อนไข" (M2M) เท่านั้น
             # จึงต้องกรองห้องแต่ละห้องซ้ำอีกชั้น ไม่เช่นนั้นรุ่นที่มีหลายห้อง
             # จะโผล่ event ของห้อง/อาคารอื่นที่ไม่ตรงตัวกรองไปด้วย
-            if cohort_category and room.room_category != cohort_category:
+            if event_categories and room.room_category not in event_categories:
+                continue
+            if not event_categories and cohort_category and room.room_category != cohort_category:
                 continue
             if cohort_room_code and room.code != cohort_room_code:
                 continue
@@ -537,6 +666,11 @@ def calendar_events(request):
         )
         .select_related("booking", "booking__room", "booking__unit", "proposed_room")
     )
+    if event_categories:
+        amendments = amendments.filter(
+            Q(proposed_room__room_category__in=event_categories)
+            | Q(proposed_room__isnull=True, booking__room__room_category__in=event_categories)
+        )
     for amendment in amendments:
         proposed_start = amendment.proposed_start_at or amendment.booking.start_at
         proposed_end = amendment.proposed_end_at or amendment.booking.end_at
@@ -571,17 +705,27 @@ def calendar_events(request):
         )
     selected_room = None
     if request.GET.get("room"):
-        selected_room = Resource.objects.filter(code=request.GET["room"], resource_type=Resource.Type.ROOM).first()
+        selected_room_query = Resource.objects.filter(
+            code=request.GET["room"], resource_type=Resource.Type.ROOM
+        )
+        if event_categories:
+            selected_room_query = selected_room_query.filter(room_category__in=event_categories)
+        selected_room = selected_room_query.first()
+
+    scoped_rooms = Resource.objects.filter(resource_type=Resource.Type.ROOM)
+    if event_categories:
+        scoped_rooms = scoped_rooms.filter(room_category__in=event_categories)
+    if request.GET.get("building"):
+        scoped_rooms = scoped_rooms.filter(building=request.GET["building"])
+    scoped_rooms = list(scoped_rooms)
+
     blackouts = Blackout.objects.filter(start_at__lt=end, end_at__gt=start).prefetch_related("rooms")
     for blackout in blackouts:
-        if selected_room and not blackout.applies_to(selected_room):
-            continue
-        if request.GET.get("building") and blackout.scope != Blackout.Scope.ALL:
-            building_rooms = Resource.objects.filter(
-                resource_type=Resource.Type.ROOM,
-                building=request.GET["building"],
-            )
-            if not any(blackout.applies_to(room) for room in building_rooms):
+        if selected_room:
+            if not blackout.applies_to(selected_room):
+                continue
+        elif event_categories or request.GET.get("building"):
+            if not any(blackout.applies_to(room) for room in scoped_rooms):
                 continue
         events.append(
             {
