@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% load thaidate %}
+{% block title %}สถานะห้องวันนี้ · SIGROOM{% endblock %}
+{% block content %}
+<section class="home-head{% if not user.is_authenticated %} guest-head{% endif %}" aria-labelledby="home-greeting">
+  <p class="home-dateline">{{ home_now|thai_date_full }} · เวลา <span id="home-clock">{{ home_now|date:"H.i" }}</span> น.</p>
+  {% if user.is_authenticated %}
+    <h1 id="home-greeting" class="home-greeting">สวัสดี {{ user.display_name }}</h1>
+    {% if user.unit %}<p class="home-unit">{{ user.unit.name }}</p>{% endif %}
+    <div class="task-strip" aria-label="งานของท่านวันนี้">
+      {% if nav_can_access_approvals and nav_pending_approval_count or nav_can_access_approvals and not nav_can_manage_usage or nav_can_access_approvals and not usage_today_count %}
+        <div class="task-cell" data-task="approvals"><span class="task-cell-label">รอท่านพิจารณา</span><span class="task-cell-value">{{ nav_pending_approval_count|default:0 }} <small>รายการ</small></span><a href="{% url 'approvals:queue' %}">{% if nav_pending_approval_count %}เปิดคิวอนุมัติ{% else %}คิวอนุมัติเรียบร้อย{% endif %}</a></div>
+      {% elif nav_can_manage_usage %}
+        <div class="task-cell" data-task="usage"><span class="task-cell-label">การใช้งานห้องวันนี้</span><span class="task-cell-value">{{ usage_today_count|default:0 }} <small>รายการให้ตรวจ</small></span><a href="{% url 'usage:list' %}">เปิดการใช้งานห้อง</a></div>
+      {% else %}
+        <div class="task-cell" data-task="my-pending"><span class="task-cell-label">คำขอของท่านที่รอพิจารณา</span><span class="task-cell-value">{{ my_pending_count }} <small>รายการ</small></span><a href="{% url 'bookings:my_bookings' %}">ดูการจองของฉัน</a></div>
+      {% endif %}
+      <div class="task-cell" data-task="next-booking">
+        <span class="task-cell-label">การจองถัดไปของท่าน</span>
+        {% if next_booking %}<a class="task-cell-title" href="{% url 'bookings:booking_detail' next_booking.id %}">{{ next_booking.room.code }} · {{ next_booking.start_at|time:"H.i" }} น.</a><span class="task-cell-note">{{ next_booking.title }}</span><span class="task-cell-note"><strong>{{ next_booking_countdown }}</strong></span>{% else %}<span class="task-cell-title">ยังไม่มีการจอง</span><a href="{% url 'bookings:my_bookings' %}">ดูประวัติการจอง</a>{% endif %}
+      </div>
+    </div>
+  {% else %}
+    <h1 id="home-greeting" class="home-greeting">สถานะห้องวันนี้</h1>
+    <p class="home-unit">เลือกหมวดห้องที่ต้องการดู แต่ละหมวดแยกทะเบียนและตารางของตัวเอง</p>
+  {% endif %}
+</section>
+
+<section class="status-category-section" aria-labelledby="status-category-heading">
+  <div class="ledger-head"><h2 id="status-category-heading">เลือกหมวดห้อง</h2><p class="ledger-summary">ไม่รวมหลายประเภทไว้ในหน้าเดียว</p></div>
+  <div class="status-category-grid">
+    {% for item in status_categories %}
+      <a class="status-category-card" href="{{ item.url }}">
+        <span class="status-category-label">{{ item.label }}</span>
+        <strong>{{ item.count }} ห้อง</strong>
+        <span>{{ item.description }}</span>
+        <small>ดูสถานะ →</small>
+      </a>
+    {% endfor %}
+  </div>
+</section>
+{% if not user.is_authenticated %}<p class="status-index-login"><a role="button" class="btn-primary" href="{% url 'login' %}?next={{ request.path }}">เข้าสู่ระบบ</a></p>{% endif %}
+{% endblock %}
+{% block scripts %}<script>document.addEventListener('DOMContentLoaded',function(){const el=document.getElementById('home-clock');if(!el)return;const z=n=>String(n).padStart(2,'0');setInterval(()=>{const d=new Date();el.textContent=`${z(d.getHours())}.${z(d.getMinutes())}`;},30000);});</script>{% endblock %}

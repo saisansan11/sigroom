@@ -26,7 +26,7 @@ def navigation_counts(request):
             },
         })
         if service in {"classroom", "meeting"}:
-            links.append({"label": "สถานะห้อง", "url": f"{reverse('bookings:calendar')}?category={service}", "active": name == "calendar"})
+            links.append({"label": "สถานะห้อง", "url": reverse("bookings:room_status", args=[service]), "active": name in {"calendar", "room_status"}})
         if service != "lodging":
             links.append({"label": "การจองของฉัน", "url": f"{reverse('bookings:my_bookings')}?service={service}", "active": name == "my_bookings"})
         elif name == "lodging_general_request_status":

@@ -112,47 +112,46 @@ def _query(url):
     return {k: v[0] for k, v in parse_qs(urlparse(url).query).items()}
 
 
-def test_home_board_links_free_gaps_to_prefilled_booking_form(client, ledger_home):
+def test_category_board_links_free_gaps_to_prefilled_booking_form(client, ledger_home):
     client.force_login(ledger_home["user"])
-    response = client.get(reverse("bookings:calendar"))
+    response = client.get(reverse("bookings:room_status", args=["classroom"]))
     assert response.status_code == 200
-
     gaps = _row(response, "LG-101")["gaps"]
     assert [(_query(g["url"])["start"], _query(g["url"])["end"]) for g in gaps] == [("08:00", "10:00"), ("12:00", "17:00")]
     first = gaps[0]["url"]
     assert first.startswith(reverse("bookings:book_form", args=["LG-101"]) + "?")
     assert _query(first)["date"] == ledger_home["today"].isoformat()
-
     html = response.content.decode()
     assert 'class="slot slot-free"' in html
     assert escape(first) in html
     assert 'class="slot slot-approved"' in html
-    assert "ทะเบียนห้องวันนี้" in html
+    assert "ทะเบียนห้องเรียนวันนี้" in html
 
 
-def test_home_board_free_gap_link_prefills_the_form(client, ledger_home):
+def test_category_board_free_gap_link_prefills_the_form(client, ledger_home):
     client.force_login(ledger_home["user"])
-    gap_url = _row(client.get(reverse("bookings:calendar")), "LG-101")["gaps"][1]["url"]
+    response = client.get(reverse("bookings:room_status", args=["classroom"]))
+    gap_url = _row(response, "LG-101")["gaps"][1]["url"]
     form = client.get(gap_url).context["form"]
     assert form.initial["start_time"] == "12:00"
     assert form.initial["end_time"] == "17:00"
 
 
-def test_home_board_free_gaps_send_anonymous_users_to_login(client, ledger_home):
-    response = client.get(reverse("bookings:calendar"))
+def test_category_board_free_gaps_send_anonymous_users_to_login(client, ledger_home):
+    response = client.get(reverse("bookings:room_status", args=["classroom"]))
     gaps = _row(response, "LG-101")["gaps"]
     assert gaps
     assert all(g["url"].startswith(reverse("login") + "?next=") for g in gaps)
-    assert "เข้าสู่ระบบเพื่อจอง" in response.content.decode()
+    assert "เข้าสู่ระบบเพื่อจองห้องเรียน" in response.content.decode()
 
 
-def test_home_board_has_no_free_gap_links_for_lodging_rooms(client, ledger_home):
+def test_lodging_status_has_no_generic_free_gap_links(client, ledger_home):
     client.force_login(ledger_home["user"])
-    response = client.get(reverse("bookings:calendar"))
+    response = client.get(reverse("bookings:room_status", args=["lodging"]))
     assert _row(response, "LG-DORM")["gaps"] == []
 
 
-def test_home_board_marks_pending_and_outage_without_relying_on_colour(client, ledger_home):
+def test_separate_category_boards_mark_pending_and_outage_without_cross_leak(client, ledger_home):
     from resources.models import ResourceOutage
 
     today = ledger_home["today"]
@@ -168,10 +167,15 @@ def test_home_board_marks_pending_and_outage_without_relying_on_colour(client, l
         end_at=timezone.make_aware(datetime.combine(today, time(11, 0)), ZONE),
     )
     client.force_login(ledger_home["user"])
-    html = client.get(reverse("bookings:calendar")).content.decode()
-    assert "รอพิจารณา · ฝึก นนส." in html
-    assert "งดใช้ · ซ่อมเครื่องปรับอากาศ" in html
-    gaps = _row(client.get(reverse("bookings:calendar")), "LG-101")["gaps"]
+    classroom = client.get(reverse("bookings:room_status", args=["classroom"]))
+    lodging = client.get(reverse("bookings:room_status", args=["lodging"]))
+    class_html = classroom.content.decode()
+    lodging_html = lodging.content.decode()
+    assert "รอพิจารณา · ฝึก นนส." in class_html
+    assert "ซ่อมเครื่องปรับอากาศ" not in class_html
+    assert "งดใช้ · ซ่อมเครื่องปรับอากาศ" in lodging_html
+    assert "ฝึก นนส." not in lodging_html
+    gaps = _row(classroom, "LG-101")["gaps"]
     assert [(_query(g["url"])["start"], _query(g["url"])["end"]) for g in gaps] == [
         ("08:00", "10:00"), ("12:00", "14:00"), ("15:00", "17:00"),
     ]

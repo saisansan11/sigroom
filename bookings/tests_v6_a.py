@@ -53,43 +53,32 @@ def v6_a_setup():
     return user, unit, cohort, room1, room2
 
 
-def test_guest_home_renders_three_one_stop_cards_and_anchor(client):
-    """Guest เห็นการ์ดทางเข้า 3 ใบของงาน A และแถบห้องว่างรายกลุ่ม"""
+def test_guest_home_renders_separate_room_category_cards(client):
     resp = client.get(reverse("bookings:calendar"))
     assert resp.status_code == 200
     content = resp.content.decode()
-
-    assert 'class="room-index"' in content
-    assert "ห้องเรียน / ห้องปฏิบัติ" in content
-    assert "ห้องประชุม" in content
-    assert "ห้องพักหลักสูตร" in content
-    assert 'href="#now-teaching"' in content
-    assert 'href="#now-meeting"' in content
-    assert 'id="now-teaching"' in content
-    assert 'id="now-meeting"' in content
-
-    # ต้องมี id="today-board" บน section
-    assert 'id="today-board"' in content
+    assert 'class="status-category-grid"' in content
+    for category in ("classroom", "lab", "meeting", "online", "lodging"):
+        assert reverse("bookings:room_status", args=[category]) in content
+    assert 'class="room-index"' not in content
+    assert 'id="today-board"' not in content
 
 
-def test_authenticated_home_hides_role_router_and_orders_actions(client, v6_a_setup):
-    """ผู้ล็อกอินแล้วไม่เห็น role router และการ์ด action เรียงตามลำดับ"""
+def test_authenticated_home_keeps_tasks_but_moves_room_data_to_category_pages(client, v6_a_setup):
     user, _, cohort, _, _ = v6_a_setup
     client.force_login(user)
-
     resp = client.get(reverse("bookings:calendar"))
     assert resp.status_code == 200
     content = resp.content.decode()
-
-    # การ์ดทางเข้าใหม่ต้องแสดงทั้ง guest และผู้ล็อกอิน
     assert "guest-role-router" not in content
-    assert 'class="room-index"' in content
-    assert 'id="homepage-availability"' in content
-    assert cohort.title in content
-    assert reverse("bookings:lodging_portal", args=[cohort.slug]) in content
-
-    # ธีม A: งานของผู้ใช้อยู่ในแถบงาน 3 ช่อง
+    assert 'class="status-category-grid"' in content
     assert 'class="task-strip"' in content
+    assert cohort.title not in content
+
+    lodging = client.get(reverse("bookings:room_status", args=["lodging"]))
+    lodging_content = lodging.content.decode()
+    assert cohort.title in lodging_content
+    assert reverse("bookings:lodging_portal", args=[cohort.slug]) in lodging_content
 
 
 def test_authenticated_role_actions_priority_ordering(client, v6_a_setup, monkeypatch):
