@@ -18,7 +18,6 @@
   <link rel="stylesheet" href="{% static 'css/fonts.css' %}">
   <link rel="stylesheet" href="{% static 'css/app.css' %}">
   <link rel="stylesheet" href="{% static 'css/theme_90s.css' %}">
-  <link rel="stylesheet" href="{% static 'css/ink_bleed.css' %}">
   {% block head %}{% endblock %}
   {% if request.path|slice:":9" == "/lodging/" or request.GET.next|slice:":9" == "/lodging/" %}<link rel="stylesheet" href="{% static 'css/lodging_theme.css' %}">{% endif %}
 </head>
@@ -130,6 +129,5 @@
   })();
   </script>
   {% block scripts %}{% endblock %}
-  <script src="{% static 'js/ink_bleed.js' %}" defer></script>
 </body>
 </html>
