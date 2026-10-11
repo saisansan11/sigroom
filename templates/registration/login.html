@@ -51,6 +51,15 @@
       <li><a href="{% url 'accounts:password_reset' %}">ลืมรหัสผ่าน?</a> ระบบจะส่งลิงก์ตั้งรหัสใหม่ไปยังอีเมลหน่วย @signalschool.ac.th ของบัญชีท่าน</li>
       <li>ยังไม่มีบัญชี หรือบัญชีถูกล็อก — ติดต่อผู้ดูแลระบบ SIGROOM ของโรงเรียน</li>
     </ul>
+    <nav class="auth-public" aria-label="นโยบายและความเป็นส่วนตัว">
+      <p class="auth-public-title">นโยบายและความเป็นส่วนตัว</p>
+      <ul>
+        <li><a href="{% url 'privacy' %}">นโยบายความเป็นส่วนตัว</a></li>
+        <li><a href="{% url 'cookies' %}">นโยบายคุกกี้</a></li>
+        <li><a href="{% url 'terms' %}">นโยบายเว็บไซต์</a></li>
+        <li><a href="{% url 'disclaimer' %}">ข้อจำกัดความรับผิดชอบ</a></li>
+      </ul>
+    </nav>
     <div class="auth-public">
       <p class="auth-public-title">ไม่ต้องเข้าสู่ระบบ</p>
       <ul>
