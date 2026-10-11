@@ -1,7 +1,7 @@
 from django.urls import path
 from django.views.generic import RedirectView
 
-from . import course_views, lodging_views, views
+from . import course_views, lodging_views, policy_views, views
 from .role_home import role_home
 from .online_teaching import (
     online_teaching_book,
@@ -76,4 +76,9 @@ urlpatterns = [
     path("lodging/c/<slug:slug>/pass/<uuid:student_id>/", lodging_views.lodging_pass, name="lodging_pass"),
     path("lodging/checkin/<uuid:student_id>/", lodging_views.lodging_checkin, name="lodging_checkin"),
     path("lodging/checkin/<uuid:student_id>/qr.svg", lodging_views.lodging_checkin_qr_svg, name="lodging_checkin_qr_svg"),
+    # ศูนย์นโยบายและข้อกำหนดการใช้งาน (Policy Center)
+    path("privacy/", policy_views.privacy_view, name="privacy"),
+    path("cookies/", policy_views.cookies_view, name="cookies"),
+    path("terms/", policy_views.terms_view, name="terms"),
+    path("disclaimer/", policy_views.disclaimer_view, name="disclaimer"),
 ]

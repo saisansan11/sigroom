@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block content %}
+<div class="policy-page-wrap">
+  <nav class="policy-breadcrumb" aria-label="เส้นทางนำทาง">
+    <a href="{% url 'bookings:lodging_about' %}">SIGROOM</a> &rsaquo;
+    <span>ศูนย์นโยบายและข้อกำหนดการใช้งาน</span>
+  </nav>
+
+  <header class="policy-hero">
+    <h1>{% block policy_h1 %}{{ policy_title }}{% endblock %}</h1>
+    <div class="policy-meta-row">
+      <span class="policy-badge policy-badge-tbc">{{ policy_status_badge }}</span>
+      <span class="policy-meta-date">ฉบับวันที่: {{ policy_date }} (เวอร์ชัน {{ policy_version }})</span>
+    </div>
+  </header>
+
+  <nav class="policy-tabs-nav" aria-label="หมวดหมู่นโยบาย">
+    <ul class="policy-tabs-list">
+      <li>
+        <a class="policy-tab-link" href="{% url 'privacy' %}"{% if current_policy == 'privacy' %} aria-current="page"{% endif %}>
+          นโยบายความเป็นส่วนตัว
+        </a>
+      </li>
+      <li>
+        <a class="policy-tab-link" href="{% url 'cookies' %}"{% if current_policy == 'cookies' %} aria-current="page"{% endif %}>
+          นโยบายคุกกี้
+        </a>
+      </li>
+      <li>
+        <a class="policy-tab-link" href="{% url 'terms' %}"{% if current_policy == 'terms' %} aria-current="page"{% endif %}>
+          นโยบายเว็บไซต์
+        </a>
+      </li>
+      <li>
+        <a class="policy-tab-link" href="{% url 'disclaimer' %}"{% if current_policy == 'disclaimer' %} aria-current="page"{% endif %}>
+          ข้อจำกัดความรับผิดชอบ
+        </a>
+      </li>
+    </ul>
+  </nav>
+
+  <div class="policy-grid">
+    <aside class="policy-toc-card" aria-label="สารบัญประจำหน้า">
+      <h2 class="policy-toc-title">สารบัญเนื้อหา</h2>
+      <ol class="policy-toc-list">
+        {% block policy_toc %}{% endblock %}
+      </ol>
+    </aside>
+
+    <article class="policy-article">
+      {% block policy_body %}{% endblock %}
+    </article>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,115 @@
+{% extends "policy/base_policy.html" %}
+
+{% block title %}นโยบายคุกกี้ · SIGROOM{% endblock %}
+{% block policy_h1 %}นโยบายคุกกี้{% endblock %}
+
+{% block policy_toc %}
+  <li><a class="policy-toc-link" href="#type">๑. คุกกี้คืออะไรและประเภทที่ใช้</a></li>
+  <li><a class="policy-toc-link" href="#list">๒. รายการคุกกี้ในระบบ</a></li>
+  <li><a class="policy-toc-link" href="#browser-storage">๓. หน่วยความจำและการจัดเก็บบนเบราว์เซอร์</a></li>
+  <li><a class="policy-toc-link" href="#management">๔. การจัดการและปิดใช้งานคุกกี้</a></li>
+  <li><a class="policy-toc-link" href="#contact">๕. ช่องทางการติดต่อสอบถาม</a></li>
+{% endblock %}
+
+{% block policy_body %}
+  <div class="policy-callout policy-callout-tbc">
+    <strong class="policy-callout-title">ข้อความชี้แจงสถานะเอกสาร (Transparency Notice)</strong>
+    <p>เอกสารฉบับนี้อธิบายการทำงานของคุกกี้และหน่วยความจำเบราว์เซอร์ตามการกำหนดค่าจริงของระบบ SIGROOM (Django Framework บน Cloud Run / LAN) โดยระบบใช้เฉพาะคุกกี้ที่มีความจำเป็นอย่างยิ่งต่อการปฏิบัติงานเท่านั้น ไม่มีการใช้คุกกี้วิเคราะห์เชิงพาณิชย์หรือคุกกี้ติดตามข้ามเว็บไซต์</p>
+  </div>
+
+  <section id="type" class="policy-section">
+    <h2>๑. คุกกี้คืออะไรและประเภทที่ใช้งาน (Cookie Types)</h2>
+    <p>คุกกี้ (Cookies) คือไฟล์ข้อความขนาดเล็กที่ถูกจัดเก็บบนเบราว์เซอร์หรืออุปกรณ์ของคุณเมื่อคุณเข้าชมเว็บไซต์ ทำหน้าที่ช่วยจดจำข้อมูลการใช้งาน เช่น สถานะการเข้าสู่ระบบ หรือการตั้งค่าความปลอดภัย</p>
+    <p>ระบบ SIGROOM ใช้ <strong>คุกกี้ที่มีความจำเป็นอย่างยิ่ง (Strictly Necessary / Technical Cookies)</strong> เพียงประเภทเดียวเท่านั้น ซึ่งจำเป็นสำหรับการทำงานพื้นฐานและการรักษาความปลอดภัยของระบบ:</p>
+    <ul>
+      <li><strong>คุกกี้ที่จำเป็นอย่างยิ่ง (Strictly Necessary):</strong> ใช้เพื่อระบุเซสชันของผู้ใช้งานที่ผ่านการยืนยันตัวตน และป้องกันการโจมตีแบบส่งคำขอปลอมแปลง (CSRF)</li>
+      <li><strong>ไม่มีคุกกี้เพื่อการโฆษณาหรือการตลาด (No Advertising/Marketing Cookies):</strong> ระบบไม่มีการบันทึกหรือขายข้อมูลพฤติกรรมแก่บุคคลภายนอก</li>
+      <li><strong>ไม่มีคุกกี้ของบุคคลภายนอก (No Third-Party Tracking Cookies):</strong> ระบบไม่มีการติดตั้งสคริปต์สถิติภายนอกที่ติดตามผู้ใช้นอกเหนือจากการให้บริการระบบ</li>
+    </ul>
+  </section>
+
+  <section id="list" class="policy-section">
+    <h2>๒. รายการคุกกี้ในระบบ (Cookie List)</h2>
+    <p>ตามการกำหนดค่าของ Django ในระบบ SIGROOM คุกกี้ที่ใช้งานจริงประกอบด้วยรายการดังต่อไปนี้:</p>
+
+    <div class="policy-table-wrap">
+      <table class="policy-table">
+        <thead>
+          <tr>
+            <th scope="col">ชื่อคุกกี้</th>
+            <th scope="col">ประเภท</th>
+            <th scope="col">วัตถุประสงค์</th>
+            <th scope="col">ระยะเวลาจัดเก็บ</th>
+            <th scope="col">คุณสมบัติด้านความปลอดภัย</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>{{ session_cookie_name }}</code></td>
+            <td>First-party (จำเป็นอย่างยิ่ง)</td>
+            <td>
+              เก็บบันทึกรหัสเซสชัน (Session ID) สำหรับผู้ใช้ที่เข้าสู่ระบบ เพื่อตรวจสอบตัวตนและสิทธิ์ในการทำรายการจองห้อง
+              <br><small>หมายเหตุ: ในสภาพแวดล้อมความปลอดภัยจริง (Secure/Firebase CDN) ใช้ชื่อ <code>__session</code> ส่วนสภาพแวดล้อมทดสอบทั่วไปใช้ <code>sessionid</code></small>
+            </td>
+            <td>{{ session_cookie_age_hours }} ชั่วโมง (SESSION_COOKIE_AGE) หรือจนกว่าจะออกจากระบบ</td>
+            <td>HttpOnly, SameSite (Lax/Strict), Secure{% if django_secure %} (เปิดใช้งาน){% endif %}</td>
+          </tr>
+          <tr>
+            <td><code>csrftoken</code></td>
+            <td>First-party (จำเป็นอย่างยิ่ง)</td>
+            <td>
+              ป้องกันการโจมตีข้ามไซต์ (Cross-Site Request Forgery) ในการส่งฟอร์มจองห้องและการส่งคำขอผ่าน HTMX
+              {% if csrf_use_sessions %}
+                <br><small>หมายเหตุ: ในโหมดความปลอดภัยสูง ค่านี้ถูกผูกเก็บภายใน Session โดยตรง (CSRF_USE_SESSIONS = True)</small>
+              {% endif %}
+            </td>
+            <td>ตลอดช่วงเวลาเซสชัน (Session) หรือสูงสุด ๑ ปีสำหรับฟอร์ม</td>
+            <td>SameSite (Lax/Strict), Secure{% if django_secure %} (เปิดใช้งาน){% endif %}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="policy-callout">
+      <strong class="policy-callout-title">ชี้แจงความโปร่งใสเรื่องระบบยืนยันตัวตน</strong>
+      <p>ระบบ SIGROOM พัฒนาด้วยสถาปัตยกรรม <strong>Django Core Authentication + django-allauth</strong> (มิได้ใช้งานแพ็กเกจ Node.js หรือ NextAuth / Auth.js) จึง<strong>ไม่มีการสร้างหรือใช้งานคุกกี้ตระกูล <code>next-auth.session-token</code> หรือ <code>__Secure-authjs.session-token</code></strong> ข้อมูลคุกกี้ทั้งหมดจึงตรงตามตารางข้างต้นอย่างเคร่งครัด</p>
+    </div>
+  </section>
+
+  <section id="browser-storage" class="policy-section">
+    <h2>๓. การจัดเก็บบนเบราว์เซอร์และหน่วยความจำเครื่อง (Browser Storage)</h2>
+    <p>นอกเหนือจากคุกกี้ ระบบ SIGROOM ยังใช้กลไกการจัดเก็บบนเบราว์เซอร์ตามมาตรฐาน Progressive Web App (PWA) เพื่อเพิ่มประสิทธิภาพและความเสถียรในการใช้งาน:</p>
+    <ul>
+      <li><strong>Cache Storage (Service Worker: <code>sw.js</code>):</strong> บันทึกไฟล์ทรัพยากรคงที่ (Static Assets) เช่น ฟอนต์สารบรรณ (Sarabun font), ไฟล์ไอคอน, สไตล์ชีต CSS และ JavaScript เพื่อให้โหลดหน้าเว็บได้รวดเร็วแม้ในสภาพเครือข่ายความเร็วต่ำ</li>
+      <li><strong>SessionStorage:</strong> บันทึกสถานะชั่วคราวระหว่างการใช้งาน เช่น การจดจำแถบตัวกรองการแสดงผลห้อง และจะถูกลบอัตโนมัติเมื่อผู้ใช้ปิดแท็บเบราว์เซอร์</li>
+      <li><strong>LocalStorage:</strong> อาจใช้จัดเก็บการตั้งค่าการแสดงผลส่วนบุคคล เช่น การปิดแบนเนอร์แจ้งเตือนคำแนะนำการติดตั้ง PWA</li>
+    </ul>
+    <p>ข้อมูลทั้งหมดในหน่วยความจำเบราว์เซอร์จะถูกเก็บไว้เฉพาะบนอุปกรณ์ของคุณเท่านั้น และไม่มีการส่งออกไปยังเซิร์ฟเวอร์ภายนอก</p>
+  </section>
+
+  <section id="management" class="policy-section">
+    <h2>๔. การจัดการและการปิดการใช้งานคุกกี้ (Cookie Management)</h2>
+    <p>คุณสามารถควบคุม จัดการ หรือลบคุกกี้ผ่านการตั้งค่าของโปรแกรมเว็บเบราว์เซอร์ที่คุณใช้งานอยู่ โดยทั่วไปมีขั้นตอนดังนี้:</p>
+    <ul>
+      <li><strong>Google Chrome:</strong> การตั้งค่า (Settings) &rsaquo; ความเป็นส่วนตัวและความปลอดภัย (Privacy and security) &rsaquo; คุกกี้และข้อมูลเว็บไซต์อื่น</li>
+      <li><strong>Apple Safari:</strong> การตั้งค่า (Preferences / Settings) &rsaquo; ความเป็นส่วนตัว (Privacy) &rsaquo; บล็อกคุกกี้ทั้งหมด หรือ จัดการข้อมูลเว็บไซต์</li>
+      <li><strong>Mozilla Firefox:</strong> การตั้งค่า (Settings) &rsaquo; ความเป็นส่วนตัวและความปลอดภัย (Privacy &amp; Security) &rsaquo; คุกกี้และข้อมูลไซต์</li>
+      <li><strong>Microsoft Edge:</strong> การตั้งค่า (Settings) &rsaquo; คุกกี้และการอนุญาตไซต์ (Cookies and site permissions)</li>
+    </ul>
+    <div class="policy-callout policy-callout-tbc">
+      <strong class="policy-callout-title">ข้อพึงระวังในการปิดใช้งานคุกกี้</strong>
+      <p>เนื่องจากคุกกี้ในระบบ SIGROOM เป็นคุกกี้ที่มีความจำเป็นอย่างยิ่งต่อการทำงาน หากคุณตั้งค่าปิดการใช้งานคุกกี้ทั้งหมดในเบราว์เซอร์ คุณจะไม่สามารถเข้าสู่ระบบและไม่สามารถส่งคำขอจองห้องหรือที่พักได้</p>
+    </div>
+  </section>
+
+  <section id="contact" class="policy-section">
+    <h2>๕. ช่องทางการติดต่อและสอบถาม (Contact)</h2>
+    <p>หากมีข้อสงสัยเกี่ยวกับการทำงานของคุกกี้หรือการตั้งค่าความปลอดภัยในระบบ SIGROOM สามารถสอบถามได้ที่:</p>
+    <div class="policy-contact-card">
+      <p><strong>แผนกวิชาการสื่อสารประเภทวิทยุและการสงครามอิเล็กทรอนิกส์</strong><br>
+      กองการศึกษา โรงเรียนทหารสื่อสาร กรมการทหารสื่อสาร<br>
+      ผู้ดูแลระบบ: ร.ต. วสันต์ ทัศนามล<br>
+      การติดต่อ: ภายในระบบเครือข่ายโรงเรียนทหารสื่อสาร</p>
+    </div>
+  </section>
+{% endblock %}
