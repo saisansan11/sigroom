@@ -20,9 +20,9 @@ Check synthetic integration #102/#99 with actual default feat/lodging-v5-2. Run 
 ## Verification checklist
 - [x] GitHub fix PR HEAD read directly; original thread status read directly.
 - [x] Latest destination fetched and SHA pinned.
-- [ ] Antigravity implementation / conflict repair reviewed.
-- [ ] Targeted checks and appropriate regression.
-- [ ] Real browser QA with screenshots and no backend mutation.
+- [x] Existing #102/#99 implementation and clean integration reviewed (no additional source changes).
+- [x] Targeted policy 5 + 4 subtests PASS; full CI regression 1180 + 4 subtests PASS; CI migration/security/accessibility gate PASS.
+- [x] Chromium + WebKit: 5 routes x 6 widths x 2 engines = 60 viewport/page cases plus 8 navigation/keyboard/landmark checks PASS. Local lodging/about remains environment-blocked by missing PostgreSQL auth; no Production inference.
 - [ ] Final diff, SHA, CI provenance and branch-base metadata.
 - [ ] Policy approval evidence from actual authority (external dependency).
 
@@ -30,4 +30,12 @@ Check synthetic integration #102/#99 with actual default feat/lodging-v5-2. Run 
 git merge-tree latest destination vs fix head: clean.
 
 ## Final status
-In progress. Release Gate NO-GO. No Merge / No Production Deploy.
+Technical checks documented below. Release Gate NO-GO. No Merge / No Production Deploy.
+
+## Independent verification evidence
+- Candidate at b6dff694c1dca25ce58f8f5f44f17207e9703380 passed all six jobs in https://github.com/saisansan11/sigroom/actions/runs/38343367997 . Checkout log proves refs/pull/103/merge: head b6dff69 + base a12989b8520658dbb6364f13548ebdc9bfce2edd.
+- Full regression: 1180 passed + 4 subtests; aggregate PR Safety Gate, security audit and accessibility audit SUCCESS.
+- Local manage.py check: no errors; local warnings refer to SMTP/TLS/proxy settings. Local migrations: no drift but DB history could not be checked. CI with isolated PostgreSQL completed both migration check and regression.
+- No booking/model/schema/database/security/infrastructure mutation. Browser server stopped after verification.
+- Documentation-only evidence update requires latest SHA CI read-back; do not relabel prior SHA's run as a new SHA run.
+- Original five Copilot threads on #99 remain open because original parent PR was not changed/merged. Approval/retention/controller authority remains TBC.
