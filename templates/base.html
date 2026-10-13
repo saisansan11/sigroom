@@ -18,6 +18,7 @@
   <link rel="stylesheet" href="{% static 'css/fonts.css' %}">
   <link rel="stylesheet" href="{% static 'css/app.css' %}">
   <link rel="stylesheet" href="{% static 'css/theme_90s.css' %}">
+  <link rel="stylesheet" href="{% static 'css/policy.css' %}">
   {% block head %}{% endblock %}
   {% if request.path|slice:":9" == "/lodging/" or request.GET.next|slice:":9" == "/lodging/" %}<link rel="stylesheet" href="{% static 'css/lodging_theme.css' %}">{% endif %}
 </head>
@@ -87,6 +88,9 @@
     {% endif %}
     {% block content %}{% endblock %}
   </main>
+  {% block footer %}
+    {% include "includes/footer.html" %}
+  {% endblock %}
   <script src="{% static 'vendor/htmx/htmx.min.js' %}"></script>
   <script>
   (function () {
