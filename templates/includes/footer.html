@@ -1,0 +1,23 @@
+<footer class="site-footer" role="contentinfo">
+  <div class="footer-shell">
+    <div class="footer-nav-strip">
+      <div class="footer-nav-brand">
+        <strong>SIGROOM</strong>
+        <span class="footer-nav-brand-sub">ระบบจองห้องและที่พัก รร.ส.สส.</span>
+      </div>
+      <ul class="footer-nav-links" aria-label="ลิงก์นโยบายและข้อมูลระบบ">
+        <li><a href="{% url 'privacy' %}"{% if request.resolver_match.url_name == 'privacy' %} aria-current="page"{% endif %}>นโยบายความเป็นส่วนตัว</a></li>
+        <li><a href="{% url 'cookies' %}"{% if request.resolver_match.url_name == 'cookies' %} aria-current="page"{% endif %}>นโยบายคุกกี้</a></li>
+        <li><a href="{% url 'terms' %}"{% if request.resolver_match.url_name == 'terms' %} aria-current="page"{% endif %}>นโยบายเว็บไซต์</a></li>
+        <li><a href="{% url 'disclaimer' %}"{% if request.resolver_match.url_name == 'disclaimer' %} aria-current="page"{% endif %}>ข้อจำกัดความรับผิดชอบ</a></li>
+        <li><a href="{% url 'bookings:about' %}">เกี่ยวกับระบบ</a></li>
+      </ul>
+    </div>
+    <div class="footer-attribution-block">
+      <p class="footer-legal-line-th">© 2569 แผนกวิชาการสื่อสารประเภทวิทยุและการสงครามอิเล็กทรอนิกส์ กองการศึกษา โรงเรียนทหารสื่อสาร กรมการทหารสื่อสาร สงวนลิขสิทธิ์</p>
+      <p class="footer-legal-line-en">© 2026 Radio Communications and Electronic Warfare Department, Education Division, Signal School, Royal Thai Signal Corps. All rights reserved.</p>
+      <p class="footer-author-line-th">สร้างสรรค์และดูแลระบบโดย ร.ต. วสันต์ ทัศนามล</p>
+      <p class="footer-author-line-en">Created &amp; Maintained by 2nd Lt. Wasan Thatsanamol</p>
+    </div>
+  </div>
+</footer>

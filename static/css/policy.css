@@ -1,0 +1,427 @@
+/* ==========================================================================
+   SIGROOM Policy Center & Site Footer Styles
+   Theme: Ledger (สมุดทะเบียนห้อง) / 90s Paper Tone
+   ========================================================================== */
+
+/* --- Footer สองภาษาและข้อความลิขสิทธิ์ทางการ --- */
+.site-footer {
+  margin-top: var(--space-3xl, 3rem);
+  border-top: 2px solid var(--rule-strong, #B9AD8F);
+  background: var(--paper-sunk, #EFE8D6);
+  color: var(--ink, #1F2A24);
+  font-size: var(--text-sm, 0.9rem);
+  line-height: 1.6;
+}
+
+.site-footer .footer-shell {
+  width: min(100% - 2rem, var(--header-max, 92rem));
+  margin-inline: auto;
+  padding: var(--space-xl, 2rem) 0 var(--space-2xl, 2.5rem);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-lg, 1.5rem);
+}
+
+.footer-nav-strip {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-md, 1rem);
+  padding-bottom: var(--space-md, 1rem);
+  border-bottom: 1px solid var(--rule, #D8CFB8);
+}
+
+.footer-nav-brand {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs, 0.5rem);
+  font-weight: 700;
+  color: var(--ink, #1F2A24);
+  text-decoration: none;
+}
+
+.footer-nav-brand-sub {
+  color: var(--ink-muted, #5E5D52);
+  font-size: var(--text-xs, 0.8rem);
+  font-weight: 400;
+}
+
+.footer-nav-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-xs, 0.5rem) var(--space-md, 1rem);
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.footer-nav-links li {
+  margin: 0;
+  list-style: none;
+}
+
+.footer-nav-links a {
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  color: var(--link, #1F4E79);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.18em;
+  font-weight: 500;
+}
+
+.footer-nav-links a[aria-current="page"] {
+  color: var(--ink, #1F2A24);
+  font-weight: 700;
+  text-decoration: underline;
+}
+
+.footer-attribution-block {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  font-size: 0.88rem;
+}
+
+.footer-legal-line-th,
+.footer-legal-line-en {
+  margin: 0;
+  color: var(--ink, #1F2A24);
+  line-height: 1.5;
+}
+
+.footer-author-line-th,
+.footer-author-line-en {
+  margin: 0;
+  color: var(--ink-muted, #5E5D52);
+  line-height: 1.45;
+}
+
+/* --- โครงร่างศูนย์นโยบาย (Policy Hub) --- */
+.policy-page-wrap {
+  margin-block: var(--space-md, 1rem) var(--space-2xl, 3rem);
+}
+
+.policy-hero {
+  margin-bottom: var(--space-lg, 1.5rem);
+  padding: var(--space-lg, 1.5rem);
+  border: 1px solid var(--rule, #D8CFB8);
+  border-left: 4px solid var(--ink, #1F2A24);
+  background: var(--paper-raised, #FBF8F0);
+}
+
+.policy-breadcrumb {
+  margin-bottom: var(--space-xs, 0.5rem);
+  font-size: var(--text-xs, 0.8rem);
+  color: var(--ink-muted, #5E5D52);
+}
+
+.policy-breadcrumb a {
+  color: var(--link, #1F4E79);
+  text-decoration: none;
+}
+
+.policy-breadcrumb a:hover {
+  text-decoration: underline;
+}
+
+.policy-hero h1 {
+  margin: 0 0 var(--space-xs, 0.5rem);
+  font-size: clamp(1.8rem, 3.5vw, 2.5rem);
+  color: var(--ink, #1F2A24);
+}
+
+.policy-meta-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-sm, 0.75rem);
+  margin-top: var(--space-xs, 0.5rem);
+}
+
+.policy-badge {
+  display: inline-block;
+  padding: 0.2rem 0.6rem;
+  border-radius: 2px;
+  font-size: var(--text-xs, 0.8rem);
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.policy-badge-tbc {
+  background: var(--pending-bg, #F3E9CC);
+  color: var(--pending-text, #7A5F18);
+  border: 1px solid var(--pending, #8A6D1F);
+}
+
+.policy-meta-date {
+  color: var(--ink-muted, #5E5D52);
+  font-size: var(--text-xs, 0.8rem);
+}
+
+/* --- แถบสลับเอกสารนโยบาย 4 หน้า (Policy Tabs / Cross-links) --- */
+.policy-tabs-nav {
+  margin-bottom: var(--space-xl, 2rem);
+  border-bottom: 2px solid var(--rule, #D8CFB8);
+}
+
+.policy-tabs-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.policy-tabs-list li {
+  margin: 0;
+  list-style: none;
+}
+
+.policy-tab-link {
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  padding: 0.5rem 1rem;
+  border: 1px solid transparent;
+  border-bottom: none;
+  border-radius: 2px 2px 0 0;
+  color: var(--link, #1F4E79);
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 0.95rem;
+  background: transparent;
+  transition: background-color var(--motion-fast, 140ms) ease;
+}
+
+.policy-tab-link:hover {
+  background: var(--paper-sunk, #EFE8D6);
+  color: var(--ink, #1F2A24);
+}
+
+.policy-tab-link[aria-current="page"] {
+  background: var(--paper-raised, #FBF8F0);
+  border-color: var(--rule, #D8CFB8);
+  border-top: 2px solid var(--link, #1F4E79);
+  color: var(--ink, #1F2A24);
+  font-weight: 700;
+  margin-bottom: -2px;
+  padding-bottom: calc(0.5rem + 2px);
+}
+
+/* --- ตารางและกล่องสองคอลัมน์ (Desktop Grid) --- */
+.policy-grid {
+  display: grid;
+  grid-template-columns: minmax(14rem, 18rem) minmax(0, 1fr);
+  gap: var(--space-xl, 2rem);
+  align-items: start;
+}
+
+/* --- สารบัญด้านซ้าย (Sticky Table of Contents) --- */
+.policy-toc-card {
+  position: sticky;
+  top: 5rem;
+  max-height: calc(100vh - 6rem);
+  overflow-y: auto;
+  padding: var(--space-md, 1rem);
+  border: 1px solid var(--rule, #D8CFB8);
+  border-radius: 2px;
+  background: var(--paper-raised, #FBF8F0);
+}
+
+.policy-toc-title {
+  margin: 0 0 var(--space-xs, 0.5rem);
+  font-size: var(--text-sm, 0.9rem);
+  font-weight: 700;
+  color: var(--ink, #1F2A24);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding-bottom: 0.35rem;
+  border-bottom: 1px solid var(--rule, #D8CFB8);
+}
+
+.policy-toc-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.policy-toc-list li {
+  margin: 0;
+  list-style: none;
+}
+
+.policy-toc-link {
+  min-height: 36px;
+  display: flex;
+  align-items: center;
+  padding: 0.35rem 0.5rem;
+  border-radius: 2px;
+  color: var(--link, #1F4E79);
+  text-decoration: none;
+  font-size: 0.88rem;
+  line-height: 1.35;
+}
+
+.policy-toc-link:hover,
+.policy-toc-link:focus-visible {
+  background: var(--paper-sunk, #EFE8D6);
+  color: var(--ink, #1F2A24);
+}
+
+/* --- เนื้อหาหลักของนโยบาย (Policy Article Content) --- */
+.policy-article {
+  background: var(--paper-raised, #FBF8F0);
+  border: 1px solid var(--rule, #D8CFB8);
+  border-radius: 2px;
+  padding: clamp(1.25rem, 3vw, 2.5rem);
+}
+
+.policy-section {
+  margin-bottom: var(--space-2xl, 2.5rem);
+  scroll-margin-top: 5.5rem;
+}
+
+.policy-section:last-child {
+  margin-bottom: 0;
+}
+
+.policy-section h2 {
+  margin: 0 0 var(--space-sm, 0.75rem);
+  font-size: clamp(1.3rem, 2.2vw, 1.6rem);
+  color: var(--ink, #1F2A24);
+  padding-bottom: 0.35rem;
+  border-bottom: 1px solid var(--rule, #D8CFB8);
+}
+
+.policy-section h3 {
+  margin: var(--space-md, 1rem) 0 var(--space-xs, 0.5rem);
+  font-size: 1.1rem;
+  color: var(--ink, #1F2A24);
+}
+
+.policy-section p {
+  margin: 0 0 var(--space-sm, 0.75rem);
+  line-height: 1.75;
+}
+
+.policy-section ul,
+.policy-section ol {
+  margin: 0 0 var(--space-md, 1rem);
+  padding-left: 1.4rem;
+}
+
+.policy-section li {
+  margin-bottom: 0.35rem;
+  line-height: 1.65;
+}
+
+/* --- กล่องแจ้งเตือนสถานะรอยืนยัน (Callout Box) --- */
+.policy-callout {
+  margin: var(--space-md, 1rem) 0;
+  padding: var(--space-md, 1rem);
+  border-radius: 2px;
+  border: 1px solid var(--rule, #D8CFB8);
+  background: var(--paper-sunk, #EFE8D6);
+}
+
+.policy-callout-tbc {
+  border-left: 4px solid var(--pending, #8A6D1F);
+  background: var(--pending-bg, #F3E9CC);
+  color: var(--pending-text, #7A5F18);
+}
+
+.policy-callout-title {
+  display: block;
+  font-weight: 700;
+  margin-bottom: 0.25rem;
+}
+
+/* --- ตารางรายการคุกกี้ (Cookie Table) --- */
+.policy-table-wrap {
+  overflow-x: auto;
+  margin: var(--space-md, 1rem) 0;
+  border: 1px solid var(--rule, #D8CFB8);
+  background: var(--paper, #F5F1E6);
+}
+
+.policy-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+  text-align: left;
+}
+
+.policy-table th,
+.policy-table td {
+  padding: 0.65rem 0.85rem;
+  border-bottom: 1px solid var(--rule, #D8CFB8);
+  vertical-align: top;
+}
+
+.policy-table th {
+  background: var(--paper-sunk, #EFE8D6);
+  font-weight: 700;
+  color: var(--ink, #1F2A24);
+}
+
+.policy-table tr:last-child td {
+  border-bottom: none;
+}
+
+.policy-table code {
+  font-size: 0.85rem;
+  padding: 0.15rem 0.35rem;
+  background: var(--paper-raised, #FBF8F0);
+  border: 1px solid var(--rule, #D8CFB8);
+  border-radius: 2px;
+}
+
+/* --- กล่องข้อมูลการติดต่อ (Contact Card) --- */
+.policy-contact-card {
+  margin-top: var(--space-lg, 1.5rem);
+  padding: var(--space-md, 1rem);
+  border: 1px solid var(--rule, #D8CFB8);
+  background: var(--paper, #F5F1E6);
+}
+
+.policy-contact-card h3 {
+  margin-top: 0;
+}
+
+/* --- การปรับแต่งสำหรับอุปกรณ์พกพา (Mobile Responsiveness) --- */
+@media (max-width: 54rem) {
+  .policy-grid {
+    grid-template-columns: 1fr;
+    gap: var(--space-lg, 1.5rem);
+  }
+
+  .policy-toc-card {
+    position: static;
+    max-height: none;
+  }
+
+  .policy-tabs-list {
+    flex-direction: column;
+  }
+
+  .policy-tab-link {
+    width: 100%;
+    border-radius: 2px;
+    border-bottom: 1px solid var(--rule, #D8CFB8);
+  }
+
+  .policy-tab-link[aria-current="page"] {
+    margin-bottom: 0;
+    padding-bottom: 0.5rem;
+    border-left: 3px solid var(--link, #1F4E79);
+    border-top: 1px solid var(--rule, #D8CFB8);
+  }
+
+  .footer-nav-strip {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}

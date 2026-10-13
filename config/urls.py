@@ -7,6 +7,7 @@ from django.urls import include, path
 from django.views.generic import TemplateView
 
 from audit.views import client_ip_diagnostics
+from bookings import policy_views
 from notifications.push_views import service_worker
 
 admin.site.site_header = "SIGROOM — ผู้ดูแลระบบ"
@@ -38,6 +39,10 @@ urlpatterns = [
     path("resources/", include("resources.urls")),
     path("usage/", include("usage.urls")),
     path("reports/", include("reports.urls")),
+    path("privacy/", policy_views.privacy_view, name="privacy"),
+    path("cookies/", policy_views.cookies_view, name="cookies"),
+    path("terms/", policy_views.terms_view, name="terms"),
+    path("disclaimer/", policy_views.disclaimer_view, name="disclaimer"),
     path("", include("bookings.urls")),
 ]
 
