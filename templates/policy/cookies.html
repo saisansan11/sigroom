@@ -54,6 +54,7 @@
             <td>{{ session_cookie_age_hours }} ชั่วโมง (SESSION_COOKIE_AGE) หรือจนกว่าจะออกจากระบบ</td>
             <td>HttpOnly, SameSite (Lax/Strict), Secure{% if django_secure %} (เปิดใช้งาน){% endif %}</td>
           </tr>
+          {% if not csrf_use_sessions %}
           <tr>
             <td><code>csrftoken</code></td>
             <td>First-party (จำเป็นอย่างยิ่ง)</td>
@@ -66,6 +67,7 @@
             <td>ตลอดช่วงเวลาเซสชัน (Session) หรือสูงสุด ๑ ปีสำหรับฟอร์ม</td>
             <td>SameSite (Lax/Strict), Secure{% if django_secure %} (เปิดใช้งาน){% endif %}</td>
           </tr>
+          {% endif %}
         </tbody>
       </table>
     </div>
@@ -78,13 +80,11 @@
 
   <section id="browser-storage" class="policy-section">
     <h2>๓. การจัดเก็บบนเบราว์เซอร์และหน่วยความจำเครื่อง (Browser Storage)</h2>
-    <p>นอกเหนือจากคุกกี้ ระบบ SIGROOM ยังใช้กลไกการจัดเก็บบนเบราว์เซอร์ตามมาตรฐาน Progressive Web App (PWA) เพื่อเพิ่มประสิทธิภาพและความเสถียรในการใช้งาน:</p>
+    <p>นอกเหนือจากคุกกี้ ระบบมี Service Worker สำหรับรับและแสดงการแจ้งเตือน Web Push เมื่อผู้ใช้อนุญาต โดยไม่ได้ประกาศใช้ Offline Cache ของไฟล์หน้าเว็บ:</p>
     <ul>
-      <li><strong>Cache Storage (Service Worker: <code>sw.js</code>):</strong> บันทึกไฟล์ทรัพยากรคงที่ (Static Assets) เช่น ฟอนต์สารบรรณ (Sarabun font), ไฟล์ไอคอน, สไตล์ชีต CSS และ JavaScript เพื่อให้โหลดหน้าเว็บได้รวดเร็วแม้ในสภาพเครือข่ายความเร็วต่ำ</li>
-      <li><strong>SessionStorage:</strong> บันทึกสถานะชั่วคราวระหว่างการใช้งาน เช่น การจดจำแถบตัวกรองการแสดงผลห้อง และจะถูกลบอัตโนมัติเมื่อผู้ใช้ปิดแท็บเบราว์เซอร์</li>
-      <li><strong>LocalStorage:</strong> อาจใช้จัดเก็บการตั้งค่าการแสดงผลส่วนบุคคล เช่น การปิดแบนเนอร์แจ้งเตือนคำแนะนำการติดตั้ง PWA</li>
+      <li><strong>Service Worker (<code>sw.js</code>):</strong> จัดการเหตุการณ์ <code>push</code> และ <code>notificationclick</code> สำหรับการแจ้งเตือนตามสิทธิ์ที่ผู้ใช้อนุญาต โดยไม่ทำ Offline Asset Caching ผ่าน <code>caches.open()</code></li>
     </ul>
-    <p>ข้อมูลทั้งหมดในหน่วยความจำเบราว์เซอร์จะถูกเก็บไว้เฉพาะบนอุปกรณ์ของคุณเท่านั้น และไม่มีการส่งออกไปยังเซิร์ฟเวอร์ภายนอก</p>
+    <p>การแจ้งเตือน Web Push อาจมีการลงทะเบียนข้อมูลการสมัครรับแจ้งเตือนกับระบบบริการตามการตั้งค่าของผู้ใช้ ไม่ควรเข้าใจว่าข้อมูลทุกประเภทอยู่บนอุปกรณ์เพียงอย่างเดียว</p>
   </section>
 
   <section id="management" class="policy-section">
