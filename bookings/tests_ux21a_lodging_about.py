@@ -126,8 +126,14 @@ def test_ux21a_interactive_explorer_hooks_preserved(client):
 def test_ios27_lodging_theme_is_scoped_to_about_page(client):
     html = client.get(reverse("bookings:lodging_about")).content.decode("utf-8")
     assert '<html lang="th" data-theme="light">' in html
-    assert '<body class="lodging-about-ledger-r3g">' in html
+    assert '<body class="lodging-about-ledger-r3g"' in html
     assert '<meta name="theme-color" content="#F5F1E6">' in html
+
+    calendar_response = client.get(reverse("bookings:calendar"))
+    assert calendar_response.status_code == 200
+    calendar_html = calendar_response.content.decode("utf-8")
+    assert "lodging-about-ledger-r3g" not in calendar_html
+    assert "lodging_about.css" not in calendar_html
 
 
 def test_ios27_visual_system_tokens_and_header_convergence():
