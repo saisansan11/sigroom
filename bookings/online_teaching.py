@@ -55,6 +55,8 @@ ONLINE_CALENDAR_FALLBACK_DAYS = 90
 
 
 def can_book_online_teaching(user) -> bool:
+    if getattr(user, "is_lodging_student", False):
+        return False
     """Stable authorization seam that future Signalschool SSO can map into."""
     if not getattr(user, "is_authenticated", False):
         return False

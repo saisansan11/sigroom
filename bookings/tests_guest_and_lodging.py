@@ -99,8 +99,8 @@ def test_calendar_events_public_masking(client, sample_data):
     assert "การประชุมลับมาก" not in events[0]["title"]
 
 
-def test_course_lodging_student_booking_flow(client, sample_data):
-    """นักเรียนสามารถกดลิงก์หลักสูตร เข้าเลือกห้องพักและเตียง 1-4 ได้โดยไม่ต้องล็อกอิน"""
+def test_course_lodging_student_booking_flow(client, sample_data, enrolled_student):
+    """PR6: นักเรียนที่ login และมีรายชื่อรุ่นจองได้คนละหนึ่งเตียง โดยคง privacy/กันชนเดิม"""
     cohort = CourseLodgingCohort.objects.create(
         title="หลักสูตรชั้นนายร้อย รุ่นที่ 70",
         slug="nr-70",
@@ -115,6 +115,8 @@ def test_course_lodging_student_booking_flow(client, sample_data):
     cohort.rooms.add(sample_data["lodging1"], sample_data["lodging2"])
 
     # 1. นักเรียนเปิดหน้าเลือกลิงก์
+    assert client.get(reverse("bookings:lodging_portal", args=["nr-70"])).status_code == 302
+    enrolled_student(cohort, name="สมชาย ใจมั่น")
     portal_resp = client.get(reverse("bookings:lodging_portal", args=["nr-70"]))
     assert portal_resp.status_code == 200
     assert "หลักสูตรชั้นนายร้อย รุ่นที่ 70" in portal_resp.content.decode("utf-8")
@@ -138,6 +140,7 @@ def test_course_lodging_student_booking_flow(client, sample_data):
     assert "เตียง 1" in book_resp.content.decode("utf-8")
 
     # 3. นักเรียนคนที่ 2 จองเตียง 2 ในห้อง DORM-101
+    enrolled_student(cohort, name="วีระ รักชาติ")
     book2_resp = client.post(
         reverse("bookings:lodging_book_bed", args=["nr-70"]),
         {
@@ -158,6 +161,7 @@ def test_course_lodging_student_booking_flow(client, sample_data):
     assert "สมชาย ใจมั่น" not in pass_html
 
     # 4. หากมีคนพยายามจองเตียง 1 ซ้ำ ต้องถูกปฏิเสธ
+    enrolled_student(cohort, name="มานพ มุ่งมั่น")
     book_dup_resp = client.post(
         reverse("bookings:lodging_book_bed", args=["nr-70"]),
         {

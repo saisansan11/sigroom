@@ -75,7 +75,8 @@ def test_ambiguous_code_or_wrong_floor_fails_closed(client, popup_room):
     assert client.get("/lodging/rooms/423/").json()["room"] is None
 
 
-def test_selected_room_is_preserved_in_portal(client, popup_room, popup_cohort):
+def test_selected_room_is_preserved_in_portal(client, popup_room, popup_cohort, enrolled_student):
+    enrolled_student(popup_cohort)
     response = client.get(f"/lodging/c/{popup_cohort.slug}/", {"room_id": popup_room.pk})
     assert response.context["selected_room"]["room"] == popup_room
     assert response.context["rooms_data"][0]["room"] == popup_room

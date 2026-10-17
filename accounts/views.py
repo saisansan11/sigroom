@@ -3,7 +3,7 @@ from django.contrib.auth import update_session_auth_hash
 from django.contrib.auth import views as auth_views
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import redirect, render
-from django.urls import reverse_lazy
+from django.urls import reverse, reverse_lazy
 from django.utils import timezone
 
 from .forms import AuditedSetPasswordForm, FirstPasswordChangeForm, ThrottledAuthenticationForm, UnitPasswordResetForm
@@ -32,8 +32,11 @@ class ThrottledLoginView(auth_views.LoginView):
             error.code == "throttled" for error in context["form"].non_field_errors().as_data()
         )
         context["login_now"] = timezone.localtime()
-        # PR-D will turn this on only after the Google auth route is implemented.
-        context["google_login_enabled"] = False
+        from django.conf import settings
+        from .social import safe_login_next
+        context["google_login_enabled"] = settings.GOOGLE_LOGIN_ENABLED
+        context["google_login_url"] = reverse("google_login")
+        context["next"] = safe_login_next(context.get("next"))
         return context
 
 

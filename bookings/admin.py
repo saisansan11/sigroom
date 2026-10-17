@@ -3,6 +3,7 @@ from django.contrib import messages
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.http import HttpResponseRedirect
 from django.urls import reverse
+from audit.services import audit
 from .models import (
     Booking,
     BookingAmendment,
@@ -16,7 +17,7 @@ from .models import (
     ReferenceValue,
     SeriesSkip,
 )
-from .lodging_models import CourseLodgingRelease
+from .lodging_models import CourseLodgingRelease, CourseStudentEnrollment
 from .lodging_services import update_cohort_allocation
 
 
@@ -129,6 +130,26 @@ class ReferenceValueAdmin(admin.ModelAdmin):
     search_fields = ("value",)
     list_editable = ("order", "is_active")
     ordering = ("field", "order", "value")
+
+
+@admin.register(CourseStudentEnrollment)
+class CourseStudentEnrollmentAdmin(admin.ModelAdmin):
+    list_display = ("email", "cohort", "user", "is_active")
+    list_filter = ("is_active", "cohort")
+    search_fields = ("email", "cohort__title")
+    autocomplete_fields = ("cohort", "user")
+
+    def save_model(self, request, obj, form, change):
+        before = None
+        if change:
+            previous = CourseStudentEnrollment.objects.get(pk=obj.pk)
+            before = {"cohort": str(previous.cohort_id), "email": previous.email, "is_active": previous.is_active}
+        super().save_model(request, obj, form, change)
+        audit(request.user, "bookings.coursestudentenrollment", obj.pk, "student_enrollment_saved",
+              before=before, after={"cohort": str(obj.cohort_id), "email": obj.email, "is_active": obj.is_active})
+
+    def has_delete_permission(self, request, obj=None):
+        return False  # Keep the confirmed membership history; disable a row instead.
 
 
 class CourseStudentLodgingInline(admin.TabularInline):

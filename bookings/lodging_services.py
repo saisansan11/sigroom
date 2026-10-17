@@ -139,6 +139,8 @@ def cohort_conflict_for_resource(resource: Resource, start_at: datetime, end_at:
 
 
 def can_create_cohort(user) -> bool:
+    if getattr(user, "is_lodging_student", False):
+        return False
     if not getattr(user, "is_authenticated", False):
         return False
     return bool(
@@ -148,6 +150,8 @@ def can_create_cohort(user) -> bool:
 
 
 def can_manage_cohort(user, cohort: CourseLodgingCohort) -> bool:
+    if getattr(user, "is_lodging_student", False):
+        return False
     if not getattr(user, "is_authenticated", False):
         return False
     return bool(
@@ -159,7 +163,7 @@ def can_manage_cohort(user, cohort: CourseLodgingCohort) -> bool:
 
 def can_access_lodging_management(user) -> bool:
     """Allow course operators and lodging approvers into the shared operations workspace."""
-    if not getattr(user, "is_authenticated", False):
+    if getattr(user, "is_lodging_student", False) or not getattr(user, "is_authenticated", False):
         return False
     if (
         getattr(user, "is_superuser", False)
@@ -190,6 +194,23 @@ def can_access_lodging_management(user) -> bool:
         resource__resource_type=Resource.Type.ROOM,
         resource__room_category=Resource.Category.LODGING,
     ).exists()
+
+
+def student_enrollment(user, cohort):
+    """Only a roster confirmed by an operator proves membership, never a QR or school domain."""
+    from .lodging_models import CourseStudentEnrollment
+    if not getattr(user, "is_authenticated", False) or not getattr(user, "is_active", False):
+        return None
+    return CourseStudentEnrollment.objects.filter(
+        cohort=cohort, email__iexact=user.email, user=user, is_active=True,
+    ).first()
+
+
+def require_student_cohort(user, cohort):
+    enrollment = student_enrollment(user, cohort)
+    if enrollment is None and not can_manage_cohort(user, cohort):
+        raise PermissionDenied("คุณไม่มีสิทธิ์จองเตียงของหลักสูตรนี้ กรุณาติดต่อผู้จัดหลักสูตร")
+    return enrollment
 
 
 def cohort_self_booking_status(cohort: CourseLodgingCohort, now: datetime | None = None) -> tuple[str, str]:
@@ -285,9 +306,15 @@ def _public_lodging_principal():
 
 @transaction.atomic
 def assign_lodging_bed(*, cohort, room_id, bed_number, rank, full_name,
-                       origin_unit, phone, note="", actor=None):
+                       origin_unit, phone, note="", actor=None, student_user=None):
     """Shared public/staff assignment; revalidate state after acquiring locks."""
     cohort = CourseLodgingCohort.objects.select_for_update().get(pk=cohort.pk)
+    if student_user is not None:
+        require_student_cohort(student_user, cohort)
+        if student_user.is_lodging_student:
+            full_name = student_user.get_full_name()
+        if cohort.students.filter(user=student_user).exists():
+            raise ValidationError("คุณจองเตียงในหลักสูตรนี้แล้ว กรุณาเปิดบัตรของตนเอง")
     if actor is not None and not can_manage_cohort(actor, cohort):
         raise PermissionDenied("คุณไม่มีสิทธิ์จัดผู้พักในหลักสูตรนี้")
     if cohort.allocation_status != CourseLodgingCohort.AllocationStatus.ALLOCATED:
@@ -317,10 +344,10 @@ def assign_lodging_bed(*, cohort, room_id, bed_number, rank, full_name,
     if cohort.students.filter(phone=phone).exists():
         raise ValidationError("เบอร์โทรศัพท์นี้ลงทะเบียนในรอบนี้แล้ว")
     student = CourseStudentLodging.objects.create(
-        cohort=cohort, room=room, bed_number=bed_number, note=note, **values)
+        cohort=cohort, room=room, bed_number=bed_number, note=note, user=student_user, **values)
     if actor is None:
         CourseLodgingAccess.objects.create(student=student)
-    audit(actor, "bookings.coursestudentlodging", student.pk,
+    audit(actor or student_user, "bookings.coursestudentlodging", student.pk,
           "lodging_bed_assigned", after={"cohort": str(cohort.pk), "room": room.code,
                                         "bed_number": bed_number, "by_staff": actor is not None})
     return student
@@ -379,6 +406,7 @@ def release_lodging_reservation(
     outcome: str,
     actor=None,
     access_token=None,
+    self_service_user=None,
     reason: str = "",
     now: datetime | None = None,
 ) -> CourseLodgingRelease:
@@ -392,6 +420,9 @@ def release_lodging_reservation(
         .select_for_update()
         .get(pk=student.pk)
     )
+    if locked.user_id and not (getattr(actor, "is_authenticated", False) and can_manage_cohort(actor, cohort)):
+        if not getattr(self_service_user, "is_authenticated", False) or self_service_user.pk != locked.user_id:
+            raise PermissionDenied("คุณไม่มีสิทธิ์ยกเลิกการจองของผู้อื่น")
     if outcome not in CourseLodgingRelease.Outcome.values:
         raise ValidationError("ผลการปล่อยเตียงไม่ถูกต้อง")
 

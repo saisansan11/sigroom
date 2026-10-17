@@ -1,6 +1,36 @@
 from django.http import HttpResponse
+from django.core.exceptions import PermissionDenied
 from django.shortcuts import redirect
 from django.urls import reverse
+
+
+class LodgingStudentScopeMiddleware:
+    """An automatic student identity cannot become a teacher/operator through a URL."""
+
+    def __init__(self, get_response):
+        self.get_response = get_response
+
+    def __call__(self, request):
+        return self.get_response(request)
+
+    def process_view(self, request, view_func, view_args, view_kwargs):
+        user = getattr(request, "user", None)
+        if not getattr(user, "is_authenticated", False) or not user.is_lodging_student:
+            return None
+        allowed = {
+            "bookings:role_home", "bookings:lodging_index", "bookings:lodging_portal",
+            "bookings:lodging_book_bed", "bookings:lodging_pass", "bookings:lodging_start",
+            "bookings:lodging_about", "bookings:lodging_reservation_manage",
+            "bookings:lodging_room_detail",
+            "bookings:lodging_reservation_cancel", "accounts:login", "logout", "webmanifest",
+            "google_login", "google_callback", "socialaccount_login_error", "favicon",
+        }
+        match = request.resolver_match
+        if match and (match.view_name in allowed or match.namespace == "notifications"):
+            return None
+        if request.path.startswith(("/static/", "/media/")):
+            return None
+        raise PermissionDenied("บัญชีนักเรียนใช้จองเตียงของหลักสูตรตนเองเท่านั้น")
 
 
 class MustChangePasswordMiddleware:

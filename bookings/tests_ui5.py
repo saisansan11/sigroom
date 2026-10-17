@@ -186,9 +186,10 @@ def test_image_performance_attributes_in_templates():
 
 
 
-def test_student_portal_modal_a11y_and_reduced_motion(client, ui5_setup):
+def test_student_portal_modal_a11y_and_reduced_motion(client, ui5_setup, enrolled_student):
     """Verify student portal includes modal focus management and reduced motion support."""
     cohort = ui5_setup["cohort"]
+    enrolled_student(cohort)
     resp = client.get(reverse("bookings:lodging_portal", args=[cohort.slug]))
     assert resp.status_code == 200
     html = resp.content.decode()

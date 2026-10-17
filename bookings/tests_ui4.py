@@ -82,9 +82,10 @@ def ui4_setup():
     }
 
 
-def test_public_portal_uses_privacy_safe_occupied_bed_text_and_share_link(client, ui4_setup):
+def test_public_portal_uses_privacy_safe_occupied_bed_text_and_share_link(client, ui4_setup, enrolled_student):
     cohort = ui4_setup["cohort"]
     roommate = ui4_setup["roommate"]
+    enrolled_student(cohort)
 
     response = client.get(reverse("bookings:lodging_portal", args=[cohort.slug]))
     assert response.status_code == 200

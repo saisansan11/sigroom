@@ -117,6 +117,10 @@ class CourseStudentLodging(models.Model):
     """ข้อมูลการจองห้องพักของนักเรียนรายบุคคล (1 คนต่อ 1 เตียงในห้อง)"""
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL, verbose_name="เจ้าของบัญชี", null=True, blank=True,
+        on_delete=models.SET_NULL, related_name="course_student_lodgings",
+    )
     cohort = models.ForeignKey(
         CourseLodgingCohort,
         verbose_name="รอบหลักสูตร",
@@ -159,6 +163,10 @@ class CourseStudentLodging(models.Model):
                 fields=["cohort", "phone"],
                 name="unique_cohort_student_phone",
             ),
+            models.UniqueConstraint(
+                fields=["cohort", "user"], condition=models.Q(user__isnull=False),
+                name="unique_cohort_student_user",
+            ),
         ]
 
     def clean(self):
@@ -193,6 +201,42 @@ class CourseStudentLodging(models.Model):
 
     def __str__(self):
         return f"{self.rank} {self.full_name} ({self.room.code} เตียง {self.bed_number})"
+
+
+class CourseStudentEnrollment(models.Model):
+    """รายชื่ออีเมลที่ผู้จัดหลักสูตรยืนยัน; QR หรือโดเมนอีเมลไม่ใช่หลักฐานสมาชิก."""
+
+    cohort = models.ForeignKey(CourseLodgingCohort, on_delete=models.CASCADE,
+                              related_name="enrollments", verbose_name="รุ่นหลักสูตร")
+    email = models.EmailField("อีเมลโรงเรียน")
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True,
+                             on_delete=models.SET_NULL, related_name="student_enrollments",
+                             verbose_name="บัญชีที่ยืนยันแล้ว")
+    rank = models.CharField("ยศ", max_length=50, blank=True)
+    origin_unit = models.CharField("หน่วยต้นสังกัด", max_length=150, blank=True)
+    phone = models.CharField("เบอร์โทรศัพท์", max_length=30, blank=True)
+    is_active = models.BooleanField("อนุญาตให้จองเตียง", default=True)
+
+    class Meta:
+        verbose_name = "รายชื่อนักเรียนที่มีสิทธิ์จองเตียง"
+        verbose_name_plural = "รายชื่อนักเรียนที่มีสิทธิ์จองเตียง"
+        constraints = [models.UniqueConstraint(fields=["cohort", "email"],
+                                              name="unique_cohort_enrollment_email")]
+
+    def clean(self):
+        from accounts.models import validate_allowed_email_domain
+        self.email = (self.email or "").strip().lower()
+        validate_allowed_email_domain(self.email)
+        self.phone = normalize_phone(self.phone) if self.phone else ""
+        if self.user_id and self.user.email.lower() != self.email:
+            raise ValidationError("อีเมลต้องตรงกับบัญชีของนักเรียน")
+
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        return super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"{self.cohort.title} / {self.email}"
 
 
 class CourseLodgingAccess(models.Model):
