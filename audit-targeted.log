@@ -1,0 +1,24 @@
+..................................................................       [100%]
+============================== warnings summary ===============================
+C:\Users\RTA\AppData\Local\Programs\Python\Python312\Lib\importlib\__init__.py:90
+  C:\\Users\\RTA\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\importlib\\__init__.py:90: RuntimeWarning: Production \u0e43\u0e0a\u0e49 SMTP EmailBackend \u0e41\u0e15\u0e48 EMAIL_HOST \u0e27\u0e48\u0e32\u0e07: self-service password reset \u0e08\u0e30\u0e2a\u0e48\u0e07\u0e2d\u0e35\u0e40\u0e21\u0e25\u0e44\u0e21\u0e48\u0e44\u0e14\u0e49\n    return _bootstrap._gcd_import(name[level:], package, level)
+
+C:\Users\RTA\AppData\Local\Programs\Python\Python312\Lib\importlib\__init__.py:90
+  C:\\Users\\RTA\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\importlib\\__init__.py:90: RuntimeWarning: DJANGO_SECURE=0 \u0e02\u0e13\u0e30 DJANGO_DEBUG=0: \u0e2d\u0e19\u0e38\u0e0d\u0e32\u0e15\u0e40\u0e09\u0e1e\u0e32\u0e30 pilot HTTP \u0e43\u0e19 LAN \u0e40\u0e17\u0e48\u0e32\u0e19\u0e31\u0e49\u0e19 \u0e2b\u0e49\u0e32\u0e21\u0e43\u0e0a\u0e49\u0e04\u0e48\u0e32\u0e19\u0e35\u0e49\u0e40\u0e21\u0e37\u0e48\u0e2d\u0e40\u0e1b\u0e34\u0e14\u0e1c\u0e48\u0e32\u0e19\u0e2d\u0e34\u0e19\u0e40\u0e17\u0e2d\u0e23\u0e4c\u0e40\u0e19\u0e47\u0e15\u0e2b\u0e23\u0e37\u0e2d production \u0e17\u0e35\u0e48\u0e21\u0e35 TLS\n    return _bootstrap._gcd_import(name[level:], package, level)
+
+C:\Users\RTA\AppData\Local\Programs\Python\Python312\Lib\importlib\__init__.py:90
+  C:\\Users\\RTA\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\importlib\\__init__.py:90: RuntimeWarning: \u0e22\u0e31\u0e07\u0e44\u0e21\u0e48\u0e44\u0e14\u0e49\u0e15\u0e31\u0e49\u0e07 CLIENT_IP_HEADER \u0e2b\u0e23\u0e37\u0e2d TRUSTED_PROXY_HOPS: IP \u0e43\u0e19 audit log \u0e1b\u0e25\u0e2d\u0e21\u0e44\u0e14\u0e49 \u0e41\u0e25\u0e30\u0e15\u0e31\u0e27\u0e08\u0e33\u0e01\u0e31\u0e14\u0e04\u0e33\u0e02\u0e2d\u0e17\u0e35\u0e48\u0e1e\u0e31\u0e01\u0e2a\u0e32\u0e18\u0e32\u0e23\u0e13\u0e30\u0e15\u0e48\u0e2d\u0e1c\u0e39\u0e49\u0e2a\u0e48\u0e07\u0e40\u0e25\u0e35\u0e48\u0e22\u0e07\u0e44\u0e14\u0e49 \u2014 \u0e15\u0e23\u0e27\u0e08\u0e04\u0e48\u0e32\u0e17\u0e35\u0e48\u0e16\u0e39\u0e01\u0e15\u0e49\u0e2d\u0e07\u0e08\u0e32\u0e01 /ops/client-ip/\n    return _bootstrap._gcd_import(name[level:], package, level)
+
+bookings/tests_m2.py::test_post_submit_succeeds_with_hold
+  F:\ogn_ROOM\.venv\Lib\site-packages\django\db\models\fields\__init__.py:1148: RemovedInDjango60Warning: The default scheme will be changed from 'http' to 'https' in Django 6.0. Pass the forms.URLField.assume_scheme argument to silence this warning, or set the FORMS_URLFIELD_ASSUME_HTTPS transitional setting to True to opt into using 'https' as the new default scheme.
+    return form_class(**defaults)
+
+bookings/tests_m2.py: 5 warnings
+bookings/tests_m5.py: 2 warnings
+bookings/tests_lodging_v4.py: 7 warnings
+bookings/tests_bugfix_booking_status.py: 7 warnings
+  F:\ogn_ROOM\.venv\Lib\site-packages\django\core\handlers\base.py:61: UserWarning: No directory at: F:\ogn_ROOM\.worktrees\bug-audit-20261003\public\static\
+    mw_instance = middleware(adapted_handler)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+66 passed, 25 warnings in 113.35s (0:01:53)

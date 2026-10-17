@@ -1,0 +1,54 @@
+C:\Users\RTA\AppData\Local\Programs\Python\Python312\Lib\importlib\__init__.py:90: RuntimeWarning: Production ใช้ SMTP EmailBackend แต่ EMAIL_HOST ว่าง: self-service password reset จะส่งอีเมลไม่ได้
+  return _bootstrap._gcd_import(name[level:], package, level)
+C:\Users\RTA\AppData\Local\Programs\Python\Python312\Lib\importlib\__init__.py:90: RuntimeWarning: DJANGO_SECURE=0 ขณะ DJANGO_DEBUG=0: อนุญาตเฉพาะ pilot HTTP ใน LAN เท่านั้น ห้ามใช้ค่านี้เมื่อเปิดผ่านอินเทอร์เน็ตหรือ production ที่มี TLS
+  return _bootstrap._gcd_import(name[level:], package, level)
+C:\Users\RTA\AppData\Local\Programs\Python\Python312\Lib\importlib\__init__.py:90: RuntimeWarning: ยังไม่ได้ตั้ง CLIENT_IP_HEADER หรือ TRUSTED_PROXY_HOPS: IP ใน audit log ปลอมได้ และตัวจำกัดคำขอที่พักสาธารณะต่อผู้ส่งเลี่ยงได้ — ตรวจค่าที่ถูกต้องจาก /ops/client-ip/
+  return _bootstrap._gcd_import(name[level:], package, level)
+Operations to perform:
+  Apply all migrations: accounts, admin, approvals, audit, auth, bookings, contenttypes, notifications, resources, sessions
+Running migrations:
+  Applying contenttypes.0001_initial... OK
+  Applying contenttypes.0002_remove_content_type_name... OK
+  Applying auth.0001_initial... OK
+  Applying auth.0002_alter_permission_name_max_length... OK
+  Applying auth.0003_alter_user_email_max_length... OK
+  Applying auth.0004_alter_user_username_opts... OK
+  Applying auth.0005_alter_user_last_login_null... OK
+  Applying auth.0006_require_contenttypes_0002... OK
+  Applying auth.0007_alter_validators_add_error_messages... OK
+  Applying auth.0008_alter_user_username_max_length... OK
+  Applying auth.0009_alter_user_last_name_max_length... OK
+  Applying auth.0010_alter_group_name_max_length... OK
+  Applying auth.0011_update_proxy_permissions... OK
+  Applying auth.0012_alter_user_first_name_max_length... OK
+  Applying accounts.0001_initial... OK
+  Applying resources.0001_initial... OK
+  Applying resources.0002_blackout_resourceoutage... OK
+  Applying resources.0003_alter_blackout_room_category_and_more... OK
+  Applying resources.0004_resourcephoto... OK
+  Applying resources.0005_alter_blackout_room_category_and_more... OK
+  Applying accounts.0002_user_must_change_password... OK
+  Applying accounts.0003_user_favorite_resources... OK
+  Applying admin.0001_initial... OK
+  Applying admin.0002_logentry_remove_auto_add... OK
+  Applying admin.0003_logentry_add_action_flag_choices... OK
+  Applying bookings.0001_initial... OK
+  Applying bookings.0002_booking_equipment... OK
+  Applying bookings.0003_booking_decision_reason_booking_sla_escalated_at... OK
+  Applying bookings.0004_booking_series_index_bookingseries_booking_series_and_more... OK
+  Applying bookings.0005_bookingamendment_preemption_and_more... OK
+  Applying approvals.0001_initial... OK
+  Applying approvals.0002_approval_amendment_alter_approval_action_and_more... OK
+  Applying audit.0001_initial... OK
+  Applying bookings.0006_referencevalue... OK
+  Applying bookings.0007_courselodgingcohort_coursestudentlodging... OK
+  Applying bookings.0008_courselodgingcohort_state_constraints_and_phone_clean... OK
+  Applying bookings.0009_coursestudentlodging_checked_in_at_and_more... OK
+  Applying bookings.0010_booking_online_meeting_url... OK
+  Applying bookings.0011_alter_referencevalue_field... OK
+  Applying bookings.0012_publiclodgingaccess_and_more... OK
+  Applying bookings.0013_courselodgingaccess_publiclodgingthrottle_and_more... OK
+  Applying bookings.0014_course_courserun_booking_course_run_and_more... OK
+  Applying bookings.0015_courselodgingrelease_checked_in_at_and_more... OK
+  Applying notifications.0001_initial... OK
+  Applying sessions.0001_initial... OK

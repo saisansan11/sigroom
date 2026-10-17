@@ -1,0 +1,99 @@
+........................................................................ [  9%]
+........................................................................ [ 18%]
+........................................................................ [ 27%]
+........................................................................ [ 36%]
+........................................................................ [ 45%]
+........................................................................ [ 54%]
+........................................................................ [ 64%]
+........................................................................ [ 73%]
+........................................................................ [ 82%]
+........................................................................ [ 91%]
+..................................................................       [100%]
+============================== warnings summary ===============================
+C:\Users\RTA\AppData\Local\Programs\Python\Python312\Lib\importlib\__init__.py:90
+  C:\\Users\\RTA\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\importlib\\__init__.py:90: RuntimeWarning: Production \u0e43\u0e0a\u0e49 SMTP EmailBackend \u0e41\u0e15\u0e48 EMAIL_HOST \u0e27\u0e48\u0e32\u0e07: self-service password reset \u0e08\u0e30\u0e2a\u0e48\u0e07\u0e2d\u0e35\u0e40\u0e21\u0e25\u0e44\u0e21\u0e48\u0e44\u0e14\u0e49\n    return _bootstrap._gcd_import(name[level:], package, level)
+
+C:\Users\RTA\AppData\Local\Programs\Python\Python312\Lib\importlib\__init__.py:90
+  C:\\Users\\RTA\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\importlib\\__init__.py:90: RuntimeWarning: DJANGO_SECURE=0 \u0e02\u0e13\u0e30 DJANGO_DEBUG=0: \u0e2d\u0e19\u0e38\u0e0d\u0e32\u0e15\u0e40\u0e09\u0e1e\u0e32\u0e30 pilot HTTP \u0e43\u0e19 LAN \u0e40\u0e17\u0e48\u0e32\u0e19\u0e31\u0e49\u0e19 \u0e2b\u0e49\u0e32\u0e21\u0e43\u0e0a\u0e49\u0e04\u0e48\u0e32\u0e19\u0e35\u0e49\u0e40\u0e21\u0e37\u0e48\u0e2d\u0e40\u0e1b\u0e34\u0e14\u0e1c\u0e48\u0e32\u0e19\u0e2d\u0e34\u0e19\u0e40\u0e17\u0e2d\u0e23\u0e4c\u0e40\u0e19\u0e47\u0e15\u0e2b\u0e23\u0e37\u0e2d production \u0e17\u0e35\u0e48\u0e21\u0e35 TLS\n    return _bootstrap._gcd_import(name[level:], package, level)
+
+C:\Users\RTA\AppData\Local\Programs\Python\Python312\Lib\importlib\__init__.py:90
+  C:\\Users\\RTA\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\importlib\\__init__.py:90: RuntimeWarning: \u0e22\u0e31\u0e07\u0e44\u0e21\u0e48\u0e44\u0e14\u0e49\u0e15\u0e31\u0e49\u0e07 CLIENT_IP_HEADER \u0e2b\u0e23\u0e37\u0e2d TRUSTED_PROXY_HOPS: IP \u0e43\u0e19 audit log \u0e1b\u0e25\u0e2d\u0e21\u0e44\u0e14\u0e49 \u0e41\u0e25\u0e30\u0e15\u0e31\u0e27\u0e08\u0e33\u0e01\u0e31\u0e14\u0e04\u0e33\u0e02\u0e2d\u0e17\u0e35\u0e48\u0e1e\u0e31\u0e01\u0e2a\u0e32\u0e18\u0e32\u0e23\u0e13\u0e30\u0e15\u0e48\u0e2d\u0e1c\u0e39\u0e49\u0e2a\u0e48\u0e07\u0e40\u0e25\u0e35\u0e48\u0e22\u0e07\u0e44\u0e14\u0e49 \u2014 \u0e15\u0e23\u0e27\u0e08\u0e04\u0e48\u0e32\u0e17\u0e35\u0e48\u0e16\u0e39\u0e01\u0e15\u0e49\u0e2d\u0e07\u0e08\u0e32\u0e01 /ops/client-ip/\n    return _bootstrap._gcd_import(name[level:], package, level)
+
+..\..\.venv\Lib\site-packages\django\db\models\fields\__init__.py:1148
+  F:\ogn_ROOM\.venv\Lib\site-packages\django\db\models\fields\__init__.py:1148: RemovedInDjango60Warning: The default scheme will be changed from 'http' to 'https' in Django 6.0. Pass the forms.URLField.assume_scheme argument to silence this warning, or set the FORMS_URLFIELD_ASSUME_HTTPS transitional setting to True to opt into using 'https' as the new default scheme.
+    return form_class(**defaults)
+
+accounts/tests_login_ledger.py: 4 warnings
+accounts/tests_login_throttle.py: 9 warnings
+accounts/tests_m6.py: 3 warnings
+accounts/tests_password_reset_self_service.py: 8 warnings
+approvals/tests.py: 4 warnings
+approvals/tests_ux8.py: 5 warnings
+approvals/tests_ux9.py: 2 warnings
+audit/tests_client_ip.py: 3 warnings
+bookings/tests_booking_3step.py: 10 warnings
+bookings/tests_bugfix_booking_status.py: 7 warnings
+bookings/tests_guest_and_lodging.py: 5 warnings
+bookings/tests_lodging_about_r3g2.py: 5 warnings
+bookings/tests_lodging_room_popup.py: 11 warnings
+bookings/tests_lodging_service_gateway.py: 9 warnings
+bookings/tests_lodging_v4.py: 7 warnings
+bookings/tests_m2.py: 5 warnings
+bookings/tests_m4.py: 2 warnings
+bookings/tests_m5.py: 2 warnings
+bookings/tests_m6b.py: 2 warnings
+bookings/tests_p2_lodging_checkout.py: 1 warning
+bookings/tests_phase0.py: 5 warnings
+bookings/tests_phase_b_lodging_lifecycle.py: 4 warnings
+bookings/tests_phase_c_staff_operations.py: 6 warnings
+bookings/tests_phase_d_oct6_readiness.py: 5 warnings
+bookings/tests_phase_e_online_teaching.py: 14 warnings
+bookings/tests_r3_0_home.py: 2 warnings
+bookings/tests_r3_11_general_lodging_weekend.py: 2 warnings
+bookings/tests_r3_l_booking_flows.py: 1 warning
+bookings/tests_theme_a_ledger.py: 5 warnings
+bookings/tests_ui3.py: 5 warnings
+bookings/tests_ui4.py: 6 warnings
+bookings/tests_ui5.py: 2 warnings
+bookings/tests_ux1.py: 15 warnings
+bookings/tests_ux12.py: 10 warnings
+bookings/tests_ux13.py: 9 warnings
+bookings/tests_ux14.py: 9 warnings
+bookings/tests_ux15.py: 2 warnings
+bookings/tests_ux16.py: 2 warnings
+bookings/tests_ux17_showcase.py: 11 warnings
+bookings/tests_ux18.py: 1 warning
+bookings/tests_ux19.py: 4 warnings
+bookings/tests_ux2.py: 5 warnings
+bookings/tests_ux20_lodging_about.py: 18 warnings
+bookings/tests_ux21a_lodging_about.py: 6 warnings
+bookings/tests_ux21b_lcp_media.py: 6 warnings
+bookings/tests_ux22_responsive_media.py: 7 warnings
+bookings/tests_ux23_isometric_explorer.py: 1 warning
+bookings/tests_ux24_3d_visual_polish.py: 1 warning
+bookings/tests_ux28_operations.py: 4 warnings
+bookings/tests_ux29_bed_first_assignment.py: 5 warnings
+bookings/tests_ux3.py: 2 warnings
+bookings/tests_ux30_occupancy_triage.py: 5 warnings
+bookings/tests_ux31_arrival_triage.py: 4 warnings
+bookings/tests_ux32_booking_v2.py: 5 warnings
+bookings/tests_ux4.py: 9 warnings
+bookings/tests_ux5.py: 3 warnings
+bookings/tests_v6_a.py: 6 warnings
+bookings/tests_v6_b.py: 3 warnings
+bookings/tests_v7_a.py: 3 warnings
+bookings/tests_v7_b.py: 4 warnings
+bookings/tests_v7_c.py: 6 warnings
+config/tests_v7_d.py: 9 warnings
+reports/tests.py: 3 warnings
+resources/tests.py: 2 warnings
+resources/tests_lodging_room_registry_sync.py: 1 warning
+resources/tests_ux7.py: 2 warnings
+resources/tests_v6_c.py: 4 warnings
+usage/tests.py: 1 warning
+usage/tests_ux10.py: 2 warnings
+  F:\ogn_ROOM\.venv\Lib\site-packages\django\core\handlers\base.py:61: UserWarning: No directory at: F:\ogn_ROOM\.worktrees\bug-audit-20261003\public\static\
+    mw_instance = middleware(adapted_handler)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+786 passed, 355 warnings in 151.02s (0:02:31)

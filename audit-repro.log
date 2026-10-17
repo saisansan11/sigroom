@@ -1,0 +1,75 @@
+FFFFFFFFF..                                                              [100%]
+================================== FAILURES ===================================
+____________ test_cancel_rejects_stale_terminal_status[cancelled] _____________
+bookings\tests_integrity_audit.py:39: in test_cancel_rejects_stale_terminal_status
+    with pytest.raises(ValueError):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^
+E   Failed: DID NOT RAISE ValueError
+_____________ test_cancel_rejects_stale_terminal_status[rejected] _____________
+bookings\tests_integrity_audit.py:39: in test_cancel_rejects_stale_terminal_status
+    with pytest.raises(ValueError):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^
+E   Failed: DID NOT RAISE ValueError
+_____________ test_cancel_rejects_stale_terminal_status[expired] ______________
+bookings\tests_integrity_audit.py:39: in test_cancel_rejects_stale_terminal_status
+    with pytest.raises(ValueError):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^
+E   Failed: DID NOT RAISE ValueError
+______________________ test_cancel_uses_current_deadline ______________________
+bookings\tests_integrity_audit.py:51: in test_cancel_uses_current_deadline
+    with pytest.raises(PermissionError):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   Failed: DID NOT RAISE PermissionError
+__________ test_cancel_preserves_latest_revision_and_releases_holds ___________
+bookings\tests_integrity_audit.py:62: in test_cancel_preserves_latest_revision_and_releases_holds
+    assert result.revision == 9
+E   assert 2 == 9
+E    +  where 2 = <Booking: \u0e17\u0e14\u0e2a\u0e2d\u0e1a \u2014 AUDIT-1 2026-10-10 09:00>.revision
+__________ test_room_without_rule_still_observes_closures[blackout] ___________
+bookings\tests_integrity_audit.py:75: in test_room_without_rule_still_observes_closures
+    with pytest.raises(ValidationError):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   Failed: DID NOT RAISE ValidationError
+___________ test_room_without_rule_still_observes_closures[outage] ____________
+bookings\tests_integrity_audit.py:75: in test_room_without_rule_still_observes_closures
+    with pytest.raises(ValidationError):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   Failed: DID NOT RAISE ValidationError
+_________ test_lodging_buffers_respect_cohort_boundaries[True-before] _________
+bookings\tests_integrity_audit.py:108: in test_lodging_buffers_respect_cohort_boundaries
+    assert bool(cohort_conflict_for_resource(room, booking.start_at, booking.end_at)) == overlap
+E   AssertionError: assert False == True
+E    +  where False = bool(None)
+E    +    where None = cohort_conflict_for_resource(<Resource: AUDIT-1 \u0e2b\u0e49\u0e2d\u0e07\u0e17\u0e14\u0e2a\u0e2d\u0e1a>, datetime.datetime(2026, 10, 10, 22, 45, tzinfo=zoneinfo.ZoneInfo(key='Asia/Bangkok')), datetime.datetime(2026, 10, 10, 23, 45, tzinfo=zoneinfo.ZoneInfo(key='Asia/Bangkok')))
+E    +      where datetime.datetime(2026, 10, 10, 22, 45, tzinfo=zoneinfo.ZoneInfo(key='Asia/Bangkok')) = <Booking: \u0e17\u0e14\u0e2a\u0e2d\u0e1a \u2014 AUDIT-1 2026-10-10 22:45>.start_at
+E    +      and   datetime.datetime(2026, 10, 10, 23, 45, tzinfo=zoneinfo.ZoneInfo(key='Asia/Bangkok')) = <Booking: \u0e17\u0e14\u0e2a\u0e2d\u0e1a \u2014 AUDIT-1 2026-10-10 22:45>.end_at
+_________ test_lodging_buffers_respect_cohort_boundaries[True-after] __________
+bookings\tests_integrity_audit.py:108: in test_lodging_buffers_respect_cohort_boundaries
+    assert bool(cohort_conflict_for_resource(room, booking.start_at, booking.end_at)) == overlap
+E   AssertionError: assert False == True
+E    +  where False = bool(None)
+E    +    where None = cohort_conflict_for_resource(<Resource: AUDIT-1 \u0e2b\u0e49\u0e2d\u0e07\u0e17\u0e14\u0e2a\u0e2d\u0e1a>, datetime.datetime(2026, 10, 12, 0, 15, tzinfo=zoneinfo.ZoneInfo(key='Asia/Bangkok')), datetime.datetime(2026, 10, 12, 1, 15, tzinfo=zoneinfo.ZoneInfo(key='Asia/Bangkok')))
+E    +      where datetime.datetime(2026, 10, 12, 0, 15, tzinfo=zoneinfo.ZoneInfo(key='Asia/Bangkok')) = <Booking: \u0e17\u0e14\u0e2a\u0e2d\u0e1a \u2014 AUDIT-1 2026-10-12 00:15>.start_at
+E    +      and   datetime.datetime(2026, 10, 12, 1, 15, tzinfo=zoneinfo.ZoneInfo(key='Asia/Bangkok')) = <Booking: \u0e17\u0e14\u0e2a\u0e2d\u0e1a \u2014 AUDIT-1 2026-10-12 00:15>.end_at
+============================== warnings summary ===============================
+C:\Users\RTA\AppData\Local\Programs\Python\Python312\Lib\importlib\__init__.py:90
+  C:\\Users\\RTA\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\importlib\\__init__.py:90: RuntimeWarning: Production \u0e43\u0e0a\u0e49 SMTP EmailBackend \u0e41\u0e15\u0e48 EMAIL_HOST \u0e27\u0e48\u0e32\u0e07: self-service password reset \u0e08\u0e30\u0e2a\u0e48\u0e07\u0e2d\u0e35\u0e40\u0e21\u0e25\u0e44\u0e21\u0e48\u0e44\u0e14\u0e49\n    return _bootstrap._gcd_import(name[level:], package, level)
+
+C:\Users\RTA\AppData\Local\Programs\Python\Python312\Lib\importlib\__init__.py:90
+  C:\\Users\\RTA\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\importlib\\__init__.py:90: RuntimeWarning: DJANGO_SECURE=0 \u0e02\u0e13\u0e30 DJANGO_DEBUG=0: \u0e2d\u0e19\u0e38\u0e0d\u0e32\u0e15\u0e40\u0e09\u0e1e\u0e32\u0e30 pilot HTTP \u0e43\u0e19 LAN \u0e40\u0e17\u0e48\u0e32\u0e19\u0e31\u0e49\u0e19 \u0e2b\u0e49\u0e32\u0e21\u0e43\u0e0a\u0e49\u0e04\u0e48\u0e32\u0e19\u0e35\u0e49\u0e40\u0e21\u0e37\u0e48\u0e2d\u0e40\u0e1b\u0e34\u0e14\u0e1c\u0e48\u0e32\u0e19\u0e2d\u0e34\u0e19\u0e40\u0e17\u0e2d\u0e23\u0e4c\u0e40\u0e19\u0e47\u0e15\u0e2b\u0e23\u0e37\u0e2d production \u0e17\u0e35\u0e48\u0e21\u0e35 TLS\n    return _bootstrap._gcd_import(name[level:], package, level)
+
+C:\Users\RTA\AppData\Local\Programs\Python\Python312\Lib\importlib\__init__.py:90
+  C:\\Users\\RTA\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\importlib\\__init__.py:90: RuntimeWarning: \u0e22\u0e31\u0e07\u0e44\u0e21\u0e48\u0e44\u0e14\u0e49\u0e15\u0e31\u0e49\u0e07 CLIENT_IP_HEADER \u0e2b\u0e23\u0e37\u0e2d TRUSTED_PROXY_HOPS: IP \u0e43\u0e19 audit log \u0e1b\u0e25\u0e2d\u0e21\u0e44\u0e14\u0e49 \u0e41\u0e25\u0e30\u0e15\u0e31\u0e27\u0e08\u0e33\u0e01\u0e31\u0e14\u0e04\u0e33\u0e02\u0e2d\u0e17\u0e35\u0e48\u0e1e\u0e31\u0e01\u0e2a\u0e32\u0e18\u0e32\u0e23\u0e13\u0e30\u0e15\u0e48\u0e2d\u0e1c\u0e39\u0e49\u0e2a\u0e48\u0e07\u0e40\u0e25\u0e35\u0e48\u0e22\u0e07\u0e44\u0e14\u0e49 \u2014 \u0e15\u0e23\u0e27\u0e08\u0e04\u0e48\u0e32\u0e17\u0e35\u0e48\u0e16\u0e39\u0e01\u0e15\u0e49\u0e2d\u0e07\u0e08\u0e32\u0e01 /ops/client-ip/\n    return _bootstrap._gcd_import(name[level:], package, level)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ===========================
+FAILED bookings/tests_integrity_audit.py::test_cancel_rejects_stale_terminal_status[cancelled]
+FAILED bookings/tests_integrity_audit.py::test_cancel_rejects_stale_terminal_status[rejected]
+FAILED bookings/tests_integrity_audit.py::test_cancel_rejects_stale_terminal_status[expired]
+FAILED bookings/tests_integrity_audit.py::test_cancel_uses_current_deadline
+FAILED bookings/tests_integrity_audit.py::test_cancel_preserves_latest_revision_and_releases_holds
+FAILED bookings/tests_integrity_audit.py::test_room_without_rule_still_observes_closures[blackout]
+FAILED bookings/tests_integrity_audit.py::test_room_without_rule_still_observes_closures[outage]
+FAILED bookings/tests_integrity_audit.py::test_lodging_buffers_respect_cohort_boundaries[True-before]
+FAILED bookings/tests_integrity_audit.py::test_lodging_buffers_respect_cohort_boundaries[True-after]
+9 failed, 2 passed, 3 warnings in 4.09s
