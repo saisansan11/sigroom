@@ -31,6 +31,10 @@ class Resource(models.Model):
         OUT_OF_SERVICE = "out_of_service", "งดใช้ชั่วคราว"
         RETIRED = "retired", "ปลดระวาง"
 
+    class Cooling(models.TextChoices):
+        AIR = "air", "แอร์"
+        FAN = "fan", "พัดลม"
+
     resource_type = models.CharField("ประเภททรัพยากร", max_length=20, choices=Type.choices, default=Type.ROOM)
     code = models.CharField("รหัส", max_length=30, unique=True, help_text="เช่น B2-301 หรือ PROJ-05")
     name = models.CharField("ชื่อ", max_length=200)
@@ -40,6 +44,7 @@ class Resource(models.Model):
     room_category = models.CharField("ประเภทห้อง", max_length=20, choices=Category.choices, default=Category.CLASSROOM)
     capacity = models.PositiveIntegerField("ความจุ (คน)", default=0, help_text="0 = ไม่กำหนด ระบบเตือนเมื่อเกิน ไม่บล็อก")
     fixed_equipment = models.TextField("อุปกรณ์ประจำห้อง", blank=True, help_text="บรรทัดละรายการ")
+    lodging_cooling = models.CharField("ประเภทห้องพัก", max_length=8, choices=Cooling.choices, blank=True, default="", db_default="")
     layouts = models.TextField("รูปแบบจัดโต๊ะที่รองรับ", blank=True, help_text="บรรทัดละรายการ")
     owner_unit = models.ForeignKey(
         "accounts.Unit", verbose_name="หน่วยเจ้าของ", null=True, blank=True, on_delete=models.PROTECT, related_name="owned_resources"

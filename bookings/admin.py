@@ -16,8 +16,31 @@ from .models import (
     ReferenceValue,
     SeriesSkip,
 )
-from .lodging_models import CourseLodgingRelease
-from .lodging_services import update_cohort_allocation
+from .lodging_models import CourseLodgingRelease, LodgingRate, LodgingMeterReading
+from .lodging_services import can_access_lodging_management, update_cohort_allocation
+
+
+@admin.register(LodgingRate)
+class LodgingRateAdmin(admin.ModelAdmin):
+    list_display = ("category", "cooling", "daily_price", "monthly_price", "basis", "effective_from")
+    list_filter = ("cooling", "basis", "effective_from")
+    search_fields = ("category",)
+
+
+@admin.register(LodgingMeterReading)
+class LodgingMeterReadingAdmin(admin.ModelAdmin):
+    list_display = ("room", "check_in_date", "check_out_date", "meter_in", "meter_out", "unit_price", "recorded_by", "recorded_at")
+    readonly_fields = ("recorded_by", "recorded_at")
+    autocomplete_fields = ("room",)
+
+    def save_model(self, request, obj, form, change):
+        if not can_access_lodging_management(request.user):
+            raise PermissionDenied("คุณไม่มีสิทธิ์บันทึกมิเตอร์ไฟห้องพัก")
+        obj.recorded_by = request.user
+        obj.save()  # Model.save audits create/edit from every entry point.
+
+    def has_delete_permission(self, request, obj=None):
+        return False
 
 
 class BookingResourceInline(admin.TabularInline):

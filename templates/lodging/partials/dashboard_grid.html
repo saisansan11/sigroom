@@ -1,0 +1,22 @@
+{% load thaidate %}
+<div class="dashboard-summary" role="status">
+  <span>ว่าง <strong>{{ summary.empty_rooms }}</strong> ห้อง</span><span>เตียงว่าง <strong>{{ summary.free_beds }}</strong></span>
+  <span>ผู้พักคืนนี้ <strong>{{ summary.people }}</strong> คน</span><span>เข้าวันนี้ {{ summary.arrivals }} · ออกวันนี้ {{ summary.departures }}</span>
+  <span>{% if summary.estimated %}ประมาณการ{% else %}ยอดที่คำนวณได้{% endif %} <strong>{{ summary.total|floatformat:2 }}</strong> บาท</span>
+</div>
+{% if summary.missing_rates %}<p class="notice warning">ยังขาดอัตราที่เจ้าหน้าที่เลือกสำหรับ {{ summary.missing_rates }} คน ยอดที่แสดงยังไม่รวมส่วนนี้</p>{% endif %}
+{% regroup rows by room.floor as floors %}
+{% for group in floors %}
+<h2>ชั้น {{ group.grouper|default:'ยังไม่ระบุ' }}</h2>
+<div class="dashboard-rooms">
+{% for item in group.list %}
+<a class="dashboard-room status-{{ item.status }}" href="{% url 'bookings:lodging_dashboard_room' item.room.pk %}?day={{ day|date:'Y-m-d' }}&amp;floor={{ floor }}&amp;status={{ status }}"
+   hx-get="{% url 'bookings:lodging_dashboard_room' item.room.pk %}?day={{ day|date:'Y-m-d' }}&amp;floor={{ floor }}&amp;status={{ status }}" hx-target="#lodging-room-panel" hx-swap="innerHTML show:top">
+  <strong>{{ item.room.code }}</strong><span>{{ item.room.get_lodging_cooling_display|default:'ยังไม่ระบุประเภท' }} · {{ item.status_label }}</span>
+  <span class="dashboard-dots" aria-hidden="true">{% for used in item.dots %}{% if used %}●{% else %}○{% endif %}{% endfor %}</span>
+  <span>{{ item.occupied }}/{{ item.capacity }} คน · {% if item.occupants %}{{ item.occupants.0.nights }} คืน{% else %}ไม่มีผู้พักคืนนี้{% endif %}</span>
+  <span>{% if item.estimated %}ประมาณการ {% endif %}{{ item.total|floatformat:2 }} บาท{% if item.missing_rates %} · ยังขาดอัตรา{% endif %}</span>
+</a>
+{% endfor %}
+</div>
+{% empty %}<p class="notice info">ไม่มีห้องพักตรงกับวันที่และตัวกรองที่เลือก</p>{% endfor %}
