@@ -1,9 +1,12 @@
+from datetime import timedelta
 from pathlib import Path
 
 import pytest
 from django.urls import reverse
+from django.utils import timezone
 
 from accounts.models import Unit, User
+from bookings.models import Booking
 from resources.models import Resource, ResourceRule
 
 pytestmark = pytest.mark.django_db
@@ -138,7 +141,7 @@ def test_staff_gateway_rejects_authenticated_user_without_owner_role(client):
         assert client.get(reverse("bookings:service_staff_entry", args=[service])).status_code == 403
 
 
-def test_online_custodian_is_redirected_to_usage_workspace(client):
+def test_online_custodian_gets_scoped_service_workspace(client):
     unit = Unit.objects.create(code="GW-ON", name="บก.กศ. ทดสอบ")
     staff = _user("gateway-online-staff", unit=unit)
     room = _room("GW-ONLINE", Resource.Category.ONLINE, unit=unit)
@@ -146,11 +149,14 @@ def test_online_custodian_is_redirected_to_usage_workspace(client):
     client.force_login(staff)
 
     response = client.get(reverse("bookings:service_staff_entry", args=["online"]))
-    assert response.status_code == 302
-    assert response.url == reverse("usage:list")
+    assert response.status_code == 200
+    html = response.content.decode("utf-8")
+    assert "งานห้องสอนออนไลน์" in html
+    assert room.code in html
+    assert f"{reverse('usage:list')}?service=online" in html
 
 
-def test_learning_custodian_is_redirected_to_usage_workspace(client):
+def test_learning_custodian_gets_scoped_service_workspace(client):
     unit = Unit.objects.create(code="GW-LEARN", name="สนับสนุนการศึกษา ทดสอบ")
     staff = _user("gateway-learning-staff", unit=unit)
     room = _room("GW-MEET", Resource.Category.MEETING, unit=unit)
@@ -158,8 +164,11 @@ def test_learning_custodian_is_redirected_to_usage_workspace(client):
     client.force_login(staff)
 
     response = client.get(reverse("bookings:service_staff_entry", args=["learning"]))
-    assert response.status_code == 302
-    assert response.url == reverse("usage:list")
+    assert response.status_code == 200
+    html = response.content.decode("utf-8")
+    assert "งานห้องเรียน / ห้องประชุม" in html
+    assert room.code in html
+    assert f"{reverse('usage:list')}?service=learning" in html
 
 
 def test_staff_gateway_superuser_can_enter_all_operational_routes(client):
@@ -169,8 +178,10 @@ def test_staff_gateway_superuser_can_enter_all_operational_routes(client):
     online = client.get(reverse("bookings:service_staff_entry", args=["online"]))
     learning = client.get(reverse("bookings:service_staff_entry", args=["learning"]))
     assert lodging.status_code == 302 and lodging.url == reverse("bookings:lodging_workspace")
-    assert online.status_code == 302 and online.url == reverse("usage:list")
-    assert learning.status_code == 302 and learning.url == reverse("usage:list")
+    assert online.status_code == 200
+    assert learning.status_code == 200
+    assert "งานห้องสอนออนไลน์" in online.content.decode("utf-8")
+    assert "งานห้องเรียน / ห้องประชุม" in learning.content.decode("utf-8")
 
 
 def test_staff_gateway_unknown_service_is_404_after_login(client):
@@ -178,3 +189,37 @@ def test_staff_gateway_unknown_service_is_404_after_login(client):
     client.force_login(admin)
     response = client.get(reverse("bookings:service_staff_entry", args=["unknown"]))
     assert response.status_code == 404
+
+
+def test_multi_service_custodian_workspace_never_leaks_other_service_rooms(client):
+    unit = Unit.objects.create(code="GW-MULTI", name="หน่วยดูแลหลายส่วน")
+    staff = _user("gateway-multi-staff", unit=unit)
+    online_room = _room("GW-ONLINE-ONLY", Resource.Category.ONLINE, unit=unit)
+    learning_room = _room("GW-LEARNING-ONLY", Resource.Category.CLASSROOM, unit=unit)
+    online_room.custodians.add(staff)
+    learning_room.custodians.add(staff)
+    now = timezone.now()
+    common = {
+        "requester": staff,
+        "unit": unit,
+        "responsible_name": staff.display_name,
+        "responsible_phone": "0800000000",
+        "start_at": now + timedelta(hours=2),
+        "end_at": now + timedelta(hours=3),
+        "request_status": Booking.RequestStatus.APPROVED,
+    }
+    Booking.objects.create(room=online_room, title="งานออนไลน์เฉพาะส่วน", **common)
+    Booking.objects.create(room=learning_room, title="งานห้องเรียนเฉพาะส่วน", **common)
+    client.force_login(staff)
+
+    online_html = client.get(reverse("bookings:service_staff_entry", args=["online"])).content.decode("utf-8")
+    assert online_room.code in online_html
+    assert learning_room.code not in online_html
+    assert "งานออนไลน์เฉพาะส่วน" in online_html
+    assert "งานห้องเรียนเฉพาะส่วน" not in online_html
+
+    learning_html = client.get(reverse("bookings:service_staff_entry", args=["learning"])).content.decode("utf-8")
+    assert learning_room.code in learning_html
+    assert online_room.code not in learning_html
+    assert "งานห้องเรียนเฉพาะส่วน" in learning_html
+    assert "งานออนไลน์เฉพาะส่วน" not in learning_html

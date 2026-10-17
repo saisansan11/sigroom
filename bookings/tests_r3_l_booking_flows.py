@@ -33,7 +33,7 @@ def test_online_teaching_booking_exposes_one_primary_submit_action():
     assert 'name="action" value="book"' in template
     assert 'name="action" value="check"' not in template
     assert "ตรวจสอบช่วงเวลา" not in template
-    assert "ระบบตรวจห้องว่างและเวลาซ้ำอีกครั้งเมื่อกดยืนยัน" in template
+    assert "ถ้าห้องว่าง ระบบยืนยันการจองทันที; ถ้าเวลาชน ระบบจะไม่สร้างการจอง" in template
     assert "ยืนยันการจอง" in template
 
 

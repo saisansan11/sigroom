@@ -10,6 +10,17 @@ from notifications.services import booking_ref, notify
 from resources.models import Resource
 
 
+SERVICE_ROOM_CATEGORIES = {
+    "online": (Resource.Category.ONLINE,),
+    "learning": (
+        Resource.Category.CLASSROOM,
+        Resource.Category.LAB,
+        Resource.Category.MEETING,
+        Resource.Category.SPECIAL,
+    ),
+}
+
+
 def can_manage_usage(user, room=None) -> bool:
     if not getattr(user, "is_authenticated", False):
         return False
@@ -19,13 +30,24 @@ def can_manage_usage(user, room=None) -> bool:
     return rooms.filter(pk=room.pk).exists() if room is not None else rooms.exists()
 
 
+def can_manage_room_categories(user, categories) -> bool:
+    if not getattr(user, "is_authenticated", False):
+        return False
+    if user.is_superuser:
+        return True
+    return user.custodied_resources.filter(
+        resource_type=Resource.Type.ROOM,
+        room_category__in=tuple(categories),
+    ).exists()
+
+
 def managed_room_ids(user):
     if user.is_superuser:
         return None
     return user.custodied_resources.filter(resource_type=Resource.Type.ROOM).values_list("pk", flat=True)
 
 
-def recent_bookings_for(user, now=None):
+def recent_bookings_for(user, now=None, *, categories=None):
     if not can_manage_usage(user):
         raise PermissionError("เฉพาะเจ้าหน้าที่ดูแลห้องหรือผู้ดูแลระบบเท่านั้น")
     now = now or timezone.now()
@@ -39,6 +61,8 @@ def recent_bookings_for(user, now=None):
     room_ids = managed_room_ids(user)
     if room_ids is not None:
         queryset = queryset.filter(room_id__in=room_ids)
+    if categories:
+        queryset = queryset.filter(room__room_category__in=tuple(categories))
     return queryset
 
 

@@ -2,7 +2,7 @@
 {% load static %}
 {% load thaidate %}
 {% block title %}หน้าแรก · SIGROOM{% endblock %}
-{% block head %}<script defer src="{% static 'vendor/fullcalendar/index.global.min.js' %}"></script><script defer src="{% static 'vendor/fullcalendar/locales-all.global.min.js' %}"></script>{% endblock %}
+{% block head %}<link rel="stylesheet" href="{% static 'css/home_gateway.css' %}?v=1"><script defer src="{% static 'vendor/fullcalendar/index.global.min.js' %}"></script><script defer src="{% static 'vendor/fullcalendar/locales-all.global.min.js' %}"></script>{% endblock %}
 {% block content %}
 {% if user.is_authenticated %}
   <section class="home-head" aria-labelledby="home-greeting">
@@ -62,6 +62,59 @@
   </section>
 {% endif %}
 
+<section class="home-service-gateway" aria-labelledby="home-service-title">
+  <div class="home-gateway-head">
+    <div><p class="eyebrow">เลือกงานที่ต้องการ</p><h2 id="home-service-title">จองห้องแบบตรงงาน</h2></div>
+    <p>เข้าเฉพาะส่วนที่ต้องใช้ ไม่ต้องผ่านหน้ารวมหลายระบบ</p>
+  </div>
+  <div class="home-service-grid">
+    <a class="home-service-card" href="{% url 'bookings:book_search' %}">
+      <span class="home-service-kicker">ห้องเรียน / ประชุม</span>
+      <strong>หาห้องว่างแล้วจอง</strong>
+      <small>เลือกวัน เวลา จำนวนคน แล้วระบบแสดงเฉพาะห้องที่จองได้</small>
+    </a>
+    {% if user.is_authenticated %}
+      {% if nav_can_book_online %}
+      <a class="home-service-card" href="{% url 'bookings:online_teaching_home' %}">
+        <span class="home-service-kicker">ห้องสอนออนไลน์</span>
+        <strong>เลือก 1 ใน 3 ห้อง</strong>
+        <small>ถ้าเวลาไม่ชน ระบบยืนยันอัตโนมัติ ไม่ต้องรอผู้อนุมัติ</small>
+      </a>
+      {% else %}
+      <div class="home-service-card is-disabled" aria-label="ห้องสอนออนไลน์ สำหรับครูที่ได้รับสิทธิ์">
+        <span class="home-service-kicker">ห้องสอนออนไลน์</span>
+        <strong>สำหรับครูที่ได้รับสิทธิ์</strong>
+        <small>บัญชีนี้ยังไม่ได้รับสิทธิ์จองห้องสอนออนไลน์</small>
+      </div>
+      {% endif %}
+    {% else %}
+      <a class="home-service-card" href="{% url 'login' %}?next={% url 'bookings:online_teaching_home' %}">
+        <span class="home-service-kicker">ห้องสอนออนไลน์</span>
+        <strong>เข้าสู่ระบบแล้วจอง</strong>
+        <small>ห้องว่างยืนยันอัตโนมัติสำหรับครูที่ได้รับสิทธิ์</small>
+      </a>
+    {% endif %}
+    <a class="home-service-card" href="{% url 'bookings:lodging_about' %}">
+      <span class="home-service-kicker">ห้องพัก</span>
+      <strong>ดูห้อง ราคา และจองที่พัก</strong>
+      <small>เข้าหน้าห้องพักโดยตรง ไม่ผ่านปฏิทินห้องเรียน</small>
+    </a>
+  </div>
+</section>
+
+{% if user.is_authenticated and nav_can_manage_lodging or user.is_authenticated and nav_can_manage_online or user.is_authenticated and nav_can_manage_learning %}
+<section class="home-staff-gateway" aria-labelledby="home-staff-title">
+  <div class="home-gateway-head"><div><p class="eyebrow">เจ้าหน้าที่</p><h2 id="home-staff-title">งานที่ฉันดูแล</h2></div><p>ระบบแสดงเฉพาะส่วนและห้องที่บัญชีนี้ได้รับมอบหมาย</p></div>
+  <div class="home-staff-grid">
+    {% if nav_can_manage_lodging %}<a href="{% url 'bookings:service_staff_entry' 'lodging' %}"><strong>งานห้องพัก</strong><small>ผู้เข้าพัก · เตียง · รายงานตัว</small></a>{% endif %}
+    {% if nav_can_manage_online %}<a href="{% url 'bookings:service_staff_entry' 'online' %}"><strong>ดูแลห้องสอนออนไลน์</strong><small>เห็นเฉพาะห้องออนไลน์ที่ท่านรับผิดชอบ</small></a>{% endif %}
+    {% if nav_can_manage_learning %}<a href="{% url 'bookings:service_staff_entry' 'learning' %}"><strong>ดูแลห้องเรียน / ประชุม</strong><small>เห็นเฉพาะห้องเรียน ห้องปฏิบัติ และห้องประชุมที่ท่านรับผิดชอบ</small></a>{% endif %}
+  </div>
+</section>
+{% endif %}
+
+<details class="home-status-disclosure">
+  <summary><span><strong>ดูสถานะห้องวันนี้</strong><small>ว่าง {{ stat_free_now }} จาก {{ stat_total }} ห้อง · เปิดเมื่อต้องการดูตารางละเอียด</small></span></summary>
 <section id="today-board" class="ledger-board" aria-labelledby="today-board-title">
   <div class="ledger-head">
     <h2 id="today-board-title">ทะเบียนห้องวันนี้</h2>
@@ -117,6 +170,7 @@
     <div class="empty-state"><strong>ไม่มีห้องในหมวดนี้</strong><span>เลือกหมวดอื่นด้านบน</span></div>
   {% endif %}
 </section>
+</details>
 
 <details id="home-more" class="home-more">
   <summary class="home-more-summary">ดูเพิ่มเติม</summary>

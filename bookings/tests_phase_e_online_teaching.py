@@ -143,7 +143,8 @@ def test_online_hub_requires_login_and_teacher_role(client, online_e_setup):
     html = response.content.decode()
     for code in ONLINE_TEACHING_ROOM_CODES:
         assert code in html
-    assert html.count("จองห้องนี้") == 3
+    assert html.count('class="online-room-book"') == 3
+    assert "จองช่วงนี้" in html
 
 
 def test_online_form_is_focused_and_course_is_strict_dropdown(client, online_e_setup):
@@ -529,3 +530,61 @@ def test_lodging_create_can_reuse_course_run_and_dates_without_title_typing(clie
     assert cohort.title == run.display_name
     assert cohort.check_in_date == run.start_date
     assert cohort.check_out_date == run.end_date
+
+
+def test_online_quick_booking_prefills_free_slot(client, online_e_setup):
+    client.force_login(online_e_setup["teacher"])
+    response = client.get(reverse("bookings:online_teaching_home"))
+    assert response.status_code == 200
+    cards = response.context["cards"]
+    assert len(cards) == 3
+    free_cards = [card for card in cards if card["available_now"]]
+    assert free_cards
+    for card in free_cards:
+        assert "?date=" in card["book_url"]
+        assert "&start=" in card["book_url"]
+        assert "&end=" in card["book_url"]
+
+
+def test_online_quick_booking_accepts_prefilled_query(client, online_e_setup):
+    teacher = online_e_setup["teacher"]
+    room = online_e_setup["rooms"][0]
+    client.force_login(teacher)
+    day = _future_day(5)
+    response = client.get(
+        reverse("bookings:online_teaching_book", args=[room.code]),
+        {"date": day.isoformat(), "start": "10:00", "end": "11:00"},
+    )
+    assert response.status_code == 200
+    form = response.context["form"]
+    assert form.initial["date"] == day
+    assert form.initial["start_time"] == "10:00"
+    assert form.initial["end_time"] == "11:00"
+
+
+def test_online_single_course_is_preselected_and_hidden(client, online_e_setup):
+    teacher = online_e_setup["teacher"]
+    room = online_e_setup["rooms"][0]
+    online_e_setup["courses"][1].is_active = False
+    online_e_setup["courses"][1].save(update_fields=["is_active"])
+    client.force_login(teacher)
+    response = client.get(reverse("bookings:online_teaching_book", args=[room.code]))
+    assert response.status_code == 200
+    html = response.content.decode("utf-8")
+    assert response.context["course_count"] == 1
+    assert 'type="hidden" name="course_run"' in html
+    assert online_e_setup["courses"][0].display_name in html
+
+
+def test_online_booking_forces_teaching_purpose_even_if_client_spoofs(client, online_e_setup):
+    teacher = online_e_setup["teacher"]
+    room = online_e_setup["rooms"][0]
+    course = online_e_setup["courses"][0]
+    client.force_login(teacher)
+    response = client.post(
+        reverse("bookings:online_teaching_book", args=[room.code]),
+        _post_payload(course, purpose=Booking.Purpose.MEETING),
+    )
+    assert response.status_code == 302
+    booking = Booking.objects.get(room=room)
+    assert booking.purpose == Booking.Purpose.TEACHING

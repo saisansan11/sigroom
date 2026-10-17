@@ -157,3 +157,53 @@ def test_ux10_css_is_usage_scoped_and_mobile_only():
     assert "min-height: 44px" in ux10
     assert "overflow-wrap: anywhere" in ux10
     assert ":has(" not in ux10
+
+
+def test_usage_service_scope_separates_online_from_learning(client, usage_mobile_setup):
+    setup = usage_mobile_setup
+    online_room = Resource.objects.create(
+        code="UX10-ONLINE",
+        name="ห้องสอนออนไลน์ UX-10",
+        owner_unit=setup["unit"],
+        room_category=Resource.Category.ONLINE,
+    )
+    ResourceRule.objects.create(resource=online_room)
+    online_room.custodians.add(setup["custodian"])
+    now = timezone.now()
+    online_booking = Booking.objects.create(
+        room=online_room,
+        requester=setup["requester"],
+        unit=setup["unit"],
+        responsible_name="ผู้รับผิดชอบออนไลน์",
+        responsible_phone="0810000001",
+        title="สอนออนไลน์",
+        start_at=now - timedelta(hours=3),
+        end_at=now - timedelta(hours=2),
+        request_status=Booking.RequestStatus.APPROVED,
+        usage_status=Booking.UsageStatus.USED,
+    )
+    client.force_login(setup["custodian"])
+
+    online = client.get(f"{reverse('usage:list')}?service=online")
+    online_html = online.content.decode("utf-8")
+    assert online.status_code == 200
+    assert online_room.code in online_html
+    assert setup["room"].code not in online_html
+    assert "เฉพาะห้องสอนออนไลน์ที่ท่านได้รับมอบหมาย" in online_html
+
+    learning = client.get(f"{reverse('usage:list')}?service=learning")
+    learning_html = learning.content.decode("utf-8")
+    assert learning.status_code == 200
+    assert setup["room"].code in learning_html
+    assert online_room.code not in learning_html
+
+    # Even when the same custodian owns both services, a scoped POST cannot cross sections.
+    cross = client.post(
+        f"{reverse('usage:update', args=[setup['open_booking'].pk])}?service=online",
+        {"status": Booking.UsageStatus.NO_SHOW},
+    )
+    assert cross.status_code == 403
+    setup["open_booking"].refresh_from_db()
+    assert setup["open_booking"].usage_status == Booking.UsageStatus.USED
+    online_booking.refresh_from_db()
+    assert online_booking.usage_status == Booking.UsageStatus.USED

@@ -1,6 +1,6 @@
 import csv
 import uuid
-from datetime import datetime, time
+from datetime import datetime, time, timedelta
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied, ValidationError
@@ -14,6 +14,7 @@ from .lodging_room_details import room_details
 
 from audit.services import audit
 from resources.models import Resource
+from .models import Booking
 from .lodging_about_data import (
     ELECTRICITY_AIR_BAHT_PER_UNIT,
     ELECTRICITY_FAN_FLAT_BAHT_PER_MONTH,
@@ -97,22 +98,66 @@ def service_staff_entry(request, service):
 
     category_map = {
         "online": (Resource.Category.ONLINE,),
-        "learning": (Resource.Category.CLASSROOM, Resource.Category.LAB, Resource.Category.MEETING),
+        "learning": (Resource.Category.CLASSROOM, Resource.Category.LAB, Resource.Category.MEETING, Resource.Category.SPECIAL),
     }
     categories = category_map.get(service)
     if categories is None:
         raise Http404("ไม่พบบริการที่ร้องขอ")
 
-    can_manage = bool(
-        request.user.is_superuser
-        or request.user.custodied_resources.filter(
-            resource_type=Resource.Type.ROOM,
-            room_category__in=categories,
-        ).exists()
+    rooms = Resource.objects.filter(
+        resource_type=Resource.Type.ROOM,
+        room_category__in=categories,
+        status=Resource.Status.ACTIVE,
     )
-    if not can_manage:
+    if not request.user.is_superuser:
+        rooms = rooms.filter(custodians=request.user)
+    rooms = rooms.order_by("code").distinct()
+    if not request.user.is_superuser and not rooms.exists():
         raise PermissionDenied("บัญชีนี้ไม่ได้รับมอบหมายให้ดูแลห้องในส่วนนี้")
-    return redirect("usage:list")
+
+    now = timezone.now()
+    horizon = now + timedelta(days=14)
+    room_ids = list(rooms.values_list("pk", flat=True))
+    upcoming = (
+        Booking.objects.filter(
+            room_id__in=room_ids,
+            request_status__in=Booking.HOLDING_STATUSES,
+            end_at__gte=now,
+            start_at__lte=horizon,
+        )
+        .select_related("room", "requester", "unit", "course_run__course")
+        .order_by("start_at", "room__code")
+    )
+    labels = {
+        "online": (
+            "งานห้องสอนออนไลน์",
+            "เฉพาะห้องสอนออนไลน์ที่ท่านได้รับมอบหมาย",
+            reverse("bookings:online_teaching_home"),
+            "เปิดหน้าจองห้องออนไลน์",
+        ),
+        "learning": (
+            "งานห้องเรียน / ห้องประชุม",
+            "เฉพาะห้องเรียน ห้องปฏิบัติ และห้องประชุมที่ท่านได้รับมอบหมาย",
+            reverse("bookings:book_search"),
+            "เปิดหน้าหาห้องว่าง",
+        ),
+    }
+    title, scope_note, booking_url, booking_label = labels[service]
+    return render(
+        request,
+        "bookings/service_staff_workspace.html",
+        {
+            "service": service,
+            "service_title": title,
+            "service_scope_note": scope_note,
+            "rooms": rooms,
+            "upcoming_bookings": upcoming,
+            "horizon_days": 14,
+            "booking_url": booking_url,
+            "booking_label": booking_label,
+            "usage_url": f"{reverse('usage:list')}?service={service}",
+        },
+    )
 
 
 def lodging_general_request_status(request, token):

@@ -3,6 +3,7 @@ const AxeBuilder = require('@axe-core/playwright').default;
 
 const PUBLIC_ROUTES = [
   '/',
+  '/home/',
   '/about/',
   '/accounts/login/',
   '/accounts/password-reset/',
@@ -64,4 +65,25 @@ test('room inspector uses a scoped polite live region', async ({ page }) => {
   await expect(page.locator('#lka-room-panel')).not.toHaveAttribute('aria-live', /.+/);
   await expect(page.locator('#lka-panel-status')).toHaveAttribute('aria-live', 'polite');
   await expect(page.locator('#lka-panel-status')).toHaveAttribute('aria-atomic', 'true');
+});
+
+
+test('home service gateway stays compact and hides detailed board by default', async ({ page }) => {
+  await page.goto('/home/', { waitUntil: 'networkidle' });
+  await expect(page.locator('.home-service-gateway')).toBeVisible();
+  await expect(page.locator('.home-service-card')).toHaveCount(3);
+  await expect(page.locator('.home-status-disclosure')).not.toHaveAttribute('open');
+
+  const metrics = await page.evaluate(() => ({
+    scrollWidth: document.documentElement.scrollWidth,
+    clientWidth: document.documentElement.clientWidth,
+    bodyFont: parseFloat(getComputedStyle(document.body).fontSize),
+  }));
+  expect(metrics.scrollWidth).toBeLessThanOrEqual(metrics.clientWidth + 1);
+  expect(metrics.bodyFont).toBeGreaterThanOrEqual(16);
+
+  const labels = await page.locator('.home-service-card strong').allTextContents();
+  expect(labels.some(text => text.includes('หาห้องว่างแล้วจอง'))).toBeTruthy();
+  expect(labels.some(text => text.includes('เข้าสู่ระบบแล้วจอง') || text.includes('เลือก 1 ใน 3 ห้อง'))).toBeTruthy();
+  expect(labels.some(text => text.includes('ดูห้อง ราคา และจองที่พัก'))).toBeTruthy();
 });

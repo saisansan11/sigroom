@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% load static thaidate %}
+{% block title %}{{ service_title }} — SIGROOM{% endblock %}
+{% block head %}<link rel="stylesheet" href="{% static 'css/service_staff_workspace.css' %}?v=1">{% endblock %}
+{% block content %}
+<div class="staff-workspace">
+  <header class="staff-workspace-head">
+    <div>
+      <p class="eyebrow">พื้นที่เจ้าหน้าที่</p>
+      <h1>{{ service_title }}</h1>
+      <p>{{ service_scope_note }}</p>
+    </div>
+    <div class="staff-workspace-actions">
+      <a role="button" href="{{ booking_url }}">{{ booking_label }}</a>
+      <a role="button" class="secondary" href="{{ usage_url }}">บันทึกผลการใช้งาน</a>
+    </div>
+  </header>
+
+  <section aria-labelledby="staff-room-heading">
+    <div class="staff-section-head">
+      <div><p class="eyebrow">ขอบเขตของฉัน</p><h2 id="staff-room-heading">ห้องที่รับผิดชอบ</h2></div>
+      <span class="count-badge">{{ rooms|length }} ห้อง</span>
+    </div>
+    <div class="staff-room-grid">
+      {% for room in rooms %}
+        <article class="staff-room-card">
+          <strong>{{ room.code }}</strong>
+          <span>{{ room.name }}</span>
+          <small>{% if room.floor %}ชั้น {{ room.floor }} · {% endif %}รองรับ {{ room.capacity }} คน</small>
+        </article>
+      {% empty %}
+        <div class="empty-state">ไม่มีห้องในขอบเขตที่รับผิดชอบ</div>
+      {% endfor %}
+    </div>
+  </section>
+
+  <section class="staff-bookings" aria-labelledby="staff-booking-heading">
+    <div class="staff-section-head">
+      <div><p class="eyebrow">ตารางงาน</p><h2 id="staff-booking-heading">วันนี้และ {{ horizon_days }} วันถัดไป</h2></div>
+      <span class="count-badge">{{ upcoming_bookings|length }} รายการ</span>
+    </div>
+    {% if upcoming_bookings %}
+      <div class="staff-booking-list">
+        {% for booking in upcoming_bookings %}
+          <a class="staff-booking-card" href="{% url 'bookings:booking_detail' booking.pk %}">
+            <div class="staff-booking-time">
+              <strong>{{ booking.start_at|thai_datetime }}</strong>
+              <span>– {{ booking.end_at|date:"H:i" }} น.</span>
+            </div>
+            <div class="staff-booking-main">
+              <strong>{{ booking.room.code }} · {{ booking.title }}</strong>
+              <span>{{ booking.requester.display_name }}{% if booking.unit %} · {{ booking.unit.name }}{% endif %}</span>
+            </div>
+            <span class="status status-{{ booking.request_status }}">{{ booking.get_request_status_display }}</span>
+          </a>
+        {% endfor %}
+      </div>
+    {% else %}
+      <div class="empty-state"><strong>ยังไม่มีรายการจองในช่วงนี้</strong><span>เมื่อมีคำขอหรือรายการอนุมัติของห้องที่ท่านดูแล จะปรากฏที่นี่</span></div>
+    {% endif %}
+  </section>
+</div>
+{% endblock %}

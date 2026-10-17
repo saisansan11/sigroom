@@ -13,7 +13,7 @@
     <div>
       <p class="eyebrow">สำหรับครูผู้สอน</p>
       <h1>ห้องสอนออนไลน์</h1>
-      <p>เลือกห้องที่ต้องการ แล้วระบุวัน เวลา และหลักสูตรเพื่อจอง</p>
+      <p>เลือกห้องที่ต้องการได้เลย ถ้าช่วงเวลาว่างระบบจะยืนยันอัตโนมัติ ไม่ต้องรออนุมัติ</p>
     </div>
     <a role="button" class="secondary" href="{% url 'bookings:my_bookings' %}">การจองของฉัน</a>
   </div>
@@ -33,7 +33,7 @@
             <h2>{{ item.room.name }}</h2>
             <p class="online-room-code">{{ item.room.code }}{% if item.room.floor %} · ชั้น {{ item.room.floor }}{% endif %}</p>
             {% if item.available_now %}
-              <span class="online-status is-free">ว่างช่วงถัดไป</span>
+              <span class="online-status is-free">ว่างช่วงถัดไป · จองได้ทันที</span>
             {% else %}
               <span class="online-status is-busy">ไม่ว่างช่วงถัดไป</span>
             {% endif %}
@@ -46,7 +46,7 @@
             </details>
           {% endif %}
         </div>
-        <a role="button" class="online-room-book" href="{% url 'bookings:online_teaching_book' item.room.code %}">จองห้องนี้</a>
+        <a role="button" class="online-room-book" href="{{ item.book_url }}">{% if item.available_now %}จองช่วงนี้{% else %}เลือกเวลาอื่น{% endif %}</a>
       </article>
     {% empty %}
       <div class="notice info">ยังไม่มีห้องสอนออนไลน์ที่เปิดใช้งาน</div>

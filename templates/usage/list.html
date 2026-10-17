@@ -2,7 +2,7 @@
 {% load thaidate %}
 {% block title %}การใช้งานห้อง — SIGROOM{% endblock %}
 {% block content %}
-<div class="page-heading"><div><p class="eyebrow">งานเจ้าหน้าที่ดูแลห้อง</p><h1>บันทึกการใช้งานห้อง</h1><p>รายการที่สิ้นสุดในวันนี้และ 3 วันที่ผ่านมา แก้สถานะได้ไม่เกิน 3 วันหลังวันใช้ห้อง</p></div></div>
+<div class="page-heading"><div><p class="eyebrow">งานเจ้าหน้าที่ดูแลห้อง</p><h1>{{ service_title }}</h1><p>{{ service_scope_note }} · แก้สถานะได้ไม่เกิน 3 วันหลังวันใช้ห้อง</p></div></div>
 {% if bookings %}
 <div class="table-scroll usage-list-wrap">
   <table class="usage-table"><caption class="visually-hidden">รายการรอบใช้ห้องที่บันทึกสถานะได้</caption>
@@ -16,7 +16,7 @@
         <td class="usage-status-cell"><span class="status status-{{ booking.usage_status }}">{{ booking.get_usage_status_display }}</span></td>
         <td class="usage-action-cell">
           {% if booking.usage_change_open %}
-          <form method="post" action="{% url 'usage:update' booking.pk %}" class="inline-actions usage-status-form">
+          <form method="post" action="{% url 'usage:update' booking.pk %}{% if service %}?service={{ service|urlencode }}{% endif %}" class="inline-actions usage-status-form">
             {% csrf_token %}
             <button class="usage-status-button usage-status-used" type="submit" name="status" value="used"{% if booking.usage_status == 'used' %} disabled{% endif %}>ใช้งานแล้ว</button>
             <button class="secondary usage-status-button usage-status-no-show" type="submit" name="status" value="no_show"{% if booking.usage_status == 'no_show' %} disabled{% endif %}>ไม่มาใช้</button>

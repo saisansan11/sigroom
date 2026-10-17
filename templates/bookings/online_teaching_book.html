@@ -42,8 +42,8 @@
       <div class="notice error" role="alert">{% for error in form.non_field_errors %}<div>{{ error }}</div>{% endfor %}</div>
     {% endif %}
 
-    <section class="online-booking-step" aria-labelledby="online-time-heading">
-      <div><p class="eyebrow">1 · วันและเวลา</p><h2 id="online-time-heading">เลือกช่วงที่จะใช้ห้อง</h2></div>
+    <section class="online-booking-step online-booking-step-compact" aria-labelledby="online-time-heading">
+      <div><p class="eyebrow">กรอกครั้งเดียว</p><h2 id="online-time-heading">วัน เวลา และหลักสูตร</h2></div>
       <div class="online-booking-grid three">
         {% for field in form %}
           {% if field.name == 'date' or field.name == 'start_time' or field.name == 'end_time' %}
@@ -51,15 +51,16 @@
           {% endif %}
         {% endfor %}
       </div>
-    </section>
-
-    <section class="online-booking-step" aria-labelledby="online-course-heading">
-      <div><p class="eyebrow">2 · หลักสูตร</p><h2 id="online-course-heading">เลือกหลักสูตรและงานที่สอน</h2></div>
-      <div class="online-booking-grid two">
-        <label for="{{ form.course_run.id_for_label }}">{{ form.course_run.label }} {{ form.course_run }}{% for error in form.course_run.errors %}<small class="field-error" role="alert">{{ error }}</small>{% endfor %}</label>
-        <label for="{{ form.purpose.id_for_label }}">{{ form.purpose.label }} {{ form.purpose }}{% for error in form.purpose.errors %}<small class="field-error" role="alert">{{ error }}</small>{% endfor %}</label>
-      </div>
-      <p class="muted-text">ชื่อ สังกัด และเบอร์โทรใช้จากบัญชีที่เข้าสู่ระบบ</p>
+      {% if course_count == 1 and single_course %}
+        {{ form.course_run.as_hidden }}
+        <div class="online-selected-course"><span>หลักสูตร</span><strong>{{ single_course.display_name }}</strong></div>
+      {% else %}
+        <div class="online-booking-grid one">
+          <label for="{{ form.course_run.id_for_label }}">{{ form.course_run.label }} {{ form.course_run }}{% for error in form.course_run.errors %}<small class="field-error" role="alert">{{ error }}</small>{% endfor %}</label>
+        </div>
+      {% endif %}
+      <input type="hidden" name="purpose" value="teaching">
+      <p class="muted-text">ชื่อ สังกัด และเบอร์โทรใช้จากบัญชีที่เข้าสู่ระบบ · กดครั้งเดียว ระบบตรวจเวลาชนและยืนยันให้ทันทีเมื่อว่าง</p>
     </section>
 
     {% if availability %}
@@ -71,7 +72,7 @@
     <div class="online-booking-actions">
       <button type="submit" name="action" value="book" {% if not form.course_catalog_ready %}disabled{% endif %}>ยืนยันการจอง</button>
     </div>
-    <p class="muted-text">ระบบตรวจห้องว่างและเวลาซ้ำอีกครั้งเมื่อกดยืนยัน</p>
+    <p class="muted-text">ถ้าห้องว่าง ระบบยืนยันการจองทันที; ถ้าเวลาชน ระบบจะไม่สร้างการจอง</p>
   </form>
 </div>
 {% endblock %}

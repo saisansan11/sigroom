@@ -4,13 +4,15 @@ Booking Core remains authoritative for time policy, blackout/outage, overlap hol
 submission state, cancellation and audit.  This module only owns the feature-policy
 layer: teacher authorization, room allowlist, course catalog choices and compact UI.
 """
-from datetime import datetime, timedelta
+from datetime import datetime, time, timedelta
+from urllib.parse import urlencode
 
 from django import forms
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse
 from django.utils import timezone
 
 from audit.services import audit, model_snapshot
@@ -81,6 +83,42 @@ def _require_teacher(user):
         raise PermissionDenied("เฉพาะครูที่ได้รับสิทธิ์จองห้องสอนออนไลน์")
 
 
+def _next_online_service_slot(rooms, duration_minutes=60):
+    """Return the next rounded slot that falls inside at least one online room service window."""
+    candidate = next_quarter_start()
+    if not rooms:
+        return candidate, candidate + timedelta(minutes=duration_minutes)
+
+    starts = []
+    ends = []
+    for room in rooms:
+        rule = getattr(room, "rule", None)
+        start_value = getattr(rule, "service_start", None) or time(7, 30)
+        end_value = getattr(rule, "service_end", None) or time(17, 0)
+        if isinstance(start_value, str):
+            start_value = time.fromisoformat(start_value)
+        if isinstance(end_value, str):
+            end_value = time.fromisoformat(end_value)
+        starts.append(start_value)
+        ends.append(end_value)
+
+    open_at = min(starts)
+    close_at = max(ends)
+    zone = timezone.get_current_timezone()
+    local_candidate = timezone.localtime(candidate)
+    day = local_candidate.date()
+    window_start = timezone.make_aware(datetime.combine(day, open_at), zone)
+    window_end = timezone.make_aware(datetime.combine(day, close_at), zone)
+    duration = timedelta(minutes=duration_minutes)
+
+    if candidate < window_start:
+        candidate = window_start
+    elif candidate + duration > window_end:
+        next_day = day + timedelta(days=1)
+        candidate = timezone.make_aware(datetime.combine(next_day, open_at), zone)
+    return candidate, candidate + duration
+
+
 def _room_availability(room, start_at, end_at, user) -> tuple[bool, str]:
     available, unavailable = find_available_rooms(
         start_at,
@@ -124,6 +162,7 @@ class OnlineTeachingBookingForm(forms.Form):
         label="วัตถุประสงค์",
         choices=Booking.Purpose.choices,
         initial=Booking.Purpose.TEACHING,
+        disabled=True,
     )
 
     def __init__(self, *args, **kwargs):
@@ -131,6 +170,8 @@ class OnlineTeachingBookingForm(forms.Form):
         runs = online_course_runs()
         self.fields["course_run"].queryset = runs
         self.course_catalog_ready = runs.exists()
+        if not self.is_bound and runs.count() == 1:
+            self.initial.setdefault("course_run", runs.first().pk)
 
     def clean(self):
         cleaned = super().clean()
@@ -149,12 +190,34 @@ class OnlineTeachingBookingForm(forms.Form):
         return cleaned
 
 
+def _slot_initial_from_request(request, rooms=None):
+    default_start, default_end = _next_online_service_slot(rooms or [])
+    booking_date = timezone.localdate(default_start)
+    start_value = timezone.localtime(default_start).strftime("%H:%M")
+    end_value = timezone.localtime(default_end).strftime("%H:%M")
+
+    raw_date = (request.GET.get("date") or "").strip()
+    raw_start = (request.GET.get("start") or "").strip()
+    raw_end = (request.GET.get("end") or "").strip()
+    try:
+        if raw_date:
+            booking_date = datetime.strptime(raw_date, "%Y-%m-%d").date()
+        if raw_start:
+            datetime.strptime(raw_start, "%H:%M")
+            start_value = raw_start
+        if raw_end:
+            datetime.strptime(raw_end, "%H:%M")
+            end_value = raw_end
+    except ValueError:
+        pass
+    return booking_date, start_value, end_value
+
+
 @login_required
 def online_teaching_home(request):
     _require_teacher(request.user)
     rooms = _ordered_rooms(active_only=True)
-    next_start = next_quarter_start()
-    next_end = next_start + timedelta(hours=1)
+    next_start, next_end = _next_online_service_slot(rooms)
     available, _ = find_available_rooms(
         next_start,
         next_end,
@@ -162,10 +225,22 @@ def online_teaching_home(request):
         room_categories=(Resource.Category.ONLINE,),
     )
     available_ids = {item.room.pk for item in available}
+    local_start = timezone.localtime(next_start)
+    local_end = timezone.localtime(next_end)
+    slot_query = urlencode({
+        "date": local_start.date().isoformat(),
+        "start": local_start.strftime("%H:%M"),
+        "end": local_end.strftime("%H:%M"),
+    })
     cards = [
         {
             "room": room,
             "available_now": room.pk in available_ids,
+            "book_url": (
+                f"{reverse('bookings:online_teaching_book', args=[room.code])}?{slot_query}"
+                if room.pk in available_ids
+                else reverse('bookings:online_teaching_book', args=[room.code])
+            ),
         }
         for room in rooms
     ]
@@ -196,13 +271,12 @@ def online_teaching_book(request, code):
         raise PermissionDenied("บัญชีครูต้องมีเบอร์โทรศัพท์ก่อนจองห้อง")
 
     if request.method == "GET":
-        start_at = next_quarter_start() + timedelta(days=1)
-        end_at = start_at + timedelta(hours=1)
+        booking_date, start_value, end_value = _slot_initial_from_request(request, [room])
         form = OnlineTeachingBookingForm(
             initial={
-                "date": timezone.localdate(start_at),
-                "start_time": timezone.localtime(start_at).strftime("%H:%M"),
-                "end_time": timezone.localtime(end_at).strftime("%H:%M"),
+                "date": booking_date,
+                "start_time": start_value,
+                "end_time": end_value,
                 "purpose": Booking.Purpose.TEACHING,
             }
         )
@@ -230,7 +304,7 @@ def online_teaching_book(request, code):
                         course_run=course_run,
                         title=course_title,
                         attendee_level=course_title,
-                        purpose=form.cleaned_data["purpose"],
+                        purpose=Booking.Purpose.TEACHING,
                         start_at=start_at,
                         end_at=end_at,
                         attendees=1,
@@ -269,6 +343,8 @@ def online_teaching_book(request, code):
                             )
                             return redirect("bookings:my_bookings")
 
+    course_runs = online_course_runs()
+    course_count = course_runs.count()
     return render(
         request,
         "bookings/online_teaching_book.html",
@@ -276,6 +352,7 @@ def online_teaching_book(request, code):
             "room": room,
             "form": form,
             "availability": availability,
-            "course_count": online_course_runs().count(),
+            "course_count": course_count,
+            "single_course": course_runs.first() if course_count == 1 else None,
         },
     )
