@@ -13,7 +13,7 @@ dependencies = [
     "whitenoise>=6.8",
     "qrcode>=8.0",
     "django-storages[google]>=1.14.6",
-    "pillow>=12.3.0",
+    "pillow>=13.0.0",
     "pywebpush>=2.3,<3",
     "django-allauth[socialaccount]>=65,<66",
 ]
