@@ -1,0 +1,24 @@
+{% extends "admin/base_site.html" %}
+{% load static %}
+
+{% block extrastyle %}
+{{ block.super }}
+<link rel="stylesheet" href="{% static 'css/admin_policy_footer.css' %}">
+{% endblock %}
+
+{% block footer %}
+<div class="sigroom-admin-policy-footer">
+  <nav class="sigroom-admin-policy-links" aria-label="ข้อกำหนดและนโยบายเว็บไซต์">
+    <a href="{% url 'privacy' %}">นโยบายความเป็นส่วนตัว</a>
+    <a href="{% url 'cookies' %}">นโยบายคุกกี้</a>
+    <a href="{% url 'terms' %}">นโยบายเว็บไซต์</a>
+    <a href="{% url 'disclaimer' %}">ข้อจำกัดความรับผิดชอบ</a>
+  </nav>
+  <div class="sigroom-admin-policy-credits">
+    <p>© 2569 แผนกวิชาการสื่อสารประเภทวิทยุและการสงครามอิเล็กทรอนิกส์ กองการศึกษา โรงเรียนทหารสื่อสาร กรมการทหารสื่อสาร สงวนลิขสิทธิ์</p>
+    <p lang="en">© 2026 Radio Communications and Electronic Warfare Department, Education Division, Signal School, Royal Thai Signal Corps. All rights reserved.</p>
+    <p>สร้างสรรค์และดูแลระบบโดย ร.ต. วสันต์ ทัศนามล</p>
+    <p lang="en">Created &amp; Maintained by 2nd Lt. Wasan Thatsanamol</p>
+  </div>
+</div>
+{% endblock %}
